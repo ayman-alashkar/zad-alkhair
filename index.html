@@ -852,6 +852,7 @@ function bind(){
     if(!d) return;
     try{
       const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+        p_title:state.title,p_dedication:state.dedication||"",
         p_end:d,p_hour:state.reminderHour,p_minute:state.reminderMinute||0});
       if(!r.ok) return toast("تعذّر التمديد");
       await refresh(); toast("مُدّد الموعد");
@@ -865,7 +866,11 @@ function settings(){
   const hh=String(state.reminderHour).padStart(2,"0");
   const mm=String(state.reminderMinute||0).padStart(2,"0");
   modal(`<div class="display" style="font-size:1.45rem">إعدادات الختمة</div>
-    <div class="field-row" style="margin-top:1.1rem"><label for="s-end">تاريخ الانتهاء</label>
+    <div class="field-row" style="margin-top:1.1rem"><label for="s-title">اسم الختمة</label>
+      <input id="s-title" class="field" value="${esc(state.title)}"></div>
+    <div class="field-row"><label for="s-ded">على نية:</label>
+      <input id="s-ded" class="field" value="${esc(state.dedication||"")}"></div>
+    <div class="field-row"><label for="s-end">تاريخ الانتهاء</label>
       <input id="s-end" class="field" type="date" value="${state.endDate}"></div>
     <div class="field-row"><label for="s-time">وقت التذكير اليومي</label>
       <input id="s-time" class="field" type="time" value="${hh}:${mm}">
@@ -886,8 +891,10 @@ function settings(){
     const p=t.split(":");
     if(!d) return toast("اختر تاريخ الانتهاء");
     try{
-      const r=await rpc("update_settings",
-        {p_code:code,p_org_code:orgCode(),p_end:d,p_hour:+p[0],p_minute:+p[1]});
+      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+        p_title:norm(document.getElementById("s-title").value),
+        p_dedication:norm(document.getElementById("s-ded").value),
+        p_end:d,p_hour:+p[0],p_minute:+p[1]});
       if(!r.ok) return toast("تعذّر الحفظ");
       closeLayer(); await refresh(); toast("حُفظت الإعدادات");
     }catch(e){ toast("تعذّر الاتصال"); }
