@@ -197,6 +197,16 @@ button,input,select{font-family:inherit;font-size:.88rem}
   background:linear-gradient(180deg,rgba(46,124,151,.14),#FFFCF4);border-color:var(--blue)}
 .overdue h2{font-family:var(--ruqaa);font-size:1.6rem;line-height:1.8;color:var(--blue)}
 .overdue p{font-family:var(--naskh);font-size:1.1rem;margin:.3rem 0 1.1rem;line-height:2}
+.linkcall{margin-top:1.3rem;padding:1.1rem 1.2rem;display:flex;align-items:center;
+  gap:1rem;flex-wrap:wrap;border-color:var(--green);
+  background:linear-gradient(180deg,var(--green-soft),#FFFCF4)}
+.linkcall .lc-text{flex:1 1 15rem;min-width:0}
+.linkcall h3{font-family:var(--ruqaa);font-size:1.25rem;line-height:1.9;color:#1D6A50}
+.linkcall p{font-size:.83rem;color:var(--muted);line-height:1.7}
+.linkcall .lc-btn{flex:0 0 auto;padding:.65rem 1.6rem;font-size:.92rem;
+  box-shadow:0 10px 22px -14px rgba(44,139,108,.95)}
+@media(max-width:480px){.linkcall{justify-content:center;text-align:center}
+  .linkcall .lc-btn{width:100%}}
 .khatm{margin-top:1.6rem;padding:2rem 1.3rem;text-align:center;
   background:linear-gradient(180deg,var(--gold-soft),#FFFCF4);border-color:var(--gold)}
 .khatm h2{font-family:var(--ruqaa);font-size:1.85rem;line-height:1.8;
@@ -591,6 +601,7 @@ function viewMain(){
     <button class="btn quiet sm" id="btn-logout">خروج</button>
   </div>
 
+  ${me.linked?"":viewLinkCall()}
   ${done===30?viewKhatm():dl===0?viewOverdue():""}
 
   <div class="sec-head"><h2 class="sec">الأجزاء الثلاثون</h2>
@@ -609,6 +620,16 @@ function viewMain(){
     ${isOrganizer()?`<button class="btn danger" id="btn-reset">إلغاء الختمة</button>`:""}
   </div>
   <p class="hint">يصل التذكير يوميًا في ${state.reminderHour}:00 إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>`;
+}
+
+function viewLinkCall(){
+  return `<div class="frame linkcall">
+    <div class="lc-text">
+      <h3>فعّل التذكير في تلغرام</h3>
+      <p>يصلك جزؤك ووردك اليومي كل يوم، حتى لا تنسى.</p>
+    </div>
+    <button class="btn green lc-btn" id="btn-link-big">فعّل الآن</button>
+  </div>`;
 }
 
 function viewOverdue(){
@@ -645,7 +666,11 @@ function openSheet(i){
     <button class="btn quiet" data-act="free" data-i="${i}">تراجع عن الحجز</button>`;
   else if(mine) acts=`<button class="btn quiet" data-act="undone" data-i="${i}">تراجع عن الإتمام</button>`;
   else{ note=`محجوز باسم ${esc(o?o.name:"—")}${j.status==="done"?"، وقد أتمّه.":"."}`;
-    if(isOrganizer()&&j.status!=="done") acts=`<button class="btn" data-act="free" data-i="${i}">حرِّر الجزء للجميع</button>`; }
+    if(isOrganizer()&&j.status==="taken")
+      acts=`<button class="btn gold" data-act="done" data-i="${i}">علّمه مقروءًا نيابةً عنه</button>
+            <button class="btn" data-act="free" data-i="${i}">حرِّر الجزء للجميع</button>`;
+    else if(isOrganizer()&&j.status==="done")
+      acts=`<button class="btn quiet" data-act="undone" data-i="${i}">تراجع عن الإتمام</button>`; }
   document.getElementById("layer").innerHTML=`
     <div class="scrim" id="scrim"></div>
     <div class="frame sheet">
@@ -778,21 +803,41 @@ function mergeDialog(fromId){
 /* ===================== الأفعال ===================== */
 async function act(a,i){
   const num=i+1;
+  const j=state.juz[i];
+  const mine=j.ownerId===viewer.id;
+  const o=j.ownerId?memberOf(j.ownerId):null;
+
+  /* حين يتصرّف المنظّم في جزء غيره، يُسأل باسم صاحبه صراحةً */
+  if(!mine&&o){
+    if(a==="done"&&!confirm(
+`هل أتمّ ${o.name} الجزء ${ar(num)} فعلًا؟\n\nسيتوقف تذكيره به، وتصله رسالة شكر.`)) return;
+    if(a==="undone"&&!confirm(
+`سيعود الجزء ${ar(num)} إلى «لم يُتمّ» باسم ${o.name}، ويعود تذكيره به.\n\nالمتابعة؟`)) return;
+    if(a==="free"&&!confirm(
+`سيُحرَّر الجزء ${ar(num)} من ${o.name} ويعود متاحًا للجميع.\n\nالمتابعة؟`)) return;
+  }
+
+  let ownerId=j.ownerId;
   try{
     let r;
     if(a==="take")        r=await rpc("claim_juz",{p_code:code,p_id:viewer.id,p_num:num});
     else if(a==="free")   r=await rpc("release_juz",{p_code:code,p_id:viewer.id,p_num:num,p_org_code:orgCode()});
-    else if(a==="done")   r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:true});
-    else if(a==="undone") r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:false});
+    else if(a==="done")   r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:true,p_org_code:orgCode()});
+    else if(a==="undone") r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:false,p_org_code:orgCode()});
     if(r&&!r.ok){ await refresh(); return toast(r.error||"تعذّر التنفيذ"); }
+    if(r&&r.ownerId) ownerId=r.ownerId;
   }catch(e){ return toast("تعذّر الاتصال"); }
+
   closeLayer(); await refresh();
+
   if(a==="done"){
+    /* رسالة الشكر تصل صاحب الجزء، ولو علّمه المنظّم نيابةً عنه */
     fetch(`${SUPABASE_URL}/functions/v1/notify-done`,{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({code,id:viewer.id,num})}).catch(()=>{});
+      body:JSON.stringify({code,id:ownerId,num})}).catch(()=>{});
     const left=state.juz.filter(x=>x.status!=="done").length;
-    toast(left===0?"تمّت الختمة، تقبّل الله":`تقبّل الله. بقي ${ar(left)} جزءًا`);
+    toast(left===0?"تمّت الختمة، تقبّل الله"
+      :mine?`تقبّل الله. بقي ${ar(left)} جزءًا`:`سُجّل جزء ${o?o.name:""}`);
   }
 }
 
@@ -910,7 +955,8 @@ function bind(){
     }catch(e){ toast("تعذّر الاتصال"); }
   });
 
-  if($("btn-link"))   $("btn-link").onclick=linkTelegram;
+  if($("btn-link"))     $("btn-link").onclick=linkTelegram;
+  if($("btn-link-big")) $("btn-link-big").onclick=linkTelegram;
   if($("btn-unlink")) $("btn-unlink").onclick=async()=>{
     try{ await rpc("unlink_telegram",{p_code:code,p_id:viewer.id}); await refresh(); toast("أُوقف التذكير"); }
     catch(e){ toast("تعذّر الاتصال"); }};
