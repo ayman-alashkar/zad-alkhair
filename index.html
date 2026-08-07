@@ -66,6 +66,8 @@ h2.sec{font-family:var(--ruqaa);font-size:1.3rem;color:var(--walnut);line-height
 
 /* ===== الدخول ===== */
 .gate{padding:2.6rem 0 2rem;text-align:center;max-width:42ch;margin:0 auto}
+.joining{font-size:.78rem;letter-spacing:.14em;color:var(--muted);margin:.2rem 0}
+.joining b{font-family:var(--naskh);font-size:1.05rem;letter-spacing:.18em;color:var(--walnut)}
 .gate .field{text-align:center;font-size:1.05rem;padding:.85rem}
 
 /* ===== الرأس ===== */
@@ -438,7 +440,7 @@ const viewBoot=()=>`<div class="gate"><p class="lede">جارٍ التحميل…
 
 function viewHome(){
   return `<div class="gate">
-    <div class="brand">كلام الرحمن يجمعنا</div>
+    <div class="brand">كلام الباري يجمعنا</div>
     ${rule()}
     <p class="lede">بتوفيق الله وهمّة بعضنا البعض، نبقى على تماس مع كلام الباري.</p>
     <div class="frame card" style="margin-top:1.7rem">
@@ -509,9 +511,12 @@ function viewShare(){
 
 function viewGate(){
   const asks=!!gateName;
+  const org=memberOf(state.organizerId);
   return `<div class="gate">
+    <p class="joining">انضمامك إلى ختمة</p>
     <div class="display">${esc(state.title)}</div>
-    ${state.dedication?`<p class="lede" style="margin-top:0">على نية: ${esc(state.dedication)}</p>`:""}
+    ${state.dedication?`<p class="lede" style="margin-top:.2rem">على نية: ${esc(state.dedication)}</p>`:""}
+    <p class="joining">بإشراف ${esc(org?org.name:"—")} · رمز الختمة <b>${esc(code)}</b></p>
     ${rule()}
     <div class="frame card">
     ${asks?`
@@ -524,7 +529,11 @@ function viewGate(){
       <div class="field-row"><input id="f-name" class="field" placeholder="أدخل اسمك لو سمحت" autocomplete="name"></div>
       <button class="btn gold wide" id="btn-login">دخول</button>
       <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>`}
-    </div></div>`;
+    </div>
+    ${asks?"":`<p class="hint" style="margin-top:1.1rem">
+      أتريد ختمة أخرى؟
+      <button class="btn quiet sm" id="btn-home">الصفحة الرئيسية</button></p>`}
+  </div>`;
 }
 
 function viewMain(){
