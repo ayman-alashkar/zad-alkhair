@@ -191,6 +191,10 @@ button,input,select{font-family:inherit;font-size:.88rem}
 .roster-row:last-child{border-bottom:0}
 .roster-row .n{color:var(--muted);font-size:.76rem}
 
+.overdue{margin-top:1.6rem;padding:1.6rem 1.3rem;text-align:center;
+  background:linear-gradient(180deg,rgba(46,124,151,.14),#FFFCF4);border-color:var(--blue)}
+.overdue h2{font-family:var(--ruqaa);font-size:1.6rem;line-height:1.8;color:var(--blue)}
+.overdue p{font-family:var(--naskh);font-size:1.1rem;margin:.3rem 0 1.1rem;line-height:2}
 .khatm{margin-top:1.6rem;padding:2rem 1.3rem;text-align:center;
   background:linear-gradient(180deg,var(--gold-soft),#FFFCF4);border-color:var(--gold)}
 .khatm h2{font-family:var(--ruqaa);font-size:1.85rem;line-height:1.8;
@@ -544,7 +548,7 @@ function viewMain(){
     <button class="btn quiet sm" id="btn-logout">خروج</button>
   </div>
 
-  ${done===30?viewKhatm():""}
+  ${done===30?viewKhatm():dl===0?viewOverdue():""}
 
   <div class="sec-head"><h2 class="sec">الأجزاء الثلاثون</h2>
     <div class="legend"><b class="lg-free">متاح</b><b class="lg-take">محجوز</b><b class="lg-done">تمّت قراءته</b></div>
@@ -562,6 +566,18 @@ function viewMain(){
     ${isOrganizer()?`<button class="btn danger" id="btn-reset">إلغاء الختمة</button>`:""}
   </div>
   <p class="hint">يصل التذكير يوميًا في ${state.reminderHour}:00 إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>`;
+}
+
+function viewOverdue(){
+  const left=state.juz.filter(j=>j.status!=="done").length;
+  return `<div class="frame overdue">
+    <h2>انقضى الموعد</h2>
+    <p>بقي ${ar(left)} ${left===1?"جزء لم يُقرأ":"أجزاء لم تُقرأ"}. لا يُلغى شيء، والتذكير يستمر أسبوعًا بعد الموعد.</p>
+    ${isOrganizer()
+      ?`<button class="btn gold" id="btn-extend">مدّد الموعد</button>
+        <p class="hint">أو ابدأ ختمة جديدة من الإعدادات.</p>`
+      :`<p class="hint">باب الخير مفتوح، فأتمّ جزءك متى تيسّر.</p>`}
+  </div>`;
 }
 
 function viewKhatm(){
@@ -831,6 +847,16 @@ function bind(){
 
   if($("btn-share")) $("btn-share").onclick=shareText;
   if($("btn-next")) $("btn-next").onclick=settings;
+  if($("btn-extend")) $("btn-extend").onclick=async()=>{
+    const d=prompt("مدّد الموعد إلى (YYYY-MM-DD):",plusDays(7));
+    if(!d) return;
+    try{
+      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+        p_end:d,p_hour:state.reminderHour,p_minute:state.reminderMinute||0});
+      if(!r.ok) return toast("تعذّر التمديد");
+      await refresh(); toast("مُدّد الموعد");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
   if($("btn-settings")) $("btn-settings").onclick=settings;
   if($("btn-reset")) $("btn-reset").onclick=cancelKhatmah;
 }
