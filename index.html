@@ -355,6 +355,17 @@ const vKey=()=>"zad:viewer:"+code;
 const cKey=()=>"zad:orgcode:"+code;
 const orgCode=()=>localStorage.getItem(cKey())||null;
 
+/* معرّف عشوائي ثابت لهذا المتصفح، به يُقفل الاسم على صاحبه */
+function deviceId(){
+  let d=localStorage.getItem("zad:device");
+  if(!d){
+    d=(crypto.randomUUID?crypto.randomUUID():
+       Date.now().toString(36)+Math.random().toString(36).slice(2,12));
+    localStorage.setItem("zad:device",d);
+  }
+  return d;
+}
+
 function loadViewer(){
   try{ viewer=JSON.parse(localStorage.getItem(vKey())||"null"); }catch(e){ viewer=null; }
 }
@@ -520,6 +531,7 @@ function viewMain(){
       ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
       ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
       <span class="spacer n">${n?`${ar(d)} / ${ar(n)} أتمّها`:"لم يحجز بعد"}</span>
+      ${isOrganizer()&&m.id!==viewer.id&&m.locked?`<button class="btn quiet sm" data-release="${esc(m.id)}">افتح الاسم</button>`:""}
       ${isOrganizer()&&m.id!==viewer.id?`<button class="btn quiet sm" data-merge="${esc(m.id)}">دمج</button>`:""}
     </div>`;
   }).join("");
@@ -641,10 +653,12 @@ async function refresh(silent){
 
 async function doSignIn(id,name,ocode){
   let r;
-  try{ r=await rpc("sign_in",{p_code:code,p_id:id,p_name:name,p_org_code:ocode}); }
+  try{ r=await rpc("sign_in",{p_code:code,p_id:id,p_name:name,
+        p_device:deviceId(),p_org_code:ocode}); }
   catch(e){ return toast("تعذّر الاتصال"); }
   if(!r||!r.ok){
     if(r&&r.needCode){ gateName=name; screen="gate"; render(); return; }
+    if(r&&r.taken) return nameTaken(r.name);
     return toast((r&&r.error)||"تعذّر الدخول");
   }
   viewer={id:r.id,name:r.name};
@@ -653,6 +667,16 @@ async function doSignIn(id,name,ocode){
   gateName="";
   await refresh();
   toast(`أهلًا ${r.name}`);
+}
+
+function nameTaken(name){
+  modal(`<div class="display" style="font-size:1.4rem">هذا الاسم لصاحبه</div>
+    <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
+      اسم «${esc(name)}» مسجَّل من جهاز آخر، فلا يُدخل به من هنا.<br>
+      إن كان اسمك أنت وغيّرت هاتفك، فاطلب من المنظّم فتحه لك.<br>
+      وإلا فادخل باسم يميّزك عنه.</p>
+    <div class="actions"><button class="btn gold" id="nt-ok">حسنًا</button></div>`);
+  document.getElementById("nt-ok").onclick=closeLayer;
 }
 
 function askSimilar(near,typed){
@@ -785,7 +809,7 @@ function bind(){
       const r=await rpc("create_khatmah",{
         p_title:norm($("f-title").value)||"زاد الخير", p_dedication:norm($("f-ded").value),
         p_end:end, p_hour:+$("f-hour").value,
-        p_org_id:keyOf(org), p_org_name:org, p_org_code:oc});
+        p_org_id:keyOf(org), p_org_name:org, p_org_code:oc, p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الإنشاء");
       code=r.code;
       history.replaceState(null,"","#"+code);
@@ -839,6 +863,15 @@ function bind(){
 
   document.querySelectorAll(".cell,.wedge").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
   document.querySelectorAll("[data-merge]").forEach(b=>b.onclick=()=>mergeDialog(b.dataset.merge));
+  document.querySelectorAll("[data-release]").forEach(b=>b.onclick=async()=>{
+    const m=memberOf(b.dataset.release);
+    if(!confirm(`سيُفتح اسم «${m?m.name:""}» ليدخل به من أي جهاز.\n\nافعل هذا لمن غيّر هاتفه أو مسح متصفحه.`)) return;
+    try{
+      const r=await rpc("release_name",{p_code:code,p_org_code:orgCode(),p_id:b.dataset.release});
+      if(!r.ok) return toast(r.error||"تعذّر الفتح");
+      await refresh(); toast("فُتح الاسم");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  });
 
   if($("btn-link"))   $("btn-link").onclick=linkTelegram;
   if($("btn-unlink")) $("btn-unlink").onclick=async()=>{
