@@ -514,7 +514,7 @@ function viewMain(){
       <span class="avatar">${esc(norm(m.name).charAt(0)||"؟")}</span>
       <span>${esc(m.name)}</span>
       ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
-      ${m.linked?'<span class="tag j">تذكير</span>':""}
+      ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
       <span class="spacer n">${n?`${ar(d)} / ${ar(n)} أتمّها`:"لم يحجز بعد"}</span>
       ${isOrganizer()&&m.id!==viewer.id?`<button class="btn quiet sm" data-merge="${esc(m.id)}">دمج</button>`:""}
     </div>`;
@@ -830,36 +830,72 @@ function bind(){
     catch(e){ toast("تعذّر الاتصال"); }};
 
   if($("btn-share")) $("btn-share").onclick=shareText;
-  if($("btn-next")) $("btn-next").onclick=nextRound;
+  if($("btn-next")) $("btn-next").onclick=settings;
   if($("btn-settings")) $("btn-settings").onclick=settings;
-  if($("btn-reset")) $("btn-reset").onclick=async()=>{
-    if(!confirm("سيُحذف توزيع هذه الختمة نهائيًا. المتابعة؟"))return;
+  if($("btn-reset")) $("btn-reset").onclick=cancelKhatmah;
+}
+
+function settings(){
+  const hh=String(state.reminderHour).padStart(2,"0");
+  const mm=String(state.reminderMinute||0).padStart(2,"0");
+  modal(`<div class="display" style="font-size:1.45rem">إعدادات الختمة</div>
+    <div class="field-row" style="margin-top:1.1rem"><label for="s-end">تاريخ الانتهاء</label>
+      <input id="s-end" class="field" type="date" value="${state.endDate}"></div>
+    <div class="field-row"><label for="s-time">وقت التذكير اليومي</label>
+      <input id="s-time" class="field" type="time" value="${hh}:${mm}">
+      <p class="hint">يصل التذكير خلال خمس دقائق من هذا الوقت.</p></div>
+    <div class="actions">
+      <button class="btn gold" id="s-save">حفظ</button>
+      <button class="btn quiet" id="s-close2">إغلاق</button></div>
+    <div class="rule" style="margin:1.3rem 0 1rem"><i>◆</i></div>
+    <button class="btn wide" id="s-next">ابدأ ختمة جديدة</button>
+    <p class="hint" style="margin-bottom:1.2rem">تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم كما هي.</p>
+    <button class="btn danger wide" id="s-del">إلغاء الختمة نهائيًا</button>`);
+
+  document.getElementById("s-close2").onclick=closeLayer;
+
+  document.getElementById("s-save").onclick=async()=>{
+    const d=document.getElementById("s-end").value;
+    const t=document.getElementById("s-time").value||"20:00";
+    const p=t.split(":");
+    if(!d) return toast("اختر تاريخ الانتهاء");
     try{
-      const r=await rpc("delete_khatmah",{p_code:code,p_org_code:orgCode()});
-      if(!r.ok) return toast("الرمز غير صحيح");
-      localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
-      location.hash=""; code=""; state=null; viewer=null; screen="home"; closeLayer(); render();
-    }catch(e){ toast("تعذّر الاتصال"); }};
+      const r=await rpc("update_settings",
+        {p_code:code,p_org_code:orgCode(),p_end:d,p_hour:+p[0],p_minute:+p[1]});
+      if(!r.ok) return toast("تعذّر الحفظ");
+      closeLayer(); await refresh(); toast("حُفظت الإعدادات");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+
+  document.getElementById("s-next").onclick=async()=>{
+    const d=prompt("تاريخ انتهاء الختمة الجديدة (YYYY-MM-DD):",plusDays(7));
+    if(!d) return;
+    try{
+      const r=await rpc("new_round",{p_code:code,p_org_code:orgCode(),p_end:d});
+      if(!r.ok) return toast("تعذّر البدء");
+      closeLayer(); await refresh(); toast("بدأت ختمة جديدة");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+
+  document.getElementById("s-del").onclick=cancelKhatmah;
 }
 
-async function nextRound(){
-  const d=prompt("تاريخ انتهاء الختمة الجديدة (YYYY-MM-DD):",plusDays(7));
-  if(!d)return;
-  try{
-    const r=await rpc("new_round",{p_code:code,p_org_code:orgCode(),p_end:d});
-    if(!r.ok) return toast("تعذّر البدء");
-    await refresh(); toast("بدأت ختمة جديدة");
-  }catch(e){ toast("تعذّر الاتصال"); }
-}
+async function cancelKhatmah(){
+  if(!confirm(
+`سيُحذف كل شيء نهائيًا: المشاركون وتذكيراتهم ورمز الختمة، ويتعطّل الرابط الذي شاركته، وتصل المجموعة رسالة بالإلغاء.
 
-async function settings(){
-  const d=prompt("تاريخ الانتهاء (YYYY-MM-DD):",state.endDate); if(!d)return;
-  const h=prompt("ساعة التذكير اليومي (0-23):",state.reminderHour);
-  const hour=(h!==null&&h!==""&&+h>=0&&+h<=23)?+h:state.reminderHour;
+لبدء ختمة جديدة بنفس المجموعة استعمل «ابدأ ختمة جديدة» بدلًا من هذا.
+
+هل تريد المتابعة؟`)) return;
   try{
-    const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),p_end:d,p_hour:hour});
-    if(!r.ok) return toast("تعذّر الحفظ");
-    await refresh(); toast("حُفظت الإعدادات");
+    const res=await fetch(`${SUPABASE_URL}/functions/v1/cancel-khatmah`,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({code,orgCode:orgCode()})});
+    const r=await res.json();
+    if(!r.ok) return toast(r.error||"الرمز غير صحيح");
+    localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
+    location.hash=""; code=""; state=null; viewer=null; screen="home"; closeLayer(); render();
+    toast("أُلغيت الختمة");
   }catch(e){ toast("تعذّر الاتصال"); }
 }
 
