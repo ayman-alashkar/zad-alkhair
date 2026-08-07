@@ -349,6 +349,8 @@ const fmtTime=(h,m)=>{
   const h12 = h%12===0 ? 12 : h%12;
   return `${ar(h12)}:${ar(String(m).padStart(2,"0"))} ${per}`;
 };
+const hourOptions=sel=>Array.from({length:24},(_,h)=>
+  `<option value="${h}" ${h===sel?"selected":""}>${fmtTime(h,0)}</option>`).join("");
 const fmtH=iso=>{try{return new Date(iso+"T12:00:00")
   .toLocaleDateString("ar-SA-u-ca-islamic-umalqura",{day:"numeric",month:"long"});}catch(e){return "";}};
 
@@ -476,9 +478,9 @@ function viewSetup(){
         <div class="dtcell"><label for="f-end">تنتهي في</label>
           <input id="f-end" class="field" type="date" value="${plusDays(7)}" min="${todayISO()}">
           <p class="dtprev" id="p-fend"></p></div>
-        <div class="dtcell"><label for="f-time">التذكير عند</label>
-          <input id="f-time" class="field" type="time" value="20:00">
-          <p class="dtprev" id="p-ftime"></p></div>
+        <div class="dtcell"><label for="f-hour">التذكير عند</label>
+          <select id="f-hour" class="field">${hourOptions(20)}</select>
+          <p class="dtprev">كل يوم</p></div>
       </div>
       <div class="field-row"><label for="f-code2">رمز المنظّم</label>
         <input id="f-code2" class="field" placeholder="رمز تحفظه لنفسك">
@@ -820,13 +822,10 @@ function bind(){
     $("f-join").onkeydown=e=>{if(e.key==="Enter")go();};
   }
 
-  if($("f-end")&&$("f-time")){
-    const u=()=>{
-      $("p-fend").textContent=$("f-end").value?`${fmtG($("f-end").value)} · ${fmtH($("f-end").value)}`:"";
-      const t=($("f-time").value||"").split(":");
-      $("p-ftime").textContent=t.length===2?fmtTime(+t[0],+t[1]):"";
-    };
-    $("f-end").oninput=u; $("f-time").oninput=u; u();
+  if($("f-end")){
+    const u=()=>{$("p-fend").textContent=
+      $("f-end").value?`${fmtG($("f-end").value)} · ${fmtH($("f-end").value)}`:"";};
+    $("f-end").oninput=u; u();
   }
 
   if($("btn-create")) $("btn-create").onclick=async()=>{
@@ -834,11 +833,10 @@ function bind(){
     if(!org) return toast("اكتب اسمك");
     if(!end) return toast("اختر تاريخ الانتهاء");
     if(!oc)  return toast("اختر رمزًا للمنظّم");
-    const ft=($("f-time").value||"20:00").split(":");
     try{
       const r=await rpc("create_khatmah",{
         p_title:norm($("f-title").value)||"زاد الخير", p_dedication:norm($("f-ded").value),
-        p_end:end, p_hour:+ft[0], p_minute:+ft[1],
+        p_end:end, p_hour:+$("f-hour").value, p_minute:0,
         p_org_id:keyOf(org), p_org_name:org, p_org_code:oc, p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الإنشاء");
       code=r.code;
@@ -910,115 +908,96 @@ function bind(){
 
   if($("btn-share")) $("btn-share").onclick=shareText;
   if($("btn-next")) $("btn-next").onclick=settings;
-  if($("btn-extend")) $("btn-extend").onclick=()=>{
-    modal(`<div class="display" style="font-size:1.4rem">تمديد الموعد</div>
-      <p class="hint" style="margin:.6rem 0 1.1rem">تبقى الحجوزات كما هي، ويعود التذكير إلى العمل.</p>
-      <div class="dtcell" style="margin-bottom:1rem"><label for="x-end">الموعد الجديد</label>
-        <input id="x-end" class="field" type="date" value="${plusDays(7)}" min="${todayISO()}">
-        <p class="dtprev" id="p-xend"></p></div>
-      <div class="actions">
-        <button class="btn gold" id="x-go">مدّد</button>
-        <button class="btn quiet" id="x-no">إلغاء</button></div>`);
-    const e=document.getElementById("x-end");
-    const u=()=>{document.getElementById("p-xend").textContent=
-      e.value?`${fmtG(e.value)} · ${fmtH(e.value)}`:"";};
-    e.oninput=u; u();
-    document.getElementById("x-no").onclick=closeLayer;
-    document.getElementById("x-go").onclick=async()=>{
-      if(!e.value) return toast("اختر التاريخ");
-      try{
-        const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
-          p_title:state.title,p_dedication:state.dedication||"",
-          p_end:e.value,p_hour:state.reminderHour,p_minute:state.reminderMinute||0});
-        if(!r.ok) return toast("تعذّر التمديد");
-        closeLayer(); await refresh(); toast("مُدّد الموعد");
-      }catch(err){ toast("تعذّر الاتصال"); }
-    };
-  };
+  if($("btn-extend")) $("btn-extend").onclick=()=>datePicker(
+    "تمديد الموعد","تبقى الحجوزات كما هي، ويعود التذكير إلى العمل.","مدّد",
+    async(d)=>{
+      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+        p_title:state.title,p_dedication:state.dedication||"",
+        p_end:d,p_hour:state.reminderHour,p_minute:0});
+      if(!r.ok) return toast("تعذّر التمديد");
+      closeLayer(); await refresh(); toast("مُدّد الموعد");
+    });
   if($("btn-settings")) $("btn-settings").onclick=settings;
   if($("btn-reset")) $("btn-reset").onclick=cancelKhatmah;
 }
 
 function settings(){
-  const hh=String(state.reminderHour).padStart(2,"0");
-  const mm=String(state.reminderMinute||0).padStart(2,"0");
-  modal(`<div class="display" style="font-size:1.45rem">إعدادات الختمة</div>
+  modal(`<div class="display" style="font-size:1.4rem">إعدادات الختمة</div>
 
-    <div class="field-row" style="margin-top:1.2rem"><label for="s-title">اسم الختمة</label>
+    <div class="field-row" style="margin-top:1rem;margin-bottom:.7rem">
+      <label for="s-title">اسم الختمة</label>
       <input id="s-title" class="field" value="${esc(state.title)}"></div>
-    <div class="field-row"><label for="s-ded">على نية:</label>
+    <div class="field-row" style="margin-bottom:.9rem">
+      <label for="s-ded">على نية:</label>
       <input id="s-ded" class="field" value="${esc(state.dedication||"")}"></div>
 
     <div class="dtgrid">
       <div class="dtcell"><label for="s-end">تنتهي في</label>
         <input id="s-end" class="field" type="date" value="${state.endDate}">
         <p class="dtprev" id="p-end"></p></div>
-      <div class="dtcell"><label for="s-time">التذكير عند</label>
-        <input id="s-time" class="field" type="time" value="${hh}:${mm}">
-        <p class="dtprev" id="p-time"></p></div>
+      <div class="dtcell"><label for="s-hour">التذكير عند</label>
+        <select id="s-hour" class="field">${hourOptions(state.reminderHour)}</select>
+        <p class="dtprev">كل يوم</p></div>
     </div>
 
-    <div class="actions">
+    <div class="actions" style="margin-top:.3rem">
       <button class="btn gold" id="s-save">حفظ</button>
       <button class="btn quiet" id="s-close2">إغلاق</button></div>
 
-    <div class="rule" style="margin:1.4rem 0 1rem"><i>◆</i></div>
-    <p class="seclabel">إجراءات أخرى</p>
-    <button class="btn wide" id="s-next">ابدأ ختمة جديدة</button>
-    <p class="hint" style="margin:.5rem 0 1.2rem">تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم كما هي.</p>
-    <button class="btn danger wide" id="s-del">إلغاء الختمة نهائيًا</button>`);
+    <div class="rule" style="margin:1.1rem 0 .8rem"><i>◆</i></div>
+    <div class="actions" style="margin:0">
+      <button class="btn sm" id="s-next">ابدأ ختمة جديدة</button>
+      <button class="btn danger sm" id="s-del">إلغاء الختمة</button></div>`);
 
-  const eEnd=document.getElementById("s-end"), eTime=document.getElementById("s-time");
-  const upd=()=>{
-    const d=eEnd.value;
-    document.getElementById("p-end").textContent =
-      d ? `${fmtG(d)} · ${fmtH(d)}` : "";
-    const t=(eTime.value||"").split(":");
-    document.getElementById("p-time").textContent =
-      t.length===2 ? fmtTime(+t[0],+t[1]) : "";
-  };
-  eEnd.oninput=upd; eTime.oninput=upd; upd();
+  const eEnd=document.getElementById("s-end");
+  const upd=()=>{document.getElementById("p-end").textContent=
+    eEnd.value?`${fmtG(eEnd.value)} · ${fmtH(eEnd.value)}`:"";};
+  eEnd.oninput=upd; upd();
 
   document.getElementById("s-close2").onclick=closeLayer;
 
   document.getElementById("s-save").onclick=async()=>{
-    const d=eEnd.value, t=(eTime.value||"20:00").split(":");
-    if(!d) return toast("اختر تاريخ الانتهاء");
+    if(!eEnd.value) return toast("اختر تاريخ الانتهاء");
     try{
       const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
         p_title:norm(document.getElementById("s-title").value),
         p_dedication:norm(document.getElementById("s-ded").value),
-        p_end:d,p_hour:+t[0],p_minute:+t[1]});
+        p_end:eEnd.value,p_hour:+document.getElementById("s-hour").value,p_minute:0});
       if(!r.ok) return toast("تعذّر الحفظ");
       closeLayer(); await refresh(); toast("حُفظت الإعدادات");
     }catch(e){ toast("تعذّر الاتصال"); }
   };
 
-  document.getElementById("s-next").onclick=()=>{
-    modal(`<div class="display" style="font-size:1.4rem">ختمة جديدة</div>
-      <p class="hint" style="margin:.6rem 0 1.1rem">تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم.</p>
-      <div class="dtcell" style="margin-bottom:1rem"><label for="n-end">تنتهي في</label>
-        <input id="n-end" class="field" type="date" value="${plusDays(7)}" min="${todayISO()}">
-        <p class="dtprev" id="p-nend"></p></div>
-      <div class="actions">
-        <button class="btn gold" id="n-go">ابدأ</button>
-        <button class="btn quiet" id="n-no">إلغاء</button></div>`);
-    const e=document.getElementById("n-end");
-    const u=()=>{document.getElementById("p-nend").textContent=
-      e.value?`${fmtG(e.value)} · ${fmtH(e.value)}`:"";};
-    e.oninput=u; u();
-    document.getElementById("n-no").onclick=closeLayer;
-    document.getElementById("n-go").onclick=async()=>{
-      if(!e.value) return toast("اختر التاريخ");
-      try{
-        const r=await rpc("new_round",{p_code:code,p_org_code:orgCode(),p_end:e.value});
-        if(!r.ok) return toast("تعذّر البدء");
-        closeLayer(); await refresh(); toast("بدأت ختمة جديدة");
-      }catch(err){ toast("تعذّر الاتصال"); }
-    };
-  };
+  document.getElementById("s-next").onclick=()=>datePicker(
+    "ختمة جديدة","تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم.","ابدأ",
+    async(d)=>{
+      const r=await rpc("new_round",{p_code:code,p_org_code:orgCode(),p_end:d});
+      if(!r.ok) return toast("تعذّر البدء");
+      closeLayer(); await refresh(); toast("بدأت ختمة جديدة");
+    });
 
   document.getElementById("s-del").onclick=cancelKhatmah;
+}
+
+/* نافذة اختيار تاريخ، تُستعمل للختمة الجديدة وللتمديد */
+function datePicker(title,note,okLabel,onOk){
+  modal(`<div class="display" style="font-size:1.4rem">${title}</div>
+    <p class="hint" style="margin:.6rem 0 1.1rem">${note}</p>
+    <div class="dtcell" style="margin-bottom:1.1rem"><label for="d-end">التاريخ</label>
+      <input id="d-end" class="field" type="date" value="${plusDays(7)}" min="${todayISO()}">
+      <p class="dtprev" id="p-dend"></p></div>
+    <div class="actions">
+      <button class="btn gold" id="d-go">${okLabel}</button>
+      <button class="btn quiet" id="d-no">إلغاء</button></div>`);
+  const e=document.getElementById("d-end");
+  const u=()=>{document.getElementById("p-dend").textContent=
+    e.value?`${fmtG(e.value)} · ${fmtH(e.value)}`:"";};
+  e.oninput=u; u();
+  document.getElementById("d-no").onclick=closeLayer;
+  document.getElementById("d-go").onclick=async()=>{
+    if(!e.value) return toast("اختر التاريخ");
+    try{ await onOk(e.value); }catch(err){ toast("تعذّر الاتصال"); }
+  };
 }
 
 async function cancelKhatmah(){
