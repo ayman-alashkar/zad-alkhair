@@ -188,6 +188,16 @@ button,input,select{font-family:inherit;font-size:.88rem}
   border:1px solid var(--line);border-radius:999px;padding:.4rem .9rem;background:var(--paper2)}
 .codechip b{font-family:var(--naskh);font-size:1.1rem;letter-spacing:.2em;color:var(--walnut)}
 
+.asg-list{max-height:38vh;overflow-y:auto;margin:0 -.3rem}
+.asg-row{display:flex;align-items:center;gap:.5rem;width:100%;text-align:start;
+  padding:.55rem .6rem;border:1px solid transparent;border-radius:var(--r-sm);
+  background:transparent;cursor:pointer;font-family:inherit;font-size:.86rem;color:var(--ink);
+  transition:background .18s,border-color .18s}
+.asg-row:hover{background:var(--sand);border-color:var(--line)}
+.asg-row.cur{border-color:var(--green);background:var(--green-soft)}
+.asg-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asg-n{font-size:.74rem;color:var(--muted);flex:0 0 auto}
+.tag.warn{background:#F4E3E1;color:#9A423A}
 .roster-row{display:flex;align-items:center;gap:.55rem;padding:.7rem .2rem;
   border-bottom:1px solid var(--line);font-size:.86rem}
 .roster-row:last-child{border-bottom:0}
@@ -661,13 +671,15 @@ function openSheet(i){
   const j=state.juz[i];
   const o=j.ownerId?memberOf(j.ownerId):null, mine=j.ownerId===viewer.id;
   let acts="", note="";
-  if(j.status==="free") acts=`<button class="btn green" data-act="take" data-i="${i}">احجز هذا الجزء</button>`;
+  if(j.status==="free") acts=`<button class="btn green" data-act="take" data-i="${i}">احجز هذا الجزء</button>`
+    + (isOrganizer()?`<button class="btn" id="s-assign" data-i="${i}">أسنده إلى مشارك</button>`:"");
   else if(mine&&j.status==="taken") acts=`<button class="btn gold" data-act="done" data-i="${i}">أتممت قراءته</button>
     <button class="btn quiet" data-act="free" data-i="${i}">تراجع عن الحجز</button>`;
   else if(mine) acts=`<button class="btn quiet" data-act="undone" data-i="${i}">تراجع عن الإتمام</button>`;
   else{ note=`محجوز باسم ${esc(o?o.name:"—")}${j.status==="done"?"، وقد أتمّه.":"."}`;
     if(isOrganizer()&&j.status==="taken")
       acts=`<button class="btn gold" data-act="done" data-i="${i}">علّمه مقروءًا نيابةً عنه</button>
+            <button class="btn" id="s-assign" data-i="${i}">أسنده إلى غيره</button>
             <button class="btn" data-act="free" data-i="${i}">حرِّر الجزء للجميع</button>`;
     else if(isOrganizer()&&j.status==="done")
       acts=`<button class="btn quiet" data-act="undone" data-i="${i}">تراجع عن الإتمام</button>`; }
@@ -688,6 +700,8 @@ function openSheet(i){
     </div>`;
   document.getElementById("scrim").onclick=closeLayer;
   document.getElementById("s-close").onclick=closeLayer;
+  const asg=document.getElementById("s-assign");
+  if(asg) asg.onclick=()=>assignDialog(i);
   document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>act(b.dataset.act,+b.dataset.i));
 }
 function closeLayer(){document.getElementById("layer").innerHTML="";selected=null;}
@@ -772,6 +786,63 @@ async function linkTelegram(){
     if(m&&m.linked){ clearInterval(t); render(); toast("تم تفعيل التذكير"); }
     else if(n>=20) clearInterval(t);
   },3000);
+}
+
+/* ===================== إسناد الأجزاء ===================== */
+function assignDialog(i){
+  const num=i+1;
+  const cur=state.juz[i].ownerId;
+  const rows=(state.members||[]).map(m=>{
+    const n=state.juz.filter(j=>j.ownerId===m.id).length;
+    return `<button class="asg-row${m.id===cur?" cur":""}" data-to="${esc(m.id)}">
+      <span class="avatar">${esc(norm(m.name).charAt(0)||"؟")}</span>
+      <span class="asg-name">${esc(m.name)}</span>
+      ${m.linked?'<span class="tag j">تذكير</span>':'<span class="tag warn">بلا تذكير</span>'}
+      <span class="asg-n">${n?`${ar(n)} ${n===1?"جزء":"أجزاء"}`:"لم يحجز"}</span>
+    </button>`;
+  }).join("");
+
+  modal(`<div class="display" style="font-size:1.4rem">إسناد الجزء ${ar(num)}</div>
+    <p class="hint" style="margin:.6rem 0 1rem">${esc(JUZ[i])}</p>
+    <div class="asg-list">${rows}</div>
+    <div class="rule" style="margin:1rem 0 .8rem"><i>◆</i></div>
+    <p class="seclabel">مشارك جديد</p>
+    <div class="field-row" style="margin-bottom:.7rem">
+      <input id="asg-new" class="field" placeholder="اسم من لا يملك تلغرام"></div>
+    <div class="actions">
+      <button class="btn" id="asg-add">أضفه وأسنده</button>
+      <button class="btn quiet" id="asg-no">إغلاق</button></div>
+    <p class="hint">من تضيفه هنا لن يصله تذكير، فبلّغه بنفسك.</p>`);
+
+  document.getElementById("asg-no").onclick=closeLayer;
+
+  document.querySelectorAll("[data-to]").forEach(b=>b.onclick=async()=>{
+    const m=memberOf(b.dataset.to);
+    if(!confirm(`سيُسنَد الجزء ${ar(num)} إلى ${m?m.name:""}.\n\nالمتابعة؟`)) return;
+    await doAssign(num,b.dataset.to);
+  });
+
+  document.getElementById("asg-add").onclick=async()=>{
+    const nm=norm(document.getElementById("asg-new").value);
+    if(!nm) return toast("اكتب الاسم");
+    const id=keyOf(nm);
+    if(memberOf(id)) return toast("الاسم مسجَّل، اختره من القائمة");
+    if(!confirm(`سيُضاف ${nm} إلى المشاركين ويُسنَد إليه الجزء ${ar(num)}.\n\nلن يصله تذكير حتى يدخل بنفسه ويفعّله.`)) return;
+    try{
+      const r=await rpc("add_member",{p_code:code,p_org_code:orgCode(),p_id:id,p_name:nm});
+      if(!r.ok) return toast(r.error||"تعذّر الإضافة");
+      await doAssign(num,id);
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+}
+
+async function doAssign(num,to){
+  try{
+    const r=await rpc("assign_juz",{p_code:code,p_org_code:orgCode(),p_num:num,p_to:to});
+    if(!r.ok) return toast(r.error||"تعذّر الإسناد");
+    closeLayer(); await refresh();
+    toast(r.linked?`أُسنِد إلى ${r.name}`:`أُسنِد إلى ${r.name} — بلّغه بنفسك`);
+  }catch(e){ toast("تعذّر الاتصال"); }
 }
 
 /* ===================== الدمج ===================== */
