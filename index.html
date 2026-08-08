@@ -211,7 +211,9 @@ button,input,select{font-family:inherit;font-size:.88rem}
   gap:1rem;flex-wrap:wrap;border-color:var(--green);
   background:linear-gradient(180deg,var(--green-soft),#FFFCF4)}
 .linkcall .lc-text{flex:1 1 15rem;min-width:0}
-.linkcall h3{font-family:var(--ruqaa);font-size:1.25rem;line-height:1.9;color:#1D6A50}
+.linkcall h3{font-family:var(--ruqaa);font-size:1.25rem;line-height:1.9;color:#1D6A50;
+  display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+.tgicon{width:1.15em;height:1.15em;flex:0 0 auto;vertical-align:middle}
 .linkcall p{font-size:.83rem;color:var(--muted);line-height:1.7}
 .linkcall .lc-btn{flex:0 0 auto;padding:.65rem 1.6rem;font-size:.92rem;
   box-shadow:0 10px 22px -14px rgba(44,139,108,.95)}
@@ -416,6 +418,10 @@ function toast(m){const t=document.getElementById("toast");t.textContent=m;t.cla
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);}
 const isOrganizer=()=>!!(viewer&&state&&state.organizerId===viewer.id);
 const memberOf=id=>((state&&state.members)||[]).find(m=>m.id===id);
+const TG_ICON=`<svg class="tgicon" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <circle cx="120" cy="120" r="120" fill="#2AABEE"/>
+  <path fill="#fff" d="M54 116.5c35-15.2 58.3-25.3 70-30.2 33.3-13.9 40.2-16.3 44.7-16.4 1 0 3.2.2 4.7 1.4a5 5 0 0 1 1.7 3.3c.2 1 .4 3.1.2 4.8-1.8 19-9.6 65.1-13.6 86.4-1.7 9-5 12-8.2 12.3-7 .6-12.3-4.6-19-9-10.6-6.9-16.6-11.2-26.8-18-11.9-7.8-4.2-12.1 2.6-19.2 1.8-1.8 32.6-29.9 33.2-32.4.1-.3.1-1.5-.6-2.1s-1.7-.4-2.4-.2c-1 .2-17.6 11.2-49.7 32.9-4.7 3.2-9 4.8-12.8 4.7-4.2-.1-12.3-2.4-18.3-4.4-7.4-2.4-13.2-3.7-12.7-7.8.3-2.1 3.2-4.3 8.9-6.5z"/>
+</svg>`;
 const rule=()=>`<div class="rule"><i>◆ ◆ ◆</i></div>`;
 
 /* ===================== الشمسة ===================== */
@@ -635,8 +641,8 @@ function viewMain(){
 function viewLinkCall(){
   return `<div class="frame linkcall">
     <div class="lc-text">
-      <h3>فعّل التذكير في تلغرام</h3>
-      <p>يصلك جزؤك ووردك اليومي كل يوم، حتى لا تنسى.</p>
+      <h3>فعّل التذكير في تلغرام ${TG_ICON}</h3>
+      <p>يصلك جزؤك ووردك اليومي برسالة تذكيرية لطيفة في وقتها كل يوم، إن شاء الله.</p>
     </div>
     <button class="btn green lc-btn" id="btn-link-big">فعّل الآن</button>
   </div>`;
