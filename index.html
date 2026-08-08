@@ -200,8 +200,26 @@ button,input,select{font-family:inherit;font-size:.88rem}
 .tag.warn{background:#F4E3E1;color:#9A423A}
 .warnbox{font-size:.82rem;line-height:1.8;color:#8A3F38;background:#F7E7E5;
   border:1px solid #E3C4C0;border-radius:var(--r-sm);padding:.6rem .8rem;margin-bottom:.6rem}
-.roster-row{display:flex;align-items:center;gap:.55rem;padding:.7rem .2rem;
-  border-bottom:1px solid var(--line);font-size:.86rem}
+.roster-row{display:flex;align-items:center;gap:.5rem;padding:.65rem .2rem;
+  border-bottom:1px solid var(--line);font-size:.86rem;min-width:0}
+.roster-row .rname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:9rem}
+.roster-row .tag{flex:0 0 auto}
+.dots{flex:0 0 auto;padding:.2rem .55rem;font-size:1.05rem;line-height:1;letter-spacing:.05em}
+
+/* نافذة المشارك */
+.mhead{display:flex;align-items:center;gap:.75rem;margin-bottom:1.1rem;text-align:start}
+.avatar.big{width:46px;height:46px;font-size:1.4rem}
+.mlist{display:flex;flex-direction:column;gap:.45rem}
+.mact{display:block;width:100%;text-align:start;font-family:inherit;cursor:pointer;
+  background:var(--paper2);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:.7rem .85rem;color:var(--ink);transition:border-color .18s,background .18s}
+.mact:hover{border-color:var(--gold);background:var(--sand)}
+.mact b{display:block;font-size:.9rem;font-weight:600}
+.mact span{display:block;font-size:.74rem;color:var(--muted);margin-top:.15rem;line-height:1.6}
+.mact.danger{color:var(--rose);border-color:rgba(180,87,78,.3)}
+.mact.danger:hover{border-color:var(--rose);background:#FBF0EF}
+.mact.danger span{color:#A86560}
+.msgbox{font-family:var(--sans);font-size:.9rem;line-height:1.9;resize:vertical;min-height:8rem}
 .roster-row:last-child{border-bottom:0}
 .roster-row .n{color:var(--muted);font-size:.76rem}
 
@@ -587,16 +605,14 @@ function viewMain(){
     const d=state.juz.filter(j=>j.ownerId===m.id&&j.status==="done").length;
     return `<div class="roster-row">
       <span class="avatar">${esc(norm(m.name).charAt(0)||"؟")}</span>
-      <span>${esc(m.name)}</span>
+      <span class="rname">${esc(m.name)}</span>
       ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
       ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
-      <span class="spacer n">${n?`${ar(d)} / ${ar(n)} أتمّها`:"لم يحجز بعد"}</span>
-      ${isOrganizer()&&m.id!==viewer.id&&m.locked?`<button class="btn quiet sm" data-release="${esc(m.id)}">افتح الاسم</button>`:""}
-      ${isOrganizer()&&m.id!==viewer.id?`<button class="btn quiet sm" data-merge="${esc(m.id)}">دمج</button>`:""}
-      ${isOrganizer()&&m.id!==viewer.id?`<button class="btn quiet sm" data-remove="${esc(m.id)}">حذف</button>`:""}
+      <span class="spacer n">${n?`${ar(d)} / ${ar(n)}`:"—"}</span>
+      ${isOrganizer()&&m.id!==viewer.id
+        ?`<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>`:""}
     </div>`;
   }).join("");
-
   return `
   <div class="frame hero">
     <div class="display">${esc(state.title)}</div>
@@ -636,6 +652,7 @@ function viewMain(){
   <div class="toolbar">
     <button class="btn" id="btn-share">نسخ رابط الدعوة</button>
     <span class="codechip">رمز الختمة <b>${esc(code)}</b></span>
+    ${isOrganizer()?`<button class="btn quiet" id="btn-broadcast">رسالة للمجموعة</button>`:""}
     ${isOrganizer()?`<button class="btn quiet" id="btn-settings">إعدادات الختمة</button>`:""}
     ${isOrganizer()?`<button class="btn danger" id="btn-reset">إلغاء الختمة</button>`:""}
   </div>
@@ -881,6 +898,86 @@ function mergeDialog(fromId){
   };
 }
 
+/* ===================== نافذة المشارك ===================== */
+function memberDialog(id){
+  const m=memberOf(id); if(!m) return;
+  const n=state.juz.filter(j=>j.ownerId===id).length;
+  const d=state.juz.filter(j=>j.ownerId===id&&j.status==="done").length;
+
+  modal(`<div class="mhead">
+      <span class="avatar big">${esc(norm(m.name).charAt(0)||"؟")}</span>
+      <div>
+        <div class="display" style="font-size:1.35rem">${esc(m.name)}</div>
+        <p class="hint" style="margin:0">
+          ${n?`${ar(d)} من ${ar(n)} ${n===1?"جزء":"أجزاء"} أتمّها`:"لم يحجز جزءًا بعد"}
+          · ${m.linked?"التذكير مفعّل":"بلا تذكير"}
+          ${m.locked?"· الاسم مقفل على جهازه":""}
+        </p>
+      </div></div>
+
+    <div class="mlist">
+      ${m.linked?`<button class="mact" id="m-msg"><b>أرسل له رسالة</b>
+        <span>تصله في تلغرام من البوت</span></button>`:""}
+      ${m.locked?`<button class="mact" id="m-release"><b>افتح الاسم</b>
+        <span>ليدخل به من جهاز آخر إن غيّر هاتفه</span></button>`:""}
+      <button class="mact" id="m-merge"><b>ادمجه في اسم آخر</b>
+        <span>تنتقل أجزاؤه وتذكيره، ويُحذف هذا الاسم</span></button>
+      <button class="mact danger" id="m-remove"><b>احذفه</b>
+        <span>تعود أجزاؤه متاحة، ويُفقد تذكيره</span></button>
+    </div>
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn quiet" id="m-close">إغلاق</button></div>`);
+
+  document.getElementById("m-close").onclick=closeLayer;
+  const msgBtn=document.getElementById("m-msg");
+  if(msgBtn) msgBtn.onclick=()=>messageDialog(id,m.name);
+  const rel=document.getElementById("m-release");
+  if(rel) rel.onclick=async()=>{
+    if(!confirm(`سيُفتح اسم «${m.name}» ليدخل به من أي جهاز.\n\nافعل هذا لمن غيّر هاتفه أو مسح متصفحه.`)) return;
+    try{
+      const r=await rpc("release_name",{p_code:code,p_org_code:orgCode(),p_id:id});
+      if(!r.ok) return toast(r.error||"تعذّر الفتح");
+      closeLayer(); await refresh(); toast("فُتح الاسم");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+  document.getElementById("m-merge").onclick=()=>mergeDialog(id);
+  document.getElementById("m-remove").onclick=()=>removeDialog(id);
+}
+
+/* ===================== الرسائل ===================== */
+function messageDialog(id,name){
+  const all=!id;
+  const n=(state.members||[]).filter(m=>m.linked).length;
+  modal(`<div class="display" style="font-size:1.4rem">${all?"رسالة للمجموعة":"رسالة إلى "+esc(name)}</div>
+    <p class="hint" style="margin:.6rem 0 .9rem">${all
+      ?`تصل ${ar(n)} ${n===1?"مشاركًا فعّل":"مشاركين فعّلوا"} التذكير. ومن لم يفعّل لا يصله شيء.`
+      :"تصله في تلغرام من البوت، تحت عنوان الختمة."}</p>
+    <div class="field-row">
+      <textarea id="msg-text" class="field msgbox" rows="6"
+        placeholder="اكتب رسالتك…"></textarea></div>
+    <div class="actions">
+      <button class="btn gold" id="msg-go">أرسل</button>
+      <button class="btn quiet" id="msg-no">إلغاء</button></div>`);
+
+  const ta=document.getElementById("msg-text"); ta.focus();
+  document.getElementById("msg-no").onclick=closeLayer;
+  document.getElementById("msg-go").onclick=async()=>{
+    const t=ta.value.trim();
+    if(!t) return toast("اكتب الرسالة");
+    if(all&&!confirm(`ستُرسل هذه الرسالة إلى ${ar(n)} من المشاركين.\n\nالمتابعة؟`)) return;
+    toast("جارٍ الإرسال…");
+    try{
+      const res=await fetch(`${SUPABASE_URL}/functions/v1/send-message`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({code,orgCode:orgCode(),to:id||null,text:t})});
+      const r=await res.json();
+      if(!r.ok) return toast(r.error||"تعذّر الإرسال");
+      closeLayer();
+      toast(r.sent?`وصلت ${ar(r.sent)} ${r.sent===1?"رسالة":"رسائل"}`:"لم تصل أي رسالة");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+}
+
 /* ===================== حذف مشارك ===================== */
 function removeDialog(id){
   const m=memberOf(id); if(!m) return;
@@ -1058,17 +1155,8 @@ function bind(){
     viewer=null;gateName="";closeLayer();screen="gate";render();};
 
   document.querySelectorAll(".cell,.wedge").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
-  document.querySelectorAll("[data-merge]").forEach(b=>b.onclick=()=>mergeDialog(b.dataset.merge));
-  document.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeDialog(b.dataset.remove));
-  document.querySelectorAll("[data-release]").forEach(b=>b.onclick=async()=>{
-    const m=memberOf(b.dataset.release);
-    if(!confirm(`سيُفتح اسم «${m?m.name:""}» ليدخل به من أي جهاز.\n\nافعل هذا لمن غيّر هاتفه أو مسح متصفحه.`)) return;
-    try{
-      const r=await rpc("release_name",{p_code:code,p_org_code:orgCode(),p_id:b.dataset.release});
-      if(!r.ok) return toast(r.error||"تعذّر الفتح");
-      await refresh(); toast("فُتح الاسم");
-    }catch(e){ toast("تعذّر الاتصال"); }
-  });
+  document.querySelectorAll("[data-member]").forEach(b=>b.onclick=()=>memberDialog(b.dataset.member));
+
 
   if($("btn-link"))     $("btn-link").onclick=linkTelegram;
   if($("btn-link-big")) $("btn-link-big").onclick=linkTelegram;
@@ -1087,6 +1175,7 @@ function bind(){
       if(!r.ok) return toast("تعذّر التمديد");
       closeLayer(); await refresh(); toast("مُدّد الموعد");
     });
+  if($("btn-broadcast")) $("btn-broadcast").onclick=()=>messageDialog(null,"");
   if($("btn-settings")) $("btn-settings").onclick=settings;
   if($("btn-reset")) $("btn-reset").onclick=cancelKhatmah;
 }
