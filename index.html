@@ -198,6 +198,7 @@ button,input,select{font-family:inherit;font-size:.88rem}
 .asg-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .asg-n{font-size:.74rem;color:var(--muted);flex:0 0 auto}
 .tag.warn{background:#F4E3E1;color:#9A423A}
+.tag.ex{background:var(--blue-soft);color:#215D73}
 .warnbox{font-size:.82rem;line-height:1.8;color:#8A3F38;background:#F7E7E5;
   border:1px solid #E3C4C0;border-radius:var(--r-sm);padding:.6rem .8rem;margin-bottom:.6rem}
 .roster-row{display:flex;align-items:center;gap:.5rem;padding:.65rem .2rem;
@@ -235,6 +236,10 @@ button,input,select{font-family:inherit;font-size:.88rem}
   display:flex;align-items:center;justify-content:center;gap:.45rem;flex-wrap:wrap}
 @media(max-width:480px){.linkcall h3{justify-content:center}}
 .tgicon{width:1.15em;height:1.15em;flex:0 0 auto;vertical-align:middle}
+.tgbig{display:flex;justify-content:center;margin-bottom:.3rem}
+.tgbig .tgicon{width:3.4rem;height:3.4rem;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(.94)}}
+.lk-hidden{display:none}
 .linkcall p{font-size:.83rem;color:var(--muted);line-height:1.7}
 .linkcall .lc-btn{flex:0 0 auto;padding:.65rem 1.6rem;font-size:.92rem;
   box-shadow:0 10px 22px -14px rgba(44,139,108,.95)}
@@ -478,12 +483,30 @@ function shamsa(){
 /* ===================== الشاشات ===================== */
 function render(){
   const v={boot:viewBoot,home:viewHome,create:viewSetup,share:viewShare,
-           gate:viewGate,main:viewMain,notfound:viewNotFound}[screen]||viewBoot;
+           gate:viewGate,main:viewMain,notfound:viewNotFound,linking:viewLinking}[screen]||viewBoot;
   document.getElementById("app").innerHTML=v();
   bind();
 }
 
 const viewBoot=()=>`<div class="gate"><p class="lede">جارٍ التحميل…</p></div>`;
+
+function viewLinking(){
+  return `<div class="gate">
+    <div class="display">${esc(state.title)}</div>
+    ${rule()}
+    <div class="frame card">
+      <div class="tgbig">${TG_ICON}</div>
+      <p class="lede" style="margin:.4rem 0 0">جارٍ فتح تلغرام لتفعيل بوت زاد الخير المرتبط بهذه الختمة…</p>
+      <div id="lk-fallback" class="lk-hidden">
+        <div class="rule" style="margin:1.2rem 0 .9rem"><i>◆</i></div>
+        <p class="hint" style="margin:0 0 .8rem">لم يفتح تلغرام؟</p>
+        <button class="btn gold wide" id="lk-retry">أعد المحاولة</button>
+        <p class="hint" style="margin-top:.9rem;line-height:1.9">
+          وإن لم يكن تلغرام على هاتفك، أخبر منظّم الختمة ليأذن لك بالدخول.</p>
+      </div>
+    </div>
+  </div>`;
+}
 
 function viewHome(){
   return `<div class="gate">
@@ -608,6 +631,7 @@ function viewMain(){
       <span class="rname">${esc(m.name)}</span>
       ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
       ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
+      ${!m.linked&&m.exempt?'<span class="tag ex">مأذون</span>':""}
       <span class="spacer n">${n?`${ar(d)} / ${ar(n)}`:"—"}</span>
       ${isOrganizer()&&m.id!==viewer.id
         ?`<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>`:""}
@@ -631,9 +655,7 @@ function viewMain(){
     ${isOrganizer()?'<span class="tag">المنظّم</span>':""}
     ${me.linked?'<span class="tag j">التذكير مفعّل</span>':""}
     <span class="spacer"></span>
-    ${me.linked
-      ? `<button class="btn quiet sm" id="btn-unlink">أوقف التذكير</button>`
-      : `<button class="btn quiet sm" id="btn-link">فعّل التذكير</button>`}
+    <button class="btn quiet sm" id="btn-link">${me.linked?"أعد تفعيل التذكير":"فعّل التذكير"}</button>
     <button class="btn quiet sm" id="btn-logout">خروج</button>
   </div>
 
@@ -744,7 +766,7 @@ async function refresh(silent){
   catch(e){ toast("تعذّر الاتصال بقاعدة البيانات"); return; }
   if(!state){ screen="notfound"; if(!silent) render(); return; }
   if(viewer && !memberOf(viewer.id)){ /* حُذف أو دُمج */ viewer=null; localStorage.removeItem(vKey()); }
-  screen = viewer ? "main" : "gate";
+  if(screen!=="linking") screen = viewer ? "main" : "gate";
   if(!silent) render();
 }
 
@@ -762,7 +784,10 @@ async function doSignIn(id,name,ocode){
   localStorage.setItem(vKey(),JSON.stringify(viewer));
   if(ocode) localStorage.setItem(cKey(),ocode);
   gateName="";
-  await refresh();
+  await refresh(true);
+  const me=memberOf(viewer.id);
+  if(me&&!me.linked&&!me.exempt&&viewer.id!==state.organizerId){ startLinking(); return; }
+  render();
   toast(`أهلًا ${r.name}`);
 }
 
@@ -800,12 +825,46 @@ function askSimilar(near,typed){
 }
 
 /* ===================== تلغرام ===================== */
-async function linkTelegram(){
+let lkTimer=null;
+
+/* يفتح البوت ويظلّ يراقب حتى يتمّ التفعيل */
+async function startLinking(){
+  screen="linking"; render();
+  const opened=await openBot();
+  if(!opened) showFallback();
+  /* بعد ثوانٍ نعرض المخرج على كل حال، فقد يفشل الفتح صامتًا */
+  setTimeout(showFallback,5000);
+  clearInterval(lkTimer);
+  lkTimer=setInterval(async()=>{
+    await refresh(true);
+    const m=memberOf(viewer.id);
+    if(m&&m.linked){
+      clearInterval(lkTimer); lkTimer=null;
+      screen="main"; render(); toast("تم تفعيل التذكير، تقبّل الله");
+    }
+  },3000);
+}
+
+function showFallback(){
+  const el=document.getElementById("lk-fallback");
+  if(el) el.classList.remove("lk-hidden");
+}
+
+/* يولّد رمز ربط ويفتح محادثة البوت. يعيد false إن منع المتصفح الفتح */
+async function openBot(){
   let lc;
   try{ lc=await rpc("make_link_code",{p_code:code,p_id:viewer.id}); }
-  catch(e){ return toast("تعذّر توليد رابط الربط"); }
-  window.open(`https://t.me/${BOT_USERNAME}?start=${lc}`,"_blank");
-  toast("اضغط Start في تلغرام ثم عد إلى هنا");
+  catch(e){ return false; }
+  if(!lc) return false;
+  const w=window.open(`https://t.me/${BOT_USERNAME}?start=${lc}`,"_blank");
+  return !!w;
+}
+
+/* الزر الظاهر في الختمة لمن لم يفعّل، أو لمن حذف البوت */
+async function linkTelegram(){
+  const ok=await openBot();
+  toast(ok?"اضغط زر البدء في تلغرام ثم عد إلى هنا":"تعذّر فتح تلغرام");
+  if(!ok) return;
   let n=0;
   const t=setInterval(async()=>{
     n++; await refresh(true);
@@ -911,13 +970,18 @@ function memberDialog(id){
         <p class="hint" style="margin:0">
           ${n?`${ar(d)} من ${ar(n)} ${n===1?"جزء":"أجزاء"} أتمّها`:"لم يحجز جزءًا بعد"}
           · ${m.linked?"التذكير مفعّل":"بلا تذكير"}
-          ${m.locked?"· الاسم مقفل على جهازه":""}
+          ${m.exempt?"· مأذون بالدخول بلا تلغرام":""}
         </p>
       </div></div>
 
     <div class="mlist">
       ${m.linked?`<button class="mact" id="m-msg"><b>أرسل له رسالة</b>
         <span>تصله في تلغرام من البوت</span></button>`:""}
+      ${m.linked?"":`<button class="mact" id="m-exempt">
+        <b>${m.exempt?"اسحب إذن الدخول":"ائذن له بالدخول بلا تلغرام"}</b>
+        <span>${m.exempt
+          ?"سيُطلب منه تفعيل تلغرام في المرة القادمة"
+          :"لمن لا تلغرام على هاتفه، فيدخل ويحجز بنفسه"}</span></button>`}
       ${m.locked?`<button class="mact" id="m-release"><b>افتح الاسم</b>
         <span>ليدخل به من جهاز آخر إن غيّر هاتفه</span></button>`:""}
       <button class="mact" id="m-merge"><b>ادمجه في اسم آخر</b>
@@ -938,6 +1002,16 @@ function memberDialog(id){
       const r=await rpc("release_name",{p_code:code,p_org_code:orgCode(),p_id:id});
       if(!r.ok) return toast(r.error||"تعذّر الفتح");
       closeLayer(); await refresh(); toast("فُتح الاسم");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+  const ex=document.getElementById("m-exempt");
+  if(ex) ex.onclick=async()=>{
+    const on=!m.exempt;
+    if(on&&!confirm(`سيدخل «${m.name}» ويحجز بلا تفعيل تلغرام، ولن يصله تذكير.\n\nالمتابعة؟`)) return;
+    try{
+      const r=await rpc("set_exempt",{p_code:code,p_org_code:orgCode(),p_id:id,p_on:on});
+      if(!r.ok) return toast(r.error||"تعذّر التنفيذ");
+      closeLayer(); await refresh(); toast(on?"أُذِن له بالدخول":"سُحب الإذن");
     }catch(e){ toast("تعذّر الاتصال"); }
   };
   document.getElementById("m-merge").onclick=()=>mergeDialog(id);
@@ -1074,6 +1148,10 @@ ${free.length?"الأجزاء المتاحة: "+free.join("، "):"اكتملت �
 function bind(){
   const $=id=>document.getElementById(id);
 
+  if($("lk-retry")) $("lk-retry").onclick=async()=>{
+    const ok=await openBot();
+    if(!ok) toast("تعذّر فتح تلغرام، تأكّد أنه مثبَّت");
+  };
   if($("btn-new")) $("btn-new").onclick=()=>{screen="create";render();};
   if($("btn-home")) $("btn-home").onclick=()=>{location.hash="";code="";state=null;viewer=null;screen="home";render();};
 
@@ -1160,9 +1238,7 @@ function bind(){
 
   if($("btn-link"))     $("btn-link").onclick=linkTelegram;
   if($("btn-link-big")) $("btn-link-big").onclick=linkTelegram;
-  if($("btn-unlink")) $("btn-unlink").onclick=async()=>{
-    try{ await rpc("unlink_telegram",{p_code:code,p_id:viewer.id}); await refresh(); toast("أُوقف التذكير"); }
-    catch(e){ toast("تعذّر الاتصال"); }};
+
 
   if($("btn-share")) $("btn-share").onclick=shareText;
   if($("btn-next")) $("btn-next").onclick=settings;
