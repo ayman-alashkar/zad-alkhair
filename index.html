@@ -631,7 +631,7 @@ function viewMain(){
       <span class="rname">${esc(m.name)}</span>
       ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
       ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
-      ${!m.linked&&m.exempt?'<span class="tag ex">مأذون</span>':""}
+      ${!m.linked&&m.exempt?'<span class="tag ex">التذكير غير مفعل</span>':""}
       <span class="spacer n">${n?`${ar(d)} / ${ar(n)}`:"—"}</span>
       ${isOrganizer()&&m.id!==viewer.id
         ?`<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>`:""}
