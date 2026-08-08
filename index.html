@@ -766,7 +766,16 @@ async function refresh(silent){
   catch(e){ toast("تعذّر الاتصال بقاعدة البيانات"); return; }
   if(!state){ screen="notfound"; if(!silent) render(); return; }
   if(viewer && !memberOf(viewer.id)){ /* حُذف أو دُمج */ viewer=null; localStorage.removeItem(vKey()); }
-  if(screen!=="linking") screen = viewer ? "main" : "gate";
+  if(screen!=="linking"){
+    const me=viewer?memberOf(viewer.id):null;
+    /* الربط شرط للدخول، ويُستثنى المنظّم ومن أُذن له */
+    if(me && !me.linked && !me.exempt && viewer.id!==state.organizerId){
+      if(!silent){ startLinking(); return; }
+      screen="main";
+    } else {
+      screen = viewer ? "main" : "gate";
+    }
+  }
   if(!silent) render();
 }
 
