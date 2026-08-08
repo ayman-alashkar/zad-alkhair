@@ -844,13 +844,16 @@ async function startLinking(){
   /* بعد ثوانٍ نعرض المخرج على كل حال، فقد يفشل الفتح صامتًا */
   setTimeout(showFallback,5000);
   clearInterval(lkTimer);
+  let tries=0;
   lkTimer=setInterval(async()=>{
+    if(screen!=="linking"||!viewer){ clearInterval(lkTimer); lkTimer=null; return; }
+    tries++;
     await refresh(true);
     const m=memberOf(viewer.id);
-    if(m&&m.linked){
+    if(m&&(m.linked||m.exempt)){
       clearInterval(lkTimer); lkTimer=null;
       screen="main"; render(); toast("تم تفعيل التذكير، تقبّل الله");
-    }
+    } else if(tries>=100){ clearInterval(lkTimer); lkTimer=null; showFallback(); }
   },3000);
 }
 
@@ -1162,7 +1165,9 @@ function bind(){
     if(!ok) toast("تعذّر فتح تلغرام، تأكّد أنه مثبَّت");
   };
   if($("btn-new")) $("btn-new").onclick=()=>{screen="create";render();};
-  if($("btn-home")) $("btn-home").onclick=()=>{location.hash="";code="";state=null;viewer=null;screen="home";render();};
+  if($("btn-home")) $("btn-home").onclick=()=>{
+    clearInterval(lkTimer); lkTimer=null;
+    location.hash="";code="";state=null;viewer=null;screen="home";render();};
 
   if($("btn-join")){
     const go=()=>{
@@ -1239,6 +1244,7 @@ function bind(){
 
   if($("btn-logout")) $("btn-logout").onclick=()=>{
     localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
+    clearInterval(lkTimer); lkTimer=null;
     viewer=null;gateName="";closeLayer();screen="gate";render();};
 
   document.querySelectorAll(".cell,.wedge").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
@@ -1367,6 +1373,7 @@ async function cancelKhatmah(){
 async function boot(){
   code=hashCode();
   closeLayer();
+  clearInterval(lkTimer); lkTimer=null;
   if(!code){ state=null; viewer=null; screen="home"; render(); return; }
   loadViewer();
   screen="boot"; render();
