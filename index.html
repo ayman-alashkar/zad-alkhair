@@ -198,6 +198,8 @@ button,input,select{font-family:inherit;font-size:.88rem}
 .asg-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .asg-n{font-size:.74rem;color:var(--muted);flex:0 0 auto}
 .tag.warn{background:#F4E3E1;color:#9A423A}
+.warnbox{font-size:.82rem;line-height:1.8;color:#8A3F38;background:#F7E7E5;
+  border:1px solid #E3C4C0;border-radius:var(--r-sm);padding:.6rem .8rem;margin-bottom:.6rem}
 .roster-row{display:flex;align-items:center;gap:.55rem;padding:.7rem .2rem;
   border-bottom:1px solid var(--line);font-size:.86rem}
 .roster-row:last-child{border-bottom:0}
@@ -212,7 +214,8 @@ button,input,select{font-family:inherit;font-size:.88rem}
   background:linear-gradient(180deg,var(--green-soft),#FFFCF4)}
 .linkcall .lc-text{flex:1 1 15rem;min-width:0}
 .linkcall h3{font-family:var(--ruqaa);font-size:1.25rem;line-height:1.9;color:#1D6A50;
-  display:flex;align-items:center;gap:.45rem;justify-content:center;flex-wrap:wrap}
+  display:flex;align-items:center;justify-content:center;gap:.45rem;flex-wrap:wrap}
+@media(max-width:480px){.linkcall h3{justify-content:center}}
 .tgicon{width:1.15em;height:1.15em;flex:0 0 auto;vertical-align:middle}
 .linkcall p{font-size:.83rem;color:var(--muted);line-height:1.7}
 .linkcall .lc-btn{flex:0 0 auto;padding:.65rem 1.6rem;font-size:.92rem;
@@ -436,7 +439,7 @@ function shamsa(){
     const fill=s==="done"?"url(#g)":s==="taken"?"#DBEFE6":"#DCEDF3";
     const st=s==="done"?"#C08A2B":s==="taken"?"#2C8B6C":"#2E7C97";
     w+=`<path class="wedge" data-i="${i}" style="animation-delay:${i*18}ms"
-      d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 1 ${x4} ${y4}Z"
+      d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z"
       fill="${fill}" stroke="${st}" stroke-width="1.1"><title>الجزء ${i+1}</title></path>`;
   }
   const done=state.juz.filter(j=>j.status==="done").length;
@@ -590,6 +593,7 @@ function viewMain(){
       <span class="spacer n">${n?`${ar(d)} / ${ar(n)} أتمّها`:"لم يحجز بعد"}</span>
       ${isOrganizer()&&m.id!==viewer.id&&m.locked?`<button class="btn quiet sm" data-release="${esc(m.id)}">افتح الاسم</button>`:""}
       ${isOrganizer()&&m.id!==viewer.id?`<button class="btn quiet sm" data-merge="${esc(m.id)}">دمج</button>`:""}
+      ${isOrganizer()&&m.id!==viewer.id?`<button class="btn quiet sm" data-remove="${esc(m.id)}">حذف</button>`:""}
     </div>`;
   }).join("");
 
@@ -877,6 +881,39 @@ function mergeDialog(fromId){
   };
 }
 
+/* ===================== حذف مشارك ===================== */
+function removeDialog(id){
+  const m=memberOf(id); if(!m) return;
+  const n=state.juz.filter(j=>j.ownerId===id).length;
+  const d=state.juz.filter(j=>j.ownerId===id&&j.status==="done").length;
+
+  const warn = n
+    ? `<p class="warnbox">يحمل ${ar(n)} ${n===1?"جزءًا":"أجزاء"}${d?`، أتمّ منها ${ar(d)}`:""}.
+       ستعود كلها متاحة للجميع.</p>` : "";
+  const tg = m.linked
+    ? `<p class="warnbox">تذكيره في تلغرام مفعّل، وسيُفقد. فإن عاد فعليه تفعيله من جديد.</p>` : "";
+
+  modal(`<div class="display" style="font-size:1.4rem">حذف مشارك</div>
+    <p class="hint" style="margin:.7rem 0 .9rem">سيُحذف «${esc(m.name)}» من قائمة المشاركين.</p>
+    ${warn}${tg}
+    <p class="hint" style="margin:.9rem 0 1.1rem">
+      وإن كان يريد تغيير اسمه لا حذفه، فالأفضل أن يدخل بالاسم الجديد ثم تدمج القديم فيه،
+      فتنتقل أجزاؤه وتذكيره معه.</p>
+    <div class="actions">
+      <button class="btn danger" id="rm-go">احذفه</button>
+      <button class="btn quiet" id="rm-no">إلغاء</button></div>`);
+
+  document.getElementById("rm-no").onclick=closeLayer;
+  document.getElementById("rm-go").onclick=async()=>{
+    try{
+      const r=await rpc("remove_member",{p_code:code,p_org_code:orgCode(),p_id:id});
+      if(!r.ok) return toast(r.error||"تعذّر الحذف");
+      closeLayer(); await refresh();
+      toast(r.freed?`حُذف ${r.name}، وتحرّرت ${ar(r.freed)} أجزاء`:`حُذف ${r.name}`);
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+}
+
 /* ===================== الأفعال ===================== */
 async function act(a,i){
   const num=i+1;
@@ -1022,6 +1059,7 @@ function bind(){
 
   document.querySelectorAll(".cell,.wedge").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
   document.querySelectorAll("[data-merge]").forEach(b=>b.onclick=()=>mergeDialog(b.dataset.merge));
+  document.querySelectorAll("[data-remove]").forEach(b=>b.onclick=()=>removeDialog(b.dataset.remove));
   document.querySelectorAll("[data-release]").forEach(b=>b.onclick=async()=>{
     const m=memberOf(b.dataset.release);
     if(!confirm(`سيُفتح اسم «${m?m.name:""}» ليدخل به من أي جهاز.\n\nافعل هذا لمن غيّر هاتفه أو مسح متصفحه.`)) return;
