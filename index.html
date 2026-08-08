@@ -631,7 +631,7 @@ function viewMain(){
       <span class="rname">${esc(m.name)}</span>
       ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
       ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
-      ${!m.linked&&m.exempt?'<span class="tag ex">التذكير غير مفعل</span>':""}
+      ${!m.linked&&m.exempt?'<span class="tag ex">بلا تذكير</span>':""}
       <span class="spacer n">${n?`${ar(d)} / ${ar(n)}`:"—"}</span>
       ${isOrganizer()&&m.id!==viewer.id
         ?`<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>`:""}
@@ -852,7 +852,8 @@ async function startLinking(){
     const m=memberOf(viewer.id);
     if(m&&(m.linked||m.exempt)){
       clearInterval(lkTimer); lkTimer=null;
-      screen="main"; render(); toast("تم تفعيل التذكير، تقبّل الله");
+      screen="main"; render();
+      toast(m.linked?"تم تفعيل التذكير، تقبّل الله":"أذن لك المنظّم بالدخول");
     } else if(tries>=100){ clearInterval(lkTimer); lkTimer=null; showFallback(); }
   },3000);
 }
@@ -982,7 +983,7 @@ function memberDialog(id){
         <p class="hint" style="margin:0">
           ${n?`${ar(d)} من ${ar(n)} ${n===1?"جزء":"أجزاء"} أتمّها`:"لم يحجز جزءًا بعد"}
           · ${m.linked?"التذكير مفعّل":"بلا تذكير"}
-          ${m.exempt?"· مأذون بالدخول بلا تلغرام":""}
+          ${m.exempt?"· يدخل بلا تذكير بإذن منك":""}
         </p>
       </div></div>
 
