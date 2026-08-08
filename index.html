@@ -430,13 +430,13 @@ function shamsa(){
   const pt=(r,d)=>{const a=d*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];};
   let w="";
   for(let i=0;i<n;i++){
-    const a1=-90-i*step-gap/2,a2=-90-(i+1)*step+gap/2;
+    const a1=-90+i*step+gap/2,a2=-90+(i+1)*step-gap/2;
     const[x1,y1]=pt(r2,a1),[x2,y2]=pt(r2,a2),[x3,y3]=pt(r1,a2),[x4,y4]=pt(r1,a1);
     const s=state.juz[i].status;
     const fill=s==="done"?"url(#g)":s==="taken"?"#DBEFE6":"#DCEDF3";
     const st=s==="done"?"#C08A2B":s==="taken"?"#2C8B6C":"#2E7C97";
     w+=`<path class="wedge" data-i="${i}" style="animation-delay:${i*18}ms"
-      d="M${x1} ${y1}A${r2} ${r2} 0 0 0 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 1 ${x4} ${y4}Z"
+      d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 1 ${x4} ${y4}Z"
       fill="${fill}" stroke="${st}" stroke-width="1.1"><title>الجزء ${i+1}</title></path>`;
   }
   const done=state.juz.filter(j=>j.status==="done").length;
