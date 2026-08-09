@@ -1053,20 +1053,18 @@ function helpDialog(){
       <ul>${x.b.map(li=>`<li>${li}</li>`).join("")}</ul>
     </section>`).join("");
 
-  let title, lede, body;
+  let title, body;
   if(!inside){
     title="التعليمات";
-    lede="ما يحتاجه المشارك، وما يحتاجه مشرف الختمة.";
     body=`<p class="hgroup">للمشارك</p>${block(HELP_ONE)}
           <p class="hgroup">لمشرف الختمة</p>${block(HELP_ORG)}`;
   } else if(org){
-    title="دليل المشرف"; lede="صلاحياتك، مختصرة."; body=block(HELP_ORG);
+    title="دليل المشرف"; body=block(HELP_ORG);
   } else {
-    title="كيف تشارك"; lede="كل ما تحتاجه في ثلاثة أقسام."; body=block(HELP_ONE);
+    title="كيف تشارك"; body=block(HELP_ONE);
   }
 
-  modal(`<div class="display" style="font-size:1.4rem">${title}</div>
-    <p class="hint" style="margin:.5rem 0 1rem">${lede}</p>
+  modal(`<div class="display" style="font-size:1.4rem;margin-bottom:1rem">${title}</div>
     <div class="hbody">${body}</div>
     <div class="actions" style="margin-top:1rem;justify-content:center">
       <button class="btn gold" id="h-close">حسنًا</button></div>`);
