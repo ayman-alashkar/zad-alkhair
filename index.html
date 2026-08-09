@@ -213,10 +213,21 @@ button,input,select{font-family:inherit;font-size:.88rem}
   border:1px solid #E3C4C0;border-radius:var(--r-sm);padding:.6rem .8rem;margin-bottom:.6rem}
 .roster-row{display:flex;align-items:center;gap:.5rem;padding:.65rem .2rem;
   border-bottom:1px solid var(--line);font-size:.86rem;min-width:0}
-.roster-row .rname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  flex:0 0 6rem;max-width:6rem}
+/* الاسم ووسم المنظّم في غلاف واحد ذي عرض ثابت،
+   فيقف عمود التذكير مصطفًّا في كل الصفوف بلا استثناء */
+.roster-row .rwho{flex:0 0 9.5rem;max-width:9.5rem;display:flex;align-items:center;
+  gap:.4rem;flex-wrap:wrap;row-gap:.15rem}
+.roster-row .rname{line-height:1.5;overflow-wrap:anywhere}
+.roster-row .rtag{flex:0 0 5.6rem;display:flex;justify-content:flex-start}
+.roster-row .n{flex:1 1 auto;text-align:end;white-space:nowrap}
 .roster-row .tag{flex:0 0 auto}
+@media(max-width:400px){
+  .roster-row .rwho{flex-basis:8rem;max-width:8rem}
+  .roster-row .rtag{flex-basis:5rem}
+}
 .dots{flex:0 0 auto;padding:.2rem .55rem;font-size:1.05rem;line-height:1;letter-spacing:.05em}
+/* تُترك مساحة الزر فارغة في صف المشرف، فلا يشذّ الصف عن اصطفاف القائمة */
+.dots-gap{flex:0 0 auto;width:2.15rem;height:1px}
 
 /* نافذة المشارك */
 .mhead{display:flex;align-items:center;gap:.75rem;margin-bottom:1.1rem;text-align:start}
@@ -244,6 +255,8 @@ button,input,select{font-family:inherit;font-size:.88rem}
 .hsec li::before{content:"◆";position:absolute;inset-inline-start:0;top:.15rem;
   font-size:.5rem;color:var(--gold)}
 .hsec li b{color:var(--walnut);font-weight:600}
+.pairbtn{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.pairbtn .btn{width:100%;text-align:center;padding-inline:.5rem}
 .msgbox{font-family:var(--sans);font-size:.9rem;line-height:1.9;resize:vertical;min-height:8rem}
 .roster-row:last-child{border-bottom:0}
 .roster-row .n{color:var(--muted);font-size:.76rem}
@@ -729,13 +742,20 @@ function viewMain(){
     const d=state.juz.filter(j=>j.ownerId===m.id&&j.status==="done").length;
     return `<div class="roster-row">
       <span class="avatar">${esc(norm(m.name).charAt(0)||"؟")}</span>
-      <span class="rname">${esc(m.name)}</span>
-      ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
-      ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
-      ${!m.linked&&m.exempt?'<span class="tag ex">بلا تذكير</span>':""}
-      <span class="spacer n">${n?`${ar(d)} / ${ar(n)}`:"—"}</span>
-      ${isOrganizer()&&m.id!==viewer.id
-        ?`<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>`:""}
+      <span class="rwho">
+        <span class="rname">${esc(m.name)}</span>
+        ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
+      </span>
+      <span class="rtag">
+        ${m.linked?'<span class="tag j">التذكير مفعّل</span>':""}
+        ${!m.linked&&m.exempt?'<span class="tag ex">بلا تذكير</span>':""}
+      </span>
+      <span class="n">${n?`${ar(d)} / ${ar(n)}`:"—"}</span>
+      ${isOrganizer()
+        ? (m.id!==viewer.id
+            ? `<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>`
+            : `<span class="dots-gap" aria-hidden="true"></span>`)
+        : ""}
     </div>`;
   }).join("");
   return `
@@ -1480,7 +1500,7 @@ function settings(){
       <button class="btn quiet" id="s-close2">إغلاق</button></div>
 
     <div class="rule" style="margin:1.1rem 0 .8rem"><i>◆</i></div>
-    <div class="actions" style="margin:0">
+    <div class="pairbtn">
       <button class="btn sm" id="s-next">ابدأ ختمة جديدة</button>
       <button class="btn danger sm" id="s-del">إلغاء الختمة</button></div>`);
 
