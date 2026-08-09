@@ -36,9 +36,19 @@ body::before{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%238C5A2E' stroke-opacity='.22' stroke-width='1.1'%3E%3Cpath d='M48 8 88 48 48 88 8 48Z'/%3E%3Cpath d='M20 20H76V76H20Z'/%3E%3Cpath d='M0 -40 40 0 0 40 -40 0Z'/%3E%3Cpath d='M-28 -28H28V28H-28Z'/%3E%3Cpath d='M96 -40 136 0 96 40 56 0Z'/%3E%3Cpath d='M68 -28H124V28H68Z'/%3E%3Cpath d='M0 56 40 96 0 136 -40 96Z'/%3E%3Cpath d='M-28 68H28V124H-28Z'/%3E%3Cpath d='M96 56 136 96 96 136 56 96Z'/%3E%3Cpath d='M68 68H124V124H68Z'/%3E%3C/g%3E%3C/svg%3E");
 }
 .wrap{position:relative;z-index:1;max-width:840px;margin:0 auto;padding:0 var(--sp)}
-.topbar{position:fixed;top:0;inset-inline:0;z-index:30;display:flex;justify-content:flex-start;
+.topbar{position:fixed;top:0;inset-inline:0;z-index:30;display:flex;align-items:center;
+  justify-content:space-between;gap:1rem;
   padding:.55rem var(--sp) 1.2rem;pointer-events:none;
   background:linear-gradient(180deg,rgba(247,240,226,.96) 40%,rgba(247,240,226,0))}
+.tb-help{pointer-events:auto;display:inline-flex;align-items:center;gap:.4rem;
+  background:transparent;border:1px solid var(--line);border-radius:999px;
+  padding:.22rem .7rem .22rem .5rem;cursor:pointer;color:var(--muted);
+  font-family:var(--sans);font-size:.72rem;transition:border-color .2s,color .2s}
+.tb-help:hover{border-color:var(--gold);color:var(--walnut)}
+.tb-help i{font-style:normal;font-family:var(--naskh);font-size:.95rem;line-height:1;
+  width:1.15rem;height:1.15rem;border-radius:50%;display:grid;place-items:center;
+  background:var(--gold-soft);color:#7A5410}
+@media(max-width:400px){.tb-help span{display:none}.tb-help{padding:.22rem .3rem}}
 .topbar span{font-family:var(--ruqaa);font-size:1.2rem;line-height:1.6;letter-spacing:.02em;
   background:linear-gradient(170deg,#D9A63F,var(--gold) 45%,#8A5A18);
   -webkit-background-clip:text;background-clip:text;color:transparent}
@@ -203,7 +213,8 @@ button,input,select{font-family:inherit;font-size:.88rem}
   border:1px solid #E3C4C0;border-radius:var(--r-sm);padding:.6rem .8rem;margin-bottom:.6rem}
 .roster-row{display:flex;align-items:center;gap:.5rem;padding:.65rem .2rem;
   border-bottom:1px solid var(--line);font-size:.86rem;min-width:0}
-.roster-row .rname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;   flex:0 0 7.5rem;max-width:7.5rem}
+.roster-row .rname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  flex:0 0 7.5rem;max-width:7.5rem}
 .roster-row .tag{flex:0 0 auto}
 .dots{flex:0 0 auto;padding:.2rem .55rem;font-size:1.05rem;line-height:1;letter-spacing:.05em}
 
@@ -220,6 +231,19 @@ button,input,select{font-family:inherit;font-size:.88rem}
 .mact.danger{color:var(--rose);border-color:rgba(180,87,78,.3)}
 .mact.danger:hover{border-color:var(--rose);background:#FBF0EF}
 .mact.danger span{color:#A86560}
+.hbody{max-height:56vh;overflow-y:auto;text-align:start;padding-inline-end:.3rem}
+.hsec{margin-bottom:1.1rem}
+.hgroup{font-family:var(--ruqaa);font-size:1.15rem;color:var(--gold);line-height:2;
+  text-align:center;margin:.4rem 0 .8rem;padding:.15rem 0;
+  border-block:1px solid var(--line)}
+.hgroup+.hsec{margin-top:.2rem}
+.hsec h4{font-family:var(--ruqaa);font-size:1.08rem;color:var(--walnut);line-height:2;
+  border-bottom:1px solid var(--line);margin-bottom:.5rem}
+.hsec ul{list-style:none;display:flex;flex-direction:column;gap:.45rem}
+.hsec li{position:relative;padding-inline-start:.9rem;font-size:.83rem;line-height:1.85;color:var(--ink)}
+.hsec li::before{content:"◆";position:absolute;inset-inline-start:0;top:.15rem;
+  font-size:.5rem;color:var(--gold)}
+.hsec li b{color:var(--walnut);font-weight:600}
 .msgbox{font-family:var(--sans);font-size:.9rem;line-height:1.9;resize:vertical;min-height:8rem}
 .roster-row:last-child{border-bottom:0}
 .roster-row .n{color:var(--muted);font-size:.76rem}
@@ -276,7 +300,11 @@ button,input,select{font-family:inherit;font-size:.88rem}
 </style>
 </head>
 <body>
-<div class="topbar"><span>زاد الخير</span></div>
+<div class="topbar">
+  <span class="tb-brand">زاد الخير</span>
+  <button class="tb-help" id="btn-help" aria-label="تعليمات">
+    <span>تعليمات</span><i>؟</i></button>
+</div>
 <div class="wrap" id="app"></div>
 <div id="layer"></div>
 <div class="toast" id="toast"></div>
@@ -574,7 +602,7 @@ function viewShare(){
       <div class="linkbox">${esc(linkFor(code))}</div>
       <button class="btn gold wide" id="btn-copy" style="margin-top:.9rem">نسخ رابط الدعوة</button>
       <button class="btn wide" id="btn-enter" style="margin-top:.5rem">ادخل إلى الختمة</button>
-      <p class="hint">احفظ رمز المنظّم الذي اخترته، فهو ما يثبت أنك صاحب الختمة.</p>
+      <p class="hint">احفظ رمز المنظّم الذي اخترته، فهو ما يثبت أنك مشرف الختمة.</p>
     </div>
   </div>`;
 }
@@ -968,6 +996,81 @@ function mergeDialog(fromId){
       toast(`نُقلت ${ar(r.moved)} أجزاء إلى ${r.name}`);
     }catch(e){ toast("تعذّر الاتصال"); }
   };
+}
+
+/* ===================== التعليمات ===================== */
+const HELP_ORG=[
+ {t:"قبل أن تبدأ",
+  b:["شارك رابط الدعوة مع المجموعة، فمن يفتحه يكتب اسمه ويحجز جزءه مباشرة.",
+     "احفظ رمز المنظّم في مكان آمن. هو ما يثبت أنك مشرف الختمة، ولا يمكن استعادته إن ضاع.",
+     "رمز الختمة يظهر في أسفل الصفحة، ويصلح لمن أراد الانضمام يدويًا بلا رابط."]},
+ {t:"كيف يدخل المشاركون",
+  b:["يكتب كلٌّ اسمه، ثم يفعّل تذكيره في تلغرام.",
+     "بعد فتح تلغرام، عليه ضغط زر «start» في أسفل الشاشة.",
+     "الاسم يُقفل على جهاز صاحبه، فلا يدخل به غيره."]},
+ {t:"من لا يملك تلغرام",
+  b:["بعد أن يكتب اسمه ويسجّل الدخول، يصبح اسمه متاحًا لك في قائمة المشاركين.",
+     "افتح نافذته من زر ⋯ واختر «ائذن له بالدخول بلا تلغرام».",
+     "سيدخل ويحجز كالجميع، لكن لن يصله تذكير.",
+     "ويظهر أمام اسمه وسم «بلا تذكير» ليذكّرك بذلك."]},
+ {t:"توزيع الأجزاء",
+  b:["الأصل أن يحجز كلٌّ جزءه بنفسه.",
+     "ولمن يصعب عليه، افتح الجزء واضغط «أسنده إلى مشارك» واختره من القائمة.",
+     "وتستطيع إضافة اسم جديد من النافذة نفسها لمن ليس في القائمة بعد.",
+     "وإن نسي أحدهم تعليم جزئه، افتح الجزء واضغط «علّمه مقروءًا نيابةً عنه»، وستصله رسالة شكر."]},
+ {t:"نافذة المشارك — زر ⋯",
+  b:["<b>أرسل له رسالة</b>: تصله في تلغرام تحت عنوان الختمة.",
+     "<b>افتح الاسم</b>: لمن غيّر هاتفه أو مسح متصفحه فلم يعد يستطيع الدخول باسمه.",
+     "<b>ادمجه في اسم آخر</b>: لمن دخل باسمين مختلفين، فتنتقل أجزاؤه وتذكيره إلى اسم واحد.",
+     "<b>احذفه</b>: للتنظيف. تعود أجزاؤه متاحة ويُفقد تذكيره."]},
+ {t:"الإعدادات وما بعد الختمة",
+  b:["وقت التذكير يخصّ الختمة كلها لا كل مشارك، وتضبطه من الإعدادات.",
+     "<b>ابدأ ختمة جديدة</b> من الإعدادات: تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم والرابط كما هي.",
+     "<b>إلغاء الختمة</b>: يمحو كل شيء نهائيًا ويُبطل الرابط، وتصل المجموعة رسالة بالإلغاء. لا تستعمله إلا للتخلّص من ختمة أنشئت بالخطأ.",
+     "إن انقضى الموعد ولم تكتمل، فالتذكير يستمر أسبوعًا برسالة ألطف، ولك أن تمدّد الموعد بضغطة."]}
+];
+
+const HELP_ONE=[
+ {t:"كيف تشارك",
+  b:["اختر جزءًا متاحًا واضغطه، ثم «احجز هذا الجزء».",
+     "تستطيع حجز أكثر من جزء إن أردت.",
+     "وإن غيّرت رأيك، افتح جزءك واضغط «تراجع عن الحجز»، فيعود متاحًا لغيرك."]},
+ {t:"إذا أتممت جزءك",
+  b:["افتحه واضغط «أتممت قراءته»، فيصير ذهبيًا.",
+     "عندها يتوقف تذكيرك به، وتصلك رسالة شكر في تلغرام.",
+     "فإن نسيت، بقي التذكير يصلك حتى تعلّمه."]},
+ {t:"التذكير",
+  b:["يصلك في تلغرام مرة كل يوم، فيه جزؤك ووردك اليومي وآية أو حديث.",
+     "ولا يصلك شيء إن لم يبق لك جزء غير مقروء."]}
+];
+
+function helpDialog(){
+  const inside = !!(state && viewer && screen==="main");
+  const org = inside && isOrganizer();
+
+  const block=(secs)=>secs.map(x=>`<section class="hsec">
+      <h4>${x.t}</h4>
+      <ul>${x.b.map(li=>`<li>${li}</li>`).join("")}</ul>
+    </section>`).join("");
+
+  let title, lede, body;
+  if(!inside){
+    title="التعليمات";
+    lede="ما يحتاجه المشارك، وما يحتاجه مشرف الختمة.";
+    body=`<p class="hgroup">للمشارك</p>${block(HELP_ONE)}
+          <p class="hgroup">لمشرف الختمة</p>${block(HELP_ORG)}`;
+  } else if(org){
+    title="دليل المشرف"; lede="صلاحياتك، مختصرة."; body=block(HELP_ORG);
+  } else {
+    title="كيف تشارك"; lede="كل ما تحتاجه في ثلاثة أقسام."; body=block(HELP_ONE);
+  }
+
+  modal(`<div class="display" style="font-size:1.4rem">${title}</div>
+    <p class="hint" style="margin:.5rem 0 1rem">${lede}</p>
+    <div class="hbody">${body}</div>
+    <div class="actions" style="margin-top:1rem;justify-content:center">
+      <button class="btn gold" id="h-close">حسنًا</button></div>`);
+  document.getElementById("h-close").onclick=closeLayer;
 }
 
 /* ===================== نافذة المشارك ===================== */
@@ -1380,6 +1483,7 @@ async function boot(){
   screen="boot"; render();
   await refresh();
 }
+document.getElementById("btn-help").onclick=helpDialog;
 window.addEventListener("hashchange",boot);
 boot();
 setInterval(async()=>{
