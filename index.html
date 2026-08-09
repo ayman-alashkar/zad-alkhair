@@ -413,10 +413,18 @@ const AR="٠١٢٣٤٥٦٧٨٩";
 const ar=n=>String(n).replace(/\d/g,d=>AR[+d]);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const norm=s=>String(s||"").normalize("NFC").trim().replace(/\s+/g," ");
-const keyOf=s=>norm(s)
-  .replace(/[\u064B-\u0652\u0670\u0640]/g,"")
-  .replace(/[أإآٱا]/g,"ا").replace(/[ىي]/g,"ي").replace(/ة/g,"ه").replace(/[ؤئء]/g,"")
-  .replace(/\s+/g,"").toLowerCase();
+/* تطبيع الحروف مع إبقاء المسافات، ليمكن تفكيك الاسم إلى كلمات.
+   المدى \u064B-\u0652 للتشكيل وحده ولا يمسّ الحروف. */
+const araNorm=s=>norm(s)
+  .replace(/[\u064B-\u0652\u0670\u0640]/g,"")   /* تشكيل وتطويل */
+  .replace(/[أإآٱ]/g,"ا")                        /* الهمزات على الألف */
+  .replace(/ؤ/g,"و").replace(/ئ/g,"ي")           /* تُبدَّل لا تُحذف، فلا يقصر الاسم */
+  .replace(/ء/g,"")
+  .replace(/ى/g,"ي").replace(/ة/g,"ه")
+  .toLowerCase();
+
+/* مفتاح الهوية: بلا مسافات */
+const keyOf=s=>araNorm(s).replace(/\s+/g,"");
 const MONTHS=["كانون الثاني","شباط","آذار","نيسان","أيار","حزيران","تموز","آب","أيلول","تشرين الأول","تشرين الثاني","كانون الأول"];
 const daysLeft=e=>Math.max(0,Math.ceil((new Date(e+"T23:59:59")-new Date())/864e5));
 const todayISO=()=>new Date().toISOString().slice(0,10);
@@ -432,18 +440,83 @@ const hourOptions=sel=>Array.from({length:24},(_,h)=>
 const fmtH=iso=>{try{return new Date(iso+"T12:00:00")
   .toLocaleDateString("ar-SA-u-ca-islamic-umalqura",{day:"numeric",month:"long"});}catch(e){return "";}};
 
-function lev(a,b){
-  const m=a.length,n=b.length; if(!m||!n) return Math.max(m,n);
-  let prev=Array.from({length:n+1},(_,i)=>i), cur=new Array(n+1);
-  for(let i=1;i<=m;i++){ cur[0]=i;
-    for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
-    const t=prev; prev=cur; cur=t; }
-  return prev[n];
-}
-const similar=(a,b)=> a!==b &&
-  ((a.includes(b)||b.includes(a)) || (Math.min(a.length,b.length)>=4 && lev(a,b)<=2));
+/* ═══════════ مطابقة الأسماء ═══════════
+   المنهج المعتمد لأسماء الأشخاص: Jaro-Winkler لا مسافة التحرير،
+   لأنها تكافئ تطابق أوائل الحروف وتتسامح مع تبادل موضعين،
+   وأكثر اختلاف الأسماء العربية يقع في آخرها (ة/ا، ى/ي).
+   ويُضاف إليها تفكيك الاسم إلى كلمات، لأن الكنية تُزاد وتُنقص. */
 
-/* ===================== الحالة ===================== */
+function jaro(a,b){
+  if(a===b) return 1;
+  const la=a.length, lb=b.length;
+  if(!la||!lb) return 0;
+  const win=Math.max(0,Math.floor(Math.max(la,lb)/2)-1);
+  const ma=new Array(la).fill(false), mb=new Array(lb).fill(false);
+  let m=0;
+  for(let i=0;i<la;i++){
+    const lo=Math.max(0,i-win), hi=Math.min(i+win+1,lb);
+    for(let j=lo;j<hi;j++){
+      if(mb[j]||a[i]!==b[j]) continue;
+      ma[i]=mb[j]=true; m++; break;
+    }
+  }
+  if(!m) return 0;
+  let t=0, k=0;
+  for(let i=0;i<la;i++){
+    if(!ma[i]) continue;
+    while(!mb[k]) k++;
+    if(a[i]!==b[k]) t++;
+    k++;
+  }
+  t/=2;
+  return (m/la + m/lb + (m-t)/m)/3;
+}
+
+/* مكافأة البادئة، بحدّ أربعة أحرف كما في الصيغة المعتمدة */
+function jw(a,b){
+  const j=jaro(a,b);
+  if(j<0.7) return j;
+  let p=0;
+  while(p<4 && p<a.length && p<b.length && a[p]===b[p]) p++;
+  return j + p*0.1*(1-j);
+}
+
+/* كلمات لا تميّز صاحبها، فلا يُبنى عليها تشابه */
+const KUNYA=new Set(["ام","ابو","ابن","بنت","بن","ابي","عبد","ال","الحاج","الحاجه","الشيخ","دكتور"]);
+
+const tokensOf=s=>araNorm(s).split(/\s+/).filter(t=>t.length>=2);
+const coreTokens=s=>tokensOf(s).filter(t=>!KUNYA.has(t));
+
+/* درجة التشابه بين اسمين: صفر إلى واحد */
+function nameScore(a,b){
+  const ka=keyOf(a), kb=keyOf(b);
+  if(ka===kb) return 1;
+
+  /* كلمة مميّزة مشتركة: «محمد» و«أم محمد»، «رضوان» و«رضوان أحمد» */
+  const ta=coreTokens(a), tb=coreTokens(b);
+  for(const x of ta) for(const y of tb)
+    if(x.length>=3 && x===y) return 0.95;
+
+  /* وإلا فمقارنة الاسم كاملًا، ثم أقرب كلمتين فيه */
+  let best=jw(ka,kb);
+  for(const x of ta) for(const y of tb)
+    if(x.length>=3&&y.length>=3) best=Math.max(best, jw(x,y)*0.96);
+  return best;
+}
+
+/* العتبة: العتبات الشائعة بين ٠٫٨٠ و٠٫٩٠، واخترنا ٠٫٨٧
+   لأن الاقتراح يُعرض ولا يُفرض، فالتساهل اليسير أهون من التفويت */
+const NEAR=0.87;
+
+function similarTo(typed,members){
+  return (members||[])
+    .map(m=>({m,s:nameScore(typed,m.name)}))
+    .filter(x=>x.s>=NEAR && x.m.id!==keyOf(typed))
+    .sort((x,y)=>y.s-x.s)
+    .slice(0,3)
+    .map(x=>x.m);
+}
+
 let code="", state=null, viewer=null, selected=null, gateName="",
     screen="boot";   /* boot | home | create | share | gate | main | notfound */
 
@@ -838,21 +911,31 @@ function nameTaken(name){
   document.getElementById("nt-ok").onclick=closeLayer;
 }
 
-function askSimilar(near,typed){
-  const n=state.juz.filter(j=>j.ownerId===near.id).length;
-  modal(`<div class="display" style="font-size:1.4rem">هل أنت نفسه؟</div>
+function askSimilar(list,typed){
+  const rows=list.map(m=>{
+    const n=state.juz.filter(j=>j.ownerId===m.id).length;
+    return `<button class="asg-row" data-pick="${esc(m.id)}">
+      <span class="avatar">${esc(norm(m.name).charAt(0)||"؟")}</span>
+      <span class="asg-name">${esc(m.name)}</span>
+      <span class="asg-n">${n?`${ar(n)} ${n===1?"جزء":"أجزاء"}`:"لم يحجز"}</span>
+    </button>`;
+  }).join("");
+
+  modal(`<div class="display" style="font-size:1.35rem">هل أنت أحد هؤلاء؟</div>
     <p class="hint" style="margin:.6rem 0 1rem">
-      يوجد مشارك باسم «${esc(near.name)}»${n?` حجز ${ar(n)} ${n===1?"جزءًا":"أجزاء"}`:""}.
-      إن كنت هو فادخل باسمه لتجد أجزاءك وتذكيرك كما تركتها.</p>
-    <div class="actions">
-      <button class="btn gold" id="sim-yes">نعم، أنا ${esc(near.name)}</button>
-      <button class="btn quiet" id="sim-no">لا، أنا شخص آخر</button>
-    </div>`);
-  document.getElementById("sim-yes").onclick=async()=>{
+      كتبت «${esc(typed)}»، ويوجد في الختمة اسم يشبهه.
+      إن كان أحدهم اسمك فاختره لتجد أجزاءك وتذكيرك كما تركتها.</p>
+    <div class="asg-list">${rows}</div>
+    <div class="actions" style="margin-top:1rem">
+      <button class="btn quiet" id="sim-no">لا، أنا شخص آخر</button></div>`);
+
+  document.querySelectorAll("[data-pick]").forEach(b=>b.onclick=async()=>{
+    const m=list.find(x=>x.id===b.dataset.pick);
     closeLayer();
-    if(near.id===state.organizerId){ gateName=near.name; screen="gate"; render(); return; }
-    await doSignIn(near.id,near.name,null);
-  };
+    if(m.id===state.organizerId){ gateName=m.name; screen="gate"; render(); return; }
+    await doSignIn(m.id,m.name,null);
+  });
+
   document.getElementById("sim-no").onclick=async()=>{
     closeLayer();
     const id=keyOf(typed);
@@ -1319,8 +1402,8 @@ function bind(){
       const id=keyOf(name);
       const exact=(state.members||[]).find(m=>m.id===id);
       if(!exact){
-        const near=(state.members||[]).find(m=>similar(id,m.id));
-        if(near) return askSimilar(near,name);
+        const near=similarTo(name,state.members);
+        if(near.length) return askSimilar(near,name);
       }
       if(id===state.organizerId){ gateName=name; render(); return; }
       await doSignIn(id,name,null);
