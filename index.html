@@ -353,8 +353,9 @@ const MOTIV=[
   s:"متفق عليه",k:"h"},
  {t:"بركة هذا الكتاب في اتّباعه، لا في تلاوته وحدها.",
   q:"وَهَذَا كِتَابٌ أَنْزَلْنَاهُ مُبَارَكٌ فَاتَّبِعُوهُ وَاتَّقُوا لَعَلَّكُمْ تُرْحَمُونَ",s:"الأنعام: ١٥٥",k:"a"},
- {t:"أنت اليوم في خير ما تنافس فيه المتنافسون.",
-  q:"خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ",s:"رواه البخاري",k:"h"},
+ {t:"مما ستقرؤه في هذا الجزء، أنّ الله يحول بين المرء وقلبه، فما أشدّ قربه عزّ وجلّ.",
+  q:"يَا أَيُّهَا الَّذِينَ آمَنُوا اسْتَجِيبُوا لِلَّهِ وَلِلرَّسُولِ إِذَا دَعَاكُمْ لِمَا يُحْيِيكُمْ وَاعْلَمُوا أَنَّ اللَّهَ يَحُولُ بَيْنَ الْمَرْءِ وَقَلْبِهِ وَأَنَّهُ إِلَيْهِ تُحْشَرُونَ",
+  s:"الأنفال: ٢٤",k:"a"},
  {t:"هذا الكتاب يرفع أهله، فاجعل لك منه نصيبًا.",
   q:"إِنَّ اللَّهَ يَرْفَعُ بِهَذَا الْكِتَابِ أَقْوَامًا وَيَضَعُ بِهِ آخَرِينَ",s:"رواه مسلم",k:"h"},
  {t:"إن كان في صدرك ضيق، فدواؤه بين يديك.",
@@ -533,6 +534,7 @@ function similarTo(typed,members){
     .map(x=>x.m);
 }
 
+let justCreated=false;
 let code="", state=null, viewer=null, selected=null, gateName="",
     screen="boot";   /* boot | home | create | share | gate | main | notfound */
 
@@ -608,6 +610,7 @@ function render(){
 const viewBoot=()=>`<div class="gate"><p class="lede">جارٍ التحميل…</p></div>`;
 
 function viewLinking(){
+  const org = justCreated || (state && viewer && state.organizerId===viewer.id);
   return `<div class="gate">
     <div class="display">${esc(state.title)}</div>
     ${rule()}
@@ -618,8 +621,9 @@ function viewLinking(){
         <div class="rule" style="margin:1.2rem 0 .9rem"><i>◆</i></div>
         <p class="hint" style="margin:0 0 .8rem">لم يفتح تلغرام؟</p>
         <button class="btn gold wide" id="lk-retry">أعد المحاولة</button>
-        <p class="hint" style="margin-top:.9rem;line-height:1.9">
-          وإن لم يكن تلغرام على هاتفك، أخبر منظّم الختمة ليأذن لك بالدخول.</p>
+        <p class="hint" style="margin-top:.9rem;line-height:1.9">${org
+          ? "ولن يظهر رمز الختمة ولا رابط الدعوة حتى يُفعَّل التذكير، فالمشرف أولى المشاركين به."
+          : "وإن لم يكن تلغرام على هاتفك، أخبر مشرف الختمة ليأذن لك بالدخول."}</p>
       </div>
     </div>
   </div>`;
@@ -893,7 +897,8 @@ async function refresh(silent){
   if(screen!=="linking"){
     const me=viewer?memberOf(viewer.id):null;
     /* الربط شرط للدخول، ويُستثنى المنظّم ومن أُذن له */
-    if(me && !me.linked && !me.exempt && viewer.id!==state.organizerId){
+    /* الربط شرط للدخول، ويلزم المشرف كما يلزم غيره */
+    if(me && !me.linked && !me.exempt){
       if(!silent){ startLinking(); return; }
       screen="main";
     } else {
@@ -919,7 +924,7 @@ async function doSignIn(id,name,ocode){
   gateName="";
   await refresh(true);
   const me=memberOf(viewer.id);
-  if(me&&!me.linked&&!me.exempt&&viewer.id!==state.organizerId){ startLinking(); return; }
+  if(me&&!me.linked&&!me.exempt){ startLinking(); return; }
   render();
   toast(`أهلًا ${r.name}`);
 }
@@ -986,6 +991,7 @@ async function startLinking(){
     const m=memberOf(viewer.id);
     if(m&&(m.linked||m.exempt)){
       clearInterval(lkTimer); lkTimer=null;
+      if(justCreated){ justCreated=false; screen="share"; render(); toast("بدأت الختمة"); return; }
       screen="main"; render();
       toast(m.linked?"تم تفعيل التذكير، تقبّل الله":"أذن لك المنظّم بالدخول");
     } else if(tries>=100){ clearInterval(lkTimer); lkTimer=null; showFallback(); }
@@ -1109,6 +1115,7 @@ const HELP_ORG=[
  {t:"قبل أن تبدأ",
   b:["شارك رابط الدعوة مع المجموعة، فمن يفتحه يكتب اسمه ويحجز جزءه مباشرة.",
      "احفظ رمز المنظّم في مكان آمن. هو ما يثبت أنك مشرف الختمة، ولا يمكن استعادته إن ضاع.",
+     "تفعيل التذكير في تلغرام يلزمك كما يلزم غيرك، ولا يظهر رمز الختمة ولا رابط الدعوة قبله.",
      "رمز الختمة يظهر في أسفل الصفحة، ويصلح لمن أراد الانضمام يدويًا بلا رابط."]},
  {t:"كيف يدخل المشاركون",
   b:["يكتب كلٌّ اسمه، ثم يفعّل تذكيره في تلغرام.",
@@ -1118,6 +1125,7 @@ const HELP_ORG=[
   b:["بعد أن يكتب اسمه ويسجّل الدخول، يصبح اسمه متاحًا لك في قائمة المشاركين.",
      "افتح نافذته من زر ⋯ واختر «ائذن له بالدخول بلا تلغرام».",
      "سيدخل ويحجز كالجميع، لكن لن يصله تذكير.",
+     "ولا يصحّ هذا الإذن لك أنت، فالمشرف يلزمه التفعيل.",
      "ويظهر أمام اسمه وسم «بلا تذكير»."]},
  {t:"توزيع الأجزاء",
   b:["الأصل أن يحجز كلٌّ جزءه بنفسه.",
@@ -1197,7 +1205,7 @@ function memberDialog(id){
     <div class="mlist">
       ${m.linked?`<button class="mact" id="m-msg"><b>أرسل له رسالة</b>
         <span>تصله في تلغرام من البوت</span></button>`:""}
-      ${m.linked?"":`<button class="mact" id="m-exempt">
+      ${(m.linked||m.id===state.organizerId)?"":`<button class="mact" id="m-exempt">
         <b>${m.exempt?"اسحب إذن الدخول":"ائذن له بالدخول بلا تلغرام"}</b>
         <span>${m.exempt
           ?"سيُطلب منه تفعيل تلغرام في المرة القادمة"
@@ -1415,7 +1423,10 @@ function bind(){
       viewer={id:keyOf(org),name:org};
       localStorage.setItem(vKey(),JSON.stringify(viewer));
       localStorage.setItem(cKey(),oc);
-      screen="share"; render();
+      /* لا يرى الرمز ولا الرابط حتى يربط تذكيره، فلا تُستعمل ختمة بلا مشرف مربوط */
+      await refresh(true);
+      justCreated=true;
+      startLinking();
     }catch(e){ toast("تعذّر الاتصال"); }
   };
 
