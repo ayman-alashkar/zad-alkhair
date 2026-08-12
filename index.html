@@ -572,6 +572,9 @@ let code="", state=null, viewer=null, selected=null, gateName="",
     screen="boot";   /* boot | home | create | share | gate | main | notfound */
 
 const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
+/* آخر ختمة دخلها صاحب هذا الجهاز.
+   يفتح بها التطبيق المثبَّت، فهو يبدأ من الجذر بلا رمز. */
+const LAST="zad:last";
 const linkFor=c=>location.origin+location.pathname+"#"+c;
 const vKey=()=>"zad:viewer:"+code;
 const cKey=()=>"zad:orgcode:"+code;
@@ -965,6 +968,7 @@ async function doSignIn(id,name,ocode){
   }
   viewer={id:r.id,name:r.name};
   localStorage.setItem(vKey(),JSON.stringify(viewer));
+  localStorage.setItem(LAST,code);
   if(ocode) localStorage.setItem(cKey(),ocode);
   gateName="";
   await refresh(true);
@@ -1441,6 +1445,7 @@ function bind(){
   if($("btn-new")) $("btn-new").onclick=()=>{screen="create";render();};
   if($("btn-home")) $("btn-home").onclick=()=>{
     clearInterval(lkTimer); lkTimer=null; linking=false;
+    localStorage.removeItem(LAST);   /* طلب صريح للرئيسية، فلا يُعاد التوجيه */
     location.hash="";code="";state=null;viewer=null;screen="home";render();};
 
   if($("btn-join")){
@@ -1474,6 +1479,7 @@ function bind(){
       history.replaceState(null,"","#"+code);
       viewer={id:keyOf(org),name:org};
       localStorage.setItem(vKey(),JSON.stringify(viewer));
+      localStorage.setItem(LAST,code);
       localStorage.setItem(cKey(),oc);
       /* لا يرى الرمز ولا الرابط حتى يربط تذكيره، فلا تُستعمل ختمة بلا مشرف مربوط */
       await refresh(true);
@@ -1521,6 +1527,7 @@ function bind(){
 
   if($("btn-logout")) $("btn-logout").onclick=()=>{
     localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
+    localStorage.removeItem(LAST);
     clearInterval(lkTimer); lkTimer=null; linking=false;
     viewer=null;gateName="";closeLayer();screen="gate";render();};
 
@@ -1645,6 +1652,7 @@ async function cancelKhatmah(){
     const r=await res.json();
     if(!r.ok) return toast(r.error||"الرمز غير صحيح");
     localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
+    localStorage.removeItem(LAST);
     location.hash=""; code=""; state=null; viewer=null; screen="home"; closeLayer(); render();
     toast("أُلغيت الختمة");
   }catch(e){ toast("تعذّر الاتصال"); }
@@ -1655,8 +1663,19 @@ async function boot(){
   code=hashCode();
   closeLayer();
   clearInterval(lkTimer); lkTimer=null; linking=false;
-  if(!code){ state=null; viewer=null; screen="home"; render(); return; }
+
+  if(!code){
+    /* لا رمز في الرابط: نعود إلى آخر ختمة إن كان صاحبها ما زال مسجَّلًا فيها */
+    const last=localStorage.getItem(LAST);
+    if(last && localStorage.getItem("zad:viewer:"+last)){
+      location.replace(location.origin+location.pathname+"#"+last);
+      return;
+    }
+    state=null; viewer=null; screen="home"; render(); return;
+  }
+
   loadViewer();
+  if(viewer) localStorage.setItem(LAST,code);
   screen="boot"; render();
   await refresh();
 }
