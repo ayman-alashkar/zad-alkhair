@@ -162,7 +162,7 @@ h2.sec{font-family:var(--ruqaa);font-size:1.3rem;color:var(--walnut);line-height
 .readbtn .rb-icon svg{width:100%;height:100%;display:block}
 .readbtn .rb-text{font-family:var(--naskh);font-size:1.15rem;line-height:1.4;color:var(--ink)}
 .readbtn .rb-src{margin-inline-start:auto;font-size:.68rem;color:var(--muted);
-  letter-spacing:.04em;direction:ltr}
+  letter-spacing:.04em;direction:rtl;unicode-bidi:plaintext}
 .ward{margin-top:.9rem;padding-top:.9rem;border-top:1px solid var(--line);font-size:.86rem;color:var(--muted)}
 .ward b{color:var(--ink);font-family:var(--naskh);font-size:1.3rem}
 .motiv{font-size:.95rem;color:var(--ink);line-height:1.9}
@@ -899,7 +899,7 @@ function openSheet(i){
       <a class="readbtn" href="${readLink(i+1)}" target="_blank" rel="noopener">
         <span class="rb-icon">${BOOK_ICON}</span>
         <span class="rb-text">اقرأ الجزء</span>
-        <span class="rb-src">من موقع <span dir="ltr">quran.com</span></span>
+        <span class="rb-src">من موقع quran.com</span>
       </a>
       <div class="ward">
         <p class="motiv">${MOTIV[i].t}</p>
