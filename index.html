@@ -976,7 +976,13 @@ function askSimilar(list,typed){
 let lkTimer=null;
 
 /* يفتح البوت ويظلّ يراقب حتى يتمّ التفعيل */
-async function startLinking(){
+let linking=false;   /* حارس: عملية ربط جارية، فلا يُولَّد رمز ثانٍ */
+
+async function startLinking(force){
+  /* كل رمز جديد يمحو ما قبله، فتولّد رمزين على ضغطة واحدة
+     يُفشل الربط ويُظهر اعتذارًا بلا سبب. */
+  if(linking && !force){ if(screen!=="linking"){ screen="linking"; render(); } return; }
+  linking=true;
   screen="linking"; render();
   const opened=await openBot();
   if(!opened) showFallback();
@@ -990,11 +996,11 @@ async function startLinking(){
     await refresh(true);
     const m=memberOf(viewer.id);
     if(m&&(m.linked||m.exempt)){
-      clearInterval(lkTimer); lkTimer=null;
+      clearInterval(lkTimer); lkTimer=null; linking=false;
       if(justCreated){ justCreated=false; screen="share"; render(); toast("بدأت الختمة"); return; }
       screen="main"; render();
       toast(m.linked?"تم تفعيل التذكير، تقبّل الله":"أذن لك المنظّم بالدخول");
-    } else if(tries>=100){ clearInterval(lkTimer); lkTimer=null; showFallback(); }
+    } else if(tries>=100){ clearInterval(lkTimer); lkTimer=null; linking=false; showFallback(); }
   },3000);
 }
 
@@ -1383,12 +1389,13 @@ function bind(){
   const $=id=>document.getElementById(id);
 
   if($("lk-retry")) $("lk-retry").onclick=async()=>{
+    /* طلب صريح من المستخدم، فيُرفع الحارس ويُولَّد رمز جديد */
     const ok=await openBot();
     if(!ok) toast("تعذّر فتح تلغرام، تأكّد أنه مثبَّت");
   };
   if($("btn-new")) $("btn-new").onclick=()=>{screen="create";render();};
   if($("btn-home")) $("btn-home").onclick=()=>{
-    clearInterval(lkTimer); lkTimer=null;
+    clearInterval(lkTimer); lkTimer=null; linking=false;
     location.hash="";code="";state=null;viewer=null;screen="home";render();};
 
   if($("btn-join")){
@@ -1469,7 +1476,7 @@ function bind(){
 
   if($("btn-logout")) $("btn-logout").onclick=()=>{
     localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
-    clearInterval(lkTimer); lkTimer=null;
+    clearInterval(lkTimer); lkTimer=null; linking=false;
     viewer=null;gateName="";closeLayer();screen="gate";render();};
 
   document.querySelectorAll(".cell,.wedge").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
@@ -1602,7 +1609,7 @@ async function cancelKhatmah(){
 async function boot(){
   code=hashCode();
   closeLayer();
-  clearInterval(lkTimer); lkTimer=null;
+  clearInterval(lkTimer); lkTimer=null; linking=false;
   if(!code){ state=null; viewer=null; screen="home"; render(); return; }
   loadViewer();
   screen="boot"; render();
