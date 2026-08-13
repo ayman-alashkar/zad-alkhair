@@ -201,32 +201,47 @@ h2.sec{font-family:var(--ruqaa);font-size:1.3rem;color:var(--walnut);line-height
 .actions{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.1rem;align-items:center}
 
 /* ===== مواقيت الصلاة ===== */
-.ptline{display:flex;align-items:center;gap:.55rem;width:100%;
-  margin-top:1.25rem;padding:.75rem .15rem 0;
+.ptline{display:flex;align-items:center;gap:.6rem;width:100%;
+  margin-top:1.3rem;padding:.85rem .2rem 0;
   border:0;border-top:1px solid var(--line);background:none;cursor:pointer;
-  font-family:inherit;font-size:.82rem;color:var(--muted);text-align:start}
-.ptline .pt-icon{flex:0 0 auto;width:1.05rem;height:1.05rem;color:var(--gold)}
+  font-family:inherit;font-size:.82rem;color:var(--muted);text-align:start;
+  transition:opacity .2s}
+.ptline:active{opacity:.6}
+.ptline .pt-icon{flex:0 0 auto;width:1.15rem;height:1.15rem;color:var(--gold)}
 .ptline .pt-icon svg{width:100%;height:100%;display:block}
-.ptline .pt-label{color:var(--ink)}
-.ptline .pt-next{margin-inline-start:auto;font-family:var(--naskh);font-size:1.02rem;color:var(--walnut)}
+.ptline .pt-label{color:var(--ink);letter-spacing:.01em}
+.ptline .pt-next{margin-inline-start:auto;font-family:var(--naskh);font-size:1.05rem;
+  color:var(--walnut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptline .pt-next.pt-ask{font-family:var(--sans);font-size:.78rem;color:var(--muted)}
-.ptline .pt-chev{flex:0 0 auto;font-size:1.15rem;line-height:1;color:var(--line)}
+.ptline .pt-chev{flex:0 0 auto;font-size:1.15rem;line-height:1;color:var(--line);transition:color .2s}
 .ptline:hover .pt-chev{color:var(--gold)}
 .ptline:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:var(--r-sm)}
 
-.ptcity{font-family:var(--naskh);font-size:1.25rem;color:var(--walnut);text-align:center;margin-top:.45rem}
-.ptable{margin:1rem 0 .9rem;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
-.ptrow{display:flex;align-items:center;justify-content:space-between;gap:1rem;
-  padding:.6rem .95rem;background:var(--paper2);border-bottom:1px solid var(--line)}
+/* قرص النهار */
+.ptdial{position:relative;width:min(252px,74vw);margin:1.1rem auto .3rem}
+.ptdial svg{display:block;width:100%;height:auto;overflow:visible}
+.ptdial-mid{position:absolute;inset:0;display:grid;align-content:center;justify-items:center;
+  gap:.3rem;text-align:center;pointer-events:none;padding:0 3.8rem}
+.ptd-now{font-family:var(--naskh);font-size:2.15rem;line-height:1;color:var(--ink);
+  display:flex;align-items:baseline;gap:.3rem}
+.ptd-now i{font-family:var(--sans);font-style:normal;font-size:.62rem;
+  letter-spacing:.06em;color:var(--muted)}
+.ptd-next{font-size:.72rem;line-height:1.6;color:var(--walnut);max-width:11ch}
+
+.ptcity{font-family:var(--naskh);font-size:1.05rem;color:var(--walnut);
+  text-align:center;margin-top:.5rem;line-height:1.7}
+.ptable{margin:.9rem 0 .2rem;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.ptrow{display:flex;align-items:center;justify-content:space-between;gap:.8rem;
+  padding:.62rem .95rem;background:var(--paper2);border-bottom:1px solid var(--line)}
 .ptrow:last-child{border-bottom:0}
-.ptrow .pn{font-size:.88rem;color:var(--ink)}
-.ptrow .pv{font-family:var(--naskh);font-size:1.2rem;color:var(--walnut)}
+.ptrow .pn{display:flex;align-items:center;gap:.5rem;font-size:.88rem;color:var(--ink)}
+.ptrow .pv{font-family:var(--naskh);font-size:1.22rem;color:var(--walnut);white-space:nowrap}
 .ptrow.sun{background:var(--sand)}
 .ptrow.sun .pn{font-size:.78rem;color:var(--muted)}
 .ptrow.sun .pv{font-size:1rem;color:var(--muted)}
-.ptrow.now{background:var(--green-soft);box-shadow:inset 3px 0 0 var(--green)}
-.ptrow.now .pn{color:#1D6A50;font-weight:600}
-.ptrow.now .pv{color:#1D6A50}
+.ptrow.now{background:var(--green-soft);box-shadow:inset -3px 0 0 var(--green)}
+.ptrow.now .pn,.ptrow.now .pv{color:var(--green)}
+.ptrow.now .tag{background:var(--green);color:#fff;font-size:.6rem;letter-spacing:.02em}
 .ptadv{margin-top:-.3rem}
 .ptadv summary{font-size:.76rem;color:var(--muted);cursor:pointer;padding:.45rem 0;list-style:none}
 .ptadv summary::-webkit-details-marker{display:none}
@@ -501,7 +516,7 @@ const readLink=j=>`https://quran.com/ar/${JUZ_START[j-1][0]}?startingVerse=${JUZ
    البلدان: [الاسم، المنطقة الزمنية، طريقة الحساب المعتادة، [المدن]]
    المدينة: [الاسم، خط العرض، خط الطول، منطقة زمنية خاصة (اختيارية)] */
 const PT_KEY="zad:prayer";
-const MIHRAB_ICON=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V11a6 6 0 0 1 12 0v10"/><path d="M3.5 21h17"/><circle cx="12" cy="3.4" r="1.15" fill="currentColor" stroke="none"/></svg>`;
+const CRESCENT_ICON=`<svg viewBox="0 0 24 24" aria-hidden="true"><defs><mask id="zk-cr"><rect width="24" height="24" fill="#fff"/><circle cx="14.9" cy="11.2" r="7.3" fill="#000"/></mask></defs><circle cx="11.1" cy="12" r="8.3" fill="currentColor" mask="url(#zk-cr)"/><path fill="currentColor" d="M19.6 3.1c.45 1.85 1 2.4 2.85 2.85-1.85.45-2.4 1-2.85 2.85-.45-1.85-1-2.4-2.85-2.85 1.85-.45 2.4-1 2.85-2.85Z"/></svg>`;
 
 const PT_NAMES={fajr:"الفجر",sunrise:"الشروق",dhuhr:"الظهر",asr:"العصر",maghrib:"المغرب",isha:"العشاء"};
 const PT_ORDER=["fajr","sunrise","dhuhr","asr","maghrib","isha"];
@@ -602,48 +617,153 @@ function ptNext(cfg){
   return {key:"fajr",at:tm.fajr,today:false};
 }
 
+/* ── الوقت المتبقّي بصيغة عربية سليمة (تثنية وجمع) ── */
+function arCount(n,one,two,few,many){
+  return n===1?one : n===2?two : (n>=3&&n<=10)?`${ar(n)} ${few}` : `${ar(n)} ${many}`;
+}
+function arDur(mins,tight){
+  mins=Math.max(0,Math.round(mins));
+  const h=Math.floor(mins/60), m=mins%60;
+  const M=()=>arCount(m,"دقيقة","دقيقتين","دقائق","دقيقة");
+  const H=()=>arCount(h,"ساعة","ساعتين","ساعات","ساعة");
+  if(!h) return m?M():"أقلّ من دقيقة";
+  /* الدقائق تُذكر ما دام الوقت قريبًا، فإذا بَعُد كفت الساعات */
+  if(h<2&&m) return `${H()} و${M()}`;
+  if(!tight&&m) return `${H()} و${M()}`;
+  return H();
+}
+/* دقائق اليوم بساعة المدينة المختارة لا بساعة الجهاز */
+function ptMin(d,tz){
+  const [h,m]=new Intl.DateTimeFormat("en-GB",
+    {timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(d).split(":").map(Number);
+  return h*60+m;
+}
+function ptClock(d,tz){
+  const [h,m]=new Intl.DateTimeFormat("en-GB",
+    {timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(d).split(":").map(Number);
+  return {t:`${ar(h%12===0?12:h%12)}:${ar(String(m).padStart(2,"0"))}`,
+          p:h<12?"صباحًا":h<18?"عصرًا":"مساءً"};
+}
+/* الصلاة القائم وقتها الآن. بين الشروق والظهر لا فريضة، فلا تعليم. */
+function ptCurrent(cfg){
+  const t=ptTimes(cfg), now=Date.now();
+  for(const k of ["isha","maghrib","asr","dhuhr","sunrise","fajr"])
+    if(t[k].getTime()<=now) return k==="sunrise"?null:k;
+  return "isha";   /* قبل الفجر: وقت العشاء ممتدّ من ليلة أمس */
+}
+const ptNextLabel=cfg=>{
+  const n=ptNext(cfg);
+  return `${PT_NAMES[n.key]} بعد ${arDur((n.at-Date.now())/6e4,true)}`;
+};
+
 function ptLine(){
   if(!ptReady()) return "";
   const cfg=ptGet();
-  let tail="";
-  if(cfg){
-    try{ const n=ptNext(cfg);
-      tail=`<span class="pt-next">${PT_NAMES[n.key]} ${ptFmt(n.at,cfg.tz)}</span>`;
-    }catch(e){ tail=""; }
-  }else tail=`<span class="pt-next pt-ask">حدّد مدينتك</span>`;
+  let tail=`<span class="pt-next pt-ask">حدّد مدينتك</span>`;
+  if(cfg){ try{ tail=`<span class="pt-next">${ptNextLabel(cfg)}</span>`; }catch(e){ tail=""; } }
   return `<button class="ptline" id="btn-prayer">
-    <span class="pt-icon">${MIHRAB_ICON}</span>
+    <span class="pt-icon">${CRESCENT_ICON}</span>
     <span class="pt-label">مواقيت الصلاة</span>
     ${tail}<span class="pt-chev">‹</span></button>`;
+}
+
+/* ═══════ قرص النهار: أربع وعشرون ساعة في دورة واحدة ═══════
+   منتصف الليل أعلى القرص، والعقرب يدور دورة كاملة كل يوم،
+   فينفرد كلُّ وقت بموضعه ولا يلتبس الفجر بالعصر كما في قرص الاثنتي عشرة. */
+const ptPol=(r,deg)=>{const a=(deg-90)*Math.PI/180;
+  return [130+r*Math.cos(a),130+r*Math.sin(a)];};
+function ptArc(r,d1,d2){
+  const [x1,y1]=ptPol(r,d1), [x2,y2]=ptPol(r,d2);
+  const big=((d2-d1+360)%360)>180?1:0;
+  return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${big} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+}
+function ptDial(cfg,t,curKey){
+  const D=m=>(m/1440)*360;
+  const mn={}; PT_ORDER.forEach(k=>mn[k]=ptMin(t[k],cfg.tz));
+  const now=ptMin(new Date(),cfg.tz);
+  const past=k=>{const d=(now-mn[k]+1440)%1440; return d<720;};   /* مضى منذ أقلّ من نصف يوم */
+
+  const ticks=Array.from({length:24},(_,i)=>{
+    const big=i%6===0, [x1,y1]=ptPol(big?84:89,i*15), [x2,y2]=ptPol(94,i*15);
+    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
+      stroke="var(--line)" stroke-width="${big?1.6:1}" stroke-linecap="round"/>`;
+  }).join("");
+
+  const nums=[[0,"٠"],[6,"٦"],[12,"١٢"],[18,"١٨"]].map(([h,lbl])=>{
+    const [x,y]=ptPol(78,h*15);
+    return `<text x="${x.toFixed(1)}" y="${(y+4.5).toFixed(1)}" text-anchor="middle"
+      font-family="Amiri,serif" font-size="13" fill="var(--muted)">${lbl}</text>`;
+  }).join("");
+
+  const dots=PT_ORDER.map(k=>{
+    const [x,y]=ptPol(104,D(mn[k]));
+    if(k===curKey) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7"
+      fill="var(--green)" stroke="var(--paper2)" stroke-width="2.5"/>`;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${k==="sunrise"?3:4.5}"
+      fill="${past(k)?"var(--line)":"var(--gold)"}" stroke="var(--paper2)" stroke-width="2"/>`;
+  }).join("");
+
+  return `<div class="ptdial">
+  <svg viewBox="0 0 260 260" aria-hidden="true">
+    <circle cx="130" cy="130" r="104" fill="none" stroke="var(--sand)" stroke-width="9"/>
+    <path d="${ptArc(104,D(mn.maghrib),D(mn.fajr))}" fill="none"
+      stroke="#6E5C42" stroke-opacity=".38" stroke-width="9"/>
+    <path d="${ptArc(104,D(mn.fajr),D(mn.sunrise))}" fill="none"
+      stroke="var(--blue)" stroke-opacity=".55" stroke-width="9"/>
+    ${ticks}${nums}${dots}
+    <g id="pt-hand" transform="rotate(${D(now).toFixed(2)} 130 130)">
+      <line x1="130" y1="36" x2="130" y2="17" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="130" cy="13" r="3.4" fill="var(--ink)"/>
+    </g>
+  </svg>
+  <div class="ptdial-mid" id="pt-mid">${ptDialMid(cfg)}</div>
+</div>`;
+}
+function ptDialMid(cfg){
+  const c=ptClock(new Date(),cfg.tz);
+  return `<span class="ptd-now">${c.t}<i>${c.p}</i></span>
+    <span class="ptd-next">${ptNextLabel(cfg)}</span>`;
 }
 
 function prayerDialog(){
   if(!ptReady()) return toast("تعذّر تحميل حاسبة المواقيت");
   const cfg=ptGet();
   if(!cfg) return ptSetupDialog();
-  let t,nx;
-  try{ t=ptTimes(cfg); nx=ptNext(cfg); }
+  let t,cur;
+  try{ t=ptTimes(cfg); cur=ptCurrent(cfg); }
   catch(e){ return ptSetupDialog(); }
   const rows=PT_ORDER.map(k=>{
-    const sun=k==="sunrise"?" sun":"";
-    const now=(nx.today&&k===nx.key)?" now":"";
-    return `<div class="ptrow${sun}${now}">
-      <span class="pn">${PT_NAMES[k]}</span>
+    const cls=(k==="sunrise"?" sun":"")+(k===cur?" now":"");
+    return `<div class="ptrow${cls}">
+      <span class="pn">${PT_NAMES[k]}${k===cur?'<span class="tag j">وقتها الآن</span>':""}</span>
       <span class="pv">${ptFmt(t[k],cfg.tz)}</span></div>`;
   }).join("");
   modal(`<div class="display" style="font-size:1.45rem">مواقيت الصلاة</div>
-    <p class="ptcity">${esc(cfg.city)}</p>
-    <p class="hint" style="text-align:center;margin:.1rem 0 0">${fmtG(todayISO())} · ${fmtH(todayISO())}</p>
+    <p class="ptcity">${esc(cfg.city)} · ${fmtG(todayISO())} · ${fmtH(todayISO())}</p>
+    ${ptDial(cfg,t,cur)}
     <div class="ptable">${rows}</div>
-    <p class="hint" style="text-align:center;line-height:1.9">
-      ${esc(PT_METHODS[cfg.method]||cfg.method)}<br>
-      على مذهب ${cfg.madhab==="Hanafi"?"الحنفية":"الجمهور"}</p>
     <div class="actions">
-      <button class="btn" id="pt-edit">غيّر المدينة</button>
+      <button class="btn" id="pt-edit">الإعدادات</button>
       <button class="btn quiet spacer" id="pt-close">إغلاق</button>
     </div>`);
   document.getElementById("pt-edit").onclick=ptSetupDialog;
   document.getElementById("pt-close").onclick=closeLayer;
+}
+
+/* نبضة كل نصف دقيقة: تُحدَّث الأرقام والعقرب وحدها بلا إعادة رسم */
+function ptTick(){
+  const cfg=ptGet(); if(!cfg||!ptReady()) return;
+  try{
+    const el=document.querySelector("#btn-prayer .pt-next");
+    if(el&&!el.classList.contains("pt-ask")) el.textContent=ptNextLabel(cfg);
+    const mid=document.getElementById("pt-mid");
+    if(mid){
+      mid.innerHTML=ptDialMid(cfg);
+      const hand=document.getElementById("pt-hand");
+      if(hand) hand.setAttribute("transform",
+        `rotate(${((ptMin(new Date(),cfg.tz)/1440)*360).toFixed(2)} 130 130)`);
+    }
+  }catch(e){}
 }
 
 function ptSetupDialog(){
@@ -1948,6 +2068,7 @@ async function boot(){
 document.getElementById("btn-help").onclick=helpDialog;
 window.addEventListener("hashchange",boot);
 boot();
+setInterval(ptTick,30000);
 setInterval(async()=>{
   if(screen!=="main") return;
   if(selected!==null || document.getElementById("layer").innerHTML) return;
