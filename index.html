@@ -899,7 +899,7 @@ function zTick(){
     put("cd-d",ar(0));put("cd-h",ar(0));put("cd-m",ar(0));put("cd-s",ar(0));
     return;
   }
-  if(lab&&lab.textContent!=="المتبقّي لختام الختمة") lab.textContent="المتبقّي لختام الختمة";
+  if(lab&&lab.textContent!=="االوقت المتبقّي لقراءة جزءك") lab.textContent="الوقت المتبقّي لقراءة جزءك";
   const t=Math.floor(left/1000);
   const p=v=>ar(String(v).padStart(2,"0"));
   put("cd-d",ar(Math.floor(t/86400)));
