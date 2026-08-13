@@ -200,6 +200,28 @@ h2.sec{font-family:var(--ruqaa);font-size:1.3rem;color:var(--walnut);line-height
 .src{font-size:.75rem;color:var(--muted);margin-top:.4rem}
 .actions{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:1.1rem;align-items:center}
 
+/* ===== الساعة والعدّاد ===== */
+.orbs{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
+  gap:1.5rem 2.4rem;margin-top:.8rem}
+.orbs .shamsa{margin:0;flex:0 0 auto}
+.zcol{display:flex;flex-direction:column;align-items:center;gap:.7rem;flex:0 0 auto}
+.zclock{display:block;width:min(292px,72vw);height:auto}
+
+.cdown{text-align:center}
+.cd-lab{display:block;font-size:.64rem;letter-spacing:.2em;color:var(--muted);margin-bottom:.45rem}
+.cd-cells{display:flex;justify-content:center;gap:.4rem}
+.cd-cell{display:flex;flex-direction:column;align-items:center;gap:.05rem;min-width:3rem;
+  padding:.34rem .3rem;border:1px solid var(--line);border-radius:var(--r-sm);
+  background:var(--paper2);box-shadow:0 8px 18px -16px rgba(80,55,20,.7)}
+.cd-cell b{font-family:var(--naskh);font-weight:400;font-size:1.3rem;line-height:1.15;
+  color:var(--walnut);font-variant-numeric:tabular-nums}
+.cd-cell em{font-style:normal;font-size:.56rem;letter-spacing:.05em;color:var(--muted)}
+
+.cdate{text-align:center;line-height:1.7}
+.cdate span{display:block}
+.cd-g{font-family:var(--naskh);font-size:1.1rem;color:var(--ink)}
+.cd-hij{font-size:.73rem;letter-spacing:.03em;color:var(--muted)}
+
 /* ===== مواقيت الصلاة ===== */
 .ptline{display:flex;align-items:center;gap:.6rem;width:100%;
   margin-top:1.3rem;padding:.85rem .2rem 0;
@@ -216,17 +238,6 @@ h2.sec{font-family:var(--ruqaa);font-size:1.3rem;color:var(--walnut);line-height
 .ptline .pt-chev{flex:0 0 auto;font-size:1.15rem;line-height:1;color:var(--line);transition:color .2s}
 .ptline:hover .pt-chev{color:var(--gold)}
 .ptline:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:var(--r-sm)}
-
-/* قرص النهار */
-.ptdial{position:relative;width:min(252px,74vw);margin:1.1rem auto .3rem}
-.ptdial svg{display:block;width:100%;height:auto;overflow:visible}
-.ptdial-mid{position:absolute;inset:0;display:grid;align-content:center;justify-items:center;
-  gap:.3rem;text-align:center;pointer-events:none;padding:0 3.8rem}
-.ptd-now{font-family:var(--naskh);font-size:2.15rem;line-height:1;color:var(--ink);
-  display:flex;align-items:baseline;gap:.3rem}
-.ptd-now i{font-family:var(--sans);font-style:normal;font-size:.62rem;
-  letter-spacing:.06em;color:var(--muted)}
-.ptd-next{font-size:.72rem;line-height:1.6;color:var(--walnut);max-width:11ch}
 
 .ptcity{font-family:var(--naskh);font-size:1.05rem;color:var(--walnut);
   text-align:center;margin-top:.5rem;line-height:1.7}
@@ -633,17 +644,6 @@ function arDur(mins,tight){
   return H();
 }
 /* دقائق اليوم بساعة المدينة المختارة لا بساعة الجهاز */
-function ptMin(d,tz){
-  const [h,m]=new Intl.DateTimeFormat("en-GB",
-    {timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(d).split(":").map(Number);
-  return h*60+m;
-}
-function ptClock(d,tz){
-  const [h,m]=new Intl.DateTimeFormat("en-GB",
-    {timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(d).split(":").map(Number);
-  return {t:`${ar(h%12===0?12:h%12)}:${ar(String(m).padStart(2,"0"))}`,
-          p:h<12?"صباحًا":h<18?"عصرًا":"مساءً"};
-}
 /* الصلاة القائم وقتها الآن. بين الشروق والظهر لا فريضة، فلا تعليم. */
 function ptCurrent(cfg){
   const t=ptTimes(cfg), now=Date.now();
@@ -667,64 +667,6 @@ function ptLine(){
     ${tail}<span class="pt-chev">‹</span></button>`;
 }
 
-/* ═══════ قرص النهار: أربع وعشرون ساعة في دورة واحدة ═══════
-   منتصف الليل أعلى القرص، والعقرب يدور دورة كاملة كل يوم،
-   فينفرد كلُّ وقت بموضعه ولا يلتبس الفجر بالعصر كما في قرص الاثنتي عشرة. */
-const ptPol=(r,deg)=>{const a=(deg-90)*Math.PI/180;
-  return [130+r*Math.cos(a),130+r*Math.sin(a)];};
-function ptArc(r,d1,d2){
-  const [x1,y1]=ptPol(r,d1), [x2,y2]=ptPol(r,d2);
-  const big=((d2-d1+360)%360)>180?1:0;
-  return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${big} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
-}
-function ptDial(cfg,t,curKey){
-  const D=m=>(m/1440)*360;
-  const mn={}; PT_ORDER.forEach(k=>mn[k]=ptMin(t[k],cfg.tz));
-  const now=ptMin(new Date(),cfg.tz);
-  const past=k=>{const d=(now-mn[k]+1440)%1440; return d<720;};   /* مضى منذ أقلّ من نصف يوم */
-
-  const ticks=Array.from({length:24},(_,i)=>{
-    const big=i%6===0, [x1,y1]=ptPol(big?84:89,i*15), [x2,y2]=ptPol(94,i*15);
-    return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"
-      stroke="var(--line)" stroke-width="${big?1.6:1}" stroke-linecap="round"/>`;
-  }).join("");
-
-  const nums=[[0,"٠"],[6,"٦"],[12,"١٢"],[18,"١٨"]].map(([h,lbl])=>{
-    const [x,y]=ptPol(78,h*15);
-    return `<text x="${x.toFixed(1)}" y="${(y+4.5).toFixed(1)}" text-anchor="middle"
-      font-family="Amiri,serif" font-size="13" fill="var(--muted)">${lbl}</text>`;
-  }).join("");
-
-  const dots=PT_ORDER.map(k=>{
-    const [x,y]=ptPol(104,D(mn[k]));
-    if(k===curKey) return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7"
-      fill="var(--green)" stroke="var(--paper2)" stroke-width="2.5"/>`;
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${k==="sunrise"?3:4.5}"
-      fill="${past(k)?"var(--line)":"var(--gold)"}" stroke="var(--paper2)" stroke-width="2"/>`;
-  }).join("");
-
-  return `<div class="ptdial">
-  <svg viewBox="0 0 260 260" aria-hidden="true">
-    <circle cx="130" cy="130" r="104" fill="none" stroke="var(--sand)" stroke-width="9"/>
-    <path d="${ptArc(104,D(mn.maghrib),D(mn.fajr))}" fill="none"
-      stroke="#6E5C42" stroke-opacity=".38" stroke-width="9"/>
-    <path d="${ptArc(104,D(mn.fajr),D(mn.sunrise))}" fill="none"
-      stroke="var(--blue)" stroke-opacity=".55" stroke-width="9"/>
-    ${ticks}${nums}${dots}
-    <g id="pt-hand" transform="rotate(${D(now).toFixed(2)} 130 130)">
-      <line x1="130" y1="36" x2="130" y2="17" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
-      <circle cx="130" cy="13" r="3.4" fill="var(--ink)"/>
-    </g>
-  </svg>
-  <div class="ptdial-mid" id="pt-mid">${ptDialMid(cfg)}</div>
-</div>`;
-}
-function ptDialMid(cfg){
-  const c=ptClock(new Date(),cfg.tz);
-  return `<span class="ptd-now">${c.t}<i>${c.p}</i></span>
-    <span class="ptd-next">${ptNextLabel(cfg)}</span>`;
-}
-
 function prayerDialog(){
   if(!ptReady()) return toast("تعذّر تحميل حاسبة المواقيت");
   const cfg=ptGet();
@@ -740,7 +682,6 @@ function prayerDialog(){
   }).join("");
   modal(`<div class="display" style="font-size:1.45rem">مواقيت الصلاة</div>
     <p class="ptcity">${esc(cfg.city)} · ${fmtG(todayISO())} · ${fmtH(todayISO())}</p>
-    ${ptDial(cfg,t,cur)}
     <div class="ptable">${rows}</div>
     <div class="actions">
       <button class="btn" id="pt-edit">الإعدادات</button>
@@ -756,13 +697,6 @@ function ptTick(){
   try{
     const el=document.querySelector("#btn-prayer .pt-next");
     if(el&&!el.classList.contains("pt-ask")) el.textContent=ptNextLabel(cfg);
-    const mid=document.getElementById("pt-mid");
-    if(mid){
-      mid.innerHTML=ptDialMid(cfg);
-      const hand=document.getElementById("pt-hand");
-      if(hand) hand.setAttribute("transform",
-        `rotate(${((ptMin(new Date(),cfg.tz)/1440)*360).toFixed(2)} 130 130)`);
-    }
   }catch(e){}
 }
 
@@ -873,6 +807,108 @@ const hourOptions=sel=>Array.from({length:24},(_,h)=>
   `<option value="${h}" ${h===sel?"selected":""}>${fmtTime(h,0)}</option>`).join("");
 const fmtH=iso=>{try{return new Date(iso+"T12:00:00")
   .toLocaleDateString("ar-SA-u-ca-islamic-umalqura",{day:"numeric",month:"long"});}catch(e){return "";}};
+
+/* ═══════════ الساعة والعدّاد ═══════════
+   قرصها من قرص الشمسة نفسه: الحلقتان الذهبيتان بمقاسيهما،
+   والقلب المضيء بنصف قطره، فتقرأ العين الاثنتين أختين.
+   العقرب الثاني يمضي بزاوية متزايدة أبدًا، فلا يرتدّ عند الدقيقة. */
+const WEEKDAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const ZEP=Math.floor(Date.now()/1000), ZEPS=new Date().getSeconds();
+const zSecDeg=()=>((Math.floor(Date.now()/1000)-ZEP)+ZEPS)*6;
+
+function zClock(){
+  const C=160, pt=(r,d)=>{const a=(d-90)*Math.PI/180;
+    return[(C+r*Math.cos(a)).toFixed(1),(C+r*Math.sin(a)).toFixed(1)];};
+
+  let ticks="";
+  for(let i=0;i<60;i++){
+    const big=i%5===0, [x1,y1]=pt(big?112:120,i*6), [x2,y2]=pt(126,i*6);
+    ticks+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-linecap="round"
+      stroke="${big?"#C08A2B":"#DCCBA8"}" stroke-width="${big?2.4:1}"/>`;
+  }
+  let nums="";
+  for(let i=1;i<=12;i++){
+    const [x,y]=pt(96,i*30);
+    nums+=`<text x="${x}" y="${(+y+7.5).toFixed(1)}" text-anchor="middle"
+      font-family="Amiri,serif" font-size="21" fill="#8C5A2E">${ar(i)}</text>`;
+  }
+  return `<svg class="zclock" id="zclock" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"
+      role="img" aria-label="الساعة الآن">
+    <circle cx="160" cy="160" r="142" fill="none" stroke="#C08A2B" stroke-opacity=".45"/>
+    <circle cx="160" cy="160" r="136" fill="none" stroke="#C08A2B" stroke-opacity=".22"/>
+    <circle cx="160" cy="160" r="130" fill="#FFFCF4"/>
+    ${ticks}${nums}
+    <circle cx="160" cy="160" r="68" fill="none" stroke="#C08A2B" stroke-opacity=".2"/>
+    <g id="zh"><path d="M160 84 L165.5 104 L163 182 L157 182 L154.5 104 Z" fill="#33291B"/></g>
+    <g id="zm"><path d="M160 50 L164 74 L162.2 186 L157.8 186 L156 74 Z" fill="#33291B"/></g>
+    <g id="zs">
+      <line x1="160" y1="192" x2="160" y2="40" stroke="#B4574E" stroke-width="1.7" stroke-linecap="round"/>
+      <circle cx="160" cy="181" r="6.5" fill="none" stroke="#B4574E" stroke-width="1.7"/>
+    </g>
+    <circle cx="160" cy="160" r="7.5" fill="#C08A2B"/>
+    <circle cx="160" cy="160" r="3.2" fill="#FFFCF4"/>
+  </svg>`;
+}
+
+function zOrb(){
+  return `<div class="zcol">
+    <div class="cdown">
+      <span class="cd-lab" id="cd-lab">المتبقّي لختام الختمة</span>
+      <div class="cd-cells">
+        <span class="cd-cell"><b id="cd-d">—</b><em>يوم</em></span>
+        <span class="cd-cell"><b id="cd-h">—</b><em>ساعة</em></span>
+        <span class="cd-cell"><b id="cd-m">—</b><em>دقيقة</em></span>
+        <span class="cd-cell"><b id="cd-s">—</b><em>ثانية</em></span>
+      </div>
+    </div>
+    ${zClock()}
+    <div class="cdate">
+      <span class="cd-g" id="cd-greg"></span>
+      <span class="cd-hij" id="cd-hij"></span>
+    </div>
+  </div>`;
+}
+
+let zDay="";
+function zTick(){
+  const face=document.getElementById("zclock");
+  if(!face) return;
+  const n=new Date(), s=n.getSeconds(), m=n.getMinutes(), h=n.getHours()%12;
+  const turn=(id,deg)=>{const e=document.getElementById(id);
+    if(e) e.setAttribute("transform",`rotate(${deg.toFixed(3)} 160 160)`);};
+  turn("zh",(h+m/60)*30);
+  turn("zm",(m+s/60)*6);
+  turn("zs",zSecDeg());
+
+  /* التاريخ يُعاد بناؤه عند تبدّل اليوم وحده */
+  const iso=todayISO(), g=document.getElementById("cd-greg"), hj=document.getElementById("cd-hij");
+  if(g&&(iso!==zDay||!g.textContent)){
+    zDay=iso;
+    g.textContent=`${WEEKDAYS[n.getDay()]} ${ar(n.getDate())} ${MONTHS[n.getMonth()]} ${ar(n.getFullYear())}`;
+    if(hj) try{ hj.textContent=n.toLocaleDateString("ar-SA-u-ca-islamic-umalqura",
+      {day:"numeric",month:"long",year:"numeric"}); }catch(e){}
+  }
+
+  /* العدّاد ينبض مع العقرب الثاني، إذ ينبعان من نبضة واحدة */
+  if(!state||!state.endDate) return;
+  const put=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+  let left=new Date(state.endDate+"T23:59:59").getTime()-Date.now();
+  const lab=document.getElementById("cd-lab");
+  if(left<=0){
+    if(lab) lab.textContent="انقضى وقت الختمة";
+    put("cd-d",ar(0));put("cd-h",ar(0));put("cd-m",ar(0));put("cd-s",ar(0));
+    return;
+  }
+  if(lab&&lab.textContent!=="المتبقّي لختام الختمة") lab.textContent="المتبقّي لختام الختمة";
+  const t=Math.floor(left/1000);
+  const p=v=>ar(String(v).padStart(2,"0"));
+  put("cd-d",ar(Math.floor(t/86400)));
+  put("cd-h",p(Math.floor(t/3600)%24));
+  put("cd-m",p(Math.floor(t/60)%60));
+  put("cd-s",p(t%60));
+}
+/* حلقة تُصحّح انحرافها، فتقع كل نبضة على رأس الثانية */
+function zLoop(){ zTick(); setTimeout(zLoop, 1000-(Date.now()%1000)); }
 
 /* ═══════════ مطابقة الأسماء ═══════════
    المنهج المعتمد لأسماء الأشخاص: Jaro-Winkler لا مسافة التحرير،
@@ -1195,7 +1231,7 @@ function viewMain(){
   <div class="frame hero">
     <div class="display">${esc(state.title)}</div>
     ${state.dedication?`<div class="dedication">على نية: ${esc(state.dedication)}</div>`:""}
-    ${shamsa()}
+    <div class="orbs">${shamsa()}${zOrb()}</div>
     <div class="stats">
       <span><em>تنتهي</em><b>${fmtG(state.endDate)} <i>${fmtH(state.endDate)}</i></b></span>
       <span><em>${dl>0?"متبقٍ":"الوقت"}</em><b>${dl>0?ar(dl)+" يومًا":"انتهى"}</b></span>
@@ -1827,6 +1863,7 @@ function bind(){
     const ok=await openBot();
     if(!ok) toast("تعذّر فتح تلغرام، تأكّد أنه مثبَّت");
   };
+  if($("zclock")) zTick();
   if($("btn-prayer")) $("btn-prayer").onclick=prayerDialog;
   if($("btn-new")) $("btn-new").onclick=()=>{screen="create";render();};
   if($("btn-home")) $("btn-home").onclick=()=>{
@@ -2069,6 +2106,7 @@ document.getElementById("btn-help").onclick=helpDialog;
 window.addEventListener("hashchange",boot);
 boot();
 setInterval(ptTick,30000);
+zLoop();
 setInterval(async()=>{
   if(screen!=="main") return;
   if(selected!==null || document.getElementById("layer").innerHTML) return;
