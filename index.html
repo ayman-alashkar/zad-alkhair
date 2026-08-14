@@ -20,14 +20,14 @@
 <meta property="og:url" content="https://ayman-alashkar.github.io/zad-alkhair/">
 <meta property="og:title" content="زاد الخير">
 <meta property="og:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
-<meta property="og:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.png">
+<meta property="og:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.jpg">
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://ayman-alashkar.github.io/zad-alkhair/">
 <meta property="twitter:title" content="زاد الخير">
 <meta property="twitter:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
-<meta property="twitter:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.png">
+<meta property="twitter:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1350,6 +1350,17 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
   .topbar{min-height:62px;padding:max(.5rem,env(safe-area-inset-top)) .72rem .82rem;background:linear-gradient(180deg,rgba(5,29,27,.98) 0%,rgba(5,29,27,.86) 68%,rgba(5,29,27,0) 100%);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
   .prayer-fab .pt-icon{width:26px;height:26px;border-radius:9px}.prayer-fab .pt-icon .zk-icon{width:17px;height:17px}
   .rb-icon{width:2.2rem!important;height:2.2rem!important}.prayer-emblem{width:49px;height:49px;border-radius:16px 16px 9px 9px}
+}
+
+/* استجابة لمسية هادئة بدل وميض المتصفح الأزرق. */
+@media(hover:none),(pointer:coarse){
+  :where(button,a,summary,[role="button"]):active{
+    opacity:.88;filter:brightness(.92);transform:translateY(1px) scale(.985)
+  }
+  .cell:active{
+    opacity:.92;filter:brightness(.94);transform:translateY(1px) scale(.975)
+  }
+  .wedge:active{opacity:.7;filter:brightness(.9)}
 }
 </style>
 </head>
