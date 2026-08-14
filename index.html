@@ -20,14 +20,14 @@
 <meta property="og:url" content="https://ayman-alashkar.github.io/zad-alkhair/">
 <meta property="og:title" content="زاد الخير">
 <meta property="og:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
-<meta property="og:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.jpg">
+<meta property="og:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.png">
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://ayman-alashkar.github.io/zad-alkhair/">
 <meta property="twitter:title" content="زاد الخير">
 <meta property="twitter:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
-<meta property="twitter:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.jpg">
+<meta property="twitter:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1355,12 +1355,13 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
 /* استجابة لمسية هادئة بدل وميض المتصفح الأزرق. */
 @media(hover:none),(pointer:coarse){
   :where(button,a,summary,[role="button"]):active{
-    opacity:.88;filter:brightness(.92);transform:translateY(1px) scale(.985)
+    opacity:.76;filter:brightness(.82) saturate(.9);transform:translateY(2px) scale(.96)
   }
   .cell:active{
-    opacity:.92;filter:brightness(.94);transform:translateY(1px) scale(.975)
+    opacity:.84;filter:brightness(.84) saturate(.9);transform:translateY(2px) scale(.94);
+    border-color:var(--state);box-shadow:inset 0 0 0 2px var(--state)
   }
-  .wedge:active{opacity:.7;filter:brightness(.9)}
+  .wedge:active{opacity:.48;filter:brightness(.82);stroke-width:2.4px}
 }
 </style>
 </head>
