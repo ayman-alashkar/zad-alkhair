@@ -624,9 +624,14 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
   .topbar .tb-brand{font-size:1rem}
 /* الاسم يقود إلى الرئيسية. بقي span ليأخذ خطّه من .topbar span،
    ونقرته على إيقاع التطبيق نفسه: خفوت يسير لا تحوّل. */
-.tb-brand[role="button"]{cursor:pointer;transition:opacity .18s}
-.tb-brand[role="button"]:active{opacity:.7}
-.tb-brand[role="button"]:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:10px}
+/* الاسم يقود إلى الرئيسية، فيُعامَل معاملة «تعليمات» نفسها:
+   إطار وخلفية يستيقظان عند المرور، ومؤشّر يدلّ عليه. */
+.tb-brand[role="button"]{cursor:pointer;padding:.28rem .6rem;margin-inline-start:-.6rem;
+  border:1px solid transparent;border-radius:12px;
+  transition:border-color .2s,background .2s,opacity .18s}
+.tb-brand[role="button"]:hover{border-color:rgba(228,201,128,.55);background:rgba(228,201,128,.08)}
+.tb-brand[role="button"]:active{opacity:.72}
+.tb-brand[role="button"]:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
   .tb-help{min-height:34px;padding:.3rem .46rem;font-size:.65rem}
   .tb-help i{width:24px;height:24px}
   .home-gate>.brand{padding-top:1rem}
