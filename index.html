@@ -347,7 +347,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 html{background:var(--night);scroll-behavior:smooth}
 body{min-height:100vh;padding:7rem 0 max(5rem,env(safe-area-inset-bottom));color:var(--ivory);font-family:var(--sans);font-size:15px;line-height:1.75;background:radial-gradient(circle at 10% 7%,rgba(228,201,128,.13),transparent 25rem),
     radial-gradient(circle at 92% 22%,rgba(73,161,140,.18),transparent 32rem),
-    linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%);background-attachment:fixed}
+    linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%)}
 body::before{inset:0;opacity:.24;background-image:linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),
     linear-gradient(150deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),
     linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),
@@ -722,6 +722,19 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
 }
 .topbar .tb-brand:focus-visible{outline:3px solid rgba(197,154,74,.28);outline-offset:3px;border-radius:8px}
 
+/* ═══ سلاسة التمرير ═══
+   كانت خلفية body ثلاثة تدرّجات بـbackground-attachment:fixed،
+   وهي تُعاد رسمها في كل إطار تمرير — أثقل ما في الصفحة على الجوّال.
+   نُقلت إلى طبقة مثبَّتة خلف كل شيء: المنظر نفسه حرفًا بحرف،
+   لكنها تُرسم مرّة واحدة ولا تُعاد مع التمرير. */
+html{background:#061F1D}
+body{background:none}
+.bg-veil{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(circle at 10% 7%,rgba(228,201,128,.13),transparent 25rem),
+    radial-gradient(circle at 92% 22%,rgba(73,161,140,.18),transparent 32rem),
+    linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%)}
+
 @media (prefers-reduced-motion:reduce){
   .tgbig .tgicon{animation:none}
 }
@@ -804,7 +817,7 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
 .public-khatmahs-head p{color:rgba(255,249,234,.62);font-size:.78rem}
 .khatmah-kinds{display:grid;gap:1.5rem}
 .khatmah-kind{min-width:0}
-.khatmah-kind-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem;margin-bottom:.65rem;padding-inline:.15rem}
+.khatmah-kind-head{display:flex;align-items:baseline;justify-content:flex-start;flex-wrap:wrap;gap:.2rem .6rem;margin-bottom:.65rem;padding-inline:.15rem}
 .khatmah-kind-title{display:flex;align-items:center;gap:.5rem;color:var(--ivory);font-family:var(--ruqaa);font-size:1.08rem}
 .khatmah-kind-note{color:rgba(255,249,234,.56);font-size:.66rem}
 .khatmah-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(.75rem,1.7vw,1.15rem)}
@@ -897,6 +910,7 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
   <button class="tb-help" id="btn-help" aria-label="تعليمات">
     <span>تعليمات</span><i><svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.35 8.5a3.05 3.05 0 0 1 5.82 1.28c0 2.22-3.17 2.48-3.17 4.45"/><path d="M12 18.2h.01"/><path d="M12 2.7c5.8 0 8.7 3.1 8.7 9.3s-2.9 9.3-8.7 9.3S3.3 18.2 3.3 12 6.2 2.7 12 2.7Z"/></svg></i></button>
 </div>
+<div class="bg-veil" aria-hidden="true"></div>
 <div class="wrap" id="app"></div>
 <div id="layer"></div>
 <div class="toast" id="toast"></div>
@@ -1799,7 +1813,6 @@ function khatmahCardsGroup(accessType,title,note){
     return `<article class="khatmah-card">
       ${cardShamsa(done,reserved)}
       <div class="card-khatmah-body">
-        <span class="access-badge ${accessType}">${isPublic?"عامة":"خاصة"}</span>
         <h3 class="card-khatmah-title">${esc(k.title||"زاد الخير")}</h3>
         <div class="card-khatmah-stats">
           <span><b>${ar(people)}</b> ${participantWord(people)}</span>
@@ -1811,7 +1824,7 @@ function khatmahCardsGroup(accessType,title,note){
           <i class="p-done" style="width:${pct(done)}%"></i>
         </div>
         <p class="card-slots ${reserved>=30?"full":""}">${reserved>=30
-          ? "جميع الأجزاء الثلاثون محجوزة"
+          ? "جميع الأجزاء الثلاثين محجوزة"
           : `<b>${ar(30-reserved)}</b> ${30-reserved===1?"جزء متاح":"جزءًا متاحًا"} · محجوز ${ar(reserved)} من ٣٠`}</p>
         <button class="btn gold card-join" data-khatmah-card="${esc(k.publicId)}">${isPublic?"انضم الآن":"أدخل الرمز"}</button>
       </div>
@@ -1822,7 +1835,7 @@ function khatmahCardsGroup(accessType,title,note){
       :"لا توجد ختمة خاصة جارية الآن."}</div>`;
   return `<section class="khatmah-kind" aria-label="${esc(title)}">
     <div class="khatmah-kind-head">
-      <h3 class="khatmah-kind-title"><span class="access-badge ${accessType}" aria-hidden="true">${accessType==="public"?"عامة":"خاصة"}</span>${esc(title)}</h3>
+      <h3 class="khatmah-kind-title">${esc(title)}</h3>
       <span class="khatmah-kind-note">${esc(note)}</span>
     </div>
     ${cards}
@@ -2568,7 +2581,8 @@ function mergeDialog(fromId){
 const HELP_ORG=[
  {t:"قبل أن تبدأ",
  b:["شارك رابط الدعوة مع المجموعة، فمن يفتحه يكتب اسمه ويحجز جزءه مباشرة.",
-     "اختر نوع الختمة: العامة مفتوحة للانضمام من الصفحة الرئيسية، والخاصة لا يدخلها القارئ من بطاقتها إلا بالرمز.",
+     "<b>اختر نوع الختمة:</b> <b>العامة</b> تظهر في الصفحة الرئيسية ويدخلها أي قارئ بضغطة، فاخترها إن أردت أن يشاركك من لا تعرفه. و<b>الخاصة</b> لا يدخلها أحد من بطاقتها إلا برمز الختمة، فاخترها لجماعة بعينها: أهل بيت أو حلقة مسجد.",
+     "ولك تغيير النوع متى شئت من «إعدادات الختمة»، فما حُجز يبقى كما هو.",
      "احفظ رمز المنظّم في مكان آمن. هو ما يثبت أنك مشرف الختمة، ولا يمكن استعادته إن ضاع.",
      "تفعيل التذكير في تلغرام يلزمك كما يلزم غيرك، ولا يظهر رمز الختمة ولا رابط الدعوة قبله.",
      "رمز الختمة يظهر في أسفل الصفحة، ويصلح لمن أراد الانضمام يدويًا بلا رابط."]},
@@ -2601,6 +2615,11 @@ const HELP_ORG=[
 ];
 
 const HELP_ONE=[
+ {t:"الختمات العامة والخاصة",
+  b:["في الصفحة الرئيسية بطاقتان: <b>الختمات العامة</b> و<b>الختمات الخاصة</b>، وفي كل بطاقة اسم الختمة وعدد المشاركين وشريط يبيّن كم جزءًا حُجز.",
+     "<b>العامة</b> مفتوحة لكل من يرغب في المشاركة، تدخلها بضغطة «انضم الآن» بلا رمز.",
+     "<b>الخاصة</b> لجماعة بعينها، فلا تدخلها إلا برمز الختمة الذي يعطيك إياه منظّمها.",
+     "وقبل أن تدخل، انظر إلى شريط الحجز: إن قال «جميع الأجزاء الثلاثين محجوزة» فلا جزء متاحًا فيها، وإلا فالشريط يخبرك كم بقي."]},
  {t:"كيف تشارك",
   b:["اختر جزءًا متاحًا واضغطه، ثم «احجز هذا الجزء».",
      "تستطيع حجز أكثر من جزء إن أردت.",
