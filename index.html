@@ -972,6 +972,81 @@ body.show-top-user .tb-user{font-family:var(--ruqaa)!important;font-weight:700!i
   .access-option-body{padding:.65rem .58rem}
   .access-option-body small{font-size:.56rem}
 }
+
+
+/* ═══ ضبط نهائي لاسم المشارك ═══
+   الاسم في شريط المستخدم والاسم الأوسط أثناء التمرير يستخدمان
+   الخط نفسه دائمًا، كي لا يحدث تبدّل لحظي عند العودة إلى أعلى الصفحة. */
+.userbar .user-name{
+  font-family:var(--sans)!important;
+  font-size:.92rem!important;
+  font-weight:650!important;
+  line-height:1.45;
+}
+.tb-user{
+  font-family:var(--sans)!important;
+  font-size:.92rem!important;
+  font-weight:650!important;
+  line-height:1.45;
+}
+/* «ختماتي» في الرئيسية تبقى بطابع العنوان كما اتُّفق سابقًا. */
+body.show-home-mine .tb-user{
+  font-family:var(--ruqaa)!important;
+  font-size:1.02rem!important;
+  font-weight:700!important;
+}
+body.show-top-user .tb-user{
+  font-family:var(--sans)!important;
+  font-size:.92rem!important;
+  font-weight:650!important;
+}
+@media (max-width:680px){
+  .userbar .user-name,.tb-user{font-size:.82rem!important}
+  body.show-home-mine .tb-user{font-size:1rem!important}
+  body.show-top-user .tb-user{font-size:.82rem!important}
+}
+@media (max-width:390px){
+  .userbar .user-name,.tb-user{font-size:.79rem!important}
+  body.show-home-mine .tb-user{font-size:.96rem!important}
+  body.show-top-user .tb-user{font-size:.79rem!important}
+}
+
+/* ═══ فتح لوح الجزء بسلاسة على الحاسب ═══
+   لا نغيّر الشكل أو المحتوى: نزيل فقط blur الحي عن كامل الشاشة أثناء
+   الحركة، ونحرّك اللوح بطبقة مركّبة مستقلة بدل إعادة رسم الصفحة خلفه. */
+@media (min-width:681px){
+  .scrim{
+    background:rgba(2,19,17,.72)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    animation:zkScrimIn .15s ease-out both!important;
+    will-change:opacity;
+  }
+  .modal{
+    background:rgba(2,19,17,.72)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .sheet{
+    animation:zkPanelIn .22s cubic-bezier(.2,.82,.24,1) both!important;
+    will-change:transform;
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    transform:translate3d(0,0,0);
+    contain:layout paint style;
+    overscroll-behavior:contain;
+  }
+  @keyframes zkPanelIn{
+    from{transform:translate3d(100%,0,0)}
+    to{transform:translate3d(0,0,0)}
+  }
+  @keyframes zkScrimIn{
+    from{opacity:0}
+    to{opacity:1}
+  }
+  /* عزل الأجزاء البعيدة عن إعادة الرسم عند تحريك اللوح فوقها. */
+  .juz-panel,.people-panel{contain:paint}
+}
 </style>
 
 
