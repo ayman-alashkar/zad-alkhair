@@ -735,23 +735,34 @@ body{background:none}
     radial-gradient(circle at 92% 22%,rgba(73,161,140,.18),transparent 32rem),
     linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%)}
 
-/* ═══ ختماتك: عودة بضغطة ═══ */
-.mine-strip{margin-bottom:1.6rem}
-.mine-row{display:flex;gap:.6rem;overflow-x:auto;padding:.15rem .15rem .5rem;
-  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
-.mine-row::-webkit-scrollbar{height:4px}
+/* ═══ ختماتك: عنوان مركزي يفتح قائمة منسدلة ═══ */
+.mine-strip{grid-column:1/-1;grid-row:4;width:min(100%,620px);justify-self:center;
+  margin:clamp(1.6rem,4vw,2.8rem) auto .2rem;text-align:center}
+.mine-toggle{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  margin:0 auto;padding:.34rem .9rem;list-style:none;cursor:pointer;user-select:none;
+  border:0;border-bottom:1px solid rgba(228,201,128,.36);background:transparent;
+  color:var(--ivory);font-family:var(--ruqaa);font-size:clamp(1.25rem,2.5vw,1.55rem);
+  font-weight:700;line-height:1.7}
+.mine-toggle::-webkit-details-marker{display:none}
+.mine-toggle::after{content:"⌄";font-family:var(--sans);font-size:.78rem;color:var(--gold-hi);
+  transition:transform .18s ease}
+.mine-strip[open] .mine-toggle::after{transform:rotate(180deg)}
+.mine-toggle:focus-visible{outline:3px solid rgba(197,154,74,.28);outline-offset:3px;border-radius:9px}
+.mine-row{width:min(100%,540px);max-height:300px;overflow-y:auto;display:grid;gap:.38rem;
+  margin:.65rem auto 0;padding:.48rem;border:1px solid rgba(228,201,128,.24);
+  border-radius:18px;background:rgba(5,31,28,.84);box-shadow:0 24px 52px -34px rgba(0,0,0,.95);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.mine-row::-webkit-scrollbar{width:4px}
 .mine-row::-webkit-scrollbar-thumb{background:rgba(228,201,128,.3);border-radius:9px}
-.mine-card{flex:0 0 auto;scroll-snap-align:start;min-width:11rem;max-width:16rem;
-  display:flex;flex-direction:column;gap:.18rem;text-align:start;cursor:pointer;
-  padding:.75rem .95rem;border-radius:16px;
-  border:1px solid rgba(228,201,128,.28);
-  background:linear-gradient(150deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
-  color:var(--ivory);transition:border-color .2s,background .2s}
-.mine-card b{font-family:var(--ruqaa);font-size:1.02rem;font-weight:700;line-height:1.7;
+.mine-card{width:100%;min-width:0;max-width:none;display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;gap:.7rem;text-align:start;cursor:pointer;padding:.68rem .82rem;border-radius:12px;
+  border:1px solid transparent;background:rgba(255,255,255,.035);color:var(--ivory);
+  transition:border-color .2s,background .2s}
+.mine-card b{min-width:0;font-family:var(--ruqaa);font-size:1rem;font-weight:700;line-height:1.7;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mine-card span{font-size:.7rem;color:rgba(255,249,234,.66)}
+.mine-card span{font-size:.67rem;color:rgba(255,249,234,.62);white-space:nowrap}
 @media (hover:hover) and (pointer:fine){
-  .mine-card:hover{border-color:rgba(228,201,128,.6);background:rgba(228,201,128,.1)}
+  .mine-card:hover{border-color:rgba(228,201,128,.52);background:rgba(228,201,128,.09)}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -830,7 +841,7 @@ body{background:none}
 }
 
 /* ===== بطاقات الختمات الجارية ===== */
-.public-khatmahs{grid-column:1/-1;grid-row:4;position:relative;z-index:2;width:100%;margin-top:clamp(2.2rem,5vw,4rem);text-align:start}
+.public-khatmahs{grid-column:1/-1;grid-row:5;position:relative;z-index:2;width:100%;margin-top:clamp(2.2rem,5vw,4rem);text-align:start}
 .public-khatmahs-head{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:1rem;color:var(--ivory)}
 .public-khatmahs-head h2{font-family:var(--ruqaa);font-size:clamp(1.65rem,3vw,2.25rem);font-weight:700}
 .public-khatmahs-head p{color:rgba(255,249,234,.62);font-size:.78rem}
@@ -1841,18 +1852,18 @@ function participantWord(n){
 }
 
 const pct=n=>Math.max(0,Math.min(100,(Number(n)||0)/30*100));
-/* ختمات هذا الجهاز: عودة بضغطة، بلا رمز ولا اسم */
+/* ختمات هذا الجهاز: كلمة مركزية تفتح قائمة العودة إلى الختمات */
 function mineStrip(){
   const list=mineGet();
   if(!list.length) return "";
-  return `<section class="mine-strip" aria-labelledby="mine-title">
-    <div class="public-khatmahs-head"><h2 id="mine-title">ختماتك</h2></div>
+  return `<details class="mine-strip">
+    <summary class="mine-toggle">ختماتك</summary>
     <div class="mine-row">${list.map(x=>`
       <button class="mine-card" data-mine="${esc(x.code)}">
         <b>${esc(x.title||"ختمة")}</b>
         <span>${esc(x.name)}</span>
       </button>`).join("")}</div>
-  </section>`;
+  </details>`;
 }
 
 function khatmahCardsGroup(accessType,title,note){
@@ -2100,7 +2111,7 @@ function viewMain(){
     return `<button class="cell ${cls}${mine}" data-i="${i}" style="animation-delay:${i*14}ms" aria-label="الجزء ${i+1}">
       <span class="num">${ar(i+1)}</span>
       <span class="range">${JUZ[i]}</span>
-      <span class="who">${o?esc(o.name):"متاح"}</span></button>`;
+      <span class="who">${o?esc(o.name):(j.status==="done"?"مقروء":"متاح")}</span></button>`;
   }).join("");
 
   const sortedMembers=[...(state.members||[])].sort((a,b)=>
@@ -2152,7 +2163,7 @@ function viewMain(){
   </div>
   ${ptLine()}
 
-  ${me.linked?"":viewLinkCall()}
+  ${(me.linked||me.exempt)?"":viewLinkCall()}
   ${done===30?viewKhatm():dl===0?viewOverdue():""}
 
   <div class="main-layout">
@@ -2179,7 +2190,9 @@ function viewMain(){
     ${isOrganizer()?`<button class="btn danger" id="btn-reset">إلغاء الختمة</button>`:""}
     ${isOrganizer()?"":`<button class="btn danger spacer" id="btn-leave">مغادرة الختمة</button>`}
   </div>
-  <p class="hint">يصل التذكير يوميًا في ${state.reminderHour}:00 إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>
+  ${state.accessType==="public"
+    ? (me.linked?`<p class="hint">موعد تذكيرك اليومي: ${fmtTime(me.reminderHour??state.reminderHour,me.reminderMinute??0)}.</p>`:"")
+    : `<p class="hint">يصل التذكير يوميًا في ${fmtTime(state.reminderHour,state.reminderMinute??0)} إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>`}
   </div>`;
 }
 
@@ -2227,7 +2240,9 @@ function openSheet(i){
   else if(mine&&j.status==="taken") acts=`<button class="btn gold" data-act="done" data-i="${i}">أتممت قراءته</button>
     <button class="btn quiet" data-act="free" data-i="${i}">تراجع عن الحجز</button>`;
   else if(mine) acts=`<button class="btn quiet" data-act="undone" data-i="${i}">تراجع عن الإتمام</button>`;
-  else{ note=`محجوز باسم ${esc(o?o.name:"—")}${j.status==="done"?"، وقد أتمّه.":"."}`;
+  else{ note=j.status==="done"&&!o
+      ? "هذا الجزء مقروء، وقد غادر قارئه الختمة."
+      : `محجوز باسم ${esc(o?o.name:"—")}${j.status==="done"?"، وقد أتمّه.":"."}`;
     if(isOrganizer()&&j.status==="taken")
       acts=`<button class="btn gold" data-act="done" data-i="${i}">علّمه مقروءًا نيابةً عنه</button>
             <button class="btn" id="s-assign" data-i="${i}">أسنده إلى غيره</button>
@@ -2425,9 +2440,13 @@ async function doSignIn(id,name,ocode){
     screen="gate"; render(); toast("تعذّر الاتصال بقاعدة البيانات"); return;
   }
   const me=memberOf(viewer.id);
-  if(me&&!me.linked&&!me.exempt){ startLinking(); return; }
+  if(me&&!me.linked&&!me.exempt){
+    if(state.accessType==="public"&&!isOrganizer()) askReminder();
+    else startLinking();
+    return;
+  }
   render();
-  toast(`أهلًا ${r.name}`);
+  toast("أهلًا بك");
 }
 
 function nameTaken(name){
@@ -2646,7 +2665,7 @@ const HELP_ORG=[
      "تفعيل التذكير في تلغرام يلزمك كما يلزم غيرك، ولا يظهر رمز الختمة ولا رابط الدعوة قبله.",
      "رمز الختمة يظهر في أسفل الصفحة، ويصلح لمن أراد الانضمام يدويًا بلا رابط."]},
  {t:"كيف يدخل المشاركون",
- b:["يكتب كلٌّ اسمه، ثم يفعّل تذكيره في تلغرام.",
+ b:["يكتب كلٌّ اسمه. في الختمة العامة يختار إن كان يريد تذكيرًا، وفي الخاصة يفعّله أو يأذن له المشرف بالدخول بلا تذكير.",
      "الختمة العامة تُفتح مباشرة من بطاقتها، أما الخاصة فتطلب رمز الختمة.",
      "بعد فتح تلغرام، عليه ضغط زر «start» في أسفل الشاشة.",
      "الاسم يُقفل على جهاز صاحبه، فلا يدخل به غيره."]},
@@ -2667,7 +2686,7 @@ const HELP_ORG=[
      "<b>ادمجه في اسم آخر</b>: لمن دخل باسمين مختلفين، فتنتقل أجزاؤه وتذكيره إلى اسم واحد.",
      "<b>احذفه</b>: في حال إنشاء حساب بالخطأ وتركه مثلًا. وتعود أجزاؤه متاحة ويُفقد تذكيره."]},
  {t:"الإعدادات وما بعد الختمة",
-  b:["وقت التذكير يخصّ الختمة كلها لا كل مشارك، وتضبطه من الإعدادات.",
+  b:["في الختمة الخاصة يكون وقت التذكير موحّدًا وتضبطه من الإعدادات. أمّا في الختمة العامة فيختار كل مشارك ساعته بنفسه.",
      "<b>ابدأ ختمة جديدة</b> من الإعدادات: تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم والرابط كما هي.",
      "<b>سلّم الإشراف</b>: تختار من يخلفك من المشاركين وتضع له رمزًا، فتصير أنت مشاركًا عاديًّا وتبقى أجزاؤك وتذكيرك كما هي. والمشرف لا يغادر ختمته، فإن أردت الخروج منها فسلّم الإشراف أوّلًا ثم غادر.",
      "<b>غيّر رمز المشرف</b>: لمن تسرّب رمزه أو أراد تبديله. القديم يبطل فورًا.",
@@ -2792,10 +2811,10 @@ function memberDialog(id){
    سؤالان لا سوق: أتريد تذكيرًا؟ فمتى؟ ثم تلغرام. */
 function askReminder(){
   closeLayer();
-  modal(`<div class="display" style="font-size:1.4rem">تذكير يوميّ؟</div>
+  modal(`<div class="display" style="font-size:1.4rem">هل تفضّل أن يصلك تذكير يومي؟</div>
     <p class="hint" style="margin:.7rem 0 1.2rem;line-height:2">
-      يصلك في تلغرام كل يوم: جزؤك ووردك وآية أو حديث.
-      ولك أن تشارك بلا تذكير، فتتابع من التطبيق متى شئت.</p>
+      يصلك في تلغرام كل يوم: جزؤك ووردك ورابط لقراءته.
+      لك أن تشارك بلا تذكير، فتتابع من التطبيق متى شئت.</p>
     <div class="mlist">
       <button class="mact" id="rm-yes"><b>نعم، عندي تلغرام</b>
         <span>أختار ساعة التذكير ثم أربط حسابي</span></button>
@@ -2808,7 +2827,7 @@ function askReminder(){
       const r=await rpc("set_my_reminder",{p_code:code,p_id:viewer.id,
         p_device:deviceId(),p_wants:false,p_hour:null,p_minute:null});
       if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التنفيذ");
-      closeLayer(); await refresh(); toast("أهلًا بك، وستتابع من التطبيق");
+      closeLayer(); await refresh(); toast("أهلًا بك");
     }catch(e){ toast("تعذّر الاتصال"); }
   };
 }
@@ -3169,8 +3188,16 @@ function bind(){
   document.querySelectorAll("[data-member]").forEach(b=>b.onclick=()=>memberDialog(b.dataset.member));
 
 
-  if($("btn-link"))     $("btn-link").onclick=linkTelegram;
-  if($("btn-link-big")) $("btn-link-big").onclick=linkTelegram;
+  if($("btn-link")) $("btn-link").onclick=()=>{
+    const me=viewer?memberOf(viewer.id):null;
+    if(state&&state.accessType==="public"&&!isOrganizer()&&me&&me.exempt&&!me.linked) askReminderHour();
+    else linkTelegram();
+  };
+  if($("btn-link-big")) $("btn-link-big").onclick=()=>{
+    const me=viewer?memberOf(viewer.id):null;
+    if(state&&state.accessType==="public"&&!isOrganizer()&&me&&me.exempt&&!me.linked) askReminderHour();
+    else linkTelegram();
+  };
   if($("btn-history"))  $("btn-history").onclick=historyDialog;
 
 
