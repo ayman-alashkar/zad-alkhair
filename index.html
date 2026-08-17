@@ -735,6 +735,25 @@ body{background:none}
     radial-gradient(circle at 92% 22%,rgba(73,161,140,.18),transparent 32rem),
     linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%)}
 
+/* ═══ ختماتك: عودة بضغطة ═══ */
+.mine-strip{margin-bottom:1.6rem}
+.mine-row{display:flex;gap:.6rem;overflow-x:auto;padding:.15rem .15rem .5rem;
+  scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.mine-row::-webkit-scrollbar{height:4px}
+.mine-row::-webkit-scrollbar-thumb{background:rgba(228,201,128,.3);border-radius:9px}
+.mine-card{flex:0 0 auto;scroll-snap-align:start;min-width:11rem;max-width:16rem;
+  display:flex;flex-direction:column;gap:.18rem;text-align:start;cursor:pointer;
+  padding:.75rem .95rem;border-radius:16px;
+  border:1px solid rgba(228,201,128,.28);
+  background:linear-gradient(150deg,rgba(255,255,255,.07),rgba(255,255,255,.02));
+  color:var(--ivory);transition:border-color .2s,background .2s}
+.mine-card b{font-family:var(--ruqaa);font-size:1.02rem;font-weight:700;line-height:1.7;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mine-card span{font-size:.7rem;color:rgba(255,249,234,.66)}
+@media (hover:hover) and (pointer:fine){
+  .mine-card:hover{border-color:rgba(228,201,128,.6);background:rgba(228,201,128,.1)}
+}
+
 @media (prefers-reduced-motion:reduce){
   .tgbig .tgicon{animation:none}
 }
@@ -1330,7 +1349,7 @@ async function postJSON(url,payload,options={}){
 }
 
 const RPC_HEADERS={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY};
-const DEVICE_LOCK_ERR="مقفول على جهاز صاحبه";
+const DEVICE_LOCK_ERRS=["مقفول على جهاز صاحبه","هذا السجل لصاحب الحساب فقط"];
 let rebinding=null;
 
 /* من دخل قبل ترحيل قفل الجهاز يبقى جهازه غير مسجَّل في القاعدة،
@@ -1361,7 +1380,7 @@ async function rpc(fn, args){
   });
   const r=await call();
   const locked=r&&r.ok===false&&typeof r.error==="string"
-    &&r.error.indexOf(DEVICE_LOCK_ERR)!==-1;
+    &&DEVICE_LOCK_ERRS.some(m=>r.error.indexOf(m)!==-1);
   if(locked&&fn!=="sign_in"&&viewer&&code&&await rebindDevice()) return call();
   return r;
 }
@@ -1610,6 +1629,25 @@ const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().sli
 const LAST="zad:last";
 const linkFor=c=>location.origin+location.pathname+"#"+c;
 const vKey=()=>"zad:viewer:"+code;
+
+/* ختمات هذا الجهاز: يُبنى منها شريط «ختماتك» في الرئيسية،
+   فيعود القارئ إلى ختمته بضغطة، بلا رمز ولا اسم. */
+const MINE="zad:mine";
+function mineGet(){
+  try{ const v=JSON.parse(localStorage.getItem(MINE)); return Array.isArray(v)?v:[]; }
+  catch(e){ return []; }
+}
+function minePut(list){
+  try{ localStorage.setItem(MINE,JSON.stringify(list.slice(0,12))); }catch(e){}
+}
+function mineRemember(){
+  if(!code||!viewer||!state) return;
+  const rest=mineGet().filter(x=>x.code!==code);
+  rest.unshift({code,name:viewer.name,title:state.title||"",
+                publicId:state.publicId||null,at:Date.now()});
+  minePut(rest);
+}
+function mineForget(c){ minePut(mineGet().filter(x=>x.code!==c)); }
 const cKey=()=>"zad:orgcode:"+code;
 const orgCode=()=>localStorage.getItem(cKey())||null;
 const OUTBOX="zad:notification-outbox";
@@ -1803,6 +1841,20 @@ function participantWord(n){
 }
 
 const pct=n=>Math.max(0,Math.min(100,(Number(n)||0)/30*100));
+/* ختمات هذا الجهاز: عودة بضغطة، بلا رمز ولا اسم */
+function mineStrip(){
+  const list=mineGet();
+  if(!list.length) return "";
+  return `<section class="mine-strip" aria-labelledby="mine-title">
+    <div class="public-khatmahs-head"><h2 id="mine-title">ختماتك</h2></div>
+    <div class="mine-row">${list.map(x=>`
+      <button class="mine-card" data-mine="${esc(x.code)}">
+        <b>${esc(x.title||"ختمة")}</b>
+        <span>${esc(x.name)}</span>
+      </button>`).join("")}</div>
+  </section>`;
+}
+
 function khatmahCardsGroup(accessType,title,note){
   const items=publicKhatmahs.filter(k=>
     (k.accessType==="public"?"public":"private")===accessType);
@@ -1923,6 +1975,7 @@ function viewHome(){
       <button class="btn wide" id="btn-join">انضمام</button>
       <p class="hint">الرمز أربعة محارف يعطيك إياها منظّم الختمة.</p>
     </div>
+    ${mineStrip()}
     <section class="public-khatmahs" aria-labelledby="active-khatmahs-title">
       <div class="public-khatmahs-head">
         <h2 id="active-khatmahs-title">الختمات الجارية</h2>
@@ -2124,6 +2177,7 @@ function viewMain(){
     ${isOrganizer()?`<button class="btn quiet" id="btn-broadcast">رسالة للمجموعة</button>`:""}
     ${isOrganizer()?`<button class="btn quiet" id="btn-settings">إعدادات الختمة</button>`:""}
     ${isOrganizer()?`<button class="btn danger" id="btn-reset">إلغاء الختمة</button>`:""}
+    ${isOrganizer()?"":`<button class="btn danger spacer" id="btn-leave">مغادرة الختمة</button>`}
   </div>
   <p class="hint">يصل التذكير يوميًا في ${state.reminderHour}:00 إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>
   </div>`;
@@ -2335,12 +2389,19 @@ async function refresh(silent=false){
     /* الربط شرط للدخول، ويُستثنى المنظّم ومن أُذن له */
     /* الربط شرط للدخول، ويلزم المشرف كما يلزم غيره */
     if(me && !me.linked && !me.exempt){
-      if(!silent){ startLinking(); return; }
+      /* في الختمة العامة لا يعرف القارئ مشرفها ليأذن له،
+         فيُسأل بنفسه بدل أن يُساق إلى تلغرام سوقًا. */
+      if(!silent){
+        if(state.accessType==="public" && !isOrganizer()) askReminder();
+        else startLinking();
+        return;
+      }
       screen="main";
     } else {
       screen = viewer ? "main" : "gate";
     }
   }
+  if(viewer&&state) mineRemember();
   if(!silent) render();
   return true;
 }
@@ -2608,6 +2669,8 @@ const HELP_ORG=[
  {t:"الإعدادات وما بعد الختمة",
   b:["وقت التذكير يخصّ الختمة كلها لا كل مشارك، وتضبطه من الإعدادات.",
      "<b>ابدأ ختمة جديدة</b> من الإعدادات: تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم والرابط كما هي.",
+     "<b>سلّم الإشراف</b>: تختار من يخلفك من المشاركين وتضع له رمزًا، فتصير أنت مشاركًا عاديًّا وتبقى أجزاؤك وتذكيرك كما هي. والمشرف لا يغادر ختمته، فإن أردت الخروج منها فسلّم الإشراف أوّلًا ثم غادر.",
+     "<b>غيّر رمز المشرف</b>: لمن تسرّب رمزه أو أراد تبديله. القديم يبطل فورًا.",
      "<b>إلغاء الختمة</b>: يمحو كل شيء نهائيًا ويُبطل الرابط، وتصل المجموعة رسالة بالإلغاء. لا تستعمله إلا للتخلّص من ختمة أنشئت بالخطأ.",
      "إن انقضى الموعد ولم تكتمل، فالتذكير يستمر أسبوعًا عبر تلغرام، ولك أن تمدّد الموعد بضغطة."]}
 ];
@@ -2617,6 +2680,7 @@ const HELP_ONE=[
   b:["في الصفحة الرئيسية بطاقتان: <b>الختمات العامة</b> و<b>الختمات الخاصة</b>، وفي كل بطاقة اسم الختمة وعدد المشاركين وشريط يبيّن كم جزءًا حُجز.",
      "<b>العامة</b> مفتوحة لكل من يرغب في المشاركة، تدخلها بضغطة «انضم الآن» بلا رمز.",
      "<b>الخاصة</b> لجماعة بعينها، فلا تدخلها إلا برمز الختمة الذي يعطيك إياه منظّمها.",
+     "في الختمة العامة يُسألُ القارئ: أتريد تذكيرًا يوميًّا في تلغرام؟ فإن قال نعم اختار ساعته وربط حسابه، وإن قال لا دخل وحجز جزءه وتابع من التطبيق.",
      "وقبل أن تدخل، انظر إلى شريط الحجز: إن قال «جميع الأجزاء الثلاثين محجوزة» فلا جزء متاحًا فيها، وإلا فالشريط يخبرك كم بقي."]},
  {t:"كيف تشارك",
   b:["اختر جزءًا متاحًا واضغطه، ثم «احجز هذا الجزء».",
@@ -2628,7 +2692,12 @@ const HELP_ONE=[
      "فإن نسيت، بقي التذكير يصلك حتى تعلّمه."]},
  {t:"التذكير",
   b:["يصلك في تلغرام مرة كل يوم، فيه جزؤك ووردك اليومي وآية أو حديث.",
-     "ولا يصلك شيء إن لم يبق لك جزء غير مقروء."]}
+     "ولا يصلك شيء إن لم يبق لك جزء غير مقروء."]},
+ {t:"إن أردت المغادرة",
+  b:["في أسفل صفحة الختمة زرّ <b>مغادرة الختمة</b>.",
+     "ما لم تُتمّه من أجزاء يعود متاحًا لغيرك، <b>وما أتممتَه يبقى محسوبًا للختمة باسمك</b> — القراءة لا تُلغى بالمغادرة.",
+     "ويتوقّف تذكيرك، ويُرفع اسمك من قائمة المشاركين.",
+     "ولك أن تعود متى شئت بالاسم نفسه."]}
 ];
 
 function helpDialog(){
@@ -2717,6 +2786,138 @@ function memberDialog(id){
   };
   document.getElementById("m-merge").onclick=()=>mergeDialog(id);
   document.getElementById("m-remove").onclick=()=>removeDialog(id);
+}
+
+/* ═══════════ التذكير في الختمة العامة ═══════════
+   سؤالان لا سوق: أتريد تذكيرًا؟ فمتى؟ ثم تلغرام. */
+function askReminder(){
+  closeLayer();
+  modal(`<div class="display" style="font-size:1.4rem">تذكير يوميّ؟</div>
+    <p class="hint" style="margin:.7rem 0 1.2rem;line-height:2">
+      يصلك في تلغرام كل يوم: جزؤك ووردك وآية أو حديث.
+      ولك أن تشارك بلا تذكير، فتتابع من التطبيق متى شئت.</p>
+    <div class="mlist">
+      <button class="mact" id="rm-yes"><b>نعم، عندي تلغرام</b>
+        <span>أختار ساعة التذكير ثم أربط حسابي</span></button>
+      <button class="mact" id="rm-no"><b>لا، بلا تذكير</b>
+        <span>أدخل الآن وأحجز جزئي، وأتابع من التطبيق</span></button>
+    </div>`);
+  document.getElementById("rm-yes").onclick=askReminderHour;
+  document.getElementById("rm-no").onclick=async()=>{
+    try{
+      const r=await rpc("set_my_reminder",{p_code:code,p_id:viewer.id,
+        p_device:deviceId(),p_wants:false,p_hour:null,p_minute:null});
+      if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التنفيذ");
+      closeLayer(); await refresh(); toast("أهلًا بك، وستتابع من التطبيق");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+}
+
+function askReminderHour(){
+  const h=state&&state.reminderHour!=null?state.reminderHour:20;
+  modal(`<div class="display" style="font-size:1.4rem">متى يصلك التذكير؟</div>
+    <p class="hint" style="margin:.7rem 0 1rem">اختر ساعة تناسب قراءتك. ولك تغييرها لاحقًا.</p>
+    <div class="field-row"><label for="rm-hour">ساعة التذكير</label>
+      <select id="rm-hour" class="field">${hourOptions(h)}</select></div>
+    <div class="actions">
+      <button class="btn gold" id="rm-go">تابِع إلى تلغرام</button>
+      <button class="btn quiet spacer" id="rm-back">رجوع</button></div>`);
+  document.getElementById("rm-back").onclick=askReminder;
+  document.getElementById("rm-go").onclick=async()=>{
+    const hh=+document.getElementById("rm-hour").value;
+    try{
+      const r=await rpc("set_my_reminder",{p_code:code,p_id:viewer.id,
+        p_device:deviceId(),p_wants:true,p_hour:hh,p_minute:0});
+      if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التنفيذ");
+    }catch(e){ return toast("تعذّر الاتصال"); }
+    closeLayer(); startLinking();
+  };
+}
+
+/* ═══════════ مغادرة الختمة ═══════════ */
+function leaveDialog(){
+  const mine=state.juz.filter(j=>j.ownerId===viewer.id);
+  const done=mine.filter(j=>j.status==="done").length;
+  const open=mine.length-done;
+  modal(`<div class="display" style="font-size:1.4rem">مغادرة الختمة</div>
+    <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">
+      ستخرج من «${esc(state.title)}» ويُرفع اسمك من المشاركين، ويتوقّف تذكيرك.</p>
+    ${open?`<p class="warnbox">${arCount(open,"جزء لم تُتمّه سيعود متاحًا","جزءان لم تُتمّهما سيعودان متاحين","أجزاء لم تُتمّها ستعود متاحة","جزءًا لم تُتمّها ستعود متاحة")} لغيرك.</p>`:""}
+    ${done?`<p class="hint" style="margin:0 0 .9rem">وما أتممتَه (${ar(done)} ${done===1?"جزء":"أجزاء"}) يبقى محسوبًا للختمة باسمك — القراءة لا تُلغى بالمغادرة.</p>`:""}
+    <p class="hint" style="margin:0 0 1.1rem">ولك أن تعود متى شئت بالاسم نفسه.</p>
+    <div class="actions">
+      <button class="btn danger" id="lv-go">غادر الختمة</button>
+      <button class="btn quiet spacer" id="lv-no">بقاء</button></div>`);
+  document.getElementById("lv-no").onclick=closeLayer;
+  document.getElementById("lv-go").onclick=async()=>{
+    try{
+      const r=await rpc("leave_khatmah",{p_code:code,p_id:viewer.id,p_device:deviceId()});
+      if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التنفيذ");
+      mineForget(code);
+      localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
+      toast(r.freed?`غادرتَ الختمة، وتحرّرت ${ar(r.freed)} ${r.freed===1?"جزء":"أجزاء"}`:"غادرتَ الختمة");
+      goHome();
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+}
+
+/* ═══════════ تسليم الإشراف ═══════════
+   ينتقل الإشراف وحده. لا تُنقل أجزاء ولا روابط تلغرام. */
+function transferDialog(){
+  const others=(state.members||[]).filter(m=>m.id!==state.organizerId);
+  if(!others.length) return toast("لا يوجد مشارك آخر لتسلّمه الإشراف");
+  modal(`<div class="display" style="font-size:1.4rem">تسليم الإشراف</div>
+    <p class="hint" style="margin:.7rem 0 1rem;line-height:2">
+      اختر من يخلفك، وضع له رمزًا يدخل به. وتصير أنت مشاركًا عاديًّا،
+      وتبقى أجزاؤك وتذكيرك كما هي.</p>
+    <div class="field-row"><label for="tr-to">المشرف الجديد</label>
+      <select id="tr-to" class="field">
+        ${others.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}
+      </select></div>
+    <div class="field-row"><label for="tr-code">رمز المشرف الجديد</label>
+      <input id="tr-code" class="field" autocomplete="off" placeholder="أربعة محارف فأكثر">
+      <p class="hint">أبلغه به بنفسك، فلا سبيل لاستعادته إن ضاع.</p></div>
+    <div class="actions">
+      <button class="btn gold" id="tr-go">سلّم الإشراف</button>
+      <button class="btn quiet spacer" id="tr-no">إلغاء</button></div>`);
+  document.getElementById("tr-no").onclick=settings;
+  document.getElementById("tr-go").onclick=async()=>{
+    const to=document.getElementById("tr-to").value;
+    const nc=norm(document.getElementById("tr-code").value);
+    const who=memberOf(to);
+    if(nc.length<4) return toast("الرمز أربعة محارف فأكثر");
+    if(!confirm(`سيصير ${who?who.name:""} مشرف الختمة، وتفقد أنت صلاحيات الإشراف.\n\nالمتابعة؟`)) return;
+    try{
+      const r=await rpc("transfer_organizer",{p_code:code,p_org_code:orgCode(),
+        p_device:deviceId(),p_to:to,p_new_code:nc});
+      if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التسليم");
+      localStorage.removeItem(cKey());
+      closeLayer(); await refresh(); toast(`صار ${r.name} مشرف الختمة`);
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
+}
+
+/* ═══════════ تغيير رمز المشرف ═══════════ */
+function orgCodeDialog(){
+  modal(`<div class="display" style="font-size:1.4rem">تغيير رمز المشرف</div>
+    <p class="hint" style="margin:.7rem 0 1rem">لمن تسرّب رمزه أو أراد تبديله. الرمز القديم يبطل فورًا.</p>
+    <div class="field-row"><label for="oc-new">الرمز الجديد</label>
+      <input id="oc-new" class="field" autocomplete="off" placeholder="أربعة محارف فأكثر"></div>
+    <div class="actions">
+      <button class="btn gold" id="oc-go">غيّر الرمز</button>
+      <button class="btn quiet spacer" id="oc-no">إلغاء</button></div>`);
+  document.getElementById("oc-no").onclick=settings;
+  document.getElementById("oc-go").onclick=async()=>{
+    const nc=norm(document.getElementById("oc-new").value);
+    if(nc.length<4) return toast("الرمز أربعة محارف فأكثر");
+    try{
+      const r=await rpc("change_organizer_code",{p_code:code,p_org_code:orgCode(),
+        p_device:deviceId(),p_new_code:nc});
+      if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التغيير");
+      localStorage.setItem(cKey(),nc);
+      closeLayer(); toast("تغيّر رمز المشرف، فاحفظه");
+    }catch(e){ toast("تعذّر الاتصال"); }
+  };
 }
 
 /* ===================== الرسائل ===================== */
@@ -2869,6 +3070,10 @@ function bind(){
   if($("zclock")) zTick();
   if($("deadline-trigger")) $("deadline-trigger").onclick=deadlineDialog;
   if($("btn-prayer")) $("btn-prayer").onclick=prayerDialog;
+  if($("btn-leave")) $("btn-leave").onclick=leaveDialog;
+  document.querySelectorAll("[data-mine]").forEach(b=>b.onclick=()=>{
+    location.hash=b.dataset.mine; boot();
+  });
   if($("btn-new")) $("btn-new").onclick=()=>{screen="create";render();};
   document.querySelectorAll("[data-khatmah-card]").forEach(button=>
     button.onclick=()=>joinKhatmahCard(button.dataset.khatmahCard));
@@ -3022,6 +3227,9 @@ function settings(){
     </div>
 
     <div class="pairbtn" style="margin-top:.3rem">
+      <button class="btn sm" id="s-transfer">سلّم الإشراف</button>
+      <button class="btn sm" id="s-orgcode">غيّر رمز المشرف</button></div>
+    <div class="pairbtn" style="margin-top:.5rem">
       <button class="btn sm" id="s-next">ابدأ ختمة جديدة</button>
       <button class="btn danger sm" id="s-del">إلغاء الختمة</button></div>
 
@@ -3063,6 +3271,8 @@ function settings(){
       toast(r.sent?`بدأت ختمة جديدة، وأُبلغ ${ar(r.sent)}`:"بدأت ختمة جديدة");
     });
 
+  document.getElementById("s-transfer").onclick=transferDialog;
+  document.getElementById("s-orgcode").onclick=orgCodeDialog;
   document.getElementById("s-del").onclick=cancelKhatmah;
 }
 
