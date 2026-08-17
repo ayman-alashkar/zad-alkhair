@@ -622,18 +622,6 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
   body{padding-top:5.45rem}
   .topbar span,.topbar .tb-brand{gap:0}
   .topbar .tb-brand{font-size:1rem}
-/* الاسم يقود إلى الرئيسية. بقي span ليأخذ خطّه من .topbar span،
-   ونقرته على إيقاع التطبيق نفسه: خفوت يسير لا تحوّل. */
-/* الاسم زرّ يقود إلى الرئيسية. خطّه من .topbar span، وسلوكه من أزرار
-   التطبيق: مرورٌ كـ«تعليمات»، وبلا تحديد نصّ لأنه زرّ.
-   أمّا الضغط فتحكمه قاعدة التطبيق العامّة لكل زرّ:
-   :where(button,a,summary,[role="button"]):active — فلا نغلبها بقاعدة خاصّة. */
-.topbar .tb-brand{-webkit-appearance:none;appearance:none;cursor:pointer;
-  padding:.3rem .62rem;margin-inline-start:-.62rem;
-  border:1px solid transparent;border-radius:12px;
-  transition:border-color .2s,background .2s,transform .16s}
-.topbar .tb-brand:hover{border-color:rgba(228,201,128,.55);background:rgba(228,201,128,.08)}
-.topbar .tb-brand:focus-visible{outline:3px solid rgba(197,154,74,.28);outline-offset:2px}
   .tb-help{min-height:34px;padding:.3rem .46rem;font-size:.65rem}
   .tb-help i{width:24px;height:24px}
   .home-gate>.brand{padding-top:1rem}
@@ -717,6 +705,22 @@ body.show-top-user .tb-user{opacity:1;transform:translateX(50%) translateY(0)}
     var(--ivory) 14%, var(--gold-hi) 56%, var(--gold) 100%);
   -webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:transparent}
+
+/* ═══ اسم التطبيق زرًّا ═══
+   لا صندوق ولا إطار: يبقى كما كان نصًّا في الشريط.
+   يُجرَّد من مظهر الزرّ الافتراضي فحسب، ويُعطى مؤشّرًا.
+   والضغط تحكمه قاعدة التطبيق العامّة:
+   :where(button,a,summary,[role="button"]):active
+   فلا قاعدة خاصّة تغلبها. */
+.topbar .tb-brand{-webkit-appearance:none;appearance:none;
+  background:none;border:0;padding:0;margin:0;
+  cursor:pointer;color:inherit}
+/* التوهّج عند المرور لأجهزة المؤشّر وحدها، فلا يلتصق بعد اللمس */
+@media (hover:hover) and (pointer:fine){
+  .topbar .tb-brand{transition:opacity .18s}
+  .topbar .tb-brand:hover{opacity:.82}
+}
+.topbar .tb-brand:focus-visible{outline:3px solid rgba(197,154,74,.28);outline-offset:3px;border-radius:8px}
 
 @media (prefers-reduced-motion:reduce){
   .tgbig .tgicon{animation:none}
