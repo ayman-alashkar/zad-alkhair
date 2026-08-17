@@ -735,7 +735,7 @@ body{background:none}
     radial-gradient(circle at 92% 22%,rgba(73,161,140,.18),transparent 32rem),
     linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%)}
 
-/* ═══ ختماتك: عنوان مركزي يفتح قائمة منسدلة ═══ */
+/* ═══ ختماتي: عنوان مركزي يفتح قائمة منسدلة ═══ */
 .mine-strip{grid-column:1/-1;grid-row:4;width:min(100%,620px);justify-self:center;
   margin:clamp(1.6rem,4vw,2.8rem) auto .2rem;text-align:center}
 .mine-toggle{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
@@ -766,12 +766,13 @@ body{background:none}
 }
 
 /* ═══ القائمة الوسطية في الشريط العلوي ═══
-   في الرئيسية تعرض «ختماتك»، وداخل الختمة يتحول الموضع نفسه إلى اسم
+   في الرئيسية تعرض «ختماتي»، وداخل الختمة يتحول الموضع نفسه إلى اسم
    القارئ بعد تجاوز شريط المستخدم. */
 .tb-user{-webkit-appearance:none;appearance:none;border:0;background:transparent;padding:.25rem .6rem;
   min-height:34px;border-radius:10px;cursor:pointer;text-align:center}
 body.show-home-mine .tb-user,body.show-top-user .tb-user{pointer-events:auto}
 body.show-home-mine .tb-user{font-family:var(--ruqaa)!important;font-size:1.02rem!important;font-weight:700!important}
+body.show-top-user .tb-user{font-family:var(--ruqaa)!important;font-weight:700!important}
 .tb-user:hover{background:rgba(228,201,128,.07)}
 .tb-user:focus-visible{outline:3px solid rgba(197,154,74,.3);outline-offset:2px}
 .tb-user::after{content:"⌄";display:inline-block;margin-inline-start:.35rem;font-family:var(--sans);
@@ -1686,7 +1687,7 @@ const LAST="zad:last";
 const linkFor=c=>location.origin+location.pathname+"#"+c;
 const vKey=()=>"zad:viewer:"+code;
 
-/* ختمات هذا الجهاز: يُبنى منها شريط «ختماتك» في الرئيسية،
+/* ختمات هذا الجهاز: يُبنى منها شريط «ختماتي» في الرئيسية،
    فيعود القارئ إلى ختمته بضغطة، بلا رمز ولا اسم. */
 const MINE="zad:mine";
 function mineGet(){
@@ -1902,7 +1903,7 @@ function mineStrip(){
   const list=mineGet();
   if(!list.length) return "";
   return `<details class="mine-strip">
-    <summary class="mine-toggle">ختماتك</summary>
+    <summary class="mine-toggle">ختماتي</summary>
     <div class="mine-row">${list.map(x=>`
       <button class="mine-card" data-mine="${esc(x.code)}">
         <b>${esc(x.title||"ختمة")}</b>
@@ -1973,23 +1974,21 @@ function closeTopMenu(){
 function topMineMarkup(withBack=false){
   const list=mineGet();
   return `${withBack?'<button class="tb-menu-item tb-menu-back" data-top-action="account">‹ رجوع</button>':""}
-    <div class="tb-menu-title">ختماتك</div>
     ${list.length?list.map(x=>`<button class="tb-menu-item" data-top-mine="${esc(x.code)}">
       <span>${esc(x.title||"ختمة")}</span><small>${esc(x.name||"")}</small></button>`).join(""):
       '<div class="tb-menu-empty">لا توجد ختمات محفوظة على هذا الجهاز.</div>'}`;
 }
 function topAccountMarkup(){
-  return `<div class="tb-menu-title">${esc(viewer&&viewer.name||"")}</div>
-    <button class="tb-menu-item" data-top-action="mine">ختماتك</button>
+  return `<button class="tb-menu-item" data-top-action="mine">ختماتي</button>
     <button class="tb-menu-item" data-top-action="history">سجلي</button>
     <button class="tb-menu-item" data-top-action="reminder">أعد تفعيل التذكير</button>
     <button class="tb-menu-item" data-top-action="logout">خروج</button>
     ${viewer&&state&&!isOrganizer()?'<button class="tb-menu-item danger" data-top-action="leave">مغادرة الختمة</button>':""}`;
 }
-function showTopMenu(kind){
+function showTopMenu(kind,mineBack=(kind==="mine"&&screen==="main")){
   const menu=document.getElementById("tb-popover"),btn=document.getElementById("tb-user");
   if(!menu||!btn) return;
-  menu.innerHTML=kind==="mine"?topMineMarkup(screen==="main"):topAccountMarkup();
+  menu.innerHTML=kind==="mine"?topMineMarkup(mineBack):topAccountMarkup();
   menu.hidden=false;btn.setAttribute("aria-expanded","true");
 }
 function toggleTopMenu(){
@@ -2009,7 +2008,7 @@ function syncTopUser(){
 
   if(screen==="home"){
     if(mineGet().length){
-      topUser.textContent="ختماتك";topUser.disabled=false;
+      topUser.textContent="ختماتي";topUser.disabled=false;
       document.body.classList.add("show-home-mine");
     }
     return;
@@ -2232,6 +2231,7 @@ function viewMain(){
     ${isOrganizer()?'<span class="tag">المنظّم</span>':""}
     ${me.linked?'<span class="tag j">التذكير مفعّل</span>':""}
     <span class="spacer"></span>
+    <button class="btn quiet sm" id="btn-mine">ختماتي</button>
     <button class="btn quiet sm" id="btn-history">سجلي</button>
     <button class="btn quiet sm" id="btn-link">${me.linked?"أعد تفعيل التذكير":"فعّل التذكير"}</button>
     <button class="btn quiet sm" id="btn-logout">خروج</button>
@@ -3304,6 +3304,7 @@ function bind(){
     if(state&&state.accessType==="public"&&!isOrganizer()&&me&&me.exempt&&!me.linked) askReminderHour();
     else linkTelegram();
   };
+  if($("btn-mine")) $("btn-mine").onclick=e=>{e.stopPropagation();showTopMenu("mine",false);};
   if($("btn-history"))  $("btn-history").onclick=historyDialog;
 
 
