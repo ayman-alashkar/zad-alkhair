@@ -2997,7 +2997,10 @@ function askReminder(){
 }
 
 function askReminderHour(){
-  const h=state&&state.reminderHour!=null?state.reminderHour:20;
+  const me=viewer?memberOf(viewer.id):null;
+  const h=me&&me.reminderHour!=null
+    ? me.reminderHour
+    : (state&&state.reminderHour!=null?state.reminderHour:20);
   modal(`<div class="display" style="font-size:1.4rem">متى يصلك التذكير؟</div>
     <p class="hint" style="margin:.7rem 0 1rem">اختر ساعة تناسب قراءتك. ولك تغييرها لاحقًا.</p>
     <div class="field-row"><label for="rm-hour">ساعة التذكير</label>
@@ -3248,8 +3251,9 @@ function logoutCurrent(){
   viewer=null;gateName="";closeTopMenu();closeLayer();screen="gate";render();
 }
 function reminderFromAccountMenu(){
-  const me=viewer?memberOf(viewer.id):null;
-  if(state&&state.accessType==="public"&&!isOrganizer()&&me&&me.exempt&&!me.linked) askReminderHour();
+  /* في الختمة العامة لكل مشارك ساعة تذكير خاصة به؛
+     لذلك يبدأ التفعيل وإعادة التفعيل دائمًا باختيار الساعة. */
+  if(state&&state.accessType==="public") askReminderHour();
   else linkTelegram();
 }
 function handleTopMenuClick(e){
@@ -3375,8 +3379,7 @@ function bind(){
 
   if($("btn-link")) $("btn-link").onclick=reminderFromAccountMenu;
   if($("btn-link-big")) $("btn-link-big").onclick=()=>{
-    const me=viewer?memberOf(viewer.id):null;
-    if(state&&state.accessType==="public"&&!isOrganizer()&&me&&me.exempt&&!me.linked) askReminderHour();
+    if(state&&state.accessType==="public") askReminderHour();
     else linkTelegram();
   };
   if($("btn-mine")) $("btn-mine").onclick=e=>{e.stopPropagation();showTopMenu("mine",false);};
