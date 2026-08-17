@@ -1926,7 +1926,6 @@ function viewHome(){
     <section class="public-khatmahs" aria-labelledby="active-khatmahs-title">
       <div class="public-khatmahs-head">
         <h2 id="active-khatmahs-title">الختمات الجارية</h2>
-        <p>العامة مفتوحة مباشرة، والخاصة تحتاج إلى رمز.</p>
       </div>
       ${publicCardsMarkup()}
     </section>
@@ -2088,7 +2087,6 @@ function viewMain(){
   <div class="frame hero">
     <div class="hero-intro">
       <div class="display">${esc(state.title)}</div>
-      <span class="access-badge ${state.accessType==="public"?"public":"private"}">${state.accessType==="public"?"ختمة عامة":"ختمة خاصة"}</span>
       ${state.dedication?`<div class="dedication">على نية: ${esc(state.dedication)}</div>`:""}
     </div>
     <div class="orbs">
