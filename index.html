@@ -1050,29 +1050,12 @@ body.show-top-user .tb-user{
 
 
 /* ===== رسائل التأكيد داخل زاد الخير =====
-   بديل موحّد لنوافذ confirm/prompt الأصلية في المتصفح. */
-.app-confirm-overlay{position:fixed;inset:0;z-index:95;display:grid;place-items:center;padding:1rem;background:rgba(2,19,17,.72);animation:appConfirmFade .16s ease-out}
-.app-confirm-card{width:min(430px,100%);padding:1.35rem 1.3rem 1.2rem;border:1px solid rgba(228,201,128,.36);border-radius:28px;color:var(--ink);background:radial-gradient(circle at 8% 0%,rgba(197,154,74,.10),transparent 18rem),linear-gradient(145deg,#FFFDF7,var(--paper));box-shadow:0 34px 90px -38px rgba(0,0,0,.9);animation:appConfirmIn .18s cubic-bezier(.2,.85,.3,1)}
-.app-confirm-head{display:flex;align-items:center;gap:.75rem;margin-bottom:.7rem}
-.app-confirm-mark{flex:0 0 auto;width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(197,154,74,.48);border-radius:50% 50% 12px 12px;color:#604515;background:linear-gradient(145deg,var(--gold-hi),var(--gold));font-family:var(--ruqaa);font-size:1.1rem;font-weight:700;box-shadow:0 10px 22px -15px rgba(132,89,22,.8)}
-.app-confirm-title{font-family:var(--ruqaa);font-size:1.55rem;font-weight:700;line-height:1.45;color:var(--ink)}
-.app-confirm-copy{font-family:var(--naskh);font-size:1.08rem;line-height:2;color:#4E493F;white-space:pre-line;text-align:start}
-.app-confirm-actions{display:flex;align-items:center;gap:.55rem;margin-top:1.15rem}
-.app-confirm-actions .btn{min-width:7rem}
-.app-confirm-actions .btn:last-child{margin-inline-start:auto}
-.app-confirm-card.danger .app-confirm-mark{color:#fff;border-color:rgba(185,81,87,.65);background:linear-gradient(145deg,#CC777C,var(--rose))}
-.app-copy-box{width:100%;min-height:7.5rem;margin-top:.8rem;padding:.75rem .85rem;resize:vertical;border:1px solid #D8CEBB;border-radius:13px;background:#FFFDF7;color:var(--ink);font-family:var(--sans);font-size:.8rem;line-height:1.8;direction:ltr;text-align:left}
-@keyframes appConfirmFade{from{opacity:0}to{opacity:1}}
-@keyframes appConfirmIn{from{opacity:0;transform:translateY(8px) scale(.985)}to{opacity:1;transform:none}}
-@media (max-width:520px){
-  .app-confirm-overlay{padding:1rem .85rem}
-  .app-confirm-card{padding:1.2rem 1.05rem 1.05rem;border-radius:24px}
-  .app-confirm-title{font-size:1.4rem}
-  .app-confirm-copy{font-size:1.03rem}
-  .app-confirm-actions .btn{flex:1;min-width:0}
-  .app-confirm-actions .btn:last-child{margin-inline-start:0}
-}
-@media (prefers-reduced-motion:reduce){.app-confirm-overlay,.app-confirm-card{animation:none}}
+   تستخدم نفس مكوّن modal/frame الموجود في بقية التطبيق بلا بطاقة بصرية مستقلة. */
+.app-confirm-overlay{z-index:95}
+.app-confirm-card{width:100%}
+.app-confirm-copy{white-space:pre-line}
+.app-copy-box{width:100%;min-height:7.5rem;margin-top:.8rem;padding:.75rem .85rem;resize:vertical;border:1px solid #D8CEBB;border-radius:var(--r-sm);background:rgba(255,253,247,.82);color:var(--ink);font-family:var(--sans);font-size:.8rem;line-height:1.8;direction:ltr;text-align:left}
+.app-copy-box:focus{outline:none;border-color:var(--gold);background:#fff;box-shadow:0 0 0 4px rgba(197,154,74,.13)}
 </style>
 
 
@@ -2473,19 +2456,16 @@ function modal(html,kind=""){
 }
 
 
-/* نافذة تأكيد من هوية التطبيق، من دون عنوان النطاق الذي يضيفه المتصفح. */
+/* نافذة تأكيد موحّدة: نفس modal/frame والعناوين والأزرار المستعملة في التطبيق. */
 function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغاء",danger=false}={}){
   return new Promise(resolve=>{
     const host=document.createElement("div");
-    host.className="app-confirm-overlay";
+    host.className="modal app-confirm-overlay";
     host.setAttribute("role","presentation");
-    host.innerHTML=`<div class="app-confirm-card${danger?" danger":""}" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
-      <div class="app-confirm-head">
-        <span class="app-confirm-mark" aria-hidden="true">◆</span>
-        <div class="app-confirm-title" id="app-confirm-title">${esc(title)}</div>
-      </div>
-      <div class="app-confirm-copy">${esc(message)}</div>
-      <div class="app-confirm-actions">
+    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
+      <div class="display" id="app-confirm-title" style="font-size:1.4rem">${esc(title)}</div>
+      <p class="hint app-confirm-copy" style="margin:.7rem 0 1.1rem;line-height:2">${esc(message)}</p>
+      <div class="actions">
         <button class="btn ${danger?"danger":"gold"}" data-confirm-ok>${esc(ok)}</button>
         <button class="btn quiet" data-confirm-cancel>${esc(cancel)}</button>
       </div>
@@ -2503,7 +2483,6 @@ function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغ
     };
     const onKey=e=>{
       if(e.key==="Escape"){e.preventDefault();done(false);}
-      else if(e.key==="Enter"&&document.activeElement===cancelBtn){return;}
     };
     okBtn.onclick=()=>done(true);
     cancelBtn.onclick=()=>done(false);
@@ -2513,19 +2492,18 @@ function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغ
   });
 }
 
-/* بديل داخلي لـ prompt عند تعذّر النسخ التلقائي. */
+/* بديل داخلي لـ prompt، بنفس نافذة التطبيق القياسية. */
 function appCopyFallback(title,value){
   return new Promise(resolve=>{
     const host=document.createElement("div");
-    host.className="app-confirm-overlay";
-    host.innerHTML=`<div class="app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-copy-title">
-      <div class="app-confirm-head">
-        <span class="app-confirm-mark" aria-hidden="true">◆</span>
-        <div class="app-confirm-title" id="app-copy-title">${esc(title)}</div>
-      </div>
-      <div class="app-confirm-copy">تعذّر النسخ التلقائي. حدّد النص وانسخه من هنا.</div>
+    host.className="modal app-confirm-overlay";
+    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-copy-title">
+      <div class="display" id="app-copy-title" style="font-size:1.4rem">${esc(title)}</div>
+      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">تعذّر النسخ التلقائي. حدّد النص وانسخه من هنا.</p>
       <textarea class="app-copy-box" readonly>${esc(value)}</textarea>
-      <div class="app-confirm-actions"><button class="btn gold" data-copy-close>حسنًا</button></div>
+      <div class="actions" style="margin-top:1rem">
+        <button class="btn gold" data-copy-close>حسنًا</button>
+      </div>
     </div>`;
     document.body.appendChild(host);
     const ta=host.querySelector("textarea");
