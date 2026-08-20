@@ -1056,49 +1056,6 @@ body.show-top-user .tb-user{
 .app-confirm-copy{white-space:pre-line}
 .app-copy-box{width:100%;min-height:7.5rem;margin-top:.8rem;padding:.75rem .85rem;resize:vertical;border:1px solid #D8CEBB;border-radius:var(--r-sm);background:rgba(255,253,247,.82);color:var(--ink);font-family:var(--sans);font-size:.8rem;line-height:1.8;direction:ltr;text-align:left}
 .app-copy-box:focus{outline:none;border-color:var(--gold);background:#fff;box-shadow:0 0 0 4px rgba(197,154,74,.13)}
-
-
-/* ═══ قارئ زاد الخير · تكامل v1 ═══
-   المركز: القرآن العظيم. موضع التعليمات السابق: حساب المستخدم/ختماتي.
-   التعليمات تنتقل إلى أسفل الصفحة. لا تغيير في بقية تخطيط التطبيق. */
-.tb-reader{
-  position:absolute;left:50%;transform:translateX(-50%);z-index:2;
-  -webkit-appearance:none;appearance:none;border:0;background:transparent;
-  min-height:36px;max-width:42%;padding:.22rem .65rem;border-radius:10px;
-  color:var(--gold-hi);font-family:var(--ruqaa);font-size:1.06rem;font-weight:700;
-  line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;
-  text-shadow:0 2px 12px rgba(0,0,0,.22);transition:background .18s,color .18s
-}
-.tb-reader:hover{background:rgba(228,201,128,.07)}
-.tb-reader:focus-visible{outline:3px solid rgba(197,154,74,.3);outline-offset:2px}
-/* tb-user occupies exactly the old help slot instead of the centre. */
-.tb-user{
-  position:relative!important;inset:auto!important;transform:none!important;
-  display:block!important;max-width:min(30vw,220px)!important;margin:0!important;
-  opacity:0;pointer-events:none;text-align:center
-}
-body.show-home-mine .tb-user,body.show-top-user .tb-user{opacity:1;transform:none!important;pointer-events:auto}
-/* Its menu now opens from the same side rather than from the old centre position. */
-.tb-popover{left:auto;inset-inline-end:max(.7rem,calc((100vw - 1220px)/2));transform:none}
-.app-help-footer{position:relative;z-index:2;width:min(1180px,calc(100% - 2rem));margin:1.6rem auto calc(1.3rem + env(safe-area-inset-bottom));text-align:center}
-.bottom-help{
-  -webkit-appearance:none;appearance:none;border:0;background:transparent;color:rgba(255,249,234,.58);
-  padding:.55rem .8rem;border-radius:10px;font-family:var(--sans);font-size:.68rem;cursor:pointer
-}
-.bottom-help:hover{color:var(--gold-hi);background:rgba(228,201,128,.06)}
-.bottom-help:focus-visible{outline:3px solid rgba(197,154,74,.25);outline-offset:2px}
-.bottom-help .zk-icon{width:.92rem;height:.92rem;vertical-align:-.18em;margin-inline-start:.25rem}
-@media(max-width:680px){
-  .tb-reader{max-width:44%;font-size:1rem;padding-inline:.35rem}
-  .tb-user{max-width:27vw!important}
-  .tb-popover{inset-inline-end:.7rem;width:min(330px,calc(100vw - 1.4rem))}
-  .app-help-footer{margin-top:1.25rem}
-}
-@media(max-width:390px){
-  .tb-reader{font-size:.94rem;max-width:43%}
-  .tb-user{max-width:25vw!important}
-}
-
 </style>
 
 
@@ -1108,15 +1065,13 @@ body.show-home-mine .tb-user,body.show-top-user .tb-user{opacity:1;transform:non
 <body>
 <div class="topbar">
   <button class="tb-brand" id="tb-home" type="button" aria-label="الصفحة الرئيسية">زاد الخير</button>
-  <button class="tb-reader" id="tb-reader" type="button" aria-label="فتح القرآن العظيم">القرآن العظيم</button>
   <button class="tb-user" id="tb-user" type="button" aria-live="polite" aria-haspopup="menu" aria-expanded="false"></button>
+  <button class="tb-help" id="btn-help" aria-label="تعليمات">
+    <span>تعليمات</span><i><svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.35 8.5a3.05 3.05 0 0 1 5.82 1.28c0 2.22-3.17 2.48-3.17 4.45"/><path d="M12 18.2h.01"/><path d="M12 2.7c5.8 0 8.7 3.1 8.7 9.3s-2.9 9.3-8.7 9.3S3.3 18.2 3.3 12 6.2 2.7 12 2.7Z"/></svg></i></button>
 </div>
 <div class="tb-popover" id="tb-popover" role="menu" hidden></div>
 <div class="bg-veil" aria-hidden="true"></div>
 <div class="wrap" id="app"></div>
-<footer class="app-help-footer">
-  <button class="bottom-help" id="btn-help" type="button" aria-label="تعليمات">تعليمات <svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.35 8.5a3.05 3.05 0 0 1 5.82 1.28c0 2.22-3.17 2.48-3.17 4.45"/><path d="M12 18.2h.01"/><path d="M12 2.7c5.8 0 8.7 3.1 8.7 9.3s-2.9 9.3-8.7 9.3S3.3 18.2 3.3 12 6.2 2.7 12 2.7Z"/></svg></button>
-</footer>
 <div id="layer"></div>
 <div class="toast" id="toast"></div>
 
@@ -1217,16 +1172,7 @@ const JUZ_START=[
   [21,1],  [23,1],  [25,21], [27,56], [29,46], [33,31], [36,28], [39,32],
   [41,47], [46,1],  [51,31], [58,1],  [67,1],  [78,1],
 ];
-function readerLink(j=null,khatmahCode=code){
-  const q=new URLSearchParams();
-  const n=Number(j);
-  if(n>=1&&n<=30) q.set("juz",String(n));
-  const c=String(khatmahCode||"").trim().toUpperCase();
-  if(c) q.set("code",c);
-  const tail=q.toString();
-  return "reader.html"+(tail?"?"+tail:"");
-}
-const readLink=j=>readerLink(j);
+const readLink=j=>`https://quran.com/ar/${JUZ_START[j-1][0]}?startingVerse=${JUZ_START[j-1][1]}`;
 
 
 
@@ -2482,10 +2428,10 @@ function openSheet(i){
       <div class="grip"></div>
       <h3>الجزء ${ar(i+1)}</h3>
       <div class="range">${JUZ[i]}</div>
-      <a class="readbtn" href="${readLink(i+1)}">
+      <a class="readbtn" href="${readLink(i+1)}" target="_blank" rel="noopener">
         <span class="rb-icon">${BOOK_ICON}</span>
         <span class="rb-text">اقرأ الجزء</span>
-        <span class="rb-src">قارئ زاد الخير</span>
+        <span class="rb-src">من موقع <bdi>quran.com</bdi></span>
         <span class="rb-fill"></span>
       </a>
       <div class="ward">
@@ -3669,8 +3615,6 @@ async function boot(){
 document.getElementById("btn-help").onclick=helpDialog;
 const tbHome=document.getElementById("tb-home");
 if(tbHome) tbHome.onclick=goHome;
-const tbReader=document.getElementById("tb-reader");
-if(tbReader) tbReader.onclick=()=>{ location.href=readerLink(null,code); };
 const tbUser=document.getElementById("tb-user");
 if(tbUser) tbUser.onclick=e=>{e.stopPropagation();toggleTopMenu();};
 const tbPopover=document.getElementById("tb-popover");
