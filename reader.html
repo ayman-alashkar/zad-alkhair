@@ -13,14 +13,16 @@
 <meta property="og:url" content="https://ayman-alashkar.github.io/zad-alkhair/reader.html">
 <meta property="og:title" content="القرآن العظيم | زاد الخير">
 <meta property="og:description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
-<meta property="og:image" content="https://ayman-alashkar.github.io/zad-alkhair/social/reader-general.png">
+<meta property="og:image" content="https://ayman-alashkar.github.io/zad-alkhair/social/reader-general.jpg">
+<meta property="og:image:secure_url" content="https://ayman-alashkar.github.io/zad-alkhair/social/reader-general.jpg">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="675">
 <meta property="og:image:alt" content="القرآن العظيم — قارئ زاد الخير">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="القرآن العظيم | زاد الخير">
 <meta name="twitter:description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
-<meta name="twitter:image" content="https://ayman-alashkar.github.io/zad-alkhair/social/reader-general.png">
+<meta name="twitter:image" content="https://ayman-alashkar.github.io/zad-alkhair/social/reader-general.jpg">
 
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 
@@ -158,6 +160,7 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 /* Visual nudge only: move the Bismillah a little lower without changing
    the QCF line metrics used by fitPage(). */
 .bismillah-line{font-family:"QCF4_Hafs_01";line-height:1.25;margin:.04em 0 .12em;position:relative;color:var(--quran);transform:translateY(3px)}
+.bismillah-original{display:inline}.bismillah-desktop{display:none}
 .verse-segment{
   display:inline-flex;direction:rtl;align-items:center;
   user-select:none;-webkit-user-select:none;touch-action:pan-y;
@@ -1243,6 +1246,81 @@ html[data-theme="dark"] .tafsir-fadl summary{color:var(--gold-hi)}
 html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)}
 .tafsir-status{font-size:10px;color:var(--ui-muted);padding:8px 0}
 
+
+/* ---------- v76 · professional single-page desktop ----------
+   Keep desktop reading mode based on input capability, not viewport width.
+   A laptop remains in this layout even when its browser window is narrow;
+   touch phones keep the approved mobile layout. */
+@media (hover:hover) and (pointer:fine){
+  .page{overflow:hidden}
+  .page-stage{
+    overflow-x:hidden;
+    overflow-y:auto;
+    align-items:flex-start !important;
+    justify-content:center;
+    scrollbar-width:thin;
+    scrollbar-color:color-mix(in srgb,var(--gold) 28%,transparent) transparent;
+  }
+  .page-stage::-webkit-scrollbar{width:7px}
+  .page-stage::-webkit-scrollbar-track{background:transparent}
+  .page-stage::-webkit-scrollbar-thumb{
+    background:color-mix(in srgb,var(--gold) 24%,transparent);
+    border-radius:999px
+  }
+  .mushaf{
+    width:min(700px,calc(100vw - 48px));
+    max-width:700px;
+    height:auto;
+    min-height:100%;
+    margin-inline:auto;
+    padding:28px 0 88px;
+    justify-content:flex-start;
+    align-items:stretch;
+    gap:0 !important;
+  }
+
+  /* Surah artwork becomes a true row on desktop, so it can never cover ayat.
+     The mobile overlay remains unchanged outside this media query. */
+  .surah-line.banner-ready{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    line-height:0;
+    min-height:0;
+    margin:15px 0 12px;
+  }
+  .surah-line.banner-ready .surah-metric{
+    position:absolute;
+    visibility:hidden;
+    pointer-events:none;
+  }
+  .surah-line.banner-ready .surah-banner{
+    position:static;
+    left:auto;top:auto;
+    transform:none;
+    max-width:none;
+    height:auto;
+  }
+  .page[data-page="1"] .surah-banner{transform:none}
+
+  /* Desktop Bismillah keeps the native QCF calligraphy.
+     Use the clean standalone glyph used on Al-Baqarah, not a fallback UI font. */
+  .bismillah-line{
+    transform:none;
+    line-height:1.20;
+    margin:3px 0 13px;
+  }
+  .bismillah-original{display:none}
+  .bismillah-desktop{display:inline}
+
+  /* Gentle breathing room without altering Quran line composition. */
+  .line:not(:has(.surah-line)):not(:has(.bismillah-line)){
+    margin-block:1px;
+  }
+}
+
 </style>
 </head>
 <body class="hidden-tools zad-identity">
@@ -1333,7 +1411,7 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 <script>
 (()=>{
 "use strict";
-/* v61 Social Preview
+/* v77 Production Reader
    Built directly on the approved v56 reference. Visual/QCF layout contracts are unchanged; production dependencies are hardened and tafsir is lazy-loaded locally.
 
    Invariants:
@@ -1838,7 +1916,13 @@ function renderPage(data){
       // glyph becomes blank on later pages. The source data itself omits the
       // Bismillah before At-Tawbah, so the Mushaf convention is preserved.
       inner.style.fontFamily=`"${first.font||"QCF4_Hafs_01"}"`;
-      inner.textContent=first.char;
+      const originalBasm=document.createElement("span");
+      originalBasm.className="bismillah-original";
+      originalBasm.textContent=first.char;
+      const desktopBasm=document.createElement("span");
+      desktopBasm.className="bismillah-desktop";
+      desktopBasm.textContent="";
+      inner.append(originalBasm,desktopBasm);
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
 
@@ -1891,12 +1975,39 @@ function fitPage(p){
   const base=p<=2?112:104;
   const surahBase=p<=2?116:108;
   const basBase=p<=2?102:96;
+  const desktop=window.matchMedia("(hover:hover) and (pointer:fine)").matches;
 
   normal.forEach(x=>x.style.fontSize=base+"px");
   const surahs=[...host.querySelectorAll(".surah-line")];
   const bases=[...host.querySelectorAll(".bismillah-line")];
   surahs.forEach(x=>x.style.fontSize=surahBase+"px");
   bases.forEach(x=>x.style.fontSize=basBase+"px");
+
+  if(desktop){
+    requestAnimationFrame(()=>{
+      host.style.justifyContent="flex-start";
+      host.style.gap="0px";
+
+      const targetW=Math.min(host.clientWidth*.985,690);
+      const maxW=Math.max(...normal.map(x=>x.getBoundingClientRect().width),1);
+      const scale=Math.min(1,targetW/maxW);
+
+      normal.forEach(x=>x.style.fontSize=(base*scale)+"px");
+      surahs.forEach(x=>x.style.fontSize=(surahBase*scale)+"px");
+      bases.forEach(x=>x.style.fontSize=(basBase*scale)+"px");
+
+      requestAnimationFrame(()=>{
+        surahs.forEach(line=>{
+          const banner=line.querySelector("canvas.surah-banner");
+          if(!banner)return;
+          renderSurahHeaderCanvas(banner,banner.dataset.glyph);
+          /* Match the frame to the Quran text block, not to viewport height. */
+          banner.style.width=Math.min(targetW*.965,host.clientWidth*.965)+"px";
+        });
+      });
+    });
+    return;
+  }
 
   requestAnimationFrame(()=>{
     // Always measure from a neutral layout. Otherwise a gap calculated by a
@@ -2022,6 +2133,12 @@ async function go(p){
     await ensurePage(target);
     clearVerseSelection();
     currentPage=target;updatePage(true);
+    if(window.matchMedia("(hover:hover) and (pointer:fine)").matches){
+      requestAnimationFrame(()=>{
+        const s=document.querySelector(`.page[data-page="${target}"] .page-stage`);
+        if(s)s.scrollTop=0;
+      });
+    }
     prefetchAround(target).then(()=>trimPageDom(target));
   }catch(e){console.error("QCF page load failed",target,e);showToast("تعذّر تحميل الصفحة "+ar(target))}
   finally{navigationBusy=false}

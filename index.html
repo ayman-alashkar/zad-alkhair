@@ -1218,10 +1218,17 @@ const JUZ_START=[
   [41,47], [46,1],  [51,31], [58,1],  [67,1],  [78,1],
 ];
 function readerLink(j=null,khatmahCode=code){
-  const q=new URLSearchParams();
   const n=Number(j);
-  if(n>=1&&n<=30) q.set("juz",String(n));
   const c=String(khatmahCode||"").trim().toUpperCase();
+
+  if(n>=1&&n<=30){
+    const q=new URLSearchParams();
+    if(c) q.set("code",c);
+    const tail=q.toString();
+    return `juz/${n}/`+(tail?"?"+tail:"");
+  }
+
+  const q=new URLSearchParams();
   if(c) q.set("code",c);
   const tail=q.toString();
   return "reader.html"+(tail?"?"+tail:"");
