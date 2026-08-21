@@ -402,6 +402,23 @@ html[data-theme="dark"] .quran-index{--index-separator:color-mix(in srgb,var(--u
 .quran-index-close{width:38px;height:38px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-accent-soft);color:var(--chrome-text);display:grid;place-items:center;padding:0}
 .quran-index-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
 .quran-index-tabs{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--ui-line);background:color-mix(in srgb,var(--paper) 97%,var(--ui-surface-2))}
+.quran-index-share-hint{
+  flex:0 0 auto;min-height:25px;display:grid;place-items:center;padding:4px 12px 5px;
+  font-family:"Alexandria",system-ui,sans-serif;font-size:9.5px;font-weight:500;
+  color:var(--muted);background:color-mix(in srgb,var(--paper) 98%,var(--ui-surface-2));
+  border-bottom:1px solid color-mix(in srgb,var(--ui-line) 70%,transparent);
+}
+.quran-index-share-pop{
+  position:fixed;z-index:135;display:none;transform:translate(-50%,-100%);
+  border:1px solid color-mix(in srgb,var(--ui-gold) 42%,var(--ui-line));border-radius:999px;
+  padding:8px 15px;background:var(--brand);color:#FFF9EA;
+  box-shadow:0 10px 28px rgba(0,0,0,.22);font:600 11px "Alexandria",system-ui,sans-serif;
+  white-space:nowrap;touch-action:manipulation;
+}
+.quran-index-share-pop.show{display:block}
+.quran-index-share-pop:active{transform:translate(-50%,-100%) scale(.97)}
+html[data-theme="dark"] .quran-index-share-pop{background:var(--gold-hi);color:#17372F;border-color:rgba(255,249,234,.20)}
+
 .quran-index-tab{height:46px;border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:600;position:relative}
 .quran-index-tab.active{color:var(--index-accent-strong)}
 .quran-index-tab.active:after{content:"";position:absolute;left:18%;right:18%;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--ui-gold)}
@@ -1411,7 +1428,7 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 <script>
 (()=>{
 "use strict";
-/* v77 Production Reader
+/* v78 Index Social Sharing
    Built directly on the approved v56 reference. Visual/QCF layout contracts are unchanged; production dependencies are hardened and tafsir is lazy-loaded locally.
 
    Invariants:
@@ -2240,7 +2257,20 @@ async function verseTextFull(k,pageHint=null){
   }
   return out.length?out.join(" "):verseTextCached(k);
 }
-function linkFor(k){return location.origin+location.pathname+"#ayah="+encodeURIComponent(k)}
+function publicSurahUrl(s,ayah=null){
+  const n=Number(s),u=new URL(`surah/${n}/`,new URL("./",location.href));
+  const a=Number(ayah);
+  if(Number.isInteger(a)&&a>=1)u.searchParams.set("ayah",String(a));
+  return u.href;
+}
+function publicJuzUrl(j){
+  const n=Number(j);
+  return new URL(`juz/${n}/`,new URL("./",location.href)).href;
+}
+function linkFor(k){
+  const [s,a]=String(k||"").split(":").map(Number);
+  return publicSurahUrl(s,a);
+}
 function ayahFromHash(){
   const m=location.hash.match(/^#ayah=(\d{1,3}):(\d{1,3})$/);
   if(!m)return null;
@@ -2433,6 +2463,7 @@ function openQuranIndex(initialTab="s"){
   const panel=document.createElement("section");panel.className="quran-index";panel.setAttribute("aria-label","الفهرس");
   panel.innerHTML=`<div class="quran-index-head"><div class="quran-index-title">الفهرس</div><button class="quran-index-close" type="button" aria-label="إغلاق"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="quran-index-tabs" role="tablist"><button class="quran-index-tab active" type="button" data-tab="s">سورة</button><button class="quran-index-tab" type="button" data-tab="j">الجزء</button></div>
+    <div class="quran-index-share-hint" id="quranIndexShareHint">(اضغط مطولًا على السورة للمشاركة)</div>
     <div class="quran-index-viewport" id="quranIndexViewport">
       <div class="quran-index-track" id="quranIndexTrack">
         <div class="quran-index-pane" data-pane="j"><div class="quran-index-scroll quran-index-juz-list" id="quranJuzList"></div></div>
@@ -2445,6 +2476,68 @@ function openQuranIndex(initialTab="s"){
   let alive=true,activeTab="",ix=0,iy=0;
   const close=()=>{alive=false;panel.remove()};panel.querySelector(".quran-index-close").onclick=close;
   const currentJuz=()=>juzForPage(currentPage);
+
+  const shareHint=panel.querySelector("#quranIndexShareHint");
+  const sharePop=document.createElement("button");
+  sharePop.type="button";sharePop.className="quran-index-share-pop";sharePop.textContent="مشاركة";
+  panel.appendChild(sharePop);
+  let sharePayload=null,shareAnchor=null;
+
+  function hideIndexShare(){
+    sharePop.classList.remove("show");sharePayload=null;shareAnchor=null;
+  }
+  function positionIndexShare(anchorEl){
+    if(!anchorEl?.isConnected)return;
+    const r=anchorEl.getBoundingClientRect(),w=window.innerWidth,h=window.innerHeight;
+    const x=Math.max(72,Math.min(w-72,r.left+r.width/2));
+    let y=r.top-7,below=false;
+    if(y<86){y=r.bottom+45;below=true}
+    sharePop.style.left=`${x}px`;sharePop.style.top=`${Math.min(h-18,y)}px`;
+    sharePop.style.transform=below?"translate(-50%,-100%)":"translate(-50%,-100%)";
+  }
+  function showIndexShare(anchorEl,payload){
+    shareAnchor=anchorEl;sharePayload=payload;positionIndexShare(anchorEl);
+    sharePop.classList.add("show");
+    try{navigator.vibrate?.(18)}catch(_){}
+  }
+  async function shareIndexPayload(payload){
+    if(!payload?.url)return;
+    try{
+      if(navigator.share)await navigator.share({title:payload.title,url:payload.url});
+      else await copyText(payload.url,"تم نسخ رابط المشاركة");
+    }catch(e){if(e?.name!=="AbortError")showToast("تعذّرت المشاركة الآن")}
+  }
+  sharePop.onclick=async e=>{
+    e.stopPropagation();const p=sharePayload;hideIndexShare();await shareIndexPayload(p);
+  };
+  function consumeIndexHold(el){
+    if(el?.dataset?.shareHold!=="1")return false;
+    delete el.dataset.shareHold;return true;
+  }
+  function bindIndexLongPress(el,payloadFactory){
+    let timer=0,sx=0,sy=0,pointerId=null;
+    const clear=()=>{if(timer){clearTimeout(timer);timer=0}};
+    el.addEventListener("pointerdown",e=>{
+      if(e.pointerType==="mouse"&&e.button!==0)return;
+      hideIndexShare();sx=e.clientX;sy=e.clientY;pointerId=e.pointerId;
+      timer=setTimeout(()=>{
+        timer=0;el.dataset.shareHold="1";showIndexShare(el,payloadFactory());
+      },520);
+    });
+    el.addEventListener("pointermove",e=>{
+      if(pointerId!==e.pointerId||!timer)return;
+      if(Math.hypot(e.clientX-sx,e.clientY-sy)>12)clear();
+    },{passive:true});
+    el.addEventListener("pointerup",e=>{if(pointerId===e.pointerId)clear()},{passive:true});
+    el.addEventListener("pointercancel",clear,{passive:true});
+    el.addEventListener("contextmenu",e=>{
+      if(el.dataset.shareHold==="1")e.preventDefault();
+    });
+  }
+  panel.addEventListener("pointerdown",e=>{
+    if(e.target!==sharePop&&!e.target.closest?.(".quran-index-row,.juz-accordion-head"))hideIndexShare();
+  },{passive:true});
+  panel.querySelectorAll(".quran-index-scroll").forEach(x=>x.addEventListener("scroll",hideIndexShare,{passive:true}));
 
   function centerIndexItem(host,item){
     if(!host||!item)return;
@@ -2468,7 +2561,8 @@ function openQuranIndex(initialTab="s"){
       const ch=e.ch,start=e.page,end=Number(ch.pages?.[1]||start),isCurrent=currentPage>=start&&currentPage<=end;
       const row=document.createElement("button");row.type="button";row.className="quran-index-row"+(isCurrent?" current":"");
       row.innerHTML=`<span class="quran-index-surah-num">${ar(ch.id)}</span><span class="quran-index-main"><span class="quran-index-name">سورة ${escapeHtml(ch.name_arabic)}</span><span class="quran-index-meta">${revelationArabic(ch.revelation_place)} - ${ar(ch.verses_count)} آية</span></span><span class="quran-index-page">${ar(start)}</span>`;
-      row.onclick=async()=>{close();await go(start)};frag.appendChild(row);
+      bindIndexLongPress(row,()=>({title:`سورة ${ch.name_arabic} | زاد الخير`,url:publicSurahUrl(ch.id)}));
+      row.onclick=async()=>{if(consumeIndexHold(row))return;close();await go(start)};frag.appendChild(row);
     }
     surahHost.appendChild(frag);surahHost.dataset.ready="1";
     const current=surahHost.querySelector(".quran-index-row.current");if(current)centerIndexItem(surahHost,current);
@@ -2532,7 +2626,8 @@ function openQuranIndex(initialTab="s"){
       const head=document.createElement("button");head.type="button";head.className="juz-accordion-head"+(j===cur?" current":"");head.setAttribute("aria-expanded","false");
       head.innerHTML=`<span class="juz-accordion-title"><b>الجزء ${ar(j)}</b><small>الصفحات ${ar(from)}–${ar(to)}</small></span><span class="juz-accordion-page">${ar(from)}–${ar(to)}</span><span class="juz-accordion-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>`;
       const body=document.createElement("div");body.className="juz-accordion-body";body.innerHTML='<div class="juz-accordion-body-inner"></div>';
-      head.onclick=()=>toggleJuz(section);section.append(head,body);frag.appendChild(section);
+      bindIndexLongPress(head,()=>({title:`الجزء ${ar(j)} | زاد الخير`,url:publicJuzUrl(j)}));
+      head.onclick=()=>{if(consumeIndexHold(head))return;toggleJuz(section)};section.append(head,body);frag.appendChild(section);
     }
     juzHost.appendChild(frag);juzHost.dataset.ready="1";
     const current=juzHost.querySelector(".juz-accordion-head.current");if(current)centerIndexItem(juzHost,current);
@@ -2545,6 +2640,8 @@ function openQuranIndex(initialTab="s"){
     // Move to the requested pane first, then populate it. Keeping the viewport
     // LTR makes the two physical pane positions deterministic while each pane
     // itself remains RTL for Arabic content.
+    hideIndexShare();
+    shareHint.textContent=kind==="j"?"(اضغط مطولًا على الجزء للمشاركة)":"(اضغط مطولًا على السورة للمشاركة)";
     if(kind==="j"){slider.classList.add("show-juz");drawJuz()}
     else{slider.classList.remove("show-juz");drawSurahs()}
     viewport.scrollLeft=0;
