@@ -319,8 +319,18 @@ body.player-on.player-expanded .audio-panel{display:block}
 .audio-now{
   margin:11px 2px 3px;font-size:10px;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
 }
-.audio-progress{height:3px;border-radius:99px;background:color-mix(in srgb,var(--chrome-text) 13%,transparent);overflow:hidden}
-.audio-progress i{display:block;height:100%;width:0;background:var(--gold-hi)}
+.audio-progress-row{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;gap:8px;align-items:center;direction:ltr!important}
+.audio-progress-time{font-size:9px;line-height:1;color:var(--ui-muted);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:center;direction:ltr;unicode-bidi:isolate}
+.audio-progress{position:relative;height:22px;direction:ltr!important;display:flex;align-items:center}
+.audio-progress:before{content:"";position:absolute;left:0;right:0;top:50%;height:3px;transform:translateY(-50%);border-radius:99px;background:color-mix(in srgb,var(--chrome-text) 13%,transparent)}
+.audio-progress i{position:absolute;left:0;top:50%;height:3px;width:0;transform:translateY(-50%);border-radius:99px;background:var(--gold-hi);pointer-events:none}
+.audio-progress input[type="range"]{position:absolute;inset:0;width:100%;height:22px;margin:0;appearance:none;-webkit-appearance:none;background:transparent;cursor:pointer;touch-action:none}
+.audio-progress input[type="range"]::-webkit-slider-runnable-track{height:22px;background:transparent;border:0}
+.audio-progress input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;margin-top:4.5px;border-radius:50%;background:var(--gold-hi);border:2px solid var(--ui-surface);box-shadow:0 1px 5px rgba(0,0,0,.22)}
+.audio-progress input[type="range"]::-moz-range-track{height:22px;background:transparent;border:0}
+.audio-progress input[type="range"]::-moz-range-progress{background:transparent}
+.audio-progress input[type="range"]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--gold-hi);border:2px solid var(--ui-surface);box-shadow:0 1px 5px rgba(0,0,0,.22)}
+.audio-progress input[type="range"]:focus-visible{outline:2px solid color-mix(in srgb,var(--gold) 45%,transparent);outline-offset:3px;border-radius:999px}
 .audio-controls{
   margin-top:13px;display:grid;grid-template-columns:52px 1fr 66px 1fr 48px 56px;gap:6px;align-items:center
 }
@@ -362,6 +372,10 @@ body.player-on.player-expanded .audio-panel{display:block}
 .source{font-size:9px;color:#837B70;border-top:1px solid #EADCC4;padding-top:8px;margin-top:11px}
 .source-line{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .tafsir-more{border:0;background:transparent;color:var(--green);font:600 8px Alexandria,system-ui,sans-serif;padding:2px 0;text-decoration:underline;text-underline-offset:2px}
+.tafsir-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:14px}
+.tafsir-nav-btn{min-width:92px;height:34px;border:1px solid var(--ui-line);border-radius:999px;background:var(--ui-surface-2);color:var(--ui-text);padding:0 12px;font:500 9px Alexandria,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.tafsir-nav-btn:active{background:var(--ui-accent-soft)}
+.tafsir-nav-btn:disabled{opacity:.32;cursor:default}
 .author-bio{font-family:Amiri,serif;font-size:18px;line-height:2;margin-top:12px}
 .author-note{margin-top:13px;padding:10px 12px;border-radius:14px;background:#F3E9D6;color:#695E4C;font-size:11px;line-height:1.8}
 .bookmark-sections{display:grid;gap:16px;margin-top:12px}
@@ -496,7 +510,7 @@ html[data-theme="dark"]{color-scheme:dark}
 .tool.primary,.zad-identity .tool.primary,.audio-main,.audio-fab{background:linear-gradient(135deg,var(--gold-hi),var(--gold));color:#19332C;border-color:var(--gold);box-shadow:0 15px 32px -18px rgba(132,89,22,.48)}
 .audio-panel{background:var(--ui-surface);border-color:color-mix(in srgb,var(--gold) 24%,var(--ui-line));color:var(--ui-text)}
 .audio-collapse,.audio-round,.audio-control,.audio-pill,.audio-qari{background:color-mix(in srgb,var(--ui-surface) 88%,var(--ui-surface-2));color:var(--ui-text);border-color:var(--ui-line)}
-.audio-progress{background:color-mix(in srgb,var(--ui-line) 62%,transparent)}
+.audio-progress:before{background:color-mix(in srgb,var(--ui-line) 62%,transparent)}
 .audio-progress i{background:var(--gold-hi)}
 .audio-repeat.active,.audio-continuous.active{color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px rgba(15,92,80,.24)}
 .ayah-menu{background:var(--brand-strong);border-color:rgba(228,201,128,.32)}
@@ -980,9 +994,10 @@ html:not([data-theme="dark"]) .hizb-ring.start{
     grid-column:1;grid-row:2;
     margin:3px 3px 1px;font-size:11.5px;line-height:1.6;
   }
-  .audio-progress{
-    grid-column:1/-1;grid-row:3;height:4px;margin-top:5px;
+  .audio-progress-row{
+    grid-column:1/-1;grid-row:3;margin-top:5px;
   }
+  .audio-progress:before,.audio-progress i{height:4px}
   .audio-controls{
     grid-column:2;grid-row:1/3;
     margin:0;display:grid;
@@ -1150,12 +1165,14 @@ html:not([data-theme="dark"]) .audio-control:not(.audio-main){
   background:rgba(255,253,247,.34) !important;
   border-color:rgba(114,76,43,.12);
 }
-html:not([data-theme="dark"]) .audio-progress{
+html:not([data-theme="dark"]) .audio-progress:before{
   background:rgba(114,76,43,.10);
 }
-html:not([data-theme="dark"]) .audio-progress i{
+html:not([data-theme="dark"]) .audio-progress i,
+html:not([data-theme="dark"]) .audio-progress input[type="range"]::-webkit-slider-thumb{
   background:#C08A2B;
 }
+html:not([data-theme="dark"]) .audio-progress input[type="range"]::-moz-range-thumb{background:#C08A2B}
 /* State controls use green only when they are actually active. */
 html:not([data-theme="dark"]) .audio-repeat.active,
 html:not([data-theme="dark"]) .audio-continuous.active{
@@ -1373,7 +1390,14 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
     </button>
   </div>
   <div class="audio-now" id="audioNow">—</div>
-  <div class="audio-progress"><i id="progressFill"></i></div>
+  <div class="audio-progress-row" aria-label="تقدم التلاوة">
+    <span class="audio-progress-time" id="audioTimeCurrent" dir="ltr">٠:٠٠</span>
+    <div class="audio-progress">
+      <i id="progressFill"></i>
+      <input id="progressSeek" type="range" min="0" max="1000" value="0" step="1" dir="ltr" aria-label="الانتقال في التلاوة">
+    </div>
+    <span class="audio-progress-time" id="audioTimeTotal" dir="ltr">٠:٠٠</span>
+  </div>
   <div class="audio-controls">
     <button type="button" class="audio-pill" id="speedBtn">1.0×</button>
     <button type="button" class="audio-control" id="audioPrev" aria-label="الآية السابقة">
@@ -1400,7 +1424,8 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 <script>
 (()=>{
 "use strict";
-/* v78 Index Social Sharing
+/* v79 Progress Scrubbing + Tafsir Navigation
+   Based on v78 Index Social Sharing.
    Built directly on the approved v56 reference. Visual/QCF layout contracts are unchanged; production dependencies are hardened and tafsir is lazy-loaded locally.
 
    Invariants:
@@ -2436,28 +2461,67 @@ function openAuthorInfo(){
     د. وهبة الزحيلي عالم وفقيه سوري وأستاذ جامعي، عُرف بمؤلفاته في الفقه وأصوله والتفسير. ومن كتبه «التفسير الوجيز»، الذي يقدّم معاني الآيات بأسلوب مختصر وواضح.
   </div><div class="author-note">اعتمدنا في إعداد هذا النص على النسخة المصوَّرة المتاحة من الكتاب، إذ لا تتوفر نسخة رقمية رسمية منشورة على الإنترنت. وقد نُقِّح النص بعناية قدر الإمكان، لكن الخطأ وارد، وجلَّ من لا يخطئ؛ فإذا لاحظت أي خطأ أو اختلاف بين النص هنا ونص كتاب «التفسير الوجيز»، فنرجو تنبيهنا إلى ذلك.</div>`);
 }
+async function focusVerseForTafsir(key){
+  const p=await getVersePage(key).catch(()=>null);
+  if(p){
+    await ensurePage(p);
+    if(p!==currentPage){
+      currentPage=p;updatePage(true);
+      prefetchAround(p).then(()=>trimPageDom(p));
+    }
+  }
+  let matches=[...document.querySelectorAll(`.page[data-page="${p||currentPage}"] .verse-segment[data-key="${key}"]`)];
+  if(!matches.length)matches=[...document.querySelectorAll(`.verse-segment[data-key="${key}"]`)];
+  document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
+  matches.forEach(x=>x.classList.add("selected"));
+  selectedKey=key;selectedAnchor=matches[0]||null;
+}
 async function openTafsir(){
   if(!selectedKey){showToast("اختر آية أولًا");return}
-  const key=selectedKey,v=verseParts(key);
-  try{
-    const record=await tafsirAyahRecord(key);
-    // The selection may have changed while the local record was being resolved.
-    if(selectedKey!==key)return;
-    if(!record){showToast("لم يُعثر على تفسير هذه الآية");return}
-    let fadl=null;try{fadl=await tafsirFadlForSurah(v.s)}catch(fadlErr){console.warn("tafsir fadl unavailable",fadlErr)}
-    const fadlHtml=fadl?`<details class="tafsir-fadl">
-      <summary>${escapeHtml("فضل سورة "+v.sname)}</summary>
-      <div class="tafsir-fadl-text">${escapeHtml(fadl.text||"")}</div>
-    </details>`:"";
-    const b=sheet("التفسير الوجيز",`<div class="ref">سورة ${escapeHtml(v.sname)} · الآية ${ar(v.a)}</div>
-      <div class="tafsir">${escapeHtml(record.text)}</div>
-      ${fadlHtml}
-      <div class="source"><div class="source-line"><span>د. وهبة الزحيلي</span><button class="tafsir-more" type="button">اقرأ المزيد</button></div></div>`);
-    b.querySelector(".tafsir-more").onclick=()=>{b.remove();openAuthorInfo()};
-  }catch(err){
-    console.error(err);
-    showToast("تعذر فتح التفسير");
+  const b=sheet("التفسير الوجيز",`<div class="tafsir-view"></div>`);
+  const view=b.querySelector(".tafsir-view");
+  let renderRequest=0;
+
+  async function render(key){
+    const request=++renderRequest,v=verseParts(key);
+    try{
+      const record=await tafsirAyahRecord(key);
+      if(request!==renderRequest||!b.isConnected)return;
+      if(!record){showToast("لم يُعثر على تفسير هذه الآية");return}
+      let fadl=null;try{fadl=await tafsirFadlForSurah(v.s)}catch(fadlErr){console.warn("tafsir fadl unavailable",fadlErr)}
+      if(request!==renderRequest||!b.isConnected)return;
+      const fadlHtml=fadl?`<details class="tafsir-fadl">
+        <summary>${escapeHtml("فضل سورة "+v.sname)}</summary>
+        <div class="tafsir-fadl-text">${escapeHtml(fadl.text||"")}</div>
+      </details>`:"";
+      const prev=previousAyahRef(v.s,v.a),next=nextAyahRef(v.s,v.a);
+      view.innerHTML=`<div class="ref">سورة ${escapeHtml(v.sname)} · الآية ${ar(v.a)}</div>
+        <div class="tafsir">${escapeHtml(record.text)}</div>
+        ${fadlHtml}
+        <div class="tafsir-nav">
+          <button class="tafsir-nav-btn" type="button" data-tafsir-nav="prev" ${prev?"":"disabled"}>‹ الآية السابقة</button>
+          <button class="tafsir-nav-btn" type="button" data-tafsir-nav="next" ${next?"":"disabled"}>الآية التالية ›</button>
+        </div>
+        <div class="source"><div class="source-line"><span>د. وهبة الزحيلي</span><button class="tafsir-more" type="button">اقرأ المزيد</button></div></div>`;
+      const sheetEl=b.querySelector(".sheet");if(sheetEl)sheetEl.scrollTop=0;
+      view.querySelector(".tafsir-more").onclick=()=>{b.remove();openAuthorInfo()};
+      view.querySelectorAll("[data-tafsir-nav]").forEach(btn=>btn.onclick=async()=>{
+        const ref=btn.dataset.tafsirNav==="prev"?previousAyahRef(v.s,v.a):nextAyahRef(v.s,v.a);
+        if(!ref||!b.isConnected)return;
+        const nextKey=`${ref.s}:${ref.a}`;
+        view.querySelectorAll("[data-tafsir-nav]").forEach(x=>x.disabled=true);
+        try{
+          await focusVerseForTafsir(nextKey);
+          if(b.isConnected)await render(nextKey);
+        }catch(err){console.error(err);showToast("تعذر الانتقال إلى الآية")}
+      });
+    }catch(err){
+      console.error(err);
+      if(b.isConnected)showToast("تعذر فتح التفسير");
+    }
   }
+
+  await render(selectedKey);
 }
 document.getElementById("tafsirBtn").onclick=openTafsir;
 document.getElementById("bookmarkBtn").onclick=openBookmarks;
@@ -2824,6 +2888,80 @@ function mediaReady(){
   });
 }
 
+let progressSeeking=false;
+function formatAudioTime(seconds){
+  const total=Math.max(0,Math.floor(Number(seconds)||0));
+  const h=Math.floor(total/3600),m=Math.floor((total%3600)/60),sec=total%60;
+  const raw=h?`${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`:`${m}:${String(sec).padStart(2,"0")}`;
+  return ar(raw);
+}
+function timedSurahProgressMode(){
+  return continuousMode&&audio.dataset.playMode==="gapless"&&Array.isArray(activeTimingRows)&&activeTimingRows.length>0&&Number.isFinite(audio.duration)&&audio.duration>0;
+}
+function audioProgressScope(){
+  if(timedSurahProgressMode())return {start:0,end:audio.duration,current:audio.currentTime||0,surah:true};
+  if(activeSegment)return {start:activeSegment.start,end:activeSegment.end,current:audio.currentTime||activeSegment.start,surah:false};
+  if(Number.isFinite(audio.duration)&&audio.duration>0)return {start:0,end:audio.duration,current:audio.currentTime||0,surah:false};
+  return {start:0,end:0,current:0,surah:false};
+}
+function paintAudioProgress(value=null){
+  const scope=audioProgressScope(),span=Math.max(0,scope.end-scope.start);
+  const p=value===null?(span?Math.max(0,Math.min(1,(scope.current-scope.start)/span)):0):Math.max(0,Math.min(1,Number(value)||0));
+  const fill=document.getElementById("progressFill"),seek=document.getElementById("progressSeek");
+  if(fill)fill.style.width=(p*100)+"%";
+  if(seek&&!progressSeeking)seek.value=String(Math.round(p*1000));
+  const current=document.getElementById("audioTimeCurrent"),total=document.getElementById("audioTimeTotal");
+  if(current)current.textContent=formatAudioTime(span*p);
+  if(total)total.textContent=formatAudioTime(span);
+}
+function resetAudioProgress(){
+  progressSeeking=false;
+  const seek=document.getElementById("progressSeek");if(seek)seek.value="0";
+  const fill=document.getElementById("progressFill");if(fill)fill.style.width="0%";
+  const current=document.getElementById("audioTimeCurrent"),total=document.getElementById("audioTimeTotal");
+  if(current)current.textContent="٠:٠٠";if(total)total.textContent="٠:٠٠";
+}
+function completeAudioProgress(){
+  progressSeeking=false;
+  const scope=audioProgressScope(),span=Math.max(0,scope.end-scope.start);
+  const seek=document.getElementById("progressSeek");if(seek)seek.value="1000";
+  const fill=document.getElementById("progressFill");if(fill)fill.style.width="100%";
+  const current=document.getElementById("audioTimeCurrent"),total=document.getElementById("audioTimeTotal");
+  if(current)current.textContent=formatAudioTime(span);if(total)total.textContent=formatAudioTime(span);
+}
+function timingRowAt(seconds){
+  if(!Array.isArray(activeTimingRows)||!activeTimingRows.length)return null;
+  const t=Number(seconds)||0;
+  let chosen=activeTimingRows[0];
+  for(const row of activeTimingRows){
+    const start=Number(row.start_time)/1000,end=Number(row.end_time)/1000;
+    if(t>=start)chosen=row;
+    if(t>=start&&t<end)return row;
+    if(t<start)break;
+  }
+  return chosen;
+}
+function seekAudioProgress(value){
+  const scope=audioProgressScope(),span=Math.max(0,scope.end-scope.start);
+  if(!(span>0))return;
+  const p=Math.max(0,Math.min(1,Number(value)/1000)),target=scope.start+span*p;
+  if(scope.surah){
+    const row=timingRowAt(target);
+    if(row){
+      const a=Number(row.ayah);
+      activeSegment={start:Number(row.start_time)/1000,end:Number(row.end_time)/1000};
+      if(a&&a!==play.current){
+        play.current=a;play.repeatAyahLeft=play.repeatAyah;
+        updatePlayer();
+        const requestId=++playbackRequestId;
+        syncPlaybackSelectionInBackground(requestId);
+      }
+    }
+  }
+  try{audio.currentTime=target}catch(_){return}
+  paintAudioProgress(p);
+}
+
 function populateReciters(){
   const q=document.getElementById("panelQari");
   q.innerHTML=RECITERS.map(r=>`<option value="${escapeHtml(r.id)}" ${r.id===reciter.id?"selected":""}>${escapeHtml(r.name)}</option>`).join("");
@@ -2843,7 +2981,7 @@ function stopPlayer(){
   delete audio.dataset.source;delete audio.dataset.playMode;audio.removeAttribute("src");audio.load();
   audioPreload.removeAttribute("src");audioPreload.load();
   document.body.classList.remove("player-on","player-expanded","audio-playing");
-  document.getElementById("progressFill").style.width="0";
+  resetAudioProgress();
   clearSleepTimer();
 }
 function updatePlayer(){
@@ -2852,6 +2990,7 @@ function updatePlayer(){
   document.getElementById("speedBtn").textContent=(play.speed===1?"1.0":String(play.speed))+"×";
   document.getElementById("repeatBtn").classList.toggle("active",play.repeatAyah>1||play.repeatGroup>1);
   const c=document.getElementById("continuousBtn");if(c){c.classList.toggle("active",continuousMode);c.textContent=continuousMode?"مستمر":"متابعة"}
+  if(!progressSeeking)paintAudioProgress();
 }
 function syncPlay(){
   const paused=audio.paused;
@@ -2966,7 +3105,6 @@ function advanceTimedSegmentWithoutPause(){
   play.current=n.a;
   play.repeatAyahLeft=play.repeatAyah;
   activeSegment={start:Number(t.start_time)/1000,end:Number(t.end_time)/1000};
-  document.getElementById("progressFill").style.width="0";
   updatePlayer();
   const requestId=++playbackRequestId;
   syncPlaybackSelectionInBackground(requestId);
@@ -2976,7 +3114,7 @@ function advanceTimedSegmentWithoutPause(){
 async function playCurrent(expand=false){
   const requestId=++playbackRequestId;
   const keepExpanded=expand||document.body.classList.contains("player-expanded");
-  document.getElementById("progressFill").style.width="0";
+  resetAudioProgress();
   updatePlayer();showPlayer(keepExpanded);
   syncPlaybackSelectionInBackground(requestId);
 
@@ -3138,14 +3276,11 @@ async function finishCurrentAyah(){
       await playCurrent(false);return;
     }
   }
-  audio.pause();syncPlay();document.getElementById("progressFill").style.width="100%";
+  audio.pause();syncPlay();completeAudioProgress();
 }
 audio.ontimeupdate=()=>{
+  if(!progressSeeking)paintAudioProgress();
   if(activeSegment){
-    const span=Math.max(.01,activeSegment.end-activeSegment.start);
-    const p=Math.max(0,Math.min(1,(audio.currentTime-activeSegment.start)/span));
-    document.getElementById("progressFill").style.width=(p*100)+"%";
-
     // On the very last ayah of the Quran, do not cut the recording at the
     // timestamp boundary. If the reciter continues with a closing phrase,
     // let the source file finish naturally and handle completion in onended.
@@ -3162,10 +3297,22 @@ audio.ontimeupdate=()=>{
         Promise.resolve(finishCurrentAyah()).finally(()=>{segmentAdvancing=false});
       }
     }
-  }else if(audio.duration){
-    document.getElementById("progressFill").style.width=(Math.min(1,audio.currentTime/audio.duration)*100)+"%";
   }
 };
+const progressSeek=document.getElementById("progressSeek");
+progressSeek.addEventListener("pointerdown",()=>{progressSeeking=true});
+progressSeek.addEventListener("input",e=>{
+  progressSeeking=true;
+  paintAudioProgress(Number(e.target.value)/1000);
+});
+progressSeek.addEventListener("change",e=>{
+  seekAudioProgress(e.target.value);
+  progressSeeking=false;
+  paintAudioProgress();
+});
+progressSeek.addEventListener("pointercancel",()=>{progressSeeking=false;paintAudioProgress()});
+audio.addEventListener("loadedmetadata",()=>paintAudioProgress());
+audio.addEventListener("durationchange",()=>paintAudioProgress());
 audio.onplay=syncPlay;audio.onpause=syncPlay;
 audio.onended=async()=>{
   if(audio.dataset.playMode==="basmala"){
