@@ -1411,6 +1411,12 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .prayer-times-modal .prayer-head{text-align:center}
 @media(max-width:620px){.zk-launch-motto{transform:translateY(8px)}}
 @media(max-height:690px) and (max-width:620px){.zk-launch-motto{transform:translateY(5px)}}
+/* v103 · On a desktop browser narrowed into the mobile breakpoint, keep the
+   diagonal motto anchored at its approved vertical geometry instead of
+   compressing its 82px canvas upward. Touch/mobile layout remains unchanged. */
+@media(max-width:620px) and (hover:hover) and (pointer:fine){
+  .zk-launch-motto{width:min(230px,74%);height:82px;min-height:82px;transform:translateY(10px)}
+}
 </style>
 
 
@@ -1580,7 +1586,16 @@ function readerLink(j=null,khatmahCode=code){
   const tail=q.toString();
   return "reader.html"+(tail?"?"+tail:"");
 }
-const readLink=j=>readerLink(j);
+function sharedJuzLink(j,khatmahCode=code){
+  const n=Number(j);
+  if(!(n>=1&&n<=30)) return readerLink(j,khatmahCode);
+  const q=new URLSearchParams();
+  const c=String(khatmahCode||"").trim().toUpperCase();
+  if(c) q.set("code",c);
+  const tail=q.toString();
+  return `juz/${n}/`+(tail?`?${tail}`:"");
+}
+const readLink=j=>sharedJuzLink(j);
 
 
 
