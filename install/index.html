@@ -296,10 +296,20 @@
 
   /* Anonymous PWA install analytics: one random UUID per browser profile. */
   const ZK_PWA_ID='zad:pwa-install-id';
-  const ZK_PWA_ACCEPTED='zad:pwa-install-accepted-reported-v1';
   const ZK_SUPABASE_URL='https://webqpbcijjbawatykoxe.supabase.co';
   const ZK_SUPABASE_KEY='sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv';
-  const ZK_APP_VERSION='v106';
+  const ZK_APP_VERSION='v107';
+
+
+  try{
+    [
+      'zad:pwa-standalone-reported-v1',
+      'zad:pwa-standalone-reported-v2',
+      'zad:pwa-standalone-pending-v1',
+      'zad:pwa-standalone-pending-v2',
+      'zad:pwa-install-accepted-reported-v1'
+    ].forEach(k=>localStorage.removeItem(k));
+  }catch(_){ }
 
   function pwaUuid(){
     try{
@@ -323,14 +333,12 @@
   }
   async function recordInstallAccepted(){
     try{
-      if(localStorage.getItem(ZK_PWA_ACCEPTED)==='1') return;
       const id=pwaUuid();if(!id)return;
-      const r=await fetch(`${ZK_SUPABASE_URL}/rest/v1/rpc/record_pwa_install`,{
+      await fetch(`${ZK_SUPABASE_URL}/rest/v1/rpc/record_pwa_install`,{
         method:'POST',keepalive:true,
         headers:{'Content-Type':'application/json',apikey:ZK_SUPABASE_KEY,Authorization:`Bearer ${ZK_SUPABASE_KEY}`},
         body:JSON.stringify({p_device_id:id,p_platform:pwaPlatform(),p_event:'install_accepted',p_app_version:ZK_APP_VERSION})
       });
-      if(r.ok)localStorage.setItem(ZK_PWA_ACCEPTED,'1');
     }catch(_){ }
   }
 
