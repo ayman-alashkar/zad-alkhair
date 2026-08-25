@@ -1586,16 +1586,15 @@ const SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
 const BOT_USERNAME = "ZadAlkhair_Bot";
 
 
-/* ═══════════ PWA install analytics · v106 ═══════════
-   - A new Chromium install is recorded by install/index.html as install_accepted.
-   - Every installed app (old or new) records standalone_open from the real root page.
-   - If the app opens offline, the attempt remains pending locally and is retried
-     when connectivity returns. Normal browser visits are never counted. */
+/* ═══════════ PWA install analytics · v107 ═══════════
+   Supabase is the source of truth. The client persists only one anonymous UUID.
+   An installed app UPSERTs its own row on each real app launch. If offline, the
+   request simply fails harmlessly and the next launch / online event retries it.
+   Normal browser visits are never counted. */
 const PWA_INSTALL_ID_KEY="zad:pwa-install-id";
-const PWA_STANDALONE_SENT_KEY="zad:pwa-standalone-reported-v2";
-const PWA_STANDALONE_PENDING_KEY="zad:pwa-standalone-pending-v2";
-const PWA_APP_VERSION="v106";
+const PWA_APP_VERSION="v107";
 let pwaInstallReportBusy=false;
+let pwaInstallReportedThisPage=false;
 
 function pwaIsStandalone(){
   return window.matchMedia("(display-mode: standalone)").matches ||
@@ -1627,19 +1626,21 @@ function pwaInstallId(){
     return id;
   }catch(_){ return null; }
 }
-async function pwaReportStandalone(){
-  if(!pwaIsStandalone()||pwaInstallReportBusy) return;
+function pwaClearLegacyAnalyticsFlags(){
   try{
-    if(localStorage.getItem(PWA_STANDALONE_SENT_KEY)==="1"){
-      localStorage.removeItem(PWA_STANDALONE_PENDING_KEY);
-      return;
-    }
+    [
+      "zad:pwa-standalone-reported-v1",
+      "zad:pwa-standalone-reported-v2",
+      "zad:pwa-standalone-pending-v1",
+      "zad:pwa-standalone-pending-v2",
+      "zad:pwa-install-accepted-reported-v1"
+    ].forEach(k=>localStorage.removeItem(k));
   }catch(_){ }
-
+}
+async function pwaReportStandalone(){
+  if(!pwaIsStandalone()||pwaInstallReportBusy||pwaInstallReportedThisPage) return;
   const id=pwaInstallId();
   if(!id) return;
-  try{ localStorage.setItem(PWA_STANDALONE_PENDING_KEY,"1"); }catch(_){ }
-  if(navigator.onLine===false) return;
 
   pwaInstallReportBusy=true;
   try{
@@ -1653,24 +1654,17 @@ async function pwaReportStandalone(){
         p_app_version:PWA_APP_VERSION
       })
     });
-    if(r.ok){
-      try{
-        localStorage.setItem(PWA_STANDALONE_SENT_KEY,"1");
-        localStorage.removeItem(PWA_STANDALONE_PENDING_KEY);
-      }catch(_){ }
-    }
+    if(r.ok) pwaInstallReportedThisPage=true;
   }catch(_){
-    /* Keep pending; analytics must never interfere with the app. */
+    /* Analytics must never interfere with app startup or offline use. */
   }finally{
     pwaInstallReportBusy=false;
   }
 }
+
+pwaClearLegacyAnalyticsFlags();
 pwaReportStandalone();
 window.addEventListener("online",pwaReportStandalone,{passive:true});
-window.addEventListener("pageshow",pwaReportStandalone,{passive:true});
-document.addEventListener("visibilitychange",()=>{
-  if(document.visibilityState==="visible") pwaReportStandalone();
-});
 
 /* موضع بدء كل جزء: رقم السورة ورقم الآية.
    منه يُبنى رابط القراءة، فيفتح المصحف عند أول الجزء لا أول السورة. */
