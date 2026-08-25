@@ -294,6 +294,46 @@
   const manual=document.getElementById('manual');
   let promptEvent=null;
 
+  /* Anonymous PWA install analytics: one random UUID per browser profile. */
+  const ZK_PWA_ID='zad:pwa-install-id';
+  const ZK_PWA_ACCEPTED='zad:pwa-install-accepted-reported-v1';
+  const ZK_SUPABASE_URL='https://webqpbcijjbawatykoxe.supabase.co';
+  const ZK_SUPABASE_KEY='sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv';
+  const ZK_APP_VERSION='v105';
+
+  function pwaUuid(){
+    try{
+      let id=localStorage.getItem(ZK_PWA_ID);
+      if(id&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return id;
+      if(crypto.randomUUID) id=crypto.randomUUID();
+      else{
+        const b=new Uint8Array(16);crypto.getRandomValues(b);b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
+        const h=[...b].map(v=>v.toString(16).padStart(2,'0')).join('');
+        id=`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+      }
+      localStorage.setItem(ZK_PWA_ID,id);return id;
+    }catch(_){return null;}
+  }
+  function pwaPlatform(){
+    const u=navigator.userAgent||'';
+    if(/Android/i.test(u)) return 'android';
+    if(/iPad|iPhone|iPod/i.test(u)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)) return 'ios';
+    if(/Windows|Macintosh|Linux/i.test(u)) return 'desktop';
+    return 'other';
+  }
+  async function recordInstallAccepted(){
+    try{
+      if(localStorage.getItem(ZK_PWA_ACCEPTED)==='1') return;
+      const id=pwaUuid();if(!id)return;
+      const r=await fetch(`${ZK_SUPABASE_URL}/rest/v1/rpc/record_pwa_install`,{
+        method:'POST',keepalive:true,
+        headers:{'Content-Type':'application/json',apikey:ZK_SUPABASE_KEY,Authorization:`Bearer ${ZK_SUPABASE_KEY}`},
+        body:JSON.stringify({p_device_id:id,p_platform:pwaPlatform(),p_event:'install_accepted',p_app_version:ZK_APP_VERSION})
+      });
+      if(r.ok)localStorage.setItem(ZK_PWA_ACCEPTED,'1');
+    }catch(_){ }
+  }
+
   const standalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
   const ua=navigator.userAgent||'';
   const isIOS=/iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
@@ -340,6 +380,7 @@
   });
 
   window.addEventListener('appinstalled',()=>{
+    recordInstallAccepted();
     btn.classList.add('hidden');
     hint.textContent='تم تثبيت زاد الخير بنجاح.';
     manual.classList.add('hidden');
