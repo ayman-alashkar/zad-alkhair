@@ -26,6 +26,7 @@
 
   <link rel="manifest" href="../manifest.json">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <script defer src="../migration.js"></script>
 
   <style>
     @font-face{
@@ -292,13 +293,23 @@
   const btn=document.getElementById('install');
   const hint=document.getElementById('hint');
   const manual=document.getElementById('manual');
+  const open=document.getElementById('open');
   let promptEvent=null;
+
+  /* Preserve a safe in-app destination supplied by the legacy-install bridge. */
+  try{
+    const next=new URLSearchParams(location.search).get('next');
+    if(next&&next.startsWith('/')&&!next.startsWith('//')){
+      const target=new URL(next,location.origin);
+      if(target.origin===location.origin)open.href=target.href;
+    }
+  }catch(_){ }
 
   /* Anonymous PWA install analytics: one random UUID per browser profile. */
   const ZK_PWA_ID='zad:pwa-install-id';
   const ZK_SUPABASE_URL='https://webqpbcijjbawatykoxe.supabase.co';
   const ZK_SUPABASE_KEY='sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv';
-  const ZK_APP_VERSION='v111';
+  const ZK_APP_VERSION='v112';
 
 
   try{
