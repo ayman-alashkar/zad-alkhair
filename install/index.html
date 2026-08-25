@@ -5,124 +5,348 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0F5C50">
   <title>تثبيت زاد الخير</title>
+  <meta name="description" content="ثبّت تطبيق زاد الخير على جهازك للوصول إلى القرآن العظيم والختمات الجماعية ومواقيت الصلاة.">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ar_AR">
+  <meta property="og:title" content="تثبيت زاد الخير">
+  <meta property="og:description" content="ثبّت تطبيق زاد الخير على جهازك.">
+  <meta property="og:image" content="../zad-alkhair-install-share.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="تثبيت زاد الخير">
+  <meta name="twitter:description" content="ثبّت تطبيق زاد الخير على جهازك.">
+  <meta name="twitter:image" content="../zad-alkhair-install-share.png">
+
   <link rel="manifest" href="../manifest.json">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+
   <style>
-    *{box-sizing:border-box}
+    @font-face{
+      font-family:"Aref Ruqaa";
+      src:url("../fonts/aref-ruqaa-arabic-700.woff2") format("woff2");
+      font-weight:700;
+      font-display:swap;
+    }
+    @font-face{
+      font-family:"Alexandria";
+      src:url("../fonts/alexandria-arabic-400-800.woff2") format("woff2");
+      font-weight:400 800;
+      font-display:swap;
+    }
+
+    :root{
+      --green:#0F5C50;
+      --green-deep:#0A473E;
+      --green-ink:#063B35;
+      --gold:#C59A4A;
+      --gold-soft:#E4C980;
+      --gold-deep:#A97B2C;
+      --cream:#FFF9EA;
+      --cream-deep:#F8EFDE;
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{min-height:100%;margin:0}
     body{
-      font-family:Tahoma,Arial,sans-serif;
-      background:#f7f1e4;
-      color:#163c36;
+      font-family:"Alexandria",Tahoma,Arial,sans-serif;
+      color:var(--green-deep);
+      background:
+        linear-gradient(rgba(197,154,74,.025),rgba(197,154,74,.025)),
+        var(--cream);
       display:grid;
       place-items:center;
-      padding:24px
+      padding:18px;
+      overflow-x:hidden;
     }
-    .card{
-      width:min(440px,100%);
+
+    body::before{
+      content:"";
+      position:fixed;inset:0;
+      pointer-events:none;
+      opacity:.42;
+      background-image:
+        linear-gradient(45deg,transparent 46%,rgba(197,154,74,.055) 47%,rgba(197,154,74,.055) 48%,transparent 49%),
+        linear-gradient(-45deg,transparent 46%,rgba(15,92,80,.025) 47%,rgba(15,92,80,.025) 48%,transparent 49%);
+      background-size:96px 96px;
+    }
+
+    .frame{
+      width:min(560px,100%);
+      min-height:min(760px,calc(100dvh - 36px));
+      position:relative;
+      border:1.5px solid var(--gold);
+      border-radius:40px;
+      padding:34px 30px 26px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      background:rgba(255,249,234,.84);
+      box-shadow:0 14px 34px rgba(10,71,62,.07);
+    }
+
+    .diamond{
+      position:absolute;
+      right:50%;
+      width:14px;height:14px;
+      background:var(--gold);
+      transform:translateX(50%) rotate(45deg);
+    }
+    .diamond.top{top:-7px}
+    .diamond.bottom{bottom:-7px}
+
+    .identity{
+      display:grid;
+      justify-items:center;
       text-align:center;
-      background:rgba(255,255,255,.62);
-      border:1px solid rgba(181,145,73,.28);
-      border-radius:28px;
-      padding:34px 24px 28px;
-      box-shadow:0 18px 55px rgba(22,60,54,.10)
     }
+
+    .motto{
+      margin:0 0 11px;
+      font:700 2.25rem/1 "Aref Ruqaa",serif;
+      color:var(--gold);
+    }
+
     .mark{
-      width:82px;height:82px;border-radius:24px;
-      margin:0 auto 18px;
+      width:126px;height:126px;
+      border-radius:30px;
       display:grid;place-items:center;
-      background:#0F5C50;
-      box-shadow:0 10px 28px rgba(15,92,80,.18)
+      background:var(--green-deep);
+      border:1px solid rgba(197,154,74,.30);
+      margin-bottom:19px;
     }
-    .mark img{width:62px;height:62px;border-radius:16px}
-    h1{font-size:1.6rem;margin:0 0 8px;color:#0b5148}
-    .tag{margin:0 0 24px;color:#7a6743;font-size:1rem}
-    button,a.open{
-      appearance:none;border:0;width:100%;min-height:54px;
-      border-radius:16px;font:700 1.03rem Tahoma,Arial,sans-serif;
-      cursor:pointer;text-decoration:none;
-      display:flex;align-items:center;justify-content:center
+    .mark svg{width:94px;height:94px;display:block}
+
+    h1{
+      margin:0;
+      font:700 4.5rem/.95 "Aref Ruqaa",serif;
+      color:var(--green);
+    }
+
+    .divider{
+      width:240px;
+      max-width:64vw;
+      display:grid;
+      grid-template-columns:1fr 12px 1fr;
+      align-items:center;
+      gap:18px;
+      margin:15px auto 18px;
+    }
+    .divider::before,.divider::after{content:"";height:1px;background:rgba(197,154,74,.72)}
+    .divider i{width:10px;height:10px;background:var(--gold);transform:rotate(45deg);justify-self:center}
+
+    .services{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-bottom:24px;
+    }
+    .service{
+      display:grid;
+      justify-items:center;
+      text-align:center;
+      gap:8px;
+      min-width:0;
+      color:var(--green-ink);
+      font-size:.82rem;
+      font-weight:650;
+    }
+    .service svg{
+      width:32px;height:32px;
+      fill:none;
+      stroke:#9A6D25;
+      stroke-width:1.55;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+
+    .actions{display:grid;gap:10px}
+
+    .btn-content{display:inline-flex;align-items:center;justify-content:center;gap:10px;flex-direction:row-reverse}
+    .btn-content svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+    button,.open{
+      min-height:56px;
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      font-family:"Alexandria",sans-serif;
+      font-size:1rem;
+      font-weight:750;
+      cursor:pointer;
+      transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;
     }
     #install{
-      background:#0F5C50;color:#fff;
-      box-shadow:0 9px 22px rgba(15,92,80,.20)
+      border:0;
+      color:#fff;
+      background:linear-gradient(180deg,var(--green),var(--green-deep));
+      box-shadow:0 9px 20px rgba(15,92,80,.18);
     }
-    #install:disabled{opacity:.55;cursor:default}
+    #install:disabled{opacity:.56;cursor:default;box-shadow:none}
     .open{
-      background:transparent;color:#0F5C50;
-      border:1px solid rgba(15,92,80,.25);
-      margin-top:10px
+      color:var(--green);
+      border:1px solid rgba(15,92,80,.22);
+      background:rgba(255,249,234,.45);
     }
+    @media (hover:hover){
+      #install:not(:disabled):hover,.open:hover{transform:translateY(-1px)}
+    }
+
     #hint{
-      font-size:.88rem;line-height:1.8;
-      color:#6b6558;margin:18px 3px 0;
-      min-height:3em
+      margin:16px 5px 0;
+      min-height:3.6em;
+      text-align:center;
+      color:#72684f;
+      font-size:.88rem;
+      line-height:1.9;
     }
+
+    .manual{
+      margin-top:6px;
+      padding:13px 15px;
+      border-top:1px solid rgba(197,154,74,.22);
+      color:#776846;
+      text-align:center;
+      font-size:.82rem;
+      line-height:1.9;
+    }
+    .manual strong{color:var(--green-deep)}
     .hidden{display:none!important}
+
+    @media (max-width:600px){
+      body{padding:10px}
+      .frame{
+        min-height:calc(100dvh - 20px);
+        padding:26px 18px 20px;
+        border-radius:30px;
+      }
+      .motto{font-size:1.9rem}
+      .mark{width:110px;height:110px;border-radius:27px;margin-bottom:16px}
+      .mark svg{width:82px;height:82px}
+      h1{font-size:3.7rem}
+      .divider{margin:13px auto 16px}
+      .services{gap:5px;margin-bottom:20px}
+      .service{font-size:.72rem;gap:6px}
+      .service svg{width:28px;height:28px}
+      button,.open{min-height:53px;font-size:.95rem}
+    }
   </style>
 </head>
 <body>
-  <main class="card">
-    <div class="mark"><img src="../icons/icon-192.png" alt=""></div>
-    <h1>زاد الخير</h1>
-    <p class="tag">كلامُ الباري يجمعُنا</p>
-    <button id="install" type="button" disabled>تثبيت زاد الخير</button>
-    <a class="open" id="open" href="../">فتح زاد الخير</a>
+  <main class="frame">
+    <span class="diamond top" aria-hidden="true"></span>
+    <span class="diamond bottom" aria-hidden="true"></span>
+
+    <section class="identity">
+      <p class="motto">اقرأْ وارتقِ</p>
+
+      <div class="mark" aria-hidden="true">
+        <svg viewBox="0 0 120 120">
+          <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M24 59V48c0-16 11-29 36-42 25 13 36 26 36 42v11" stroke="#FFF9EA" stroke-width="4.6"/>
+            <path d="M41 58V47c0-10 6-17 19-25 13 8 19 15 19 25v11" stroke="#E4C980" stroke-width="4"/>
+            <path d="M14 65c18-3 33 2 46 14 13-12 28-17 46-14v29c-18-2-33 3-46 16-13-13-28-18-46-16V65Z" stroke="#FFF9EA" stroke-width="4.2"/>
+            <path d="M60 79v31M24 76c13 0 23 3 31 10M96 76c-13 0-23 3-31 10" stroke="#E4C980" stroke-width="3.3"/>
+            <path d="m60 13 4 5-4 5-4-5 4-5Z" fill="#E4C980" stroke="none"/>
+          </g>
+        </svg>
+      </div>
+
+      <h1>زَادُ الخَيْرِ</h1>
+      <div class="divider" aria-hidden="true"><i></i></div>
+    </section>
+
+    <section class="services" aria-label="خدمات زاد الخير">
+      <div class="service">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19.648 5.437-.659-1.043c-.364-.577-.546-.866-.785-.892-.238-.027-.505.247-1.038.795-1.722 1.77-3.444 1.508-5.166 4.691-1.722-3.183-3.444-2.921-5.166-4.691-.533-.548-.8-.822-1.038-.795-.239.026-.421.315-.785.892l-.658 1.043c-.255.402-.382.604-.347.816.034.212.217.357.584.647l6.182 4.898c.591.468.887.702 1.228.702s.637-.234 1.228-.702L19.41 6.9c.367-.29.55-.435.584-.647.035-.212-.092-.414-.346-.816M22 8.5l-16 12v-4.696M2 8.5l16 12v-4.696"/></svg>
+        <span>القرآن العظيم</span>
+      </div>
+      <div class="service">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.25"/><path d="M3.5 19c.45-3.15 2.4-5 5.5-5s5.05 1.85 5.5 5M14.3 14.8c.75-.55 1.7-.8 2.7-.8 2.35 0 3.75 1.4 4 3.8"/></svg>
+        <span>ختمات جماعية</span>
+      </div>
+      <div class="service">
+        <svg viewBox="0 0 25 24" aria-hidden="true"><path d="M9.15309 9C5.68214 5.5 11.0125 3.75 12.5 2C13.9875 3.75 19.3179 5.5 15.8469 9H9.15309Z"/><path d="M18.5 12V11C18.5 10.0572 18.5 9.58579 18.2071 9.29289C17.9142 9 17.4428 9 16.5 9H8.5C7.55719 9 7.08579 9 6.79289 9.29289C6.5 9.58579 6.5 10.0572 6.5 11V12"/><path d="M17.5 12H7.5C6.08579 12 5.37868 12 4.93934 12.4393C4.5 12.8787 4.5 13.5858 4.5 15V19C4.5 20.4142 4.5 21.1213 4.93934 21.5607C5.37868 22 6.08579 22 7.5 22H17.5C18.9142 22 19.6213 22 20.0607 21.5607C20.5 21.1213 20.5 20.4142 20.5 19V15C20.5 13.5858 20.5 12.8787 20.0607 12.4393C19.6213 12 18.9142 12 17.5 12Z"/><path d="M10.0001 22V19C9.98279 16 12.5 15 12.5 15C12.5 15 15.0172 16 14.9999 19V22"/></svg>
+        <span>مواقيت الصلاة</span>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button id="install" type="button" disabled><span class="btn-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5"/></svg><span>تثبيت زاد الخير</span></span></button>
+      <a class="open" id="open" href="../"><span class="btn-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5"/><path d="M10 14 19 5"/><path d="M19 14v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3"/></svg><span>فتح زاد الخير</span></span></a>
+    </div>
+
     <p id="hint">جاري تجهيز التثبيت…</p>
+    <div class="manual hidden" id="manual"></div>
   </main>
+
 <script>
 (()=>{
-  const btn=document.getElementById("install");
-  const hint=document.getElementById("hint");
-  const open=document.getElementById("open");
+  const btn=document.getElementById('install');
+  const hint=document.getElementById('hint');
+  const manual=document.getElementById('manual');
   let promptEvent=null;
 
-  const standalone=
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone===true;
+  const standalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+  const ua=navigator.userAgent||'';
+  const isIOS=/iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+
+  function showManual(){
+    manual.classList.remove('hidden');
+    manual.innerHTML=isIOS
+      ? '<strong>على iPhone أو iPad:</strong> اضغط زر المشاركة في Safari، ثم اختر «إضافة إلى الشاشة الرئيسية».'
+      : '<strong>إذا لم تظهر نافذة التثبيت:</strong> افتح قائمة المتصفح ⋮ ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».';
+  }
 
   if(standalone){
-    btn.classList.add("hidden");
-    hint.textContent="زاد الخير مثبت على جهازك بالفعل.";
-    open.textContent="فتح زاد الخير";
+    btn.classList.add('hidden');
+    hint.textContent='زاد الخير مثبت على جهازك بالفعل.';
     return;
   }
 
-  window.addEventListener("beforeinstallprompt",e=>{
+  window.addEventListener('beforeinstallprompt',e=>{
     e.preventDefault();
     promptEvent=e;
     btn.disabled=false;
-    hint.textContent="اضغط الزر، ثم وافق على نافذة التثبيت.";
+    hint.textContent='اضغط الزر، ثم وافق على نافذة التثبيت.';
+    manual.classList.add('hidden');
   });
 
-  btn.addEventListener("click",async()=>{
+  btn.addEventListener('click',async()=>{
     if(!promptEvent){
-      hint.textContent="إن لم تظهر نافذة التثبيت، افتح هذه الصفحة في Chrome ثم اختر «تثبيت التطبيق» من قائمة ⋮.";
+      hint.textContent='استخدم خطوات التثبيت المناسبة لمتصفحك.';
+      showManual();
       return;
     }
     btn.disabled=true;
     await promptEvent.prompt();
     const choice=await promptEvent.userChoice.catch(()=>null);
     promptEvent=null;
-
-    if(choice && choice.outcome==="accepted"){
-      btn.classList.add("hidden");
-      hint.textContent="تمت الموافقة على التثبيت. ستجد زاد الخير بين تطبيقاتك.";
+    if(choice&&choice.outcome==='accepted'){
+      btn.classList.add('hidden');
+      hint.textContent='تمت الموافقة على التثبيت. ستجد زاد الخير بين تطبيقاتك.';
+      manual.classList.add('hidden');
     }else{
       btn.disabled=false;
-      hint.textContent="يمكنك تثبيت زاد الخير متى شئت بالضغط على الزر.";
+      hint.textContent='يمكنك تثبيت زاد الخير متى شئت.';
     }
   });
 
-  window.addEventListener("appinstalled",()=>{
-    btn.classList.add("hidden");
-    hint.textContent="تم تثبيت زاد الخير بنجاح.";
+  window.addEventListener('appinstalled',()=>{
+    btn.classList.add('hidden');
+    hint.textContent='تم تثبيت زاد الخير بنجاح.';
+    manual.classList.add('hidden');
   });
 
   setTimeout(()=>{
-    if(!promptEvent && !standalone){
+    if(!promptEvent&&!standalone){
       btn.disabled=false;
-      hint.textContent="اضغط «تثبيت زاد الخير». إذا لم تظهر نافذة التثبيت، افتح الصفحة في Chrome.";
+      if(isIOS){
+        hint.textContent='على iPhone يتم التثبيت من قائمة المشاركة في Safari.';
+        showManual();
+      }else{
+        hint.textContent='اضغط «تثبيت زاد الخير». إذا لم تظهر نافذة التثبيت، استخدم قائمة المتصفح.';
+      }
     }
   },1800);
 })();
