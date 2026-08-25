@@ -12,6 +12,8 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-32.png" sizes="32x32">
 <link rel="icon" href="icons/zad-mark.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/aref-ruqaa-arabic-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="icons/zad-mark.svg" as="image" type="image/svg+xml">
 <meta name="description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
 <title>زاد الخير</title>
 
@@ -1285,8 +1287,10 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zk-launch::after{content:none!important;display:none!important}
 .zk-launch-card{
   position:absolute;z-index:1;isolation:isolate;left:var(--zk-home-cx);top:var(--zk-home-cy);width:500px;height:780px;margin:0;padding:0;border:0;background:none;box-shadow:none;
-  transform:translate(-50%,-50%) scale(var(--zk-home-scale));transform-origin:50% 50%;overflow:visible;text-align:center;will-change:transform
+  transform:translate(-50%,-50%) scale(var(--zk-home-scale));transform-origin:50% 50%;overflow:visible;text-align:center;will-change:transform;
+  opacity:0;visibility:hidden
 }
+.zk-launch.zk-home-ready .zk-launch-card{opacity:1;visibility:visible}
 .zk-launch-mihrab{position:absolute;inset:0;z-index:0;width:500px;height:780px;display:block;overflow:visible;filter:drop-shadow(0 28px 30px rgba(0,0,0,.42)) drop-shadow(0 4px 9px rgba(197,154,74,.09))}
 .zk-launch-identity{position:absolute;z-index:1;left:80px;right:80px;top:104px;display:grid;justify-items:center;gap:1px;margin:0;padding:0}
 .zk-launch-mark{display:block;width:104px;height:104px;margin:0;object-fit:contain;filter:drop-shadow(0 9px 12px rgba(15,92,80,.12))}
@@ -1469,7 +1473,7 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
    request simply fails harmlessly and the next launch / online event retries it.
    Normal browser visits are never counted. */
 const PWA_INSTALL_ID_KEY="zad:pwa-install-id";
-const PWA_APP_VERSION="v110";
+const PWA_APP_VERSION="v111";
 let pwaInstallReportBusy=false;
 let pwaInstallReportedThisPage=false;
 
@@ -4075,6 +4079,36 @@ document.addEventListener("click",e=>{
 },true);
 const zkLaunch=document.getElementById("zk-launch");
 const zkOfflineStatus=document.getElementById("zk-offline-status");
+
+/* v111 · critical home assets gate.
+   The launcher canvas is revealed only after its actual Arabic display font
+   and local mark are ready, so the browser never paints fallback typography
+   and then reflows it a fraction of a second later. */
+let zkHomeReady=false;
+function zkRevealHome(){
+  if(zkHomeReady)return;
+  zkHomeReady=true;
+  zkLaunch?.classList.add("zk-home-ready");
+}
+async function zkPrepareHome(){
+  const jobs=[];
+  try{
+    if(document.fonts?.load){
+      jobs.push(document.fonts.load('700 67px "Aref Ruqaa"',"زاد الخير اقرأ وارتق القرآن العظيم الختمات الجماعية مواقيت الصلاة"));
+    }
+  }catch(_){ }
+  try{
+    const mark=zkLaunch?.querySelector(".zk-launch-mark");
+    if(mark?.decode) jobs.push(mark.decode());
+  }catch(_){ }
+  try{ await Promise.allSettled(jobs); }catch(_){ }
+  zkRevealHome();
+}
+/* Safety only: never leave navigation inaccessible because of a broken
+   browser font API. Normal cached/PWA launches resolve far earlier. */
+const zkHomeReadyFallback=setTimeout(zkRevealHome,1800);
+zkPrepareHome().finally(()=>clearTimeout(zkHomeReadyFallback));
+
 const ZK_HOME_BASE_W=500,ZK_HOME_BASE_H=780,ZK_HOME_GUTTER=24;
 function zkFitLaunch(){
   if(!zkLaunch)return;
