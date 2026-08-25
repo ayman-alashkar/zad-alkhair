@@ -2,7 +2,7 @@
   "name": "زاد الخير",
   "short_name": "زاد الخير",
   "description": "القرآن العظيم وزاد الخير للختم الجماعية.",
-  "start_url": "./",
+  "start_url": "./pwa-start.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#061F1D",
