@@ -851,26 +851,6 @@ body.show-top-user .tb-user{font-family:var(--ruqaa)!important;font-weight:700!i
   .roster-row .n{font-size:.63rem}
   .roster-row .dots,.roster-row .dots-gap{width:1.8rem;min-width:1.8rem}
 }
-/* نافذة المواقيت كاملة بلا شريط تمرير. */
-.prayer-times-modal{overflow:hidden}
-.prayer-times-modal .frame{display:flex;flex-direction:column;overflow:hidden;max-height:calc(100dvh - 1.2rem)}
-.prayer-times-modal .ptable{flex:0 1 auto}
-@media (max-height:660px){
-  .prayer-times-modal .frame{padding:.72rem 1rem}
-  .prayer-times-modal .prayer-emblem{width:40px;height:40px;margin-bottom:.28rem;border-radius:13px 13px 8px 8px}
-  .prayer-times-modal .prayer-emblem .zk-icon{width:24px;height:24px}
-  .prayer-times-modal .display{font-size:1.12rem !important}
-  .prayer-times-modal .prayer-head{margin-bottom:.38rem}
-  .prayer-times-modal .prayer-head .ptcity{font-size:.98rem;margin-bottom:.05rem}
-  .prayer-times-modal .prayer-date-g{font-size:.84rem}
-  .prayer-times-modal .prayer-date-h{font-size:.75rem}
-  .prayer-times-modal .ptable{margin:.28rem 0}
-  .prayer-times-modal .ptrow{padding:.34rem .75rem}
-  .prayer-times-modal .ptrow .pv{font-size:.84rem}
-  .prayer-times-modal .ptrow .pn{font-size:.8rem}
-  .prayer-times-modal .actions{margin-top:.5rem}
-  .prayer-times-modal .btn{min-height:38px;padding:.4rem .85rem}
-}
 @media (max-width:680px){
   .topbar{min-height:62px;padding:max(.5rem,env(safe-area-inset-top)) .72rem .82rem;background:linear-gradient(180deg,rgba(5,29,27,.98) 0%,rgba(5,29,27,.86) 68%,rgba(5,29,27,0) 100%);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
   .prayer-fab .pt-icon{width:26px;height:26px;border-radius:9px}
@@ -1102,7 +1082,7 @@ body.show-home-mine .tb-user,body.show-top-user .tb-user{opacity:1;transform:non
 
 /* ---------- Production final · بوابة زاد الخير: محراب وهوية واحدة ---------- */
 .zk-launch{
-  position:fixed;inset:0;z-index:120;display:none;overflow:auto;overscroll-behavior:contain;
+  position:fixed;inset:0;z-index:120;display:none;overflow:hidden;overscroll-behavior:none;
   padding:max(26px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(26px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));
   color:var(--ink);font-family:var(--sans);
   background:
@@ -1308,45 +1288,69 @@ body.zk-launch-prayer .modal{z-index:150}
   .zk-launch-rosette{width:43px;height:43px}
 }
 
-/* مواقيت الصلاة · v97 — نفس الفخامة ولكن بلا تغيير في المنطق */
-.prayer-times-modal{background:rgba(2,16,14,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+/* مواقيت الصلاة · v108 — بنية فعلية: رأس أخضر مستقل + جسم كريمي مستقل */
+.prayer-times-modal{
+  overflow:hidden;padding:max(.55rem,env(safe-area-inset-top)) max(.55rem,env(safe-area-inset-right)) max(.55rem,env(safe-area-inset-bottom)) max(.55rem,env(safe-area-inset-left));
+  background:rgba(2,16,14,.78);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)
+}
 .prayer-times-modal .frame{
-  position:relative;max-width:470px;padding:0;overflow:hidden;border:1px solid rgba(228,201,128,.72);border-radius:28px;
-  /* The prayer header now uses the exact same green field as the application background. */
+  position:relative;display:block;width:min(470px,100%);max-width:470px;max-height:calc(100dvh - 1.1rem);
+  margin:auto;padding:0;overflow:hidden;border:1px solid rgba(228,201,128,.72);border-radius:28px;
+  background:#F7EFDF;box-shadow:0 46px 105px -40px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.06)
+}
+.prayer-times-modal .frame::before{content:"";position:absolute;inset:6px;border:1px solid rgba(228,201,128,.2);border-radius:22px;pointer-events:none;z-index:8}
+.prayer-times-modal .frame::after{display:none!important;content:none!important}
+.prayer-panel{display:flex;flex-direction:column;min-height:0;max-height:calc(100dvh - 1.1rem)}
+.prayer-modal-head{
+  position:relative;flex:0 0 auto;overflow:hidden;text-align:center;padding:16px 18px 14px;
   background:
-    linear-gradient(180deg,transparent 0,transparent 174px,#FFF9EA 174px,#F7EFDF 100%),
     radial-gradient(circle at 10% 7%,rgba(228,201,128,.13),transparent 25rem),
     radial-gradient(circle at 92% 22%,rgba(73,161,140,.18),transparent 32rem),
     linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%);
-  box-shadow:0 46px 105px -40px rgba(0,0,0,.92),inset 0 0 0 1px rgba(255,255,255,.06)
+  border-bottom:1px solid rgba(197,154,74,.48)
 }
-.prayer-times-modal .frame::before{content:"";position:absolute;inset:6px;border:1px solid rgba(228,201,128,.2);border-radius:22px;pointer-events:none;z-index:4}
-.prayer-times-modal .frame::after{
-  /* Exact copy of body::before: same five layers, opacity, positions, size and mask. */
-  content:"";position:absolute;left:0;right:0;top:0;height:174px;pointer-events:none;opacity:.24;
+.prayer-modal-head::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.24;
   background-image:
     linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),
     linear-gradient(150deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),
     linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),
     linear-gradient(150deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),
     linear-gradient(60deg,rgba(228,201,128,.08) 25%,transparent 25.5%,transparent 75%,rgba(228,201,128,.08) 75%);
-  background-position:0 0,0 0,42px 72px,42px 72px,0 0;
-  background-size:84px 144px;
-  -webkit-mask-image:linear-gradient(90deg,black,transparent 44%,transparent 56%,black);
-  mask-image:linear-gradient(90deg,black,transparent 44%,transparent 56%,black)
+  background-position:0 0,0 0,42px 72px,42px 72px,0 0;background-size:84px 144px;
+  -webkit-mask-image:linear-gradient(90deg,black,transparent 44%,transparent 56%,black);mask-image:linear-gradient(90deg,black,transparent 44%,transparent 56%,black)
 }
-.prayer-times-modal .prayer-emblem{position:relative;z-index:5;width:48px;height:48px;margin:18px auto 4px;border:1px solid rgba(228,201,128,.58);border-radius:15px;background:rgba(255,249,234,.055);color:#E4C980;box-shadow:inset 0 0 0 3px rgba(228,201,128,.04)}
-.prayer-times-modal .display{position:relative;z-index:5;color:#FFF9EA!important;text-shadow:0 1px 0 rgba(0,0,0,.2)}
-.prayer-times-modal .prayer-head{position:relative;z-index:5;margin:.1rem 0 14px;padding:0 18px}.prayer-times-modal .prayer-head .ptcity{color:#E4C980}.prayer-times-modal .prayer-date-g{color:#FFF9EA}.prayer-times-modal .prayer-date-h{color:rgba(255,249,234,.7)}
-.prayer-times-modal .ptable{position:relative;z-index:5;margin:0 13px;border:1px solid #D6C5A6;border-radius:17px;overflow:hidden;background:#FFFBF2;box-shadow:0 17px 33px -30px rgba(0,0,0,.7)}
-.prayer-times-modal .ptrow{min-height:51px;padding:.55rem 1rem;background:transparent;border-color:#E6DAC3}.prayer-times-modal .ptrow.sun{background:#F2E8D5}.prayer-times-modal .ptrow.now{background:linear-gradient(90deg,rgba(221,236,229,.72),rgba(255,251,241,.9))}
+.prayer-modal-head>*{position:relative;z-index:1}
+.prayer-times-modal .prayer-emblem{width:48px;height:48px;margin:0 auto 4px;border:1px solid rgba(228,201,128,.58);border-radius:15px;background:rgba(255,249,234,.055);color:#E4C980;box-shadow:inset 0 0 0 3px rgba(228,201,128,.04)}
+.prayer-times-modal .display{width:100%;text-align:center!important;color:#FFF9EA!important;line-height:1.25;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+.prayer-times-modal .prayer-head{margin:.2rem 0 0;padding:0;text-align:center}
+.prayer-times-modal .prayer-head .ptcity{margin:0 0 .12rem;color:#E4C980}
+.prayer-times-modal .prayer-date{gap:0}
+.prayer-times-modal .prayer-date-g{color:#FFF9EA}
+.prayer-times-modal .prayer-date-h{display:block;color:rgba(255,249,234,.76)}
+.prayer-modal-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#FFF9EA 0%,#F7EFDF 100%)}
+.prayer-times-modal .ptable{flex:0 0 auto;margin:0 13px;border:1px solid #D6C5A6;border-radius:17px;overflow:hidden;background:#FFFBF2;box-shadow:0 17px 33px -30px rgba(0,0,0,.7)}
+.prayer-times-modal .ptrow{min-height:51px;padding:.55rem 1rem;background:transparent;border-color:#E6DAC3}
+.prayer-times-modal .ptrow.sun{background:#F2E8D5}.prayer-times-modal .ptrow.now{background:linear-gradient(90deg,rgba(221,236,229,.72),rgba(255,251,241,.9))}
 .prayer-times-modal .ptrow .pn{font-family:var(--naskh);font-size:.98rem;font-weight:700;color:#173D35}.prayer-times-modal .ptrow .pv{font-family:var(--sans);font-size:.86rem;font-weight:700;color:#674924}.prayer-times-modal .ptrow.now .pn,.prayer-times-modal .ptrow.now .pv{color:#0F5C50}
-.prayer-times-modal .actions{position:relative;z-index:5;margin:0;padding:14px 16px 16px;background:linear-gradient(180deg,rgba(255,249,234,0),#F7EFDF 35%)}
+.prayer-times-modal .actions{flex:0 0 auto;margin:0;padding:14px 16px 16px;background:linear-gradient(180deg,rgba(255,249,234,0),#F7EFDF 35%)}
 .prayer-times-modal .actions .btn{border-color:#D6C6A5;background:#FFFDF7}.prayer-times-modal .actions .btn:first-child{color:#0F5C50;border-color:#BDA56F}
 @media(max-width:560px){
-  .prayer-times-modal{padding:.55rem}.prayer-times-modal .frame{border-radius:23px;background:linear-gradient(180deg,transparent 0,transparent 158px,#FFF9EA 158px,#F7EFDF 100%),radial-gradient(circle at 10% 7%,rgba(228,201,128,.13),transparent 25rem),radial-gradient(circle at 92% 22%,rgba(73,161,140,.18),transparent 32rem),linear-gradient(145deg,#061F1D 0%,var(--night) 44%,#0B3832 100%)}
-  .prayer-times-modal .frame::after{height:158px}.prayer-times-modal .prayer-emblem{width:43px;height:43px;margin-top:13px}.prayer-times-modal .prayer-emblem .zk-icon{width:25px;height:25px}
-  .prayer-times-modal .display{font-size:1.22rem!important}.prayer-times-modal .prayer-head{margin-bottom:9px}.prayer-times-modal .ptable{margin-inline:9px;border-radius:15px}.prayer-times-modal .ptrow{min-height:46px;padding:.42rem .78rem}.prayer-times-modal .actions{padding:10px 11px 12px}
+  .prayer-times-modal .frame{border-radius:23px}.prayer-times-modal .frame::before{border-radius:18px}
+  .prayer-modal-head{padding:12px 14px 10px}
+  .prayer-times-modal .prayer-emblem{width:43px;height:43px;margin-bottom:3px}.prayer-times-modal .prayer-emblem .zk-icon{width:25px;height:25px}
+  .prayer-times-modal .display{font-size:1.22rem!important}.prayer-times-modal .prayer-head .ptcity{font-size:.98rem;margin-bottom:.02rem}
+  .prayer-times-modal .prayer-date-g{font-size:.84rem}.prayer-times-modal .prayer-date-h{font-size:.75rem}
+  .prayer-times-modal .ptable{margin-inline:9px;border-radius:15px}.prayer-times-modal .ptrow{min-height:46px;padding:.42rem .78rem}
+  .prayer-times-modal .actions{padding:10px 11px 12px}
+}
+@media(max-height:660px){
+  .prayer-modal-head{padding:9px 14px 8px}
+  .prayer-times-modal .prayer-emblem{width:38px;height:38px;margin-bottom:2px;border-radius:12px}.prayer-times-modal .prayer-emblem .zk-icon{width:23px;height:23px}
+  .prayer-times-modal .display{font-size:1.08rem!important}.prayer-times-modal .prayer-head{margin-top:.08rem}.prayer-times-modal .prayer-head .ptcity{font-size:.9rem;line-height:1.4}
+  .prayer-times-modal .prayer-date-g{font-size:.78rem;line-height:1.4}.prayer-times-modal .prayer-date-h{font-size:.72rem;line-height:1.4}
+  .prayer-times-modal .ptable{margin-inline:9px}.prayer-times-modal .ptrow{min-height:42px;padding:.28rem .72rem}.prayer-times-modal .ptrow .pn{font-size:.82rem}.prayer-times-modal .ptrow .pv{font-size:.8rem}
+  .prayer-times-modal .actions{padding:8px 10px 9px}.prayer-times-modal .btn{min-height:36px;padding:.35rem .78rem}
 }
 
 /* v89 · stable text sizing across Chrome refreshes */
@@ -1434,6 +1438,25 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   }
   .zk-launch-options{grid-row:3}
 }
+
+/* ═══════════ v108 · canonical viewport contract ═══════════
+   The launcher is a viewport, not a second page. The document owns scrolling
+   only after the launcher closes. Width is bounded both by the viewport and by
+   viewport height, so the 500:780 mihrab always fits without any scrollbar. */
+html,body{max-width:100%;overflow-x:hidden}
+@supports(overflow:clip){html,body{overflow-x:clip}}
+html.zk-launch-open,body.zk-launch-open{height:100%;overflow:hidden!important;overscroll-behavior:none!important}
+.zk-launch{
+  width:100%;height:100vh;height:100dvh;max-width:100vw;max-height:100dvh;
+  overflow:hidden!important;overscroll-behavior:none!important
+}
+.zk-launch.show{display:grid;place-items:center}
+.zk-launch-card{
+  width:min(500px,calc(100vw - 12px),60.8vh);
+  width:min(500px,calc(100vw - 12px),60.8dvh);
+  max-width:100%;margin:0
+}
+
 </style>
 
 
@@ -1586,13 +1609,13 @@ const SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
 const BOT_USERNAME = "ZadAlkhair_Bot";
 
 
-/* ═══════════ PWA install analytics · v107 ═══════════
+/* ═══════════ PWA install analytics · v108 ═══════════
    Supabase is the source of truth. The client persists only one anonymous UUID.
    An installed app UPSERTs its own row on each real app launch. If offline, the
    request simply fails harmlessly and the next launch / online event retries it.
    Normal browser visits are never counted. */
 const PWA_INSTALL_ID_KEY="zad:pwa-install-id";
-const PWA_APP_VERSION="v107";
+const PWA_APP_VERSION="v108";
 let pwaInstallReportBusy=false;
 let pwaInstallReportedThisPage=false;
 
@@ -1877,19 +1900,26 @@ function prayerDialog(){
       <span class="pv">${ptFmt(t[k],cfg.tz)}</span></div>`;
   }).join("");
   const today=dateISOInZone(new Date(),cfg.tz);
-  modal(`<div class="prayer-emblem">${PRAYER_ICON}</div><div class="display" style="font-size:1.45rem">مواقيت الصلاة</div>
-    <div class="prayer-head">
-      <p class="ptcity">${esc(cfg.city)}</p>
-      <div class="prayer-date">
-        <span class="prayer-date-g">${esc(fmtClockG(today))}</span>
-        <span class="prayer-date-h">${esc(fmtClockH(today))}</span>
+  modal(`<section class="prayer-panel" role="dialog" aria-modal="true" aria-label="مواقيت الصلاة">
+    <header class="prayer-modal-head">
+      <div class="prayer-emblem">${PRAYER_ICON}</div>
+      <div class="display" style="font-size:1.45rem">مواقيت الصلاة</div>
+      <div class="prayer-head">
+        <p class="ptcity">${esc(cfg.city)}</p>
+        <div class="prayer-date">
+          <span class="prayer-date-g">${esc(fmtClockG(today))}</span>
+          <span class="prayer-date-h">${esc(fmtClockH(today))}</span>
+        </div>
+      </div>
+    </header>
+    <div class="prayer-modal-body">
+      <div class="ptable">${rows}</div>
+      <div class="actions">
+        <button class="btn" id="pt-edit">الإعدادات</button>
+        <button class="btn quiet spacer" id="pt-close">إغلاق</button>
       </div>
     </div>
-    <div class="ptable">${rows}</div>
-    <div class="actions">
-      <button class="btn" id="pt-edit">الإعدادات</button>
-      <button class="btn quiet spacer" id="pt-close">إغلاق</button>
-    </div>`,"prayer-times-modal");
+  </section>`,"prayer-times-modal");
   document.getElementById("pt-edit").onclick=ptSetupDialog;
   document.getElementById("pt-close").onclick=closeLayer;
 }
@@ -4204,6 +4234,8 @@ function zkCaptureIncomingKhatmah(){
 function zkShowLaunch(){
   if(!zkLaunch)return;
   closeTopMenu();closeLayer();
+  document.documentElement.classList.add("zk-launch-open");
+  document.body.classList.add("zk-launch-open");
   zkLaunch.classList.add("show");
   zkLaunch.setAttribute("aria-hidden","false");
 }
@@ -4211,6 +4243,8 @@ function zkHideLaunch(){
   if(!zkLaunch)return;
   zkLaunch.classList.remove("show");
   zkLaunch.setAttribute("aria-hidden","true");
+  document.documentElement.classList.remove("zk-launch-open");
+  document.body.classList.remove("zk-launch-open");
 }
 const zkRootGuardToken=`${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let zkExitPressedAt=0,zkExitRearmTimer=null;
