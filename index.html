@@ -1585,6 +1585,93 @@ const SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
 const SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
 const BOT_USERNAME = "ZadAlkhair_Bot";
 
+
+/* ═══════════ PWA install analytics · v106 ═══════════
+   - A new Chromium install is recorded by install/index.html as install_accepted.
+   - Every installed app (old or new) records standalone_open from the real root page.
+   - If the app opens offline, the attempt remains pending locally and is retried
+     when connectivity returns. Normal browser visits are never counted. */
+const PWA_INSTALL_ID_KEY="zad:pwa-install-id";
+const PWA_STANDALONE_SENT_KEY="zad:pwa-standalone-reported-v2";
+const PWA_STANDALONE_PENDING_KEY="zad:pwa-standalone-pending-v2";
+const PWA_APP_VERSION="v106";
+let pwaInstallReportBusy=false;
+
+function pwaIsStandalone(){
+  return window.matchMedia("(display-mode: standalone)").matches ||
+         window.navigator.standalone===true;
+}
+function pwaInstallPlatform(){
+  const ua=navigator.userAgent||"";
+  const uaPlatform=navigator.userAgentData&&navigator.userAgentData.platform||"";
+  if(/Android/i.test(ua)||/Android/i.test(uaPlatform)) return "android";
+  if(/iPad|iPhone|iPod/i.test(ua)||
+     /iPad|iPhone|iPod|iOS/i.test(uaPlatform)||
+     (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)) return "ios";
+  if(/Windows|Macintosh|MacIntel|Linux|CrOS/i.test(`${ua} ${uaPlatform} ${navigator.platform||""}`)) return "desktop";
+  return "other";
+}
+function pwaInstallId(){
+  try{
+    let id=localStorage.getItem(PWA_INSTALL_ID_KEY);
+    const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if(id&&valid.test(id)) return id;
+    if(crypto.randomUUID) id=crypto.randomUUID();
+    else{
+      const b=new Uint8Array(16);crypto.getRandomValues(b);
+      b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
+      const h=[...b].map(v=>v.toString(16).padStart(2,"0")).join("");
+      id=`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+    }
+    localStorage.setItem(PWA_INSTALL_ID_KEY,id);
+    return id;
+  }catch(_){ return null; }
+}
+async function pwaReportStandalone(){
+  if(!pwaIsStandalone()||pwaInstallReportBusy) return;
+  try{
+    if(localStorage.getItem(PWA_STANDALONE_SENT_KEY)==="1"){
+      localStorage.removeItem(PWA_STANDALONE_PENDING_KEY);
+      return;
+    }
+  }catch(_){ }
+
+  const id=pwaInstallId();
+  if(!id) return;
+  try{ localStorage.setItem(PWA_STANDALONE_PENDING_KEY,"1"); }catch(_){ }
+  if(navigator.onLine===false) return;
+
+  pwaInstallReportBusy=true;
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/rpc/record_pwa_install`,{
+      method:"POST",keepalive:true,
+      headers:{"Content-Type":"application/json",apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY},
+      body:JSON.stringify({
+        p_device_id:id,
+        p_platform:pwaInstallPlatform(),
+        p_event:"standalone_open",
+        p_app_version:PWA_APP_VERSION
+      })
+    });
+    if(r.ok){
+      try{
+        localStorage.setItem(PWA_STANDALONE_SENT_KEY,"1");
+        localStorage.removeItem(PWA_STANDALONE_PENDING_KEY);
+      }catch(_){ }
+    }
+  }catch(_){
+    /* Keep pending; analytics must never interfere with the app. */
+  }finally{
+    pwaInstallReportBusy=false;
+  }
+}
+pwaReportStandalone();
+window.addEventListener("online",pwaReportStandalone,{passive:true});
+window.addEventListener("pageshow",pwaReportStandalone,{passive:true});
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible") pwaReportStandalone();
+});
+
 /* موضع بدء كل جزء: رقم السورة ورقم الآية.
    منه يُبنى رابط القراءة، فيفتح المصحف عند أول الجزء لا أول السورة. */
 const JUZ_START=[
