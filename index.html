@@ -1270,12 +1270,12 @@ html,body{max-width:100%;overflow-x:hidden}
    أصغر بعد متاح في الـviewport، لذلك تبقى جميع النسب مطابقة دائمًا. */
 html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none!important}
 .zk-launch{
-  --zk-home-scale:1;position:fixed;inset:0;z-index:120;display:none;overflow:hidden;
-  width:100%;height:100vh;height:100dvh;padding:0;place-items:center;overscroll-behavior:none;isolation:isolate;
+  --zk-home-scale:1;--zk-home-cx:50vw;--zk-home-cy:50dvh;position:fixed;inset:0;z-index:120;display:none;overflow:hidden;
+  width:100%;height:100vh;height:100dvh;padding:0;overscroll-behavior:none;isolation:isolate;
   color:var(--ink);font-family:var(--sans);
   background:radial-gradient(circle at 50% -8%,rgba(228,201,128,.15),transparent 30rem),radial-gradient(circle at 10% 88%,rgba(73,161,140,.12),transparent 32rem),linear-gradient(154deg,#041A18 0%,#062521 48%,#0A3C34 100%)
 }
-.zk-launch.show{display:grid}
+.zk-launch.show{display:block}
 .zk-launch::before{
   content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.24;
   background-image:linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(150deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(150deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(60deg,rgba(228,201,128,.08) 25%,transparent 25.5%,transparent 75%,rgba(228,201,128,.08) 75%);
@@ -1284,8 +1284,8 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 }
 .zk-launch::after{content:none!important;display:none!important}
 .zk-launch-card{
-  position:relative;z-index:1;isolation:isolate;flex:none;width:500px;height:780px;margin:0;padding:0;border:0;background:none;box-shadow:none;
-  transform:scale(var(--zk-home-scale));transform-origin:50% 50%;overflow:visible;text-align:center
+  position:absolute;z-index:1;isolation:isolate;left:var(--zk-home-cx);top:var(--zk-home-cy);width:500px;height:780px;margin:0;padding:0;border:0;background:none;box-shadow:none;
+  transform:translate(-50%,-50%) scale(var(--zk-home-scale));transform-origin:50% 50%;overflow:visible;text-align:center;will-change:transform
 }
 .zk-launch-mihrab{position:absolute;inset:0;z-index:0;width:500px;height:780px;display:block;overflow:visible;filter:drop-shadow(0 28px 30px rgba(0,0,0,.42)) drop-shadow(0 4px 9px rgba(197,154,74,.09))}
 .zk-launch-identity{position:absolute;z-index:1;left:80px;right:80px;top:104px;display:grid;justify-items:center;gap:1px;margin:0;padding:0}
@@ -1469,7 +1469,7 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
    request simply fails harmlessly and the next launch / online event retries it.
    Normal browser visits are never counted. */
 const PWA_INSTALL_ID_KEY="zad:pwa-install-id";
-const PWA_APP_VERSION="v109";
+const PWA_APP_VERSION="v110";
 let pwaInstallReportBusy=false;
 let pwaInstallReportedThisPage=false;
 
@@ -4081,8 +4081,12 @@ function zkFitLaunch(){
   const vv=window.visualViewport;
   const w=vv?.width||window.innerWidth||ZK_HOME_BASE_W;
   const h=vv?.height||window.innerHeight||ZK_HOME_BASE_H;
+  const x=(vv?.offsetLeft||0)+(w/2);
+  const y=(vv?.offsetTop||0)+(h/2);
   const scale=Math.max(.1,Math.min(1,(w-ZK_HOME_GUTTER)/ZK_HOME_BASE_W,(h-ZK_HOME_GUTTER)/ZK_HOME_BASE_H));
   zkLaunch.style.setProperty("--zk-home-scale",String(scale));
+  zkLaunch.style.setProperty("--zk-home-cx",x+"px");
+  zkLaunch.style.setProperty("--zk-home-cy",y+"px");
 }
 
 function zkCaptureIncomingKhatmah(){
@@ -4153,6 +4157,7 @@ window.addEventListener("hashchange",()=>{
 window.addEventListener("resize",queueTopUserSync,{passive:true});
 window.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("resize",zkFitLaunch,{passive:true});
+window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
 zkCaptureIncomingKhatmah();
 zkShowLaunch();
