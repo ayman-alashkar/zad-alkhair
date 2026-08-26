@@ -6,10 +6,17 @@
 const TOKEN  = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const APP_URL = Deno.env.get("APP_URL") ?? "";
 const APP_TIME_ZONE = Deno.env.get("APP_TIME_ZONE") ?? "Asia/Damascus";
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
 const FINAL_ORIGIN = "https://zad-alkhair.net";
+const CONFIGURED_APP_URL = Deno.env.get("APP_URL") ?? "";
+const APP_URL = (() => {
+  try {
+    const configured = new URL(CONFIGURED_APP_URL);
+    if (configured.origin === FINAL_ORIGIN) return configured.href;
+  } catch { /**/ }
+  return `${FINAL_ORIGIN}/`;
+})();
 const MIGRATION_CAMPAIGN = "final-domain-v1";
 
 async function rpc(fn: string, args: unknown = {}) {
