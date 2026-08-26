@@ -4,17 +4,19 @@
   Zad Al-Khair legacy-origin bridge.
 
   The bridge is deliberately inert until the final domain serves the unique
-  v113 readiness asset. Membership data is exchanged through a short-lived,
+  v114 readiness asset. Membership data is exchanged through a short-lived,
   one-time server token; device and organizer credentials never enter the URL.
 */
 (()=>{
   const LEGACY_HOST="ayman-alashkar.github.io";
   const LEGACY_PREFIX="/zad-alkhair";
   const NEW_ORIGIN="https://zad-alkhair.net";
-  const READY_ASSET="/icons/migration-ready-v113.svg";
+  const READY_ASSET="/icons/migration-ready-v114.svg";
   const HANDOFF_URL="https://webqpbcijjbawatykoxe.supabase.co/functions/v1/migration-handoff";
   const SUPABASE_KEY="sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
   const OVERLAY_ID="zad-domain-migration";
+  const CLEANUP_PROOF_KEY="zad:migration-cleanup-proof-v1";
+  const CLEANED_KEY="zad:migration-cleaned-v1";
   const SAFE_PREF_KEYS=[
     "zad:prayer",
     "zad:qcf4:qari",
@@ -45,6 +47,17 @@
 
   function currentDestinationPath(){
     return appPath()+location.search+location.hash;
+  }
+
+  function alreadyCleaned(){
+    try{return !!localStorage.getItem(CLEANED_KEY)}catch(_){return false}
+  }
+
+  async function armCleanup(token){
+    if(!crypto.subtle||typeof TextEncoder!=="function")throw new Error("cleanup_proof_unavailable");
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token));
+    const proof=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
+    localStorage.setItem(CLEANUP_PROOF_KEY,proof);
   }
 
   function safeJson(value){
@@ -112,7 +125,7 @@
       };
       const timer=setTimeout(()=>finish(false),timeoutMs);
       image.onload=()=>finish(true);image.onerror=()=>finish(false);
-      image.src=NEW_ORIGIN+READY_ASSET+"?migration=v113&time="+Date.now();
+      image.src=NEW_ORIGIN+READY_ASSET+"?migration=v114&time="+Date.now();
     });
   }
 
@@ -143,7 +156,7 @@
         body:JSON.stringify(collectHandoff()),signal:controller.signal
       });
       const data=await response.json().catch(()=>null);
-      if(!response.ok||!data||typeof data.token!=="string")throw new Error("handoff_failed");
+      if(!response.ok||!data||typeof data.token!=="string"||!/^[A-Za-z0-9_-]{43}$/.test(data.token))throw new Error("handoff_failed");
       return data.token;
     }finally{clearTimeout(timer)}
   }
@@ -219,6 +232,7 @@
       note.className="zad-migration-note";note.textContent="يرجى الانتظار لحظات…";
       try{
         const token=await createHandoff();
+        await armCleanup(token);
         location.replace(transferDestination(token,currentDestinationPath()));
       }catch(_){
         action.disabled=false;action.textContent="إعادة المحاولة";
@@ -233,6 +247,12 @@
     action.focus({preventScroll:true});
   }
 
-  function checkAndShow(){customDomainReady().then(ready=>{if(ready)showMigration()}).catch(()=>{})}
+  function checkAndShow(){
+    customDomainReady().then(ready=>{
+      if(!ready)return;
+      if(alreadyCleaned())location.replace(new URL(currentDestinationPath(),NEW_ORIGIN).href);
+      else showMigration();
+    }).catch(()=>{});
+  }
   checkAndShow();window.addEventListener("online",checkAndShow,{passive:true});
 })();

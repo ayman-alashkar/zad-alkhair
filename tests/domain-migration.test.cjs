@@ -10,11 +10,22 @@ const token="T".repeat(43);
 function sourceSecurityChecks(){
   const home=fs.readFileSync(path.join(root,"index.html"),"utf8");
   assert.match(home,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/">/,"the final homepage declares the canonical production URL");
+  assert.match(home,/migration\.js\?v=114/,"the legacy bridge bypasses a stale service-worker response");
   const edge=fs.readFileSync(path.join(root,"supabase/functions/migration-handoff/index.ts"),"utf8");
   assert.match(edge,/redeemed_at=is\.null/,"redemption only accepts unused handoffs");
   assert.match(edge,/method:\"PATCH\",headers:\{Prefer:\"return=representation\"\}/,"redemption claims and returns the handoff atomically");
   const transfer=fs.readFileSync(path.join(root,"transfer/index.html"),"utf8");
   assert.match(transfer,/zad:migration-package-v1/,"the redeemed package is retained for an in-session retry");
+  assert.match(transfer,/LEGACY_CLEANUP="https:\/\/ayman-alashkar\.github\.io\/zad-alkhair\/cleanup\/"/,"successful transfer returns to the legacy origin for cleanup");
+  assert.match(transfer,/cleanup:false,proof/,"success remains pending until cleanup is verified");
+  assert.match(transfer,/sameValue\(await tokenHash\(arrival\.cleaned\),done\.proof\)/,"the cleanup receipt is cryptographically matched");
+  const cleanup=fs.readFileSync(path.join(root,"cleanup/index.html"),"utf8");
+  assert.match(cleanup,/CACHE_PREFIXES=\["zad-shell-","zad-runtime-","zad-quran-","zad-tafsir-","zad-audio-"\]/,"only known Zad caches are selected");
+  assert.match(cleanup,/key\.startsWith\("zad:"\)/,"only Zad browser keys are selected");
+  assert.doesNotMatch(cleanup,/localStorage\.clear\(|sessionStorage\.clear\(/,"shared-origin storage is never cleared wholesale");
+  assert.match(cleanup,/scope\.origin===location\.origin/,"service-worker cleanup is origin constrained");
+  assert.match(cleanup,/scope\.pathname\.startsWith\(LEGACY_SCOPE\)/,"service-worker cleanup is app-scope constrained");
+  assert.match(cleanup,/sameValue\(await tokenHash\(proof\),expected\)/,"cleanup requires the proof armed on the legacy origin");
 }
 
 function mime(file){
@@ -48,10 +59,10 @@ async function localUiChecks(browser){
 }
 
 async function transferChecks(browser){
-  const context=await browser.newContext();
+  const context=await browser.newContext({serviceWorkers:"block"});
   const page=await context.newPage();
   let confirmed=false;
-  await page.route("https://webqpbcijjbawatykoxe.supabase.co/functions/v1/migration-handoff",async route=>{
+  await context.route("https://webqpbcijjbawatykoxe.supabase.co/functions/v1/migration-handoff",async route=>{
     const body=route.request().postDataJSON();
     if(body.action==="redeem"){
       assert.equal(body.token,token);
@@ -64,8 +75,34 @@ async function transferChecks(browser){
     if(body.action==="confirm"){confirmed=true;return route.fulfill({status:200,contentType:"application/json",body:'{"ok":true}'})}
     return route.abort();
   });
+  await context.route("https://zad-alkhair.net/**",async route=>{
+    const url=new URL(route.request().url());
+    if(url.pathname==="/__migration_audit__")return route.fulfill({status:200,contentType:"text/html",body:"<!doctype html><title>audit</title>"});
+    let relative=url.pathname.replace(/^\//,"")||"index.html";if(relative.endsWith("/"))relative+="index.html";
+    const file=path.resolve(root,relative);
+    if(!file.startsWith(root)||!fs.existsSync(file))return route.fulfill({status:404,body:"not found"});
+    return route.fulfill({status:200,contentType:mime(file),body:fs.readFileSync(file)});
+  });
+  await context.route("https://ayman-alashkar.github.io/zad-alkhair/**",async route=>{
+    const url=new URL(route.request().url());
+    if(url.pathname.endsWith("/__migration_audit__"))return route.fulfill({status:200,contentType:"text/html",body:"<!doctype html><title>audit</title>"});
+    let relative=url.pathname.replace(/^\/zad-alkhair\/?/,"")||"index.html";if(relative.endsWith("/"))relative+="index.html";
+    const file=path.resolve(root,relative);
+    if(!file.startsWith(root)||!fs.existsSync(file))return route.fulfill({status:404,body:"not found"});
+    return route.fulfill({status:200,contentType:mime(file),body:fs.readFileSync(file)});
+  });
+  await page.goto("https://ayman-alashkar.github.io/zad-alkhair/__migration_audit__",{waitUntil:"domcontentloaded"});
+  await page.evaluate(async transferToken=>{
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(transferToken));
+    const hash=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
+    localStorage.setItem("zad:migration-cleanup-proof-v1",hash);
+    localStorage.setItem("zad:device","legacy-device");
+    localStorage.setItem("other:keep","untouched");
+    await (await caches.open("zad-quran-core-v1")).put(new Request(location.origin+"/quran-probe"),new Response("quran"));
+    await (await caches.open("other-app-cache")).put(new Request(location.origin+"/other-probe"),new Response("other"));
+  },token);
   const fragment=new URLSearchParams({token,next:"/"});
-  await page.goto(`http://127.0.0.1:4173/transfer/#${fragment}`,{waitUntil:"domcontentloaded"});
+  await page.goto(`https://zad-alkhair.net/transfer/#${fragment}`,{waitUntil:"domcontentloaded"});
   await page.waitForSelector("#success:not([hidden])");
   assert.equal(new URL(page.url()).hash,"","token is removed from the address immediately");
   const stored=await page.evaluate(()=>({
@@ -74,6 +111,17 @@ async function transferChecks(browser){
     theme:localStorage.getItem("zad:qcf4:theme")
   }));
   assert.deepEqual(stored,{device:"device-test-1234",last:"AB12",viewer:{id:"member-test",name:"قارئ تجريبي"},org:"admin-test",theme:"dark"});
+  const audit=await context.newPage();
+  await audit.goto("https://ayman-alashkar.github.io/zad-alkhair/__migration_audit__",{waitUntil:"domcontentloaded"});
+  const legacy=await audit.evaluate(async()=>({
+    zadDevice:localStorage.getItem("zad:device"),proof:localStorage.getItem("zad:migration-cleanup-proof-v1"),
+    cleaned:!!localStorage.getItem("zad:migration-cleaned-v1"),other:localStorage.getItem("other:keep"),caches:await caches.keys()
+  }));
+  assert.equal(legacy.zadDevice,null,"legacy Zad identity is removed after transfer");
+  assert.equal(legacy.proof,null,"cleanup authorization proof is removed after use");
+  assert.equal(legacy.cleaned,true,"a tiny marker prevents the old bridge from running again");
+  assert.equal(legacy.other,"untouched","unrelated shared-origin local storage survives cleanup");
+  assert.deepEqual(legacy.caches,["other-app-cache"],"unrelated shared-origin caches survive cleanup");
   await page.waitForTimeout(50);assert.equal(confirmed,true,"handoff is confirmed after local storage succeeds");
   await context.close();
 }
@@ -92,7 +140,7 @@ async function legacyBridgeChecks(browser){
     localStorage.setItem("zad:offline-library-v1","must-not-transfer");
     localStorage.setItem("zad:pwa-install-id","must-not-transfer");
   });
-  await context.route("https://zad-alkhair.net/icons/migration-ready-v113.svg**",route=>route.fulfill({status:200,contentType:"image/svg+xml",body:'<svg xmlns="http://www.w3.org/2000/svg"/>'}));
+  await context.route("https://zad-alkhair.net/icons/migration-ready-v114.svg**",route=>route.fulfill({status:200,contentType:"image/svg+xml",body:'<svg xmlns="http://www.w3.org/2000/svg"/>'}));
   await context.route("https://zad-alkhair.net/transfer/**",route=>route.fulfill({status:200,contentType:"text/html",body:"<!doctype html><title>وصل</title>"}));
   await context.route("https://webqpbcijjbawatykoxe.supabase.co/functions/v1/migration-handoff",async route=>{
     if(route.request().method()==="OPTIONS")return route.fulfill({status:204,headers:{"access-control-allow-origin":"https://ayman-alashkar.github.io","access-control-allow-headers":"authorization,apikey,content-type"}});
@@ -122,6 +170,10 @@ async function legacyBridgeChecks(browser){
   assert.equal("zad:pwa-install-id" in createBody.prefs,false);
   assert.equal(page.url().includes("device-synthetic-1234"),false,"device credential never enters the destination URL");
   assert.equal(page.url().includes("admin-synthetic-secret"),false,"organizer credential never enters the destination URL");
+  const legacyAudit=await context.newPage();
+  await legacyAudit.goto("https://ayman-alashkar.github.io/zad-alkhair/",{waitUntil:"domcontentloaded"});
+  const proof=await legacyAudit.evaluate(()=>localStorage.getItem("zad:migration-cleanup-proof-v1"));
+  assert.match(proof,/^[0-9a-f]{64}$/,"legacy cleanup is armed with a hash rather than the raw handoff token");
   await context.close();
 }
 
