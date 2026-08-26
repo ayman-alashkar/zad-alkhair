@@ -1,4 +1,5 @@
 name: Temporary Cloudflare preview
+# Ephemeral review workflow; remove before merge.
 
 on:
   push:
