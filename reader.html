@@ -7,7 +7,8 @@
 <script defer src="migration.js?v=116"></script>
 <title>القرآن العظيم | زاد الخير</title>
 <meta name="description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
-<link rel="canonical" href="https://zad-alkhair.net/reader.html">
+<meta name="robots" content="noindex,follow">
+<link rel="canonical" href="https://zad-alkhair.net/quran/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ar_AR">
 <meta property="og:site_name" content="زاد الخير">
@@ -3202,12 +3203,15 @@ function readerEntryParams(){
   const code=rawCode.slice(0,4);
   const juz=Number(q.get("juz")),page=Number(q.get("page"));
   const surah=Number(q.get("surah")),ayah=Number(q.get("ayah")),home=q.get("home")==="1",fromZad=q.get("from")==="zad";
+  const qari=String(q.get("qari")||"").trim();
   return {
     code,
     juz:Number.isInteger(juz)&&juz>=1&&juz<=30?juz:null,
     page:Number.isInteger(page)&&page>=1&&page<=TOTAL_PAGES?page:null,
     surah:Number.isInteger(surah)&&surah>=1&&surah<=114?surah:null,
     ayah:Number.isInteger(ayah)&&ayah>=1?ayah:null,
+    qari:RECITERS.some(r=>r.id===qari)?qari:null,
+    autoplay:q.get("play")==="1",
     home,fromZad
   };
 }
@@ -3715,6 +3719,15 @@ async function playSurahFromHub(s,closeHub){
   play={surah:s,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
   pendingSurahBasmala=(s!==1&&s!==9);basmalaFallbackTarget=null;
   closeHub();const p=Number(chapterMap.get(s)?.pages?.[0]||1);await go(p);await playCurrent(true);
+}
+function prepareSurahFromDeepLink(s){
+  s=Number(s)||1;
+  setIndexPlaybackBoundary(null);
+  continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");
+  play={surah:s,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
+  pendingSurahBasmala=(s!==1&&s!==9);basmalaFallbackTarget=null;
+  updatePlayer();showPlayer(true);
+  setTimeout(()=>showToast(`اضغط تشغيل للاستماع بصوت ${reciter.name}`),220);
 }
 async function playJuzFromHub(j,closeHub){
   j=Math.max(1,Math.min(30,Number(j)||1));const start=LOCAL_HIZB_QUARTERS[(j-1)*8];
@@ -4694,6 +4707,10 @@ if("serviceWorker" in navigator){
 
     /* Integration deep links. Specific ayah wins, then page, then juz, then saved position. */
     const entry=readerEntryParams();
+    if(entry.qari){
+      reciter=RECITERS.find(r=>r.id===entry.qari)||defaultReciter();
+      storageJsonSet(STORAGE_KEYS.qari,reciter);
+    }
     let deepLinkedAyah=ayahFromHash();
     if(!deepLinkedAyah&&entry.surah&&entry.ayah){
       const max=Number(chapterMap.get(entry.surah)?.verses_count||0);
@@ -4721,6 +4738,7 @@ if("serviceWorker" in navigator){
       const anchor=document.querySelector(`.page[data-page="${currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
       if(anchor)selectVerse(deepLinkedAyah,anchor,true);
     }
+    if(entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
     prefetchAround(currentPage).then(()=>trimPageDom(currentPage));
     loadTafsirIndex().catch(err=>console.warn("tafsir index unavailable",err));
     if(wantsHome){

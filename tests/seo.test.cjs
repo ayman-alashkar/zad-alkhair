@@ -1,0 +1,82 @@
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const path=require("node:path");
+const test=require("node:test");
+
+const root=path.resolve(__dirname,"..");
+const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
+
+test("sitemap contains every canonical discovery page once",()=>{
+  const xml=read("sitemap.xml");
+  const urls=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>match[1]);
+  assert.equal(urls.length,154);
+  assert.equal(new Set(urls).size,154);
+  assert.ok(urls.includes("https://zad-alkhair.net/"));
+  assert.ok(urls.includes("https://zad-alkhair.net/quran/"));
+  assert.ok(urls.includes("https://zad-alkhair.net/khatmahs/"));
+  assert.ok(urls.includes("https://zad-alkhair.net/surah/67/"));
+  assert.ok(urls.includes("https://zad-alkhair.net/quran/reciters/ayman-suwaid/"));
+  assert.match(read("robots.txt"),/Sitemap: https:\/\/zad-alkhair\.net\/sitemap\.xml/);
+});
+
+test("every sitemap URL maps to a page with its own canonical",()=>{
+  const urls=[...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]));
+  for(const url of urls){
+    const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
+    const html=read(relative);
+    assert.match(html,new RegExp(`<link rel="canonical" href="${url.href.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}">`),relative);
+    assert.match(html,/<meta name="description" content="[^"\n]+">/,relative);
+  }
+});
+
+test("Quran discovery pages expose useful crawlable links",()=>{
+  const quran=read("quran/index.html");
+  assert.equal((quran.match(/href="\/surah\/\d+\/"/g)||[]).length,114);
+  assert.equal((quran.match(/href="\/juz\/\d+\/"/g)||[]).length,30);
+  assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,5);
+  const mulk=read("surah/67/index.html");
+  assert.match(mulk,/سورة الملك بصوت الشيخ أيمن سويد/);
+  assert.match(mulk,/qari=Ayman_Sowaid_64kbps/);
+  assert.match(mulk,/if\(!\["code","ayah","qari","open"\]\.some\(k=>p\.has\(k\)\)\)return/);
+  assert.doesNotMatch(mulk,/document\.getElementById\("openReader"\)\.href=u\.href;location\.replace/);
+});
+
+test("homepage gives Google real links without changing app actions",()=>{
+  const home=read("index.html");
+  assert.match(home,/<a class="zk-launch-option" id="zk-launch-quran" href="quran\/">/);
+  assert.match(home,/<a class="zk-launch-option" id="zk-launch-zad" href="khatmahs\/">/);
+  assert.match(home,/<a class="zk-launch-install" id="zk-launch-install" href="install\/" hidden>/);
+  assert.match(home,/event=>\{event\.preventDefault\(\);zkHideLaunch\(\);boot\(\)\}/);
+  assert.match(home,/القرآن العظيم، ختمات جماعية ومواقيت الصلاة/);
+});
+
+test("reader accepts a validated reciter deep link",()=>{
+  const reader=read("reader.html");
+  assert.match(reader,/<meta name="robots" content="noindex,follow">/);
+  assert.match(reader,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/quran\/">/);
+  assert.match(reader,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
+  assert.match(reader,/if\(entry\.qari\)\{/);
+  assert.match(reader,/if\(entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
+});
+
+test("structured data parses and internal links resolve",()=>{
+  const urls=[...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]));
+  for(const url of urls){
+    const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
+    const html=read(relative);
+    for(const match of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g))assert.doesNotThrow(()=>JSON.parse(match[1]),relative);
+    for(const match of html.matchAll(/href="([^"]+)"/g)){
+      if(match[1].includes("${"))continue;
+      const target=new URL(match[1].replace(/&amp;/g,"&"),url);
+      if(target.origin!=="https://zad-alkhair.net")continue;
+      const file=target.pathname==="/"?"index.html":target.pathname.endsWith("/")?path.join(target.pathname.slice(1),"index.html"):target.pathname.slice(1);
+      assert.ok(fs.existsSync(path.join(root,file)),`${relative} -> ${target.pathname}`);
+    }
+  }
+});
+
+test("group khatmahs have a dedicated descriptive page",()=>{
+  const page=read("khatmahs/index.html");
+  for(const phrase of ["ختمات جماعية","حجز الأجزاء","تذكير يومي اختياري","تلغرام","إدارة الختمة"])assert.ok(page.includes(phrase),phrase);
+  assert.match(page,/href="\/\?section=khatmahs"/);
+});

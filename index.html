@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="canonical" href="https://zad-alkhair.net/">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="manifest" href="manifest.json">
 <script defer src="migration.js?v=116"></script>
 <meta name="theme-color" content="#0F5C50">
@@ -16,22 +17,28 @@
 <link rel="icon" href="icons/zad-mark.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/aref-ruqaa-arabic-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="icons/zad-mark.svg" as="image" type="image/svg+xml">
-<meta name="description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
-<title>زاد الخير</title>
+<meta name="description" content="زاد الخير تطبيق لقراءة القرآن العظيم والاستماع إليه مع التفسير الوجيز، وتنظيم الختمات الجماعية ومتابعة الأجزاء المقروءة، وعرض مواقيت الصلاة.">
+<title>زاد الخير | القرآن العظيم، ختمات جماعية ومواقيت الصلاة</title>
 
 <!-- Open Graph / Facebook / WhatsApp / Slack -->
 <meta property="og:type" content="website">
+<meta property="og:locale" content="ar_AR">
+<meta property="og:site_name" content="زاد الخير">
 <meta property="og:url" content="https://zad-alkhair.net/">
-<meta property="og:title" content="زاد الخير">
-<meta property="og:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
+<meta property="og:title" content="زاد الخير | القرآن العظيم والختمات الجماعية">
+<meta property="og:description" content="اقرأ واستمع للقرآن العظيم مع التفسير الوجيز، وشارك في الختمات الجماعية، وتابع الأجزاء المقروءة ومواقيت الصلاة عبر زاد الخير.">
 <meta property="og:image" content="https://zad-alkhair.net/zad-alkhair-share.png">
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
 <meta property="twitter:url" content="https://zad-alkhair.net/">
-<meta property="twitter:title" content="زاد الخير">
-<meta property="twitter:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
+<meta property="twitter:title" content="زاد الخير | القرآن العظيم والختمات الجماعية">
+<meta property="twitter:description" content="اقرأ واستمع للقرآن العظيم مع التفسير الوجيز، وشارك في الختمات الجماعية، وتابع الأجزاء المقروءة ومواقيت الصلاة.">
 <meta property="twitter:image" content="https://zad-alkhair.net/zad-alkhair-share.png">
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[{"@type":"WebSite","@id":"https://zad-alkhair.net/#website","url":"https://zad-alkhair.net/","name":"زاد الخير","alternateName":"تطبيق زاد الخير","inLanguage":"ar"},{"@type":"WebApplication","@id":"https://zad-alkhair.net/#app","name":"زاد الخير","url":"https://zad-alkhair.net/","applicationCategory":"LifestyleApplication","operatingSystem":"Any","isAccessibleForFree":true,"inLanguage":"ar","description":"تطبيق لقراءة القرآن العظيم والاستماع إليه مع التفسير الوجيز، وتنظيم الختمات الجماعية ومتابعة الأجزاء المقروءة، وعرض مواقيت الصلاة.","featureList":["قراءة القرآن العظيم","التفسير الوجيز للدكتور وهبة الزحيلي","الاستماع إلى تلاوات القراء","الختمات الجماعية ومتابعة الأجزاء","مواقيت الصلاة","الاستخدام دون اتصال"]}]}
+</script>
 
 <!-- حاسبة مواقيت الصلاة محلية داخل الحزمة، بلا تنفيذ JavaScript من طرف ثالث. -->
 <script src="vendor/adhan-4.4.4.umd.min.js"></script>
@@ -1306,7 +1313,7 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zk-launch-options::before{content:none!important;display:none!important}
 .zk-launch-option{
   appearance:none;position:relative;width:326px;height:76px;min-height:76px;margin:0;display:grid;grid-template-columns:46px 196px;align-items:center;justify-content:center;column-gap:10px;
-  direction:ltr;padding:8px 32px 8px 14px;border:1px solid rgba(167,119,38,.44);border-radius:15px;background:linear-gradient(180deg,rgba(255,253,247,.985),rgba(247,239,224,.975));color:#173D35;cursor:pointer;
+  direction:ltr;padding:8px 32px 8px 14px;border:1px solid rgba(167,119,38,.44);border-radius:15px;background:linear-gradient(180deg,rgba(255,253,247,.985),rgba(247,239,224,.975));color:#173D35;cursor:pointer;text-decoration:none;
   box-shadow:0 10px 22px -18px rgba(76,48,14,.58),inset 0 1px 0 rgba(255,255,255,.96),inset 0 -1px 0 rgba(197,154,74,.05);transition:transform .12s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease
 }
 .zk-launch-option:nth-child(1),.zk-launch-option:nth-child(2),.zk-launch-option:nth-child(3){background:linear-gradient(180deg,rgba(255,253,247,.985),rgba(247,239,224,.975));border-color:rgba(167,119,38,.44)}
@@ -1316,7 +1323,7 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zk-launch-option-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#0F5C50;background:transparent;box-shadow:none}
 .zk-launch-option:nth-child(1) .zk-launch-option-icon,.zk-launch-option:nth-child(2) .zk-launch-option-icon{color:#0F5C50;background:transparent;box-shadow:none}.zk-launch-option:nth-child(3) .zk-launch-option-icon{color:#9A6D25;background:transparent;box-shadow:none}
 .zk-launch-option-icon svg{display:block;width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.zk-launch-install{appearance:none;position:absolute;z-index:2;left:135px;top:674px;width:230px;min-height:28px;padding:3px 8px;border:0;background:transparent;color:#5F756D;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:650;line-height:1.4;transition:color .18s ease,opacity .18s ease}
+.zk-launch-install{appearance:none;position:absolute;z-index:2;left:135px;top:674px;width:230px;min-height:28px;padding:3px 8px;border:0;background:transparent;color:#5F756D;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:650;line-height:1.4;text-decoration:none;transition:color .18s ease,opacity .18s ease}
 .zk-launch-install[hidden]{display:none!important}
 .zk-launch-install:hover{color:#0F5C50}.zk-launch-install:focus-visible{outline:2px solid rgba(15,92,80,.22);outline-offset:2px;border-radius:10px}.zk-launch-install:active{transform:translateY(1px)}
 .zk-launch-install svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
@@ -1353,23 +1360,23 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
     </div>
     <p class="zk-launch-motto" aria-label="اقرأْ وارتقِ"><span class="zk-motto-rise">ارتقِ</span><span class="zk-motto-and">و</span><span class="zk-motto-read">اقرأْ</span></p>
     <div class="zk-launch-options">
-      <button class="zk-launch-option" id="zk-launch-quran" type="button">
+      <a class="zk-launch-option" id="zk-launch-quran" href="quran/">
         <span class="zk-launch-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m19.648 5.437-.659-1.043c-.364-.577-.546-.866-.785-.892-.238-.027-.505.247-1.038.795-1.722 1.77-3.444 1.508-5.166 4.691-1.722-3.183-3.444-2.921-5.166-4.691-.533-.548-.8-.822-1.038-.795-.239.026-.421.315-.785.892l-.658 1.043c-.255.402-.382.604-.347.816.034.212.217.357.584.647l6.182 4.898c.591.468.887.702 1.228.702s.637-.234 1.228-.702L19.41 6.9c.367-.29.55-.435.584-.647.035-.212-.092-.414-.346-.816M22 8.5l-16 12v-4.696M2 8.5l16 12v-4.696"/></svg></span>
         <strong>القرآن العظيم</strong>
-      </button>
-      <button class="zk-launch-option" id="zk-launch-zad" type="button">
+      </a>
+      <a class="zk-launch-option" id="zk-launch-zad" href="khatmahs/">
         <span class="zk-launch-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.25"/><path d="M3.5 19c.45-3.15 2.4-5 5.5-5s5.05 1.85 5.5 5M14.3 14.8c.75-.55 1.7-.8 2.7-.8 2.35 0 3.75 1.4 4 3.8"/></svg></span>
         <strong>الختمات الجماعية</strong>
-      </button>
+      </a>
       <button class="zk-launch-option" id="zk-launch-prayer" type="button">
         <span class="zk-launch-option-icon" aria-hidden="true"><svg viewBox="0 0 25 24"><path d="M9.15309 9C5.68214 5.5 11.0125 3.75 12.5 2C13.9875 3.75 19.3179 5.5 15.8469 9H9.15309Z"/><path d="M18.5 12V11C18.5 10.0572 18.5 9.58579 18.2071 9.29289C17.9142 9 17.4428 9 16.5 9H8.5C7.55719 9 7.08579 9 6.79289 9.29289C6.5 9.58579 6.5 10.0572 6.5 11V12"/><path d="M17.5 12H7.5C6.08579 12 5.37868 12 4.93934 12.4393C4.5 12.8787 4.5 13.5858 4.5 15V19C4.5 20.4142 4.5 21.1213 4.93934 21.5607C5.37868 22 6.08579 22 7.5 22H17.5C18.9142 22 19.6213 22 20.0607 21.5607C20.5 21.1213 20.5 20.4142 20.5 19V15C20.5 13.5858 20.5 12.8787 20.0607 12.4393C19.6213 12 18.9142 12 17.5 12Z"/><path d="M10.0001 22V19C9.98279 16 12.5 15 12.5 15C12.5 15 15.0172 16 14.9999 19V22"/></svg></span>
         <strong>مواقيت الصلاة</strong>
       </button>
     </div>
-    <button class="zk-launch-install" id="zk-launch-install" type="button" hidden>
+    <a class="zk-launch-install" id="zk-launch-install" href="install/" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5"/></svg>
       <span>ثبّت تطبيق زاد الخير</span>
-    </button>
+    </a>
   </div>
 </section>
 
@@ -1505,9 +1512,10 @@ window.addEventListener("appinstalled",()=>{
 try{
   window.matchMedia("(display-mode: standalone)").addEventListener("change",pwaPaintInstallButton);
 }catch(_){ }
-pwaInstallButton?.addEventListener("click",async()=>{
-  if(pwaIsStandalone()){pwaInstallButton.hidden=true;return}
-  if(!pwaInstallPrompt){location.href="install/?next=/";return}
+pwaInstallButton?.addEventListener("click",async event=>{
+  if(pwaIsStandalone()){event.preventDefault();pwaInstallButton.hidden=true;return}
+  if(!pwaInstallPrompt)return;
+  event.preventDefault();
   const prompt=pwaInstallPrompt;pwaInstallPrompt=null;
   await prompt.prompt();
   const choice=await prompt.userChoice.catch(()=>null);
@@ -4211,8 +4219,8 @@ function zkRootBack(){
   zkConfirmNativeExit();
 }
 window.addEventListener("popstate",()=>zkRootBack());
-document.getElementById("zk-launch-quran")?.addEventListener("click",()=>{location.href="reader.html?home=1&from=zad"});
-document.getElementById("zk-launch-zad")?.addEventListener("click",()=>{zkHideLaunch();boot()});
+document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{event.preventDefault();location.href="reader.html?home=1&from=zad"});
+document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
 document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{document.body.classList.add("zk-launch-prayer");prayerDialog()});
 window.addEventListener("hashchange",()=>{
   const incoming=hashCode();
@@ -4228,7 +4236,8 @@ window.visualViewport?.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
 zkCaptureIncomingKhatmah();
-zkShowLaunch();
+if(new URLSearchParams(location.search).get("section")==="khatmahs"){zkHideLaunch();boot()}
+else zkShowLaunch();
 zkArmRootGuard()
 
 /* PWA shell + offline Quran/Tafsir library. The index checks status only;
