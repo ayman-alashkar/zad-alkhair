@@ -201,13 +201,13 @@ function cleanToken(value:unknown){
 async function redeem(body:any,supabaseUrl:string,serviceRole:string,origin:string|null){
   const token=cleanToken(body.token);if(!token)return json({error:"invalid_token"},400,origin);
   const tokenHash=await hexHash(fromBase64url(token));
+  const redeemedAt=new Date().toISOString();
   const rows=await rest(supabaseUrl,serviceRole,
-    `origin_migration_handoffs?select=payload,iv,expires_at&token_hash=eq.${tokenHash}&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&limit=1`);
+    `origin_migration_handoffs?token_hash=eq.${tokenHash}&expires_at=gt.${encodeURIComponent(redeemedAt)}&redeemed_at=is.null&select=payload,iv`,{
+      method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({redeemed_at:redeemedAt})
+    });
   const row=Array.isArray(rows)?rows[0]:null;if(!row)return json({error:"expired_or_used"},410,origin);
   const payload=await decryptPayload(row.payload,row.iv,serviceRole);
-  await rest(supabaseUrl,serviceRole,`origin_migration_handoffs?token_hash=eq.${tokenHash}`,{
-    method:"PATCH",headers:{Prefer:"return=minimal"},body:JSON.stringify({redeemed_at:new Date().toISOString()})
-  });
   return json({payload},200,origin);
 }
 

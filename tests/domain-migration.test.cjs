@@ -3,10 +3,17 @@
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
-const {chromium}=require("playwright");
 
 const root=path.resolve(__dirname,"..");
 const token="T".repeat(43);
+
+function sourceSecurityChecks(){
+  const edge=fs.readFileSync(path.join(root,"supabase/functions/migration-handoff/index.ts"),"utf8");
+  assert.match(edge,/redeemed_at=is\.null/,"redemption only accepts unused handoffs");
+  assert.match(edge,/method:\"PATCH\",headers:\{Prefer:\"return=representation\"\}/,"redemption claims and returns the handoff atomically");
+  const transfer=fs.readFileSync(path.join(root,"transfer/index.html"),"utf8");
+  assert.match(transfer,/zad:migration-package-v1/,"the redeemed package is retained for an in-session retry");
+}
 
 function mime(file){
   if(file.endsWith(".html"))return "text/html; charset=utf-8";
@@ -117,6 +124,12 @@ async function legacyBridgeChecks(browser){
 }
 
 (async()=>{
+  sourceSecurityChecks();
+  if(process.argv.includes("--static")){
+    console.log("DOMAIN MIGRATION STATIC TESTS PASS");
+    return;
+  }
+  const {chromium}=require("playwright");
   const browser=await chromium.launch({headless:true});
   try{
     await localUiChecks(browser);

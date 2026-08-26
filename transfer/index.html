@@ -67,6 +67,7 @@
   const SUPABASE_KEY="sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
   const TOKEN_KEY="zad:migration-token-v1";
   const NEXT_KEY="zad:migration-next-v1";
+  const PACKAGE_KEY="zad:migration-package-v1";
   const COMPLETE_KEY="zad:migration-complete-v1";
   const SAFE_PREF_KEYS=new Set([
     "zad:prayer","zad:qcf4:qari","zad:qcf4:continuous","zad:qcf4:recent-visits",
@@ -176,12 +177,17 @@
       return showFailure("رابط الانتقال غير مكتمل. افتح الرابط القديم واضغط «الانتقال بأمان إلى النسخة النهائية» مرة أخرى.");
     }
     try{
-      const redeemed=await callApi("redeem",arrival.token);
-      const result=applyPackage(redeemed.payload);
+      let pkg=null;
+      try{pkg=JSON.parse(sessionStorage.getItem(PACKAGE_KEY)||"null")}catch(_){ }
+      if(!pkg){
+        const redeemed=await callApi("redeem",arrival.token);pkg=redeemed.payload;
+        try{sessionStorage.setItem(PACKAGE_KEY,JSON.stringify(pkg))}catch(_){ }
+      }
+      const result=applyPackage(pkg);
       try{localStorage.setItem(COMPLETE_KEY,JSON.stringify({at:Date.now(),member:result.member,next:arrival.next}))}catch(_){ }
       showSuccess(result.member,arrival.next);
       callApi("confirm",arrival.token).catch(()=>{});
-      sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(NEXT_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(NEXT_KEY);sessionStorage.removeItem(PACKAGE_KEY);
     }catch(_){showFailure("لم تُحذف أو تتغير أي بيانات. تحقق من الاتصال ثم أعد المحاولة.")}
   }
 
