@@ -26,6 +26,8 @@ function sourceSecurityChecks(){
   assert.match(cleanup,/scope\.origin===location\.origin/,"service-worker cleanup is origin constrained");
   assert.match(cleanup,/scope\.pathname\.startsWith\(LEGACY_SCOPE\)/,"service-worker cleanup is app-scope constrained");
   assert.match(cleanup,/sameValue\(await tokenHash\(proof\),expected\)/,"cleanup requires the proof armed on the legacy origin");
+  const worker=fs.readFileSync(path.join(root,"sw.js"),"utf8");
+  assert.ok(worker.includes('const reader=/\\/reader(?:\\.html)?\\/?$/i.test(url.pathname);'),"offline navigation recognizes both reader.html and Cloudflare Pages' clean /reader URL");
 }
 
 function mime(file){

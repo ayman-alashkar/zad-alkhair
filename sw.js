@@ -133,7 +133,8 @@ async function networkFirst(request){
     if(hit)return hit;
     if(request.mode==="navigate"){
       const url=new URL(request.url);
-      const reader=/reader\.html$/i.test(url.pathname);
+      /* Cloudflare Pages serves reader.html at the clean /reader URL. */
+      const reader=/\/reader(?:\.html)?\/?$/i.test(url.pathname);
       const fallback=await caches.match(reader?"./reader.html":"./index.html");
       if(fallback)return fallback;
     }
