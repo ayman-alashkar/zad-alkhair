@@ -6,6 +6,8 @@ const TTL_MS=15*60*1000;
 const MAX_PROFILES=12;
 const MAX_PREFS_BYTES=90000;
 const MAX_CREATES_PER_HOUR=20;
+const CAMPAIGN_KEY="final-domain-v1";
+const TELEGRAM_MIGRATION_URL="https://webqpbcijjbawatykoxe.supabase.co/functions/v1/telegram-migration";
 const encoder=new TextEncoder();
 const decoder=new TextDecoder();
 const SAFE_PREF_KEYS=new Set([
@@ -23,7 +25,14 @@ const SAFE_PREF_KEYS=new Set([
 ]);
 
 type ClientProfile={code:string;mid:string;orgCode:string};
-type ValidProfile={code:string;viewer:{id:string;name:string};title:string;orgCode?:string};
+type ValidProfile={
+  code:string;
+  viewer:{id:string;name:string};
+  title:string;
+  khatmahId:string;
+  mid:string;
+  orgCode?:string;
+};
 
 function base64url(bytes:Uint8Array){
   let binary="";
@@ -156,7 +165,9 @@ async function validateProfiles(supabaseUrl:string,serviceRole:string,device:str
     const valid:ValidProfile={
       code:String(khatmah.code),
       viewer:{id:String(member.mid),name:String(member.name||"").slice(0,200)},
-      title:String(khatmah.title||"ختمة").slice(0,200)
+      title:String(khatmah.title||"ختمة").slice(0,200),
+      khatmahId:String(khatmah.id),
+      mid:String(member.mid)
     };
     if(String(khatmah.organizer_id||"")===String(member.mid)&&profile.orgCode&&
        await constantEqual(profile.orgCode,String(khatmah.organizer_code||"")))valid.orgCode=profile.orgCode;
@@ -211,11 +222,33 @@ async function redeem(body:any,supabaseUrl:string,serviceRole:string,origin:stri
   return json({payload},200,origin);
 }
 
+async function dispatchWelcomes(chatIds:unknown){
+  const cronSecret=Deno.env.get("CRON_SECRET")||"";
+  if(!cronSecret||!Array.isArray(chatIds))return;
+  const unique=[...new Set(chatIds.map(value=>Number(value)).filter(Number.isSafeInteger))].slice(0,MAX_PROFILES);
+  await Promise.all(unique.map(chatId=>fetch(TELEGRAM_MIGRATION_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-cron-secret":cronSecret},
+    body:JSON.stringify({action:"dispatch",chatId})
+  }).catch(()=>null)));
+}
+
 async function confirm(body:any,supabaseUrl:string,serviceRole:string,origin:string|null){
   const token=cleanToken(body.token);if(!token)return json({error:"invalid_token"},400,origin);
   const tokenHash=await hexHash(fromBase64url(token));
-  await rest(supabaseUrl,serviceRole,`origin_migration_handoffs?token_hash=eq.${tokenHash}`,{method:"DELETE",headers:{Prefer:"return=minimal"}});
-  return json({ok:true},200,origin);
+  const rows=await rest(supabaseUrl,serviceRole,
+    `origin_migration_handoffs?token_hash=eq.${tokenHash}&redeemed_at=not.is.null&select=payload,iv&limit=1`);
+  const row=Array.isArray(rows)?rows[0]:null;if(!row)return json({error:"expired_or_used"},410,origin);
+  const payload=await decryptPayload(row.payload,row.iv,serviceRole);
+  const profiles=Array.isArray(payload?.profiles)
+    ?payload.profiles.map((profile:any)=>({khatmahId:profile?.khatmahId,mid:profile?.mid}))
+    :[];
+  const completed=await rest(supabaseUrl,serviceRole,"rpc/complete_origin_domain_migration",{
+    method:"POST",
+    body:JSON.stringify({p_device:payload?.device||"",p_profiles:profiles,p_campaign_key:CAMPAIGN_KEY})
+  });
+  await dispatchWelcomes(completed?.chatIds).catch(()=>null);
+  return json({ok:true,members:Number(completed?.members||0)},200,origin);
 }
 
 Deno.serve(async(req:Request)=>{

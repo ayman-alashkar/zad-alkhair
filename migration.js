@@ -4,14 +4,14 @@
   Zad Al-Khair legacy-origin bridge.
 
   The bridge is deliberately inert until the final domain serves the unique
-  v114 readiness asset. Membership data is exchanged through a short-lived,
+  v115 readiness asset. Membership data is exchanged through a short-lived,
   one-time server token; device and organizer credentials never enter the URL.
 */
 (()=>{
   const LEGACY_HOST="ayman-alashkar.github.io";
   const LEGACY_PREFIX="/zad-alkhair";
   const NEW_ORIGIN="https://zad-alkhair.net";
-  const READY_ASSET="/icons/migration-ready-v114.svg";
+  const READY_ASSET="/icons/migration-ready-v115.svg";
   const HANDOFF_URL="https://webqpbcijjbawatykoxe.supabase.co/functions/v1/migration-handoff";
   const SUPABASE_KEY="sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
   const OVERLAY_ID="zad-domain-migration";
@@ -125,7 +125,7 @@
       };
       const timer=setTimeout(()=>finish(false),timeoutMs);
       image.onload=()=>finish(true);image.onerror=()=>finish(false);
-      image.src=NEW_ORIGIN+READY_ASSET+"?migration=v114&time="+Date.now();
+      image.src=NEW_ORIGIN+READY_ASSET+"?migration=v115&time="+Date.now();
     });
   }
 
@@ -151,7 +151,6 @@
         headers:{
           "Content-Type":"application/json",
           apikey:SUPABASE_KEY,
-          Authorization:"Bearer "+SUPABASE_KEY
         },
         body:JSON.stringify(collectHandoff()),signal:controller.signal
       });

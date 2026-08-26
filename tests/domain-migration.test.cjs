@@ -10,7 +10,7 @@ const token="T".repeat(43);
 function sourceSecurityChecks(){
   const home=fs.readFileSync(path.join(root,"index.html"),"utf8");
   assert.match(home,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/">/,"the final homepage declares the canonical production URL");
-  assert.match(home,/migration\.js\?v=114/,"the legacy bridge bypasses a stale service-worker response");
+  assert.match(home,/migration\.js\?v=115/,"the legacy bridge bypasses a stale service-worker response");
   const edge=fs.readFileSync(path.join(root,"supabase/functions/migration-handoff/index.ts"),"utf8");
   assert.match(edge,/redeemed_at=is\.null/,"redemption only accepts unused handoffs");
   assert.match(edge,/method:\"PATCH\",headers:\{Prefer:\"return=representation\"\}/,"redemption claims and returns the handoff atomically");
@@ -140,7 +140,7 @@ async function legacyBridgeChecks(browser){
     localStorage.setItem("zad:offline-library-v1","must-not-transfer");
     localStorage.setItem("zad:pwa-install-id","must-not-transfer");
   });
-  await context.route("https://zad-alkhair.net/icons/migration-ready-v114.svg**",route=>route.fulfill({status:200,contentType:"image/svg+xml",body:'<svg xmlns="http://www.w3.org/2000/svg"/>'}));
+  await context.route("https://zad-alkhair.net/icons/migration-ready-v115.svg**",route=>route.fulfill({status:200,contentType:"image/svg+xml",body:'<svg xmlns="http://www.w3.org/2000/svg"/>'}));
   await context.route("https://zad-alkhair.net/transfer/**",route=>route.fulfill({status:200,contentType:"text/html",body:"<!doctype html><title>وصل</title>"}));
   await context.route("https://webqpbcijjbawatykoxe.supabase.co/functions/v1/migration-handoff",async route=>{
     if(route.request().method()==="OPTIONS")return route.fulfill({status:204,headers:{"access-control-allow-origin":"https://ayman-alashkar.github.io","access-control-allow-headers":"authorization,apikey,content-type"}});
@@ -177,6 +177,49 @@ async function legacyBridgeChecks(browser){
   await context.close();
 }
 
+async function telegramTransferChecks(browser){
+  const context=await browser.newContext({serviceWorkers:"block"});
+  await context.addInitScript(()=>localStorage.setItem("zad:device","telegram-device-test-1234"));
+  let confirmed=false;
+  await context.route("https://webqpbcijjbawatykoxe.supabase.co/functions/v1/telegram-migration",async route=>{
+    const body=route.request().postDataJSON();
+    assert.equal(body.device,"telegram-device-test-1234");
+    assert.equal(body.token,token);
+    if(body.action==="redeem")return route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({payload:{
+      v:1,device:body.device,active:"AB12",prefs:{},
+      profiles:[{code:"AB12",viewer:{id:"telegram-member",name:"قارئ تلغرام"},title:"ختمة تلغرام",orgCode:"telegram-organizer"}]
+    }})});
+    if(body.action==="confirm"){
+      confirmed=true;
+      return route.fulfill({status:200,contentType:"application/json",body:'{"ok":true}'});
+    }
+    return route.abort();
+  });
+  await context.route("https://zad-alkhair.net/**",async route=>{
+    const url=new URL(route.request().url());
+    let relative=url.pathname.replace(/^\//,"")||"index.html";if(relative.endsWith("/"))relative+="index.html";
+    const file=path.resolve(root,relative);
+    if(!file.startsWith(root)||!fs.existsSync(file))return route.fulfill({status:404,body:"not found"});
+    return route.fulfill({status:200,contentType:mime(file),body:fs.readFileSync(file)});
+  });
+  const page=await context.newPage();
+  const next="/juz/7/?code=AB12";
+  await page.goto(`https://zad-alkhair.net/telegram-transfer/?next=${encodeURIComponent(next)}#token=${token}`,{waitUntil:"domcontentloaded"});
+  await page.waitForSelector("#success:not([hidden])");
+  assert.equal(new URL(page.url()).hash,"","the Telegram token is removed from the URL immediately");
+  assert.equal(confirmed,true,"Telegram success waits for server confirmation");
+  const state=await page.evaluate(()=>({
+    device:localStorage.getItem("zad:device"),
+    last:localStorage.getItem("zad:last"),
+    viewer:JSON.parse(localStorage.getItem("zad:viewer:AB12")),
+    org:localStorage.getItem("zad:orgcode:AB12")
+  }));
+  assert.deepEqual(state,{device:"telegram-device-test-1234",last:"AB12",viewer:{id:"telegram-member",name:"قارئ تلغرام"},org:"telegram-organizer"});
+  assert.equal(await page.locator("#open-app").getAttribute("href"),next);
+  assert.match(await page.locator("#success").innerText(),/وإذا كان التطبيق القديم مثبتًا لديك، فيرجى حذفه وتثبيت التطبيق الجديد/);
+  await context.close();
+}
+
 (async()=>{
   sourceSecurityChecks();
   if(process.argv.includes("--static")){
@@ -189,6 +232,7 @@ async function legacyBridgeChecks(browser){
     await localUiChecks(browser);
     await transferChecks(browser);
     await legacyBridgeChecks(browser);
+    await telegramTransferChecks(browser);
     console.log("DOMAIN MIGRATION TESTS PASS");
   }finally{await browser.close()}
 })().catch(error=>{console.error(error);process.exitCode=1});
