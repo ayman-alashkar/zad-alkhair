@@ -1,0 +1,35 @@
+name: Temporary Cloudflare preview
+
+on:
+  push:
+    branches:
+      - codex/final-domain-transition
+    paths:
+      - .github/workflows/cloudflare-preview.yml
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - name: Check out preview branch
+        uses: actions/checkout@v4
+
+      - name: Prepare public assets
+        shell: bash
+        run: |
+          preview_dir="${RUNNER_TEMP}/zad-preview"
+          mkdir -p "${preview_dir}"
+          git archive HEAD -- . ':(exclude)supabase' ':(exclude)tests' ':(exclude).github' | tar -x -C "${preview_dir}"
+          echo "PREVIEW_DIR=${preview_dir}" >> "${GITHUB_ENV}"
+
+      - name: Deploy isolated 60-minute preview
+        shell: bash
+        run: |
+          npx --yes wrangler@4.126.0 deploy --temporary --assets "${PREVIEW_DIR}" --name zad-alkhair-preview --compatibility-date 2026-08-26
