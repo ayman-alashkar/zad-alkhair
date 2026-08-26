@@ -54,9 +54,26 @@ test("reader accepts a validated reciter deep link",()=>{
   const reader=read("reader.html");
   assert.match(reader,/<meta name="robots" content="noindex,follow">/);
   assert.match(reader,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/quran\/">/);
+  assert.match(reader,/<meta property="og:url" content="https:\/\/zad-alkhair\.net\/reader">/);
+  assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/zad-alkhair-share\.png">/);
   assert.match(reader,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
   assert.match(reader,/if\(entry\.qari\)\{/);
   assert.match(reader,/if\(entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
+});
+
+test("every local social preview image exists",()=>{
+  const htmlFiles=[
+    "index.html","reader.html","install/index.html","quran/index.html","about/index.html","khatmahs/index.html",
+    ...Array.from({length:114},(_,i)=>`surah/${i+1}/index.html`),
+    ...Array.from({length:30},(_,i)=>`juz/${i+1}/index.html`),
+    ..."ayman-suwaid abdul-rashid-sufi maher-al-muaiqly mohamed-siddiq-al-minshawi mahmoud-khalil-al-husary".split(" ").map(slug=>`quran/reciters/${slug}/index.html`)
+  ];
+  for(const relative of htmlFiles){
+    const html=read(relative);
+    for(const match of html.matchAll(/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/([^"]+)">/g)){
+      assert.ok(fs.existsSync(path.join(root,match[1])),`${relative} -> /${match[1]}`);
+    }
+  }
 });
 
 test("structured data parses and internal links resolve",()=>{
