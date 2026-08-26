@@ -10,7 +10,10 @@ const token="T".repeat(43);
 function sourceSecurityChecks(){
   const home=fs.readFileSync(path.join(root,"index.html"),"utf8");
   assert.match(home,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/">/,"the final homepage declares the canonical production URL");
-  assert.match(home,/migration\.js\?v=115/,"the legacy bridge bypasses a stale service-worker response");
+  assert.match(home,/migration\.js\?v=116/,"the legacy bridge bypasses a stale service-worker response");
+  const bridge=fs.readFileSync(path.join(root,"migration.js"),"utf8");
+  assert.match(bridge,/markImage\.src=`\$\{LEGACY_PREFIX\}\/icons\/zad-mark\.svg`/,"the migration dialog reuses the final Zad Alkhair mark");
+  assert.doesNotMatch(bridge,/zad-migration-mark","زاد"/,"the temporary text tile is removed from the migration dialog");
   const edge=fs.readFileSync(path.join(root,"supabase/functions/migration-handoff/index.ts"),"utf8");
   assert.match(edge,/redeemed_at=is\.null/,"redemption only accepts unused handoffs");
   assert.match(edge,/method:\"PATCH\",headers:\{Prefer:\"return=representation\"\}/,"redemption claims and returns the handoff atomically");
@@ -161,6 +164,7 @@ async function legacyBridgeChecks(browser){
   await page.goto("https://ayman-alashkar.github.io/zad-alkhair/",{waitUntil:"domcontentloaded"});
   await page.waitForSelector("#zad-domain-migration");
   assert.equal(await page.locator("#zad-domain-migration .zad-migration-action").count(),1);
+  assert.equal(await page.locator("#zad-domain-migration .zad-migration-mark img").getAttribute("src"),"/zad-alkhair/icons/zad-mark.svg","the visible dialog uses the final brand mark");
   assert.equal(await page.locator("#zad-domain-migration a").count(),0,"there is no bypass link to the old interface");
   await page.locator("#zad-domain-migration .zad-migration-action").click();
   await page.waitForURL(/zad-alkhair\.net\/transfer\//);

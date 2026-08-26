@@ -179,9 +179,11 @@
         background:linear-gradient(90deg,#0F5C50,#C59A4A,#0F5C50);
       }
       #${OVERLAY_ID} .zad-migration-mark{
-        width:74px;height:74px;margin:0 auto 15px;border-radius:22px;display:grid;place-items:center;
-        color:#FFF9EA;background:#0A473E;border:1px solid rgba(197,154,74,.5);
-        font-family:"Aref Ruqaa",serif;font-size:2rem;font-weight:700;
+        width:86px;height:86px;margin:0 auto 15px;display:grid;place-items:center;
+      }
+      #${OVERLAY_ID} .zad-migration-mark img{
+        display:block;width:100%;height:100%;object-fit:contain;
+        filter:drop-shadow(0 9px 12px rgba(15,92,80,.12));
       }
       #${OVERLAY_ID} h2{margin:0;color:#0F5C50;font-family:"Aref Ruqaa",serif;font-size:1.9rem;line-height:1.4}
       #${OVERLAY_ID} p{margin:13px auto 0;max-width:44ch;color:#5f594b;font-size:.94rem;line-height:1.95}
@@ -217,7 +219,11 @@
     overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");
     overlay.setAttribute("aria-labelledby","zad-migration-title");
     const card=el("div","zad-migration-card");
-    const mark=el("div","zad-migration-mark","زاد");mark.setAttribute("aria-hidden","true");
+    const mark=el("div","zad-migration-mark");mark.setAttribute("aria-hidden","true");
+    const markImage=document.createElement("img");
+    markImage.src=`${LEGACY_PREFIX}/icons/zad-mark.svg`;
+    markImage.alt="";
+    mark.appendChild(markImage);
     const title=el("h2","","شكرًا لمساعدتنا في النسخة التجريبية من زاد الخير");title.id="zad-migration-title";
     const intro=el("p","","أصبحت النسخة النهائية من زاد الخير متاحة الآن على:");
     const domainLine=el("p");domainLine.appendChild(el("span","zad-migration-domain","zad-alkhair.net"));
