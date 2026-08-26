@@ -29,6 +29,16 @@ jobs:
           node tests/domain-migration.test.cjs --static
           node validate-tafsir.mjs
 
+      - name: Run browser migration checks
+        shell: bash
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.55.0
+          npx playwright install --with-deps chromium
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/zad-preview-server.log 2>&1 &
+          preview_server=$!
+          trap 'kill "${preview_server}" 2>/dev/null || true' EXIT
+          node tests/domain-migration.test.cjs
+
       - name: Prepare public assets
         shell: bash
         run: |
