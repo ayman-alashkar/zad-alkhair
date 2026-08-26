@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0F5C50">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>تنظيف النسخة التجريبية من زاد الخير</title>
+  <link rel="icon" href="../icons/zad-mark.svg" type="image/svg+xml">
+  <style>
+    @font-face{font-family:"Alexandria";src:url("../fonts/alexandria-arabic-400-800.woff2") format("woff2");font-weight:400 800;font-display:swap}
+    @font-face{font-family:"Aref Ruqaa";src:url("../fonts/aref-ruqaa-arabic-700.woff2") format("woff2");font-weight:700;font-display:swap}
+    *{box-sizing:border-box}
+    :root{color-scheme:light;--green:#0F5C50;--green-deep:#0A473E;--gold:#C59A4A;--cream:#FFF9EA;--ink:#173D35;--muted:#6F6859;--danger:#A33F45}
+    html,body{min-height:100%;margin:0}
+    body{min-height:100dvh;display:grid;place-items:center;padding:max(20px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));font-family:"Alexandria",Tahoma,Arial,sans-serif;color:var(--ink);background:radial-gradient(circle at 50% -8%,rgba(228,201,128,.18),transparent 31rem),linear-gradient(154deg,#041A18,#0A3C34)}
+    .card{width:min(520px,100%);position:relative;overflow:hidden;padding:31px 24px 24px;border:1px solid rgba(197,154,74,.72);border-radius:30px;text-align:center;background:var(--cream);box-shadow:0 28px 75px rgba(0,0,0,.3)}
+    .card::before{content:"";position:absolute;inset:0 0 auto;height:7px;background:linear-gradient(90deg,var(--green),var(--gold),var(--green))}
+    .mark{width:76px;height:76px;margin:0 auto 15px;padding:13px;border-radius:22px;display:grid;place-items:center;background:var(--green-deep);border:1px solid rgba(197,154,74,.48)}
+    .mark img{width:100%;height:100%;display:block}
+    h1{margin:0;font-family:"Aref Ruqaa",serif;font-size:2rem;line-height:1.4;color:var(--green)}
+    p{max-width:43ch;margin:13px auto 0;color:var(--muted);font-size:.94rem;line-height:1.95}
+    .note{font-size:.8rem}
+    .actions{display:grid;gap:10px;margin-top:23px}
+    .actions a,.retry{min-height:53px;padding:12px 17px;border-radius:17px;display:flex;align-items:center;justify-content:center;text-decoration:none;font:750 .96rem/1.5 "Alexandria",Tahoma,Arial,sans-serif}
+    .retry{width:100%;cursor:pointer;color:#fff;background:linear-gradient(180deg,var(--green),var(--green-deep));border:0;box-shadow:0 9px 22px rgba(15,92,80,.2)}
+    .secondary{color:var(--green);background:#fffdf5;border:1px solid rgba(15,92,80,.24)}
+    .spinner{width:34px;height:34px;margin:22px auto 7px;border:3px solid rgba(15,92,80,.18);border-top-color:var(--green);border-radius:50%;animation:spin .85s linear infinite}
+    .error{color:var(--danger);font-weight:700}
+    [hidden]{display:none!important}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:520px){.card{padding:28px 18px 21px;border-radius:25px}h1{font-size:1.75rem}}
+    @media(prefers-reduced-motion:reduce){.spinner{animation-duration:1.6s}}
+  </style>
+</head>
+<body>
+  <main class="card" aria-live="polite">
+    <div class="mark" aria-hidden="true"><img src="../icons/zad-mark-reverse.svg" alt=""></div>
+
+    <section id="progress">
+      <h1>جارٍ تحرير مساحة النسخة التجريبية</h1>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>نحذف الآن ملفات القرآن والتفسير والصوتيات المحمّلة من النسخة القديمة.</p>
+      <p class="note">لن تتأثر بياناتك في النسخة النهائية.</p>
+    </section>
+
+    <section id="failure" hidden>
+      <h1>لم يكتمل تنظيف النسخة القديمة</h1>
+      <p class="error" id="failure-message">تم نقل دخولك بنجاح، لكن تعذّر حذف بعض الملفات القديمة من هذا الجهاز.</p>
+      <div class="actions">
+        <button class="retry" id="retry" type="button">إعادة المحاولة</button>
+        <a class="secondary" href="https://zad-alkhair.net/">المتابعة إلى النسخة النهائية</a>
+      </div>
+    </section>
+  </main>
+
+<script>
+(()=>{
+  const FINAL_TRANSFER="https://zad-alkhair.net/transfer/";
+  const PROOF_KEY="zad:migration-cleanup-proof-v1";
+  const CLEANED_KEY="zad:migration-cleaned-v1";
+  const LEGACY_SCOPE="/zad-alkhair/";
+  const CACHE_PREFIXES=["zad-shell-","zad-runtime-","zad-quran-","zad-tafsir-","zad-audio-"];
+  const progress=document.getElementById("progress");
+  const failure=document.getElementById("failure");
+  const failureMessage=document.getElementById("failure-message");
+
+  function validToken(value){return /^[A-Za-z0-9_-]{43}$/.test(String(value||""))}
+
+  function readProof(){
+    let proof="";
+    try{proof=new URLSearchParams(location.hash.replace(/^#/,"")).get("proof")||""}catch(_){ }
+    history.replaceState(null,"",location.pathname);
+    return validToken(proof)?proof:"";
+  }
+
+  async function tokenHash(token){
+    if(!crypto.subtle||typeof TextEncoder!=="function")throw new Error("cleanup_proof_unavailable");
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token));
+    return Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("");
+  }
+
+  function sameValue(left,right){
+    left=String(left||"");right=String(right||"");
+    if(left.length!==right.length)return false;
+    let different=0;for(let i=0;i<left.length;i++)different|=left.charCodeAt(i)^right.charCodeAt(i);
+    return different===0;
+  }
+
+  function isZadCache(name){return CACHE_PREFIXES.some(prefix=>String(name).startsWith(prefix))}
+
+  async function deleteZadCaches(){
+    if(!("caches" in window))return;
+    const names=(await caches.keys()).filter(isZadCache);
+    const results=await Promise.all(names.map(name=>caches.delete(name)));
+    if(results.some(result=>!result))throw new Error("cache_cleanup_failed");
+  }
+
+  function belongsToZad(registration){
+    try{
+      const scope=new URL(registration.scope);
+      return scope.origin===location.origin&&(scope.pathname===LEGACY_SCOPE.slice(0,-1)||scope.pathname.startsWith(LEGACY_SCOPE));
+    }catch(_){return false}
+  }
+
+  async function unregisterZadWorkers(){
+    if(!("serviceWorker" in navigator))return;
+    let registrations=[];
+    if(typeof navigator.serviceWorker.getRegistrations==="function")registrations=await navigator.serviceWorker.getRegistrations();
+    else if(typeof navigator.serviceWorker.getRegistration==="function"){
+      const registration=await navigator.serviceWorker.getRegistration();if(registration)registrations=[registration];
+    }
+    const owned=registrations.filter(belongsToZad);
+    const results=await Promise.all(owned.map(registration=>registration.unregister()));
+    if(results.some(result=>!result))throw new Error("worker_cleanup_failed");
+  }
+
+  function removeZadKeys(storage,exceptions=new Set()){
+    const keys=[];
+    for(let i=0;i<storage.length;i++){
+      const key=storage.key(i)||"";if(key.startsWith("zad:")&&!exceptions.has(key))keys.push(key);
+    }
+    keys.forEach(key=>storage.removeItem(key));
+  }
+
+  async function cleanup(proof){
+    const expected=localStorage.getItem(PROOF_KEY)||"";
+    if(!proof||!sameValue(await tokenHash(proof),expected))throw new Error("cleanup_not_authorized");
+    await deleteZadCaches();
+    await unregisterZadWorkers();
+    removeZadKeys(localStorage,new Set([PROOF_KEY]));
+    removeZadKeys(sessionStorage);
+    localStorage.setItem(CLEANED_KEY,JSON.stringify({at:Date.now(),version:1}));
+    localStorage.removeItem(PROOF_KEY);
+  }
+
+  const proof=readProof();
+  async function run(){
+    progress.hidden=false;failure.hidden=true;
+    try{
+      await cleanup(proof);
+      const destination=new URL(FINAL_TRANSFER);destination.hash=new URLSearchParams({cleaned:proof}).toString();
+      location.replace(destination.href);
+    }catch(error){
+      progress.hidden=true;failure.hidden=false;
+      if(error&&error.message==="cleanup_not_authorized"){
+        failureMessage.textContent="لم يبدأ التنظيف حفاظًا على أمان بياناتك. افتح الرابط القديم وابدأ الانتقال من هناك.";
+      }
+    }
+  }
+
+  document.getElementById("retry").addEventListener("click",run);
+  run();
+})();
+</script>
+</body>
+</html>

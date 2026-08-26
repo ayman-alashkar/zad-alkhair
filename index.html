@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="canonical" href="https://zad-alkhair.net/">
 <link rel="manifest" href="manifest.json">
-<script defer src="migration.js"></script>
+<script defer src="migration.js?v=115"></script>
 <meta name="theme-color" content="#0F5C50">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,17 +21,17 @@
 
 <!-- Open Graph / Facebook / WhatsApp / Slack -->
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://ayman-alashkar.github.io/zad-alkhair/">
+<meta property="og:url" content="https://zad-alkhair.net/">
 <meta property="og:title" content="زاد الخير">
 <meta property="og:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
-<meta property="og:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.png">
+<meta property="og:image" content="https://zad-alkhair.net/zad-alkhair-share.png">
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:url" content="https://ayman-alashkar.github.io/zad-alkhair/">
+<meta property="twitter:url" content="https://zad-alkhair.net/">
 <meta property="twitter:title" content="زاد الخير">
 <meta property="twitter:description" content="تطبيق لتنظيم و ضبط الختم الجماعية، مع تذكير يومي، وإمكانية تحويل القراءة الفردية إلى مذاكرة جماعية للقرآن الكريم بين قراء الختمة.">
-<meta property="twitter:image" content="https://ayman-alashkar.github.io/zad-alkhair/zad-alkhair-share.png">
+<meta property="twitter:image" content="https://zad-alkhair.net/zad-alkhair-share.png">
 
 <!-- حاسبة مواقيت الصلاة محلية داخل الحزمة، بلا تنفيذ JavaScript من طرف ثالث. -->
 <script src="vendor/adhan-4.4.4.umd.min.js"></script>
@@ -1315,6 +1316,10 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zk-launch-option-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#0F5C50;background:transparent;box-shadow:none}
 .zk-launch-option:nth-child(1) .zk-launch-option-icon,.zk-launch-option:nth-child(2) .zk-launch-option-icon{color:#0F5C50;background:transparent;box-shadow:none}.zk-launch-option:nth-child(3) .zk-launch-option-icon{color:#9A6D25;background:transparent;box-shadow:none}
 .zk-launch-option-icon svg{display:block;width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.zk-launch-install{appearance:none;position:absolute;z-index:2;left:135px;top:674px;width:230px;min-height:28px;padding:3px 8px;border:0;background:transparent;color:#5F756D;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:650;line-height:1.4;transition:color .18s ease,opacity .18s ease}
+.zk-launch-install[hidden]{display:none!important}
+.zk-launch-install:hover{color:#0F5C50}.zk-launch-install:focus-visible{outline:2px solid rgba(15,92,80,.22);outline-offset:2px;border-radius:10px}.zk-launch-install:active{transform:translateY(1px)}
+.zk-launch-install svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
 .zk-launch-rosette{display:none!important}
 </style>
 
@@ -1361,6 +1366,10 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
         <strong>مواقيت الصلاة</strong>
       </button>
     </div>
+    <button class="zk-launch-install" id="zk-launch-install" type="button" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5"/></svg>
+      <span>ثبّت تطبيق زاد الخير</span>
+    </button>
   </div>
 </section>
 
@@ -1474,7 +1483,7 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
    request simply fails harmlessly and the next launch / online event retries it.
    Normal browser visits are never counted. */
 const PWA_INSTALL_ID_KEY="zad:pwa-install-id";
-const PWA_APP_VERSION="v112";
+const PWA_APP_VERSION="v115";
 let pwaInstallReportBusy=false;
 let pwaInstallReportedThisPage=false;
 
@@ -1482,6 +1491,30 @@ function pwaIsStandalone(){
   return window.matchMedia("(display-mode: standalone)").matches ||
          window.navigator.standalone===true;
 }
+let pwaInstallPrompt=null;
+const pwaInstallButton=document.getElementById("zk-launch-install");
+function pwaPaintInstallButton(){
+  if(pwaInstallButton)pwaInstallButton.hidden=pwaIsStandalone();
+}
+window.addEventListener("beforeinstallprompt",event=>{
+  event.preventDefault();pwaInstallPrompt=event;pwaPaintInstallButton();
+});
+window.addEventListener("appinstalled",()=>{
+  pwaInstallPrompt=null;if(pwaInstallButton)pwaInstallButton.hidden=true;
+});
+try{
+  window.matchMedia("(display-mode: standalone)").addEventListener("change",pwaPaintInstallButton);
+}catch(_){ }
+pwaInstallButton?.addEventListener("click",async()=>{
+  if(pwaIsStandalone()){pwaInstallButton.hidden=true;return}
+  if(!pwaInstallPrompt){location.href="install/?next=/";return}
+  const prompt=pwaInstallPrompt;pwaInstallPrompt=null;
+  await prompt.prompt();
+  const choice=await prompt.userChoice.catch(()=>null);
+  if(choice&&choice.outcome==="accepted")pwaInstallButton.hidden=true;
+  else pwaPaintInstallButton();
+});
+pwaPaintInstallButton();
 function pwaInstallPlatform(){
   const ua=navigator.userAgent||"";
   const uaPlatform=navigator.userAgentData&&navigator.userAgentData.platform||"";
