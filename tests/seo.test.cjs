@@ -35,10 +35,33 @@ test("Quran discovery pages expose useful crawlable links",()=>{
   assert.equal((quran.match(/href="\/juz\/\d+\/"/g)||[]).length,30);
   assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,5);
   const mulk=read("surah/67/index.html");
-  assert.match(mulk,/سورة الملك بصوت الشيخ أيمن سويد/);
+  assert.match(mulk,/سورة الملك بصوت فضيلة الشيخ أيمن سويد/);
   assert.match(mulk,/qari=Ayman_Sowaid_64kbps/);
   assert.match(mulk,/if\(!\["code","ayah","qari","open"\]\.some\(k=>p\.has\(k\)\)\)return/);
   assert.doesNotMatch(mulk,/document\.getElementById\("openReader"\)\.href=u\.href;location\.replace/);
+});
+
+test("Quran, reciter and surah pages use the approved concise copy",()=>{
+  const quran=read("quran/index.html");
+  assert.match(quran,/مصحف المدينة QCF4/);
+  assert.match(quran,/>افتح المصحف الشريف<\/a>/);
+  assert.match(quran,/>ثبّت التطبيق<\/a>/);
+  assert.match(quran,/<strong>فضيلة الشيخ أيمن سويد<\/strong>/);
+  assert.doesNotMatch(quran,/استماع وقراءة سور القرآن/);
+  assert.match(quran,/اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها/);
+  assert.match(quran,/<small>آياتها: ٣٠<\/small>/);
+  assert.match(quran,/يمكن تنزيل القرآن الكريم والتفسير كاملين للقراءة دون اتصال/);
+
+  const reciter=read("quran/reciters/ayman-suwaid/index.html");
+  assert.match(reciter,/<h1>القرآن الكريم بصوت فضيلة الشيخ أيمن سويد<\/h1>/);
+  assert.match(reciter,/اختر سورة من القائمة، لتسمعها بصوت فضيلة الشيخ أيمن سويد وتقرأها في ذات الوقت/);
+  assert.doesNotMatch(reciter,/استمع إلى تلاوة سور القرآن/);
+  assert.doesNotMatch(reciter,/<small>بصوت/);
+
+  const mulk=read("surah/67/index.html");
+  assert.match(mulk,/اقرأ سورة الملك من المصحف الشريف/);
+  assert.match(mulk,/اختر القارئ الذي تود سماع سورة الملك بصوته/);
+  assert.match(mulk,/>فضيلة الشيخ أيمن سويد<\/a>/);
 });
 
 test("homepage gives Google real links without changing app actions",()=>{
@@ -48,6 +71,10 @@ test("homepage gives Google real links without changing app actions",()=>{
   assert.match(home,/<a class="zk-launch-install" id="zk-launch-install" href="install\/" hidden>/);
   assert.match(home,/event=>\{event\.preventDefault\(\);zkHideLaunch\(\);boot\(\)\}/);
   assert.match(home,/القرآن العظيم، ختمات جماعية ومواقيت الصلاة/);
+  assert.match(home,/<summary>دليل زاد الخير<\/summary>/);
+  assert.match(home,/<a href="quran\/">الفهرس والقراء<\/a>/);
+  assert.match(home,/<a href="khatmahs\/">كيف تعمل الختمات؟<\/a>/);
+  assert.match(home,/<a href="about\/">عن التطبيق<\/a>/);
 });
 
 test("reader accepts a validated reciter deep link",()=>{
@@ -96,4 +123,7 @@ test("group khatmahs have a dedicated descriptive page",()=>{
   const page=read("khatmahs/index.html");
   for(const phrase of ["ختمات جماعية","حجز الأجزاء","تذكير يومي اختياري","تلغرام","إدارة الختمة"])assert.ok(page.includes(phrase),phrase);
   assert.match(page,/href="\/\?section=khatmahs"/);
+  assert.doesNotMatch(page,/خدمة مجانية لتنظيم ختم القرآن/);
+  assert.doesNotMatch(page,/طلاب الحلقة/);
+  assert.doesNotMatch(page,/<h2>القراءة من داخل الختمة<\/h2>/);
 });
