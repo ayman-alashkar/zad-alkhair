@@ -8,12 +8,13 @@ const json=value=>JSON.stringify(value).replace(/</g,"\\u003c");
 const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 
 const reciters=[
-  {slug:"ayman-suwaid",id:"Ayman_Sowaid_64kbps",name:"أيمن سويد",display:"فضيلة الشيخ أيمن سويد"},
-  {slug:"abdul-rashid-sufi",id:"AbdulRashidSufi_Hafs",name:"عبد الرشيد الصوفي",display:"فضيلة الشيخ عبد الرشيد الصوفي"},
-  {slug:"maher-al-muaiqly",id:"MaherAlMuaiqly128kbps",name:"ماهر المعيقلي",display:"فضيلة الشيخ ماهر المعيقلي"},
-  {slug:"mohamed-siddiq-al-minshawi",id:"Minshawy_Murattal_128kbps",name:"محمد صديق المنشاوي",display:"فضيلة الشيخ محمد صديق المنشاوي"},
-  {slug:"mahmoud-khalil-al-husary",id:"Husary_128kbps",name:"محمود خليل الحصري",display:"فضيلة الشيخ محمود خليل الحصري"}
+  {slug:"ayman-suwaid",id:"Ayman_Sowaid_64kbps",display:"فضيلة الشيخ أيمن سويد"},
+  {slug:"abdul-rashid-sufi",id:"AbdulRashidSufi_Hafs",display:"فضيلة الشيخ عبد الرشيد الصوفي"},
+  {slug:"maher-al-muaiqly",id:"MaherAlMuaiqly128kbps",display:"فضيلة الشيخ ماهر المعيقلي"},
+  {slug:"mohamed-siddiq-al-minshawi",id:"Minshawy_Murattal_128kbps",display:"فضيلة الشيخ محمد صديق المنشاوي"},
+  {slug:"mahmoud-khalil-al-husary",id:"Husary_128kbps",display:"فضيلة الشيخ محمود خليل الحصري"}
 ];
+const reciterDescription=reciters.map(r=>r.display).join("، و");
 
 function readSurahs(){
   return Array.from({length:114},(_,i)=>{
@@ -72,7 +73,7 @@ function crumbs(items){return `<nav class="breadcrumbs" aria-label="مسار ا�
 
 function surahPage(s){
   const title=`سورة ${s.name} مكتوبة — قراءة واستماع | زاد الخير`;
-  const description=`سورة ${s.name} مكتوبة للقراءة والاستماع بصوت أيمن سويد، عبد الرشيد الصوفي، ماهر المعيقلي، محمد صديق المنشاوي ومحمود خليل الحصري، مع التفسير الوجيز.`;
+  const description=`سورة ${s.name} مكتوبة للقراءة والاستماع بصوت القراء الأفاضل: ${reciterDescription}، مع التفسير الوجيز.`;
   const canonical=`/surah/${s.n}/`,image=`/social/surah/surah-${String(s.n).padStart(3,"0")}.jpg`;
   const graph={"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":`${site}${canonical}#webpage`,name:title,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}},{"@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"زاد الخير",item:`${site}/`},{"@type":"ListItem",position:2,name:"القرآن العظيم",item:`${site}/quran/`},{"@type":"ListItem",position:3,name:`سورة ${s.name}`,item:`${site}${canonical}`}]}]};
   const listeners=reciters.map(r=>`<a class="listen" href="/reader.html?surah=${s.n}&amp;ayah=1&amp;qari=${encodeURIComponent(r.id)}&amp;play=1" aria-label="الاستماع إلى سورة ${esc(s.name)} بصوت ${esc(r.display)}">${esc(r.display)}</a>`).join("\n");

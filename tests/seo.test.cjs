@@ -67,6 +67,30 @@ test("Quran, reciter and surah pages use the approved concise copy",()=>{
   assert.match(mulk,/>فضيلة الشيخ أيمن سويد<\/a>/);
 });
 
+test("reciter honorifics are consistent in every surah description and the reader UI",()=>{
+  const honorifics=[
+    "فضيلة الشيخ أيمن سويد",
+    "فضيلة الشيخ عبد الرشيد الصوفي",
+    "فضيلة الشيخ ماهر المعيقلي",
+    "فضيلة الشيخ محمد صديق المنشاوي",
+    "فضيلة الشيخ محمود خليل الحصري"
+  ];
+  for(let surah=1;surah<=114;surah++){
+    const html=read(`surah/${surah}/index.html`);
+    const description=(html.match(/<meta name="description" content="([^"]+)"/)||[])[1];
+    assert.ok(description,`surah/${surah}/index.html description`);
+    assert.match(description,/بصوت القراء الأفاضل:/,`surah/${surah}/index.html`);
+    for(const name of honorifics)assert.ok(description.includes(name),`surah/${surah}/index.html -> ${name}`);
+    assert.match(html,new RegExp(`<meta property="og:description" content="${description.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}">`));
+    assert.match(html,new RegExp(`<meta name="twitter:description" content="${description.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}">`));
+  }
+
+  const reader=read("reader.html");
+  for(const name of honorifics)assert.match(reader,new RegExp(`name:"${name}`));
+  assert.match(reader,/name:"فضيلة الشيخ محمد صديق المنشاوي — مجود"/);
+  assert.match(reader,/name:"فضيلة الشيخ محمد صديق المنشاوي — مرتل"/);
+});
+
 test("homepage gives Google real links without changing app actions",()=>{
   const home=read("index.html");
   assert.match(home,/<link rel="icon" href="\/icons\/icon-192\.png" sizes="192x192" type="image\/png">/);
