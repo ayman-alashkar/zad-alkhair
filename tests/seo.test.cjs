@@ -81,10 +81,24 @@ test("homepage gives Google real links without changing app actions",()=>{
   assert.match(home,/<a href="about\/">عن التطبيق<\/a>/);
 });
 
-test("corrected tafsir cross-reference keeps its integrity hash",()=>{
-  const anAam=JSON.parse(read("data/tafsir/al-wajeez/006.json"));
-  assert.match(anAam.ayahs[109].text,/\[٩٠\/١٦\]/);
-  assert.doesNotMatch(anAam.ayahs[109].text,/\[١٦\/٩٠\]/);
+test("tafsir cross-references use verse then surah order",()=>{
+  const references=[];
+  for(let surah=1;surah<=114;surah++){
+    const data=JSON.parse(read(`data/tafsir/al-wajeez/${String(surah).padStart(3,"0")}.json`));
+    for(const [ayah,record] of Object.entries(data.ayahs)){
+      for(const match of record.text.matchAll(/\[[٠-٩0-9]+\/[٠-٩0-9]+\]/g))references.push(`${surah}:${ayah}:${match[0]}`);
+    }
+  }
+  assert.deepEqual(references,[
+    "2:174:[٧٧/٣]",
+    "4:140:[٦٨/٦]",
+    "4:160:[١٤٦/٦]",
+    "5:13:[٢٩/٩]",
+    "6:109:[٩٠/١٦]",
+    "8:44:[١٣/٣]",
+    "16:66:[٧٨/٦]",
+    "16:118:[١٤٦/٦]"
+  ]);
 });
 
 test("reader accepts a validated reciter deep link",()=>{
