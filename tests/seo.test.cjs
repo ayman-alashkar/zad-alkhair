@@ -43,6 +43,9 @@ test("Quran discovery pages expose useful crawlable links",()=>{
 
 test("Quran, reciter and surah pages use the approved concise copy",()=>{
   const quran=read("quran/index.html");
+  const quranDescription="اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: فضيلة الشيخ أيمن سويد وفضيلة الشيخ عبد الرشيد الصوفي وفضيلة الشيخ ماهر المعيقلي وفضيلة الشيخ محمد صديق المنشاوي وفضيلة الشيخ محمود خليل الحصري.";
+  assert.match(quran,new RegExp(`<meta name="description" content="${quranDescription}">`));
+  assert.match(quran,new RegExp(`<meta property="og:description" content="${quranDescription}">`));
   assert.match(quran,/مصحف المدينة QCF4/);
   assert.match(quran,/>افتح المصحف الشريف<\/a>/);
   assert.match(quran,/>ثبّت التطبيق<\/a>/);
@@ -66,6 +69,7 @@ test("Quran, reciter and surah pages use the approved concise copy",()=>{
 
 test("homepage gives Google real links without changing app actions",()=>{
   const home=read("index.html");
+  assert.match(home,/<link rel="icon" href="\/icons\/icon-192\.png" sizes="192x192" type="image\/png">/);
   assert.match(home,/<a class="zk-launch-option" id="zk-launch-quran" href="quran\/">/);
   assert.match(home,/<a class="zk-launch-option" id="zk-launch-zad" href="khatmahs\/">/);
   assert.match(home,/<a class="zk-launch-install" id="zk-launch-install" href="install\/" hidden>/);
@@ -75,6 +79,12 @@ test("homepage gives Google real links without changing app actions",()=>{
   assert.match(home,/<a href="quran\/">الفهرس والقراء<\/a>/);
   assert.match(home,/<a href="khatmahs\/">كيف تعمل الختمات؟<\/a>/);
   assert.match(home,/<a href="about\/">عن التطبيق<\/a>/);
+});
+
+test("corrected tafsir cross-reference keeps its integrity hash",()=>{
+  const anAam=JSON.parse(read("data/tafsir/al-wajeez/006.json"));
+  assert.match(anAam.ayahs[109].text,/\[٩٠\/١٦\]/);
+  assert.doesNotMatch(anAam.ayahs[109].text,/\[١٦\/٩٠\]/);
 });
 
 test("reader accepts a validated reciter deep link",()=>{

@@ -86,7 +86,7 @@ function juzPage(j){
 }
 function quranPage(surahs,juz){
   const title="القرآن العظيم | قراءة، تفسير واستماع | زاد الخير",canonical="/quran/";
-  const description="اقرأ القرآن العظيم في مصحف المدينة QCF4 مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى تلاوات نخبة من القراء.";
+  const description="اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: فضيلة الشيخ أيمن سويد وفضيلة الشيخ عبد الرشيد الصوفي وفضيلة الشيخ ماهر المعيقلي وفضيلة الشيخ محمد صديق المنشاوي وفضيلة الشيخ محمود خليل الحصري.";
   const schema={"@context":"https://schema.org","@type":"CollectionPage",name:"القرآن العظيم في زاد الخير",url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}};
   const reciterCards=reciters.map(r=>`<a class="card link reciter-card" href="/quran/reciters/${r.slug}/"><strong>${esc(r.display)}</strong></a>`).join("");
   const surahLinks=surahs.map(s=>`<a class="item" href="/surah/${s.n}/"><span>سورة ${esc(s.name)}</span><small>آياتها: ${arNum(s.verses)}</small></a>`).join("");
