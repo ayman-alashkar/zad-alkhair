@@ -175,3 +175,12 @@ test("group khatmahs have a dedicated descriptive page",()=>{
   assert.doesNotMatch(page,/طلاب الحلقة/);
   assert.doesNotMatch(page,/<h2>القراءة من داخل الختمة<\/h2>/);
 });
+
+test("discovery pages reuse the app visual identity without overlapping breadcrumbs",()=>{
+  const css=read("seo-pages.css");
+  assert.match(css,/body::before\{/);
+  assert.match(css,/background-size:84px 144px/);
+  assert.match(css,/-webkit-mask-image:linear-gradient\(90deg,#000,transparent 44%,transparent 56%,#000\)/);
+  assert.match(css,/\.breadcrumbs\{[\s\S]*?width:max-content;[\s\S]*?margin:-25px auto 16px;/);
+  assert.match(css,/main\{[\s\S]*?linear-gradient\(145deg,var\(--surface\),var\(--paper\)\)/);
+});
