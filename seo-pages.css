@@ -92,16 +92,14 @@ a{color:inherit}
 }
 .site-head::after{
   content:"◆";
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:grid;
+  place-items:center;
   width:min(260px,70vw);
   margin:17px auto 0;
   overflow:hidden;
   color:rgba(228,201,128,.72);
   font-size:.52rem;
-  letter-spacing:1rem;
-  text-indent:1rem;
+  line-height:1;
   white-space:nowrap;
   border-block:1px solid rgba(228,201,128,.18);
 }
