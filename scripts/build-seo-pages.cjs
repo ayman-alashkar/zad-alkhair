@@ -51,7 +51,7 @@ function head({title,description,canonical,image="/zad-alkhair-share.png",type="
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="${url}">
 <link rel="icon" href="/icons/zad-mark.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/seo-pages.css">
+<link rel="stylesheet" href="/seo-pages.css?v=20260828">
 <meta property="og:type" content="${type}">
 <meta property="og:locale" content="ar_AR">
 <meta property="og:site_name" content="زاد الخير">

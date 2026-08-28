@@ -183,4 +183,11 @@ test("discovery pages reuse the app visual identity without overlapping breadcru
   assert.match(css,/-webkit-mask-image:linear-gradient\(90deg,#000,transparent 44%,transparent 56%,#000\)/);
   assert.match(css,/\.breadcrumbs\{[\s\S]*?width:max-content;[\s\S]*?margin:-25px auto 16px;/);
   assert.match(css,/main\{[\s\S]*?linear-gradient\(145deg,var\(--surface\),var\(--paper\)\)/);
+  const urls=[...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]));
+  for(const url of urls){
+    const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
+    const html=read(relative);
+    if(html.includes("seo-pages.css"))assert.match(html,/href="\/seo-pages\.css\?v=20260828"/,relative);
+  }
+  assert.match(read("scripts/build-seo-pages.cjs"),/href="\/seo-pages\.css\?v=20260828"/);
 });
