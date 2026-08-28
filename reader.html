@@ -4678,10 +4678,12 @@ if("serviceWorker" in navigator){
       else{refreshAudioDownloadButton(job.btn,job.s).catch(()=>setAudioDownloadButton(job.btn,"available"));showToast("تعذّر تنزيل السورة كاملة، حاول مرة أخرى")}
     }
   });
-  window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").then(()=>navigator.serviceWorker.ready).then(reg=>{
+  const prepareReaderServiceWorker=()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>reg.update().catch(()=>reg)).then(()=>navigator.serviceWorker.ready).then(reg=>{
     const worker=reg.active||reg.waiting||reg.installing;
+    if(navigator.onLine)worker?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
     worker?.postMessage({type:navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY"});
-  }).catch(()=>{}),{once:true});
+  }).catch(()=>{});
+  prepareReaderServiceWorker();
   window.addEventListener("online",()=>postOfflineLibrary("ENSURE_OFFLINE_LIBRARY"));
   navigator.serviceWorker.addEventListener("controllerchange",()=>postOfflineLibrary(navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY"));
 }

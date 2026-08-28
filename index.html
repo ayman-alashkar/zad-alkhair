@@ -4242,7 +4242,13 @@ function zkRootBack(){
   zkConfirmNativeExit();
 }
 window.addEventListener("popstate",()=>zkRootBack());
-document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{event.preventDefault();location.href="reader.html?home=1&from=zad"});
+document.getElementById("zk-launch-quran")?.addEventListener("click",async event=>{
+  event.preventDefault();
+  if(navigator.onLine){
+    try{await fetch("reader.html",{cache:"reload"})}catch(_){ }
+  }
+  location.href="reader.html?home=1&from=zad";
+});
 document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
 document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{document.body.classList.add("zk-launch-prayer");prayerDialog()});
 window.addEventListener("hashchange",()=>{
@@ -4288,11 +4294,17 @@ if("serviceWorker" in navigator){
       zkRememberOfflineLibrary(false);zkPaintOfflineStatus(false);
     }
   });
-  window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("sw.js").then(()=>navigator.serviceWorker.ready).then(reg=>{
-      (reg.active||reg.waiting||reg.installing)?.postMessage({type:"CHECK_OFFLINE_LIBRARY"});
-    }).catch(()=>{});
-  },{once:true});
+  const zkPrepareServiceWorker=()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"})
+    .then(reg=>Promise.allSettled([reg.update(),navigator.serviceWorker.ready]))
+    .then(()=>navigator.serviceWorker.ready)
+    .then(reg=>{
+      const worker=reg.active||reg.waiting||reg.installing;
+      worker?.postMessage({type:"CHECK_OFFLINE_LIBRARY"});
+      if(navigator.onLine)worker?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
+      return reg;
+    }).catch(()=>null);
+  zkPrepareServiceWorker();
+  window.addEventListener("online",zkPrepareServiceWorker);
   navigator.serviceWorker.addEventListener("controllerchange",()=>navigator.serviceWorker.ready.then(reg=>(reg.active||reg.waiting||reg.installing)?.postMessage({type:"CHECK_OFFLINE_LIBRARY"})).catch(()=>{}));
 }
 let ptTimer=setInterval(ptTick,30000);
