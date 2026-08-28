@@ -5,18 +5,18 @@
   Cache domains are intentionally separated so an interface update never forces
   a re-download of the Mushaf, and a Tafsir correction never invalidates QCF4.
 */
-const SHELL_CACHE="zad-shell-v118";
+const SHELL_CACHE="zad-shell-v119";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
-const RUNTIME_CACHE="zad-runtime-v118";
+const RUNTIME_CACHE="zad-runtime-v119";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
 
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
 const QUL_HEADER="https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf";
 
 const SHELL=[
-  "./","./index.html","./reader","./reader.html","./transfer/","./telegram-transfer/","./cleanup/","./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
+  "./","./index.html","./reader","./reader.html","./reader.html?home=1&from=zad","./transfer/","./telegram-transfer/","./cleanup/","./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
   "./fonts/amiri-arabic-400.woff2","./fonts/amiri-latin-400.woff2","./fonts/amiri-arabic-700.woff2","./fonts/amiri-latin-700.woff2",
   "./fonts/aref-ruqaa-arabic-400.woff2","./fonts/aref-ruqaa-arabic-700.woff2",
@@ -135,15 +135,16 @@ async function networkFirst(request){
     if(cacheable(response))await runtime.put(request,response.clone());
     return response;
   }catch(error){
-    const hit=await caches.match(request);
+    const hit=await caches.match(request,{ignoreSearch:true});
     if(hit)return hit;
     if(request.mode==="navigate"){
       const url=new URL(request.url);
       /* Cloudflare Pages serves reader.html at the clean /reader URL. */
       const reader=/\/reader(?:\.html)?\/?$/i.test(url.pathname);
       const fallback=reader
-        ?await caches.match("./reader.html")||await caches.match("./reader")
-        :await caches.match("./index.html");
+        ?await caches.match(new URL("./reader.html",self.registration.scope).href,{ignoreSearch:true})||
+          await caches.match(new URL("./reader",self.registration.scope).href,{ignoreSearch:true})
+        :await caches.match(new URL("./index.html",self.registration.scope).href,{ignoreSearch:true});
       if(fallback)return fallback;
     }
     throw error;
@@ -202,7 +203,7 @@ self.addEventListener("fetch",event=>{
     event.respondWith(audioFetch(request));
     return;
   }
-  if(request.mode==="navigate"){
+  if(request.mode==="navigate"||request.destination==="document"){
     event.respondWith(networkFirst(request));
     return;
   }
