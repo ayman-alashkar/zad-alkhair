@@ -70,8 +70,8 @@ async function run(){
     }catch(e){error=String(e)}
     const after=await snapshot();
     report.textContent=JSON.stringify({before,repair:{error,registration:registration?{scope:registration.scope,active:workerInfo(registration.active),waiting:workerInfo(registration.waiting),installing:workerInfo(registration.installing)}:null},after},null,2);
-    const shell=after.caches.find(c=>c.name==="zad-shell-v118");
-    const ready=!!navigator.serviceWorker.controller&&!!shell&&shell.checks["/reader.html"];
+    const shell=after.caches.filter(c=>c.name.startsWith("zad-shell-")).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})).at(-1);
+    const ready=!!navigator.serviceWorker.controller&&!!shell&&shell.checks["/reader.html"]&&shell.checks["/reader.html?home=1&from=zad"];
     summary.className=ready?"ok":"bad";
     summary.textContent=ready?"الفحص يرى أن القارئ مخزّن وعامل الخدمة متحكم.":"ما زال الفحص يرى خللًا؛ أرسل التقرير.";
   }catch(e){summary.className="bad";summary.textContent="تعذّر الفحص: "+e;report.textContent=String(e)}
