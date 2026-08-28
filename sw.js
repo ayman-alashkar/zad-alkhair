@@ -5,18 +5,18 @@
   Cache domains are intentionally separated so an interface update never forces
   a re-download of the Mushaf, and a Tafsir correction never invalidates QCF4.
 */
-const SHELL_CACHE="zad-shell-v117";
+const SHELL_CACHE="zad-shell-v118";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
-const RUNTIME_CACHE="zad-runtime-v117";
+const RUNTIME_CACHE="zad-runtime-v118";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
 
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
 const QUL_HEADER="https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf";
 
 const SHELL=[
-  "./","./index.html","./reader.html","./transfer/","./telegram-transfer/","./cleanup/","./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
+  "./","./index.html","./reader","./reader.html","./transfer/","./telegram-transfer/","./cleanup/","./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
   "./fonts/amiri-arabic-400.woff2","./fonts/amiri-latin-400.woff2","./fonts/amiri-arabic-700.woff2","./fonts/amiri-latin-700.woff2",
   "./fonts/aref-ruqaa-arabic-400.woff2","./fonts/aref-ruqaa-arabic-700.woff2",
@@ -91,11 +91,17 @@ async function notifyAll(message){
   await Promise.all(clients.map(client=>client.postMessage(message)));
 }
 
+async function ensureOfflineShell(){
+  const shell=await caches.open(SHELL_CACHE);
+  const results=await Promise.all(SHELL.map(url=>putOne(shell,url)));
+  const ready=results.every(Boolean);
+  await notifyAll({type:ready?"OFFLINE_SHELL_READY":"OFFLINE_SHELL_INCOMPLETE"});
+  return ready;
+}
+
 self.addEventListener("install",event=>{
   event.waitUntil((async()=>{
-    const shell=await caches.open(SHELL_CACHE);
-    const results=await Promise.all(SHELL.map(url=>putOne(shell,url)));
-    if(results.some(ok=>!ok))throw new Error("Zad shell precache incomplete");
+    if(!await ensureOfflineShell())throw new Error("Zad shell precache incomplete");
     await self.skipWaiting();
   })());
 });
@@ -135,7 +141,9 @@ async function networkFirst(request){
       const url=new URL(request.url);
       /* Cloudflare Pages serves reader.html at the clean /reader URL. */
       const reader=/\/reader(?:\.html)?\/?$/i.test(url.pathname);
-      const fallback=await caches.match(reader?"./reader.html":"./index.html");
+      const fallback=reader
+        ?await caches.match("./reader.html")||await caches.match("./reader")
+        :await caches.match("./index.html");
       if(fallback)return fallback;
     }
     throw error;
@@ -315,6 +323,7 @@ async function cacheAudioResources(resources,tag=""){
 
 self.addEventListener("message",event=>{
   const data=event.data||{};
+  if(data.type==="ENSURE_OFFLINE_SHELL")event.waitUntil(ensureOfflineShell());
   if(data.type==="CHECK_OFFLINE_LIBRARY"||data.type==="CHECK_QURAN_OFFLINE")event.waitUntil(checkOfflineLibrary());
   if(data.type==="ENSURE_OFFLINE_LIBRARY"||data.type==="CACHE_QURAN_OFFLINE")event.waitUntil(ensureOfflineLibrary());
   if(data.type==="CACHE_AUDIO_PACKAGE")event.waitUntil(cacheAudioResources(data.resources,data.tag));
