@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F5C50">
+<title>فحص العمل دون اتصال | زاد الخير</title>
+<style>
+body{margin:0;background:#061f1d;color:#fff9ea;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+main{width:min(720px,calc(100% - 28px));margin:24px auto;padding:22px;box-sizing:border-box;background:#fff9ea;color:#183c36;border-radius:24px}
+h1{margin:0 0 8px;color:#0f5c50;font-size:1.5rem}
+p{line-height:1.8}
+button{width:100%;min-height:50px;border:0;border-radius:15px;background:#0f5c50;color:#fff;font:700 1rem inherit;margin:8px 0}
+pre{direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere;background:#102b27;color:#eaf8f3;padding:15px;border-radius:15px;font-size:.78rem;line-height:1.6}
+.ok{color:#147452}.bad{color:#a32828;font-weight:700}
+</style>
+</head>
+<body><main>
+<h1>فحص العمل دون اتصال</h1>
+<p>لا ترسل هذه الصفحة أي معلومات. اضغط «فحص وإصلاح»، ثم انسخ التقرير وأرسله إلى Codex.</p>
+<button id="run">فحص وإصلاح</button>
+<button id="copy">نسخ التقرير</button>
+<p id="summary">جاهز للفحص.</p>
+<pre id="report"></pre>
+</main>
+<script>
+const $=id=>document.getElementById(id),report=$("report"),summary=$("summary");
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function workerInfo(w){return w?{state:w.state,scriptURL:w.scriptURL}:null}
+async function snapshot(){
+  const out={
+    time:new Date().toISOString(),
+    online:navigator.onLine,
+    standalone:matchMedia("(display-mode: standalone)").matches,
+    controller:workerInfo(navigator.serviceWorker?.controller),
+    registrations:[],
+    caches:[],
+    storage:null
+  };
+  if("serviceWorker" in navigator){
+    for(const r of await navigator.serviceWorker.getRegistrations()){
+      out.registrations.push({scope:r.scope,active:workerInfo(r.active),waiting:workerInfo(r.waiting),installing:workerInfo(r.installing)});
+    }
+  }
+  for(const name of await caches.keys()){
+    if(!name.startsWith("zad-"))continue;
+    const c=await caches.open(name),checks={};
+    for(const path of ["/","/index.html","/reader","/reader.html","/reader.html?home=1&from=zad"]){
+      checks[path]=!!await c.match(path);
+    }
+    out.caches.push({name,checks});
+  }
+  try{
+    const e=await navigator.storage?.estimate?.();
+    out.storage={usage:e?.usage,quota:e?.quota,persisted:await navigator.storage?.persisted?.()};
+  }catch(_){}
+  return out;
+}
+async function run(){
+  $("run").disabled=true;summary.textContent="جارٍ الفحص والإصلاح…";
+  try{
+    const before=await snapshot();
+    let registration=null,error=null;
+    try{
+      registration=await navigator.serviceWorker.register("/sw.js",{scope:"/",updateViaCache:"none"});
+      await registration.update();
+      await navigator.serviceWorker.ready;
+      (registration.active||registration.waiting||registration.installing)?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
+      await sleep(5000);
+    }catch(e){error=String(e)}
+    const after=await snapshot();
+    report.textContent=JSON.stringify({before,repair:{error,registration:registration?{scope:registration.scope,active:workerInfo(registration.active),waiting:workerInfo(registration.waiting),installing:workerInfo(registration.installing)}:null},after},null,2);
+    const shell=after.caches.find(c=>c.name==="zad-shell-v118");
+    const ready=!!navigator.serviceWorker.controller&&!!shell&&shell.checks["/reader.html"];
+    summary.className=ready?"ok":"bad";
+    summary.textContent=ready?"الفحص يرى أن القارئ مخزّن وعامل الخدمة متحكم.":"ما زال الفحص يرى خللًا؛ أرسل التقرير.";
+  }catch(e){summary.className="bad";summary.textContent="تعذّر الفحص: "+e;report.textContent=String(e)}
+  finally{$("run").disabled=false}
+}
+$("run").onclick=run;
+$("copy").onclick=async()=>{try{await navigator.clipboard.writeText(report.textContent);$("copy").textContent="تم النسخ"}catch(_){}};
+run();
+</script>
+</body>
+</html>
