@@ -4255,7 +4255,7 @@ window.addEventListener("hashchange",()=>{
   const incoming=hashCode();
   if(incoming){
     const known=!!localStorage.getItem("zad:viewer:"+incoming);
-    activeKhatmahSet(incoming,known);zkReplaceHash("");zkShowLaunch();return;
+    activeKhatmahSet(incoming,known);zkReplaceHash("");zkHideLaunch();boot();return;
   }
   if(!zkLaunchVisible())boot();
 });
@@ -4264,8 +4264,8 @@ window.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
-zkCaptureIncomingKhatmah();
-if(new URLSearchParams(location.search).get("section")==="khatmahs"){zkHideLaunch();boot()}
+const zkIncomingKhatmah=zkCaptureIncomingKhatmah();
+if(zkIncomingKhatmah||new URLSearchParams(location.search).get("section")==="khatmahs"){zkHideLaunch();boot()}
 else zkShowLaunch();
 zkArmRootGuard()
 
