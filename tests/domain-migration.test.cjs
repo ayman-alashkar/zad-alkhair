@@ -31,6 +31,11 @@ function sourceSecurityChecks(){
     "the retired cleanup page redirects directly to the final site");
   assert.doesNotMatch(cleanup,/localStorage|sessionStorage|caches|serviceWorker/,
     "the retired cleanup page cannot delete browser data");
+  const telegramTransfer=fs.readFileSync(path.join(root,"telegram-transfer/index.html"),"utf8");
+  assert.match(telegramTransfer,/location\.replace\("https:\/\/zad-alkhair\.net\/"\)/,
+    "saved Telegram transfer URLs redirect directly to the final site");
+  assert.doesNotMatch(telegramTransfer,/telegram-migration|localStorage|sessionStorage|fetch\(/,
+    "the retired Telegram transfer route cannot migrate or mutate identity");
   const worker=fs.readFileSync(path.join(root,"sw.js"),"utf8");
   assert.ok(worker.includes('const reader=/\\/reader(?:\\.html)?\\/?$/i.test(url.pathname);'),"offline navigation recognizes both reader.html and Cloudflare Pages' clean /reader URL");
 }
@@ -206,7 +211,6 @@ async function telegramTransferChecks(browser){
   try{
     await localUiChecks(browser);
     await legacyBridgeChecks(browser);
-    await telegramTransferChecks(browser);
     console.log("DOMAIN MIGRATION TESTS PASS");
   }finally{await browser.close()}
 })().catch(error=>{console.error(error);process.exitCode=1});
