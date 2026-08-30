@@ -17,20 +17,20 @@ function sourceSecurityChecks(){
   assert.doesNotMatch(bridge,/migration-handoff|collectHandoff|zad-domain-migration/,
     "the legacy origin no longer migrates identity or displays a migration page");
   const edge=fs.readFileSync(path.join(root,"supabase/functions/migration-handoff/index.ts"),"utf8");
-  assert.match(edge,/redeemed_at=is\.null/,"redemption only accepts unused handoffs");
-  assert.match(edge,/method:\"PATCH\",headers:\{Prefer:\"return=representation\"\}/,"redemption claims and returns the handoff atomically");
+  assert.match(edge,/error:"migration_retired"/,"the server permanently rejects legacy migration");
+  assert.match(edge,/status:410/,"retired migration requests receive Gone");
+  assert.doesNotMatch(edge,/SUPABASE_SERVICE_ROLE_KEY|complete_origin_domain_migration|redeem\(/,
+    "the retired endpoint cannot read or mutate migration data");
   const transfer=fs.readFileSync(path.join(root,"transfer/index.html"),"utf8");
-  assert.match(transfer,/zad:migration-package-v1/,"the redeemed package is retained for an in-session retry");
-  assert.match(transfer,/LEGACY_CLEANUP="https:\/\/ayman-alashkar\.github\.io\/zad-alkhair\/cleanup\/"/,"successful transfer returns to the legacy origin for cleanup");
-  assert.match(transfer,/cleanup:false,proof/,"success remains pending until cleanup is verified");
-  assert.match(transfer,/sameValue\(await tokenHash\(arrival\.cleaned\),done\.proof\)/,"the cleanup receipt is cryptographically matched");
+  assert.match(transfer,/location\.replace\("https:\/\/zad-alkhair\.net\/"\)/,
+    "the retired transfer page redirects directly to the final site");
+  assert.doesNotMatch(transfer,/localStorage|sessionStorage|migration-handoff/,
+    "the retired transfer page cannot change browser identity");
   const cleanup=fs.readFileSync(path.join(root,"cleanup/index.html"),"utf8");
-  assert.match(cleanup,/CACHE_PREFIXES=\["zad-shell-","zad-runtime-","zad-quran-","zad-tafsir-","zad-audio-"\]/,"only known Zad caches are selected");
-  assert.match(cleanup,/key\.startsWith\("zad:"\)/,"only Zad browser keys are selected");
-  assert.doesNotMatch(cleanup,/localStorage\.clear\(|sessionStorage\.clear\(/,"shared-origin storage is never cleared wholesale");
-  assert.match(cleanup,/scope\.origin===location\.origin/,"service-worker cleanup is origin constrained");
-  assert.match(cleanup,/scope\.pathname\.startsWith\(LEGACY_SCOPE\)/,"service-worker cleanup is app-scope constrained");
-  assert.match(cleanup,/sameValue\(await tokenHash\(proof\),expected\)/,"cleanup requires the proof armed on the legacy origin");
+  assert.match(cleanup,/location\.replace\("https:\/\/zad-alkhair\.net\/"\)/,
+    "the retired cleanup page redirects directly to the final site");
+  assert.doesNotMatch(cleanup,/localStorage|sessionStorage|caches|serviceWorker/,
+    "the retired cleanup page cannot delete browser data");
   const worker=fs.readFileSync(path.join(root,"sw.js"),"utf8");
   assert.ok(worker.includes('const reader=/\\/reader(?:\\.html)?\\/?$/i.test(url.pathname);'),"offline navigation recognizes both reader.html and Cloudflare Pages' clean /reader URL");
 }
@@ -205,7 +205,6 @@ async function telegramTransferChecks(browser){
   const browser=await chromium.launch({headless:true});
   try{
     await localUiChecks(browser);
-    await transferChecks(browser);
     await legacyBridgeChecks(browser);
     await telegramTransferChecks(browser);
     console.log("DOMAIN MIGRATION TESTS PASS");

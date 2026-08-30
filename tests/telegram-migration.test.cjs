@@ -37,9 +37,14 @@ assert.match(reminders,/guardedLink\(readerLink\(code, juz\), migrationToken\)/,
 assert.match(reminders,/navigationRows\(url, migrationToken\)/,"Telegram buttons use the same authenticated path");
 assert.match(reminders,/p_lifetime_seconds: 172800/,"reminder tokens expire");
 
-assert.match(handoff,/complete_origin_domain_migration/,"the ordinary path records the same server-side completion");
-assert.match(handoff,/dispatchWelcomes/,"ordinary Telegram-linked members receive the same one-time welcome");
-assert.match(ordinary,/await callApi\("confirm",arrival\.token,true\)/,"legacy cleanup waits for server confirmation");
+assert.match(handoff,/error:"migration_retired"/,"the ordinary domain handoff is permanently retired");
+assert.match(handoff,/status:410/,"legacy handoff requests receive Gone");
+assert.doesNotMatch(handoff,/SUPABASE_SERVICE_ROLE_KEY|complete_origin_domain_migration|dispatchWelcomes/,
+  "the retired endpoint has no privileged migration path");
+assert.match(ordinary,/location\.replace\("https:\/\/zad-alkhair\.net\/"\)/,
+  "the retired ordinary transfer page redirects directly");
+assert.doesNotMatch(ordinary,/localStorage|migration-handoff/,
+  "the retired ordinary transfer cannot overwrite a device identity");
 
 assert.match(transfer,/history\.replaceState\(null,"",location\.pathname\+location\.search\)/,"the personal token is removed from the address immediately");
 assert.match(transfer,/pkg\.device!==device/,"a cached package cannot be applied on another device");
