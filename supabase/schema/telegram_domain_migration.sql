@@ -178,8 +178,8 @@ begin
    where token_hash = v_hash
    for update;
 
-  if not found or v_row.expires_at <= now() or v_row.confirmed_at is not null then
-    return json_build_object('ok', false, 'error', 'expired_or_used');
+  if not found or v_row.expires_at <= now() then
+    return json_build_object('ok', false, 'error', 'expired');
   end if;
   if v_row.device_hash is not null and v_row.device_hash <> v_device_hash then
     return json_build_object('ok', false, 'error', 'already_claimed');

@@ -72,6 +72,17 @@ begin
     raise exception 'confirmation is not idempotent: %', v_result;
   end if;
 
+  v_result := public.redeem_telegram_migration_token(v_token, 'new-device-test-0002');
+  if not coalesce((v_result->>'ok')::boolean, false)
+     or v_result#>>'{payload,profiles,0,viewer,id}' <> 'telegram-member' then
+    raise exception 'same-device reopen is not idempotent: %', v_result;
+  end if;
+
+  v_result := public.redeem_telegram_migration_token(v_token, 'other-device-test-0003');
+  if v_result->>'error' <> 'already_claimed' then
+    raise exception 'confirmed token crossed devices: %', v_result;
+  end if;
+
   v_result := public.issue_telegram_migration_token(v_chat, 600, 'final-domain-v1');
   if not coalesce((v_result->>'ok')::boolean, false)
      or coalesce((v_result->>'needed')::boolean, true) then

@@ -22,6 +22,10 @@ assert.match(schema,/for update skip locked/,"outbox delivery claims are concurr
 assert.match(schema,/revoke all on function public\.redeem_telegram_migration_token/,"browser roles cannot call privileged migration RPCs");
 assert.match(schema,/grant execute on function public\.redeem_telegram_migration_token\(text, text\) to service_role/);
 assert.match(schema,/status = 'cancelled'/,"ordinary completion cancels an unsent Telegram campaign");
+assert.doesNotMatch(schema,/expires_at <= now\(\) or v_row\.confirmed_at is not null/,
+  "a confirmed token remains reusable on its bound device");
+assert.match(schema,/v_row\.device_hash is not null and v_row\.device_hash <> v_device_hash/,
+  "a confirmed token still rejects a different device");
 
 assert.match(edge,/CAMPAIGN_TEXT=`🕌 <b>زاد الخير<\/b>/);
 assert.match(edge,/WELCOME_TEXT=`🕌 <b>زاد الخير<\/b>/);
@@ -52,5 +56,8 @@ assert.match(transfer,/await callApi\("confirm",token,device\)/,"success waits f
 assert.doesNotMatch(transfer,/Authorization:"Bearer "\+SUPABASE_KEY/,"publishable keys are not misused as bearer JWTs");
 assert.match(transfer,/تم ربط هذا الجهاز بختمتك نفسها في النسخة النهائية من زاد الخير\./);
 assert.match(transfer,/وإذا كان التطبيق القديم مثبتًا لديك، فيرجى حذفه وتثبيت التطبيق الجديد\./);
+assert.match(transfer,/error\.code=data&&data\.error/,"the UI preserves the precise server error");
+assert.match(transfer,/error\.code==="already_claimed"/,"the UI distinguishes another device");
+assert.match(transfer,/error\.code==="expired"/,"the UI distinguishes an expired link");
 
 console.log("TELEGRAM MIGRATION STATIC TESTS PASS");

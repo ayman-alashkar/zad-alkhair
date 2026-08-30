@@ -211,7 +211,7 @@ Deno.serve(async(req:Request)=>{
         p_device:device
       });
       if(!result?.ok){
-        const gone=result?.error==="expired_or_used"||result?.error==="already_claimed";
+        const gone=result?.error==="expired"||result?.error==="already_claimed";
         return json({error:result?.error??"invalid_migration"},gone?410:403,origin);
       }
       return json({payload:result.payload},200,origin);

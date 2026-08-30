@@ -120,7 +120,8 @@
       });
       const data=await response.json().catch(()=>null);
       if(!response.ok||!data){
-        const error=new Error(data&&data.error||"migration_failed");error.status=response.status;throw error;
+        const error=new Error(data&&data.error||"migration_failed");
+        error.status=response.status;error.code=data&&data.error||"migration_failed";throw error;
       }
       return data;
     }finally{clearTimeout(timer)}
@@ -182,8 +183,10 @@
       sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(PACKAGE_KEY);
       showSuccess(next);
     }catch(error){
-      if(error&&error.status===410){
-        showFailure("انتهت صلاحية رابط الانتقال أو استُخدم على جهاز آخر. افتح أحدث رسالة من بوت زاد الخير واضغط زر الانتقال من جديد.");
+      if(error&&error.code==="already_claimed"){
+        showFailure("استُخدم هذا الرابط على جهاز مختلف. حفاظًا على حسابك، افتح أحدث رسالة من بوت زاد الخير من الجهاز الذي تريد ربطه.");
+      }else if(error&&error.code==="expired"){
+        showFailure("انتهت صلاحية هذا الرابط. افتح أحدث رسالة من بوت زاد الخير واضغط زر فتح زاد الخير.");
       }else showFailure();
     }
   }
