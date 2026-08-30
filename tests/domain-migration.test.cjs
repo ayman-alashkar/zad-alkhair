@@ -10,10 +10,12 @@ const token="T".repeat(43);
 function sourceSecurityChecks(){
   const home=fs.readFileSync(path.join(root,"index.html"),"utf8");
   assert.match(home,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/">/,"the final homepage declares the canonical production URL");
-  assert.match(home,/migration\.js\?v=116/,"the legacy bridge bypasses a stale service-worker response");
+  assert.match(home,/migration\.js\?v=117/,"the retired legacy origin loads the current redirect immediately");
   const bridge=fs.readFileSync(path.join(root,"migration.js"),"utf8");
-  assert.match(bridge,/markImage\.src=`\$\{LEGACY_PREFIX\}\/icons\/zad-mark\.svg`/,"the migration dialog reuses the final Zad Alkhair mark");
-  assert.doesNotMatch(bridge,/zad-migration-mark","زاد"/,"the temporary text tile is removed from the migration dialog");
+  assert.match(bridge,/location\.replace\(FINAL_ORIGIN\+path\+location\.search\+location\.hash\)/,
+    "legacy URLs redirect directly while preserving path, query, and hash");
+  assert.doesNotMatch(bridge,/migration-handoff|collectHandoff|zad-domain-migration/,
+    "the legacy origin no longer migrates identity or displays a migration page");
   const edge=fs.readFileSync(path.join(root,"supabase/functions/migration-handoff/index.ts"),"utf8");
   assert.match(edge,/redeemed_at=is\.null/,"redemption only accepts unused handoffs");
   assert.match(edge,/method:\"PATCH\",headers:\{Prefer:\"return=representation\"\}/,"redemption claims and returns the handoff atomically");
@@ -132,26 +134,7 @@ async function transferChecks(browser){
 }
 
 async function legacyBridgeChecks(browser){
-  const context=await browser.newContext();
-  let createBody=null;
-  await context.addInitScript(()=>{
-    localStorage.setItem("zad:device","device-synthetic-1234");
-    localStorage.setItem("zad:last","AB12");
-    localStorage.setItem("zad:mine",JSON.stringify([{code:"AB12",name:"قديم",title:"تجريبي"}]));
-    localStorage.setItem("zad:viewer:AB12",JSON.stringify({id:"member-test",name:"قديم"}));
-    localStorage.setItem("zad:orgcode:AB12","admin-synthetic-secret");
-    localStorage.setItem("zad:qcf4:theme","dark");
-    localStorage.setItem("zad:notification-outbox","must-not-transfer");
-    localStorage.setItem("zad:offline-library-v1","must-not-transfer");
-    localStorage.setItem("zad:pwa-install-id","must-not-transfer");
-  });
-  await context.route("https://zad-alkhair.net/icons/migration-ready-v115.svg**",route=>route.fulfill({status:200,contentType:"image/svg+xml",body:'<svg xmlns="http://www.w3.org/2000/svg"/>'}));
-  await context.route("https://zad-alkhair.net/transfer/**",route=>route.fulfill({status:200,contentType:"text/html",body:"<!doctype html><title>وصل</title>"}));
-  await context.route("https://webqpbcijjbawatykoxe.supabase.co/functions/v1/migration-handoff",async route=>{
-    if(route.request().method()==="OPTIONS")return route.fulfill({status:204,headers:{"access-control-allow-origin":"https://ayman-alashkar.github.io","access-control-allow-headers":"authorization,apikey,content-type"}});
-    createBody=route.request().postDataJSON();
-    return route.fulfill({status:201,contentType:"application/json",headers:{"access-control-allow-origin":"https://ayman-alashkar.github.io"},body:JSON.stringify({token})});
-  });
+  const context=await browser.newContext({serviceWorkers:"block"});
   await context.route("https://ayman-alashkar.github.io/zad-alkhair/**",async route=>{
     const url=new URL(route.request().url());
     let relative=url.pathname.replace(/^\/zad-alkhair\/?/,"")||"index.html";
@@ -160,26 +143,12 @@ async function legacyBridgeChecks(browser){
     if(!file.startsWith(root)||!fs.existsSync(file))return route.fulfill({status:404,body:"not found"});
     return route.fulfill({status:200,contentType:mime(file),body:fs.readFileSync(file)});
   });
+  await context.route("https://zad-alkhair.net/**",route=>
+    route.fulfill({status:200,contentType:"text/html",body:"<!doctype html><title>final</title>"}));
   const page=await context.newPage();
-  await page.goto("https://ayman-alashkar.github.io/zad-alkhair/",{waitUntil:"domcontentloaded"});
-  await page.waitForSelector("#zad-domain-migration");
-  assert.equal(await page.locator("#zad-domain-migration .zad-migration-action").count(),1);
-  assert.equal(await page.locator("#zad-domain-migration .zad-migration-mark img").getAttribute("src"),"/zad-alkhair/icons/zad-mark.svg","the visible dialog uses the final brand mark");
-  assert.equal(await page.locator("#zad-domain-migration a").count(),0,"there is no bypass link to the old interface");
-  await page.locator("#zad-domain-migration .zad-migration-action").click();
-  await page.waitForURL(/zad-alkhair\.net\/transfer\//);
-  assert.equal(createBody.action,"create");
-  assert.equal(createBody.profiles[0].code,"AB12");
-  assert.equal(createBody.prefs["zad:qcf4:theme"],"dark");
-  assert.equal("zad:notification-outbox" in createBody.prefs,false);
-  assert.equal("zad:offline-library-v1" in createBody.prefs,false);
-  assert.equal("zad:pwa-install-id" in createBody.prefs,false);
-  assert.equal(page.url().includes("device-synthetic-1234"),false,"device credential never enters the destination URL");
-  assert.equal(page.url().includes("admin-synthetic-secret"),false,"organizer credential never enters the destination URL");
-  const legacyAudit=await context.newPage();
-  await legacyAudit.goto("https://ayman-alashkar.github.io/zad-alkhair/",{waitUntil:"domcontentloaded"});
-  const proof=await legacyAudit.evaluate(()=>localStorage.getItem("zad:migration-cleanup-proof-v1"));
-  assert.match(proof,/^[0-9a-f]{64}$/,"legacy cleanup is armed with a hash rather than the raw handoff token");
+  await page.goto("https://ayman-alashkar.github.io/zad-alkhair/?source=old#87VE",{waitUntil:"domcontentloaded"});
+  await page.waitForURL("https://zad-alkhair.net/?source=old#87VE");
+  assert.equal(page.url(),"https://zad-alkhair.net/?source=old#87VE");
   await context.close();
 }
 
