@@ -5,18 +5,21 @@
   Cache domains are intentionally separated so an interface update never forces
   a re-download of the Mushaf, and a Tafsir correction never invalidates QCF4.
 */
-const SHELL_CACHE="zad-shell-v124";
+const SHELL_CACHE="zad-shell-v125";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
-const RUNTIME_CACHE="zad-runtime-v124";
+const RUNTIME_CACHE="zad-runtime-v125";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
 
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
 const QUL_HEADER="https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf";
 
+/* The two documents below are the non-negotiable offline entry points.
+   Optional shell assets must never block a service-worker update. */
+const REQUIRED_SHELL=["./index.html","./reader.html"];
 const SHELL=[
-  "./","./index.html","./reader","./reader.html","./reader.html?home=1&from=zad","./transfer/","./telegram-transfer/","./cleanup/","./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
+  "./","./reader","./reader.html?home=1&from=zad","./transfer/","./telegram-transfer/","./cleanup/","./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
   "./fonts/amiri-arabic-400.woff2","./fonts/amiri-latin-400.woff2","./fonts/amiri-arabic-700.woff2","./fonts/amiri-latin-700.woff2",
   "./fonts/aref-ruqaa-arabic-400.woff2","./fonts/aref-ruqaa-arabic-700.woff2",
@@ -93,10 +96,20 @@ async function notifyAll(message){
 
 async function ensureOfflineShell(){
   const shell=await caches.open(SHELL_CACHE);
-  const results=await Promise.all(SHELL.map(url=>putOne(shell,url)));
-  const ready=results.every(Boolean);
-  await notifyAll({type:ready?"OFFLINE_SHELL_READY":"OFFLINE_SHELL_INCOMPLETE"});
-  return ready;
+  const requiredResults=await Promise.all(REQUIRED_SHELL.map(url=>putOne(shell,url)));
+  const requiredReady=requiredResults.every(Boolean)&&
+    await allPresent(shell,REQUIRED_SHELL);
+  if(!requiredReady){
+    await notifyAll({type:"OFFLINE_SHELL_INCOMPLETE",required:true});
+    return false;
+  }
+
+  /* Finish the richer shell opportunistically. A missing redirect, icon, or
+     secondary page must not strand users on an older worker without reader.html. */
+  const optionalResults=await Promise.all(SHELL.map(url=>putOne(shell,url)));
+  const optionalFailed=optionalResults.filter(value=>!value).length;
+  await notifyAll({type:"OFFLINE_SHELL_READY",optionalFailed});
+  return true;
 }
 
 self.addEventListener("install",event=>{
