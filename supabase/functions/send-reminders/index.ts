@@ -17,7 +17,6 @@ const APP_URL = (() => {
   } catch { /**/ }
   return `${FINAL_ORIGIN}/`;
 })();
-const MIGRATION_CAMPAIGN = "final-domain-v1";
 
 async function rpc(fn: string, args: unknown = {}) {
   const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
@@ -64,25 +63,7 @@ function generalReaderLink() {
   return root ? new URL("reader.html", root).href : APP_URL;
 }
 
-function migrationLink(token: string, destination: string) {
-  const transfer = new URL("/telegram-transfer/", FINAL_ORIGIN);
-  try {
-    const target = new URL(destination);
-    if (target.pathname.startsWith("/zad-alkhair/")) {
-      target.pathname = target.pathname.slice("/zad-alkhair".length) || "/";
-    }
-    const next = target.pathname + target.search + target.hash;
-    if (next !== "/") transfer.searchParams.set("next", next);
-  } catch { /**/ }
-  transfer.hash = new URLSearchParams({ token }).toString();
-  return transfer.href;
-}
-
-function guardedLink(destination: string, migrationToken = "") {
-  return migrationToken ? migrationLink(migrationToken, destination) : destination;
-}
-
-function navigationRows(sourceUrl: string, migrationToken = "") {
+function navigationRows(sourceUrl: string) {
   let code = "";
   try {
     code = (new URL(sourceUrl).searchParams.get("code") ?? "").trim().toUpperCase();
@@ -90,13 +71,13 @@ function navigationRows(sourceUrl: string, migrationToken = "") {
   const app = appLink(code || undefined);
   const reader = generalReaderLink();
   const row: Array<{ text: string; url: string }> = [];
-  if (app) row.push({ text: "افتح زاد الخير", url: guardedLink(app, migrationToken) });
-  if (reader) row.push({ text: "افتح المصحف", url: guardedLink(reader, migrationToken) });
+  if (app) row.push({ text: "افتح زاد الخير", url: app });
+  if (reader) row.push({ text: "افتح المصحف", url: reader });
   return row.length ? [row] : [];
 }
 
 /* إرسال رسالة. يعيد blocked إذا حظر المستخدم البوت */
-async function send(chat: number, text: string, url?: string, migrationToken = "") {
+async function send(chat: number, text: string, url?: string) {
   const body: Record<string, unknown> = {
     chat_id: chat,
     text,
@@ -104,7 +85,7 @@ async function send(chat: number, text: string, url?: string, migrationToken = "
     disable_web_page_preview: true,
   };
   if (url) {
-    body.reply_markup = { inline_keyboard: navigationRows(url, migrationToken) };
+    body.reply_markup = { inline_keyboard: navigationRows(url) };
   }
   const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
     method: "POST",
@@ -198,17 +179,18 @@ const JUZ_START: [number, number][] = [
   [41,47], [46,1],  [51,31], [58,1],  [67,1],  [78,1],
 ];
 
-const readLink = (juz: number, code: string, migrationToken = "") =>
-  guardedLink(readerLink(code, juz), migrationToken);
+const readLink = (juz: number, code: string, _legacyToken = "") =>
+  readerLink(code, juz);
 
 function juzWord(n: number) {
   if (n === 1) return "جزؤك";
   if (n === 2) return "جزءاك";
   return `أجزاؤك ال${n <= 10 ? ["","","","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة","عشرة"][n] : ar(n)}`;
 }
-function juzList(nums: number[], code: string, migrationToken = "") {
+function juzList(nums: number[], code: string, migrationToken = "", respectful = false) {
+  const invitation = respectful ? "يمكنكم" : "يمكنك";
   return nums.map((n) =>
-    `• الجزء ${ar(n)} — ${JUZ[n - 1]}\n  📖 يمكنك قراءة هذا الجزء من <a href="${esc(readLink(n, code, migrationToken))}">هنا</a>`
+    `• الجزء ${ar(n)} — ${JUZ[n - 1]}\n  📖 ${invitation} قراءة هذا الجزء من <a href="${esc(readLink(n, code, migrationToken))}">هنا</a>`
   ).join("\n");
 }
 
@@ -218,37 +200,48 @@ function daily(g: Group, migrationToken = "") {
   const per = Math.max(1, Math.ceil(20 * nums.length / Math.max(1, g.daysLeft || 1)));
   const group = g.doneCount >= 15
     ? `\n<b>المجموعة:</b> أتمّت ${ar(g.doneCount)} من ٣٠ جزءًا` : "";
+  const numberList = nums.length === 1
+    ? ar(nums[0])
+    : nums.length === 2
+      ? `${ar(nums[0])} و${ar(nums[1])}`
+      : `${nums.slice(0, -1).map((n) => ar(n)).join("، ")} و${ar(nums[nums.length - 1])}`;
+  const subject = nums.length === 1
+    ? `الجزء ${numberList}`
+    : nums.length === 2
+      ? `الجزآن ${numberList}`
+      : `الأجزاء ${numberList}`;
+  const waiting = nums.length === 1 ? "ما زال" : nums.length === 2 ? "ما زالا" : "ما تزال";
+  const reasonSubject = nums.length === 1 ? "الجزء" : nums.length === 2 ? "الجزأين" : "الأجزاء";
+  const notMarked = nums.length === 1
+    ? "لم يُعلَّم مقروءًا"
+    : nums.length === 2
+      ? "لم يُعلَّما مقروءين"
+      : "لم تُعلَّم مقروءة";
+  const marking = nums.length === 1 ? "بتعليمه" : nums.length === 2 ? "بتعليمهما" : "بتعليمها";
   const tail = nums.length > 1
-    ? `ابدأ بالجزء ${ar(first)}، ولو صفحة واحدة.`
-    : `افتح المصحف الآن، ولو صفحة واحدة.`;
-  const why = nums.length > 1
-    ? "وصلتك هذه الرسالة لأن هذه الأجزاء لم تُعلَّم مقروءة بعد. فما أتممته منها فعلّمه في التطبيق"
-    : "وصلتك هذه الرسالة لأن جزءك لم يُعلَّم مقروءًا بعد. فإن كنت قد أتممته فعلّمه في التطبيق";
+    ? `ابدؤوا بالجزء ${ar(first)}، ولو صفحة واحدة.`
+    : "افتحوا المصحف الآن، ولو صفحة واحدة.";
 
-  return `🕌 <b>زاد الخير</b>\n\nالسلام عليكم يا ${esc(g.name)}\n\n<b>${juzWord(nums.length)}:</b>\n${juzList(nums, g.code, migrationToken)}\n<b>وردك اليوم:</b> ${ar(per)} صفحات تقريبًا${group}\n\n${quote(first - 1)}\n\n${tail}\n\n———\n${why}، واعتبر هذا التذكير شكرًا لك ودعاءً بالتوفيق والقبول.`;
+  return `🕌 <b>زاد الخير</b>\n\nالسلام عليكم يا ${esc(g.name)}\n\n${subject} ${waiting} بانتظار الإتمام.\n\n${juzList(nums, g.code, migrationToken, true)}\n<b>وردكم اليوم:</b> ${ar(per)} صفحات تقريبًا${group}\n\n${quote(first - 1)}\n\n${tail}\n\n———\nوصلتكم هذه الرسالة لأن ${reasonSubject} ${notMarked} بعد. إن كنتم قد أتممتم القراءة، فتفضّلوا ${marking} في التطبيق. جزاكم الله خيرًا وكتب لكم القبول.`;
 }
 
 function lastDay(g: Group, migrationToken = "") {
   const nums = g.juz;
   const first = nums[0];
-  const per = Math.max(1, Math.ceil(20 * nums.length / Math.max(1, g.daysLeft || 1)));
-  const mine = nums.length === 1 ? `جزؤك ${ar(first)}` : `${juzWord(nums.length)}`;
-  let line: string;
+  const numberList = nums.length === 1
+    ? ar(nums[0])
+    : nums.length === 2
+      ? `${ar(nums[0])} و${ar(nums[1])}`
+      : `${nums.slice(0, -1).map((n) => ar(n)).join("، ")} و${ar(nums[nums.length - 1])}`;
+  const subject = nums.length === 1
+    ? `الجزء ${numberList}`
+    : nums.length === 2
+      ? `الجزآن ${numberList}`
+      : `الأجزاء ${numberList}`;
+  const waiting = nums.length === 1 ? "ما زال" : nums.length === 2 ? "ما زالا" : "ما تزال";
+  const marking = nums.length === 1 ? "بتعليمه" : nums.length === 2 ? "بتعليمهما" : "بتعليمها";
 
-  if (g.remaining === nums.length) {
-    const left = nums.length === 1
-      ? "جزء واحد"
-      : nums.length === 2 ? "جزءان" : `${ar(nums.length)} أجزاء`;
-    const verb = nums.length === 1 ? "يفصل" : "تفصل";
-    line = `${esc(g.name)}، لم يبق من الختمة إلا ${nums.length === 1 ? "جزؤك" : "أجزاؤك"} أنت. `
-         + `${left} ${verb} الجماعة عن ختمةٍ كاملة.`;
-  } else if (g.remaining <= 3) {
-    line = `${esc(g.name)}، بقي على الختمة ${ar(g.remaining)} أجزاء، منها ${nums.length === 1 ? "جزؤك" : "أجزاؤك"}. اليوم آخر يوم.`;
-  } else {
-    line = `${esc(g.name)}، اليوم آخر يوم في الختمة. ${mine} ${nums.length === 1 ? "ينتظرك" : "تنتظرك"}، و${ar(per)} صفحات تكفي لإتمامها.`;
-  }
-
-  return `🕌 <b>زاد الخير</b> — اليوم آخر يوم\n\n${line}\n\n${juzList(nums, g.code, migrationToken)}\n\n${quote(first - 1)}`;
+  return `🕌 <b>زاد الخير</b> — اليوم آخر يوم\n\nالسلام عليكم يا ${esc(g.name)}\n\n${subject} ${waiting} بانتظار الإتمام، وموعد انتهاء الختمة اليوم. إن كنتم قد أتممتم القراءة، فتفضّلوا ${marking} في التطبيق، وإن لم يتيسّر بعد فاقرؤوا ما استطعتم. جزاكم الله خيرًا وكتب لكم القبول.\n\n${juzList(nums, g.code, migrationToken, true)}\n\n${quote(first - 1)}`;
 }
 
 function overdue(g: Group, migrationToken = "") {
@@ -311,32 +304,10 @@ Deno.serve(async (req) => {
   let failed = 0;
   for (const group of due ?? []) {
     group.juz.sort((a, b) => a - b);
-    let migrationToken = "";
-    try {
-      const issued = await rpc("issue_telegram_migration_token", {
-        p_chat: group.chatId,
-        p_lifetime_seconds: 172800,
-        p_campaign_key: MIGRATION_CAMPAIGN,
-      });
-      if (!issued?.ok || (issued.needed !== false && typeof issued.token !== "string")) {
-        throw new Error("migration token unavailable");
-      }
-      migrationToken = issued.needed === false ? "" : issued.token;
-    } catch {
-      failed++;
-      try {
-        await rpc("notification_finish", {
-          p_delivery: group.deliveryId,
-          p_ok: false,
-          p_permanent: false,
-        });
-      } catch { /**/ }
-      continue;
-    }
-    const text = group.daysLeft < 0 ? overdue(group, migrationToken)
-      : group.daysLeft <= 1 ? lastDay(group, migrationToken) : daily(group, migrationToken);
+    const text = group.daysLeft < 0 ? overdue(group)
+      : group.daysLeft <= 1 ? lastDay(group) : daily(group);
     const link = readerLink(group.code, group.juz[0]) || undefined;
-    const result = await send(group.chatId, text, link, migrationToken);
+    const result = await send(group.chatId, text, link);
     if (result.ok) sent++;
     else if (result.blocked) {
       blocked++;

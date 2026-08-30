@@ -34,12 +34,13 @@ assert.match(edge,/claim_telegram_migration_deliveries/);
 assert.match(edge,/finish_telegram_migration_delivery/);
 assert.match(edge,/issued\?\.ok&&issued\.needed===false/,"a race with an ordinary migration does not send a stale campaign");
 
-assert.match(reminders,/issue_telegram_migration_token/,"every unmigrated reminder receives a fresh authenticated token");
 assert.match(reminders,/configured\.origin === FINAL_ORIGIN/,"a stale APP_URL cannot restore legacy-domain reminder links");
 assert.match(reminders,/return `\$\{FINAL_ORIGIN\}\/`/,"the final domain is the safe reminder fallback");
-assert.match(reminders,/guardedLink\(readerLink\(code, juz\), migrationToken\)/,"links embedded in reminder text are authenticated");
-assert.match(reminders,/navigationRows\(url, migrationToken\)/,"Telegram buttons use the same authenticated path");
-assert.match(reminders,/p_lifetime_seconds: 172800/,"reminder tokens expire");
+assert.doesNotMatch(reminders,/issue_telegram_migration_token|\/telegram-transfer\//,
+  "reminders never enter the retired migration flow");
+assert.match(reminders,/url: app/,"the app button points directly to the canonical app");
+assert.match(reminders,/url: reader/,"the reader button points directly to the canonical reader");
+assert.match(reminders,/readerLink\(code, juz\)/,"links embedded in reminder text are direct");
 
 assert.match(handoff,/error:"migration_retired"/,"the ordinary domain handoff is permanently retired");
 assert.match(handoff,/status:410/,"legacy handoff requests receive Gone");
