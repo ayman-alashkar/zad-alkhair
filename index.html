@@ -2297,6 +2297,30 @@ function mineRemember(){
   minePut(rest);
 }
 function mineForget(c){ minePut(mineGet().filter(x=>x.code!==c)); }
+
+/* Remove legacy entries whose khatmahs were cancelled on another session.
+   A network/RPC failure always keeps the entry; only an authoritative null
+   response from get_state is allowed to remove it. */
+let minePrunePromise=null;
+function minePruneMissing(){
+  if(minePrunePromise||!navigator.onLine) return minePrunePromise||Promise.resolve(false);
+  const snapshot=mineGet();
+  if(!snapshot.length) return Promise.resolve(false);
+  minePrunePromise=(async()=>{
+    const checks=await Promise.all(snapshot.map(async item=>{
+      try{
+        const remote=await rpc("get_state",{p_code:item.code});
+        return {code:item.code,missing:remote===null};
+      }catch(_){ return {code:item.code,missing:false}; }
+    }));
+    const missing=new Set(checks.filter(x=>x.missing).map(x=>x.code));
+    if(!missing.size) return false;
+    minePut(mineGet().filter(item=>!missing.has(item.code)));
+    if(screen==="home") render();
+    return true;
+  })().finally(()=>{minePrunePromise=null});
+  return minePrunePromise;
+}
 const cKey=()=>"zad:orgcode:"+code;
 const orgCode=()=>localStorage.getItem(cKey())||null;
 const OUTBOX="zad:notification-outbox";
@@ -4113,7 +4137,7 @@ async function boot(){
        على الجهاز. إن لم توجد ختمة نشطة أصلًا نعرض صفحة الختمات المعتادة. */
     const active=activeKhatmahGet();
     if(active){zkReplaceHash(active);code=active;}
-    else{state=null;viewer=null;screen="home";render();loadPublicKhatmahs();return;}
+    else{state=null;viewer=null;screen="home";render();minePruneMissing();loadPublicKhatmahs();return;}
   }
 
   activeKhatmahSet(code,false);
