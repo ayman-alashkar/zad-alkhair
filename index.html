@@ -4128,6 +4128,7 @@ async function cancelKhatmah(){
 /* ===================== الإقلاع ===================== */
 async function boot(){
   flushOutbox();
+  minePruneMissing();
   code=hashCode();
   closeLayer();
   clearInterval(lkTimer); lkTimer=null; linking=false;
@@ -4137,7 +4138,7 @@ async function boot(){
        على الجهاز. إن لم توجد ختمة نشطة أصلًا نعرض صفحة الختمات المعتادة. */
     const active=activeKhatmahGet();
     if(active){zkReplaceHash(active);code=active;}
-    else{state=null;viewer=null;screen="home";render();minePruneMissing();loadPublicKhatmahs();return;}
+    else{state=null;viewer=null;screen="home";render();loadPublicKhatmahs();return;}
   }
 
   activeKhatmahSet(code,false);
