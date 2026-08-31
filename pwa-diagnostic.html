@@ -56,6 +56,18 @@ async function snapshot(){
   }catch(_){}
   return out;
 }
+function shellState(snapshot){
+  const stable=snapshot.caches.find(c=>c.name==="zad-shell-stable-v1");
+  const backup=snapshot.caches.find(c=>c.name==="zad-shell-backup-v1");
+  const usable=s=>!!s&&!!s.checks["/index.html"]&&!!s.checks["/reader.html"];
+  return {stable,backup,stableReady:usable(stable),backupReady:usable(backup)};
+}
+async function requestPersistence(){
+  try{
+    if(await navigator.storage?.persisted?.())return true;
+    return !!await navigator.storage?.persist?.();
+  }catch(_){return false}
+}
 async function run(){
   $("run").disabled=true;summary.textContent="جارٍ الفحص والإصلاح…";
   try{
@@ -66,14 +78,17 @@ async function run(){
       await registration.update();
       await navigator.serviceWorker.ready;
       (registration.active||registration.waiting||registration.installing)?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
+      await requestPersistence();
       await sleep(5000);
     }catch(e){error=String(e)}
     const after=await snapshot();
-    report.textContent=JSON.stringify({before,repair:{error,registration:registration?{scope:registration.scope,active:workerInfo(registration.active),waiting:workerInfo(registration.waiting),installing:workerInfo(registration.installing)}:null},after},null,2);
-    const shell=after.caches.filter(c=>c.name.startsWith("zad-shell-")).sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true})).at(-1);
-    const ready=!!navigator.serviceWorker.controller&&!!shell&&shell.checks["/reader.html"]&&shell.checks["/reader.html?home=1&from=zad"];
+    const shell=shellState(after);
+    report.textContent=JSON.stringify({before,repair:{error,registration:registration?{scope:registration.scope,active:workerInfo(registration.active),waiting:workerInfo(registration.waiting),installing:workerInfo(registration.installing)}:null},after,shell},null,2);
+    const ready=!!navigator.serviceWorker.controller&&shell.stableReady;
     summary.className=ready?"ok":"bad";
-    summary.textContent=ready?"الفحص يرى أن القارئ مخزّن وعامل الخدمة متحكم.":"ما زال الفحص يرى خللًا؛ أرسل التقرير.";
+    summary.textContent=ready
+      ?`القارئ مخزّن في الـ shell الثابت${after.storage?.persisted?"، والتخزين الدائم ممنوح.":"، لكن المتصفح لم يمنح التخزين الدائم حتى الآن."}`
+      :"ما زال الفحص يرى خللًا في الـ shell الثابت؛ أرسل التقرير.";
   }catch(e){summary.className="bad";summary.textContent="تعذّر الفحص: "+e;report.textContent=String(e)}
   finally{$("run").disabled=false}
 }
