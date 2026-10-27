@@ -11,11 +11,11 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v129";
+const SHELL_STAGE_CACHE="zad-shell-stage-v130";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
-const RUNTIME_CACHE="zad-runtime-v129";
+const RUNTIME_CACHE="zad-runtime-v130";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
 
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
@@ -166,7 +166,10 @@ async function refreshOptionalShell(){
   return results.filter(value=>!value).length;
 }
 
+let shellPromise=null;
 async function ensureOfflineShell(){
+  if(shellPromise)return shellPromise;
+  shellPromise=(async()=>{
   await migrateLegacyShell();
   let refreshed=false;
   try{refreshed=await refreshRequiredShellAtomically()}catch(_){refreshed=false}
@@ -185,6 +188,8 @@ async function ensureOfflineShell(){
   const optionalFailed=await refreshOptionalShell();
   await notifyAll({type:"OFFLINE_SHELL_READY",optionalFailed,refreshed});
   return true;
+  })();
+  try{return await shellPromise}finally{shellPromise=null}
 }
 
 async function migrateLegacyOfflinePack(){
@@ -248,6 +253,7 @@ async function cacheFirst(request,primaryCache){
 function isReaderPath(pathname){return /\/reader(?:\.html)?\/?$/i.test(pathname)}
 function isIndexPath(pathname){return pathname==="/"||/\/index\.html$/i.test(pathname)}
 async function shellFallback(url){
+  if(url.origin!==self.location.origin||(!isReaderPath(url.pathname)&&!isIndexPath(url.pathname)))return null;
   const key=isReaderPath(url.pathname)?"./reader.html":"./index.html";
   for(const name of [SHELL_CACHE,SHELL_BACKUP_CACHE]){
     const cache=await caches.open(name);
@@ -271,17 +277,26 @@ async function cacheSuccessfulDocument(request,response){
   await runtime.put(request,response.clone());
 }
 async function networkFirstDocument(request){
+  const url=new URL(request.url);
+  const isShell=url.origin===self.location.origin&&(isReaderPath(url.pathname)||isIndexPath(url.pathname));
+  const controller=isShell?new AbortController():null;
+  const timer=controller?setTimeout(()=>controller.abort(),2000):null;
   try{
-    const response=await fetch(request);
+    const response=await fetch(request,controller?{signal:controller.signal}:undefined);
+    if(isShell&&response.status>=500){
+      const fallback=await shellFallback(url);
+      if(fallback)return fallback;
+    }
     await cacheSuccessfulDocument(request,response);
     return response;
   }catch(error){
-    const url=new URL(request.url);
     const fallback=await shellFallback(url);
     if(fallback)return fallback;
     const exact=await caches.match(request,{ignoreSearch:true});
     if(exact)return exact;
     throw error;
+  }finally{
+    if(timer)clearTimeout(timer);
   }
 }
 
@@ -372,14 +387,23 @@ async function packState(){
 }
 
 let libraryPromise=null;
-async function cacheSet(cacheName,urls,kind,offset,total){
-  const cache=await caches.open(cacheName);
+async function missingUrls(cache,urls){
+  const missing=[];
+  for(let i=0;i<urls.length;i+=32){
+    const batch=urls.slice(i,i+32);
+    const hits=await Promise.all(batch.map(url=>cache.match(requestFor(url))));
+    batch.forEach((url,index)=>{if(!hits[index])missing.push(url)});
+  }
+  return missing;
+}
+async function cacheSet(cache,urls,kind,offset,total){
   let done=0,failed=0;
   for(let i=0;i<urls.length;i+=8){
     const batch=urls.slice(i,i+8);
     const results=await Promise.all(batch.map(url=>putOne(cache,url)));
-    failed+=results.filter(value=>!value).length;
-    done+=batch.length;
+    const batchFailed=results.filter(value=>!value).length;
+    failed+=batchFailed;
+    done+=batch.length-batchFailed;
     await notifyAll({type:"OFFLINE_LIBRARY_PROGRESS",kind,done:offset+done,total});
   }
   return {cache,failed};
@@ -392,17 +416,22 @@ async function ensureOfflineLibrary(){
       await notifyAll({type:"OFFLINE_LIBRARY_READY",quran:true,tafsir:true});
       return initial;
     }
-    const total=(initial.quranReady?0:QURAN_REQUIRED.length)+(initial.tafsirReady?0:TAFSIR_REQUIRED.length);
-    await notifyAll({type:"OFFLINE_LIBRARY_PROGRESS",kind:"library",done:0,total});
+    const [quran,tafsir]=await Promise.all([caches.open(QURAN_CACHE),caches.open(TAFSIR_CACHE)]);
+    const [missingQuran,missingTafsir]=await Promise.all([
+      initial.quranReady?[]:missingUrls(quran,QURAN_REQUIRED),
+      initial.tafsirReady?[]:missingUrls(tafsir,TAFSIR_REQUIRED)
+    ]);
+    const total=missingQuran.length+missingTafsir.length;
+    if(total)await notifyAll({type:"OFFLINE_LIBRARY_PROGRESS",kind:"library",done:0,total});
     let offset=0,failed=0;
     if(!initial.quranReady){
-      const result=await cacheSet(QURAN_CACHE,QURAN_REQUIRED,"quran",offset,total);
-      failed+=result.failed;offset+=QURAN_REQUIRED.length;
+      const result=await cacheSet(quran,missingQuran,"quran",offset,total);
+      failed+=result.failed;offset+=missingQuran.length-result.failed;
       if(result.failed===0&&await allPresent(result.cache,QURAN_REQUIRED))await markReady(result.cache,QURAN_MARKER,"quran-core-v1");
     }
     if(!initial.tafsirReady){
-      const result=await cacheSet(TAFSIR_CACHE,TAFSIR_REQUIRED,"tafsir",offset,total);
-      failed+=result.failed;offset+=TAFSIR_REQUIRED.length;
+      const result=await cacheSet(tafsir,missingTafsir,"tafsir",offset,total);
+      failed+=result.failed;offset+=missingTafsir.length-result.failed;
       if(result.failed===0&&await allPresent(result.cache,TAFSIR_REQUIRED))await markReady(result.cache,TAFSIR_MARKER,"tafsir-alwajeez-v1");
     }
     const final=await packState();
@@ -479,3 +508,4 @@ self.addEventListener("message",event=>{
   if(data.type==="CACHE_AUDIO_PACKAGE")event.waitUntil(cacheAudioResources(data.resources,data.tag));
   if(data.type==="CACHE_AUDIO_URLS")event.waitUntil(cacheAudioResources((data.urls||[]).map(url=>({url,kind:"audio"})),data.tag));
 });
+
