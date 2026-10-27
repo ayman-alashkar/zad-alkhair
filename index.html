@@ -3447,7 +3447,7 @@ const HELP_ORG=[
      "وإن نسي أحدهم تعليم جزئه، افتح الجزء واضغط «علّمه مقروءًا نيابةً عنه»، وستصله رسالة شكر."]},
  {t:"نافذة المشارك — زر ⋯",
   b:["<b>أرسل له رسالة</b>: تصله في تلغرام تحت عنوان الختمة.",
-     "<b>افتح الاسم</b>: لمن غيّر هاتفه أو مسح متصفحه فلم يعد يستطيع الدخول باسمه.",
+     "<b>افتح الاسم</b>: افتحه لمرة واحدة أو دائماً، ويمكنك إلغاء الفتح الدائم لاحقاً.",
      "<b>ادمجه في اسم آخر</b>: لمن دخل باسمين مختلفين، فتنتقل أجزاؤه وتذكيره إلى اسم واحد.",
      "<b>احذفه</b>: في حال إنشاء حساب بالخطأ وتركه مثلًا. وتعود أجزاؤه متاحة ويُفقد تذكيره."]},
  {t:"الإعدادات وما بعد الختمة",
@@ -3512,6 +3512,38 @@ function helpDialog(){
 }
 
 /* ===================== نافذة المشارك ===================== */
+function nameAccessDialog(id){
+  const m=memberOf(id); if(!m) return;
+  modal(`<div class="display" style="font-size:1.4rem">فتح اسم «${esc(m.name)}»</div>
+    <p class="hint" style="line-height:2;margin:.7rem 0">اختر طريقة الدخول المناسبة للمشارك.</p>
+    <div class="mlist">
+      <button class="mact" id="access-once"><b>فتح لمرة واحدة</b>
+        <span>أول متصفح يدخل بالاسم يصبح الجهاز المسموح له، ثم يُقفل الاسم مجدداً.</span></button>
+      ${m.openPermanently
+        ? `<button class="mact" id="access-lock"><b>إلغاء الفتح الدائم</b><span>تعود الحماية للأجهزة المسموح لها قبل الفتح الدائم.</span></button>`
+        : `<button class="mact" id="access-open"><b>فتح دائم</b><span>يمكن الدخول بالاسم من أي متصفح حتى تلغي الفتح.</span></button>`}
+    </div>
+    <p class="hint" style="line-height:1.9;margin:.8rem 0">عند الفتح الدائم يستطيع أي شخص يعرف الاسم ورابط الختمة الدخول به.</p>
+    <div class="actions"><button class="btn quiet" id="access-back">رجوع</button></div>`);
+  document.getElementById("access-back").onclick=()=>memberDialog(id);
+  async function setAccess(mode){
+    const message=mode==="open"
+      ? `سيستطيع أي شخص يعرف اسم «${m.name}» ورابط الختمة الدخول به من أي متصفح حتى تلغي الفتح. هل تريد المتابعة؟`
+      : mode==="once"
+        ? `سيتمكن أول متصفح يدخل باسم «${m.name}» من استخدامه، ثم يُقفل الاسم عليه. تأكد أن صاحبه سيدخل فوراً.`
+        : `ستعود حماية اسم «${m.name}» للأجهزة التي كانت مسموحة قبل الفتح الدائم.`;
+    if(!await appConfirm(message,{title:"فتح الاسم",ok:mode==="lock"?"ألغِ الفتح":"تأكيد"})) return;
+    try{
+      const r=await rpc("set_name_access",{p_code:code,p_org_code:orgCode(),p_id:id,p_device:deviceId(),p_mode:mode});
+      if(!r?.ok) return toast(r?.error||"تعذّر التنفيذ");
+      closeLayer(); await refresh(); toast(mode==="open"?"فُتح الاسم دائماً":mode==="once"?"فُتح الاسم لمرة واحدة":"أُلغي الفتح الدائم");
+    }catch(e){toast("تعذّر الاتصال");}
+  }
+  document.getElementById("access-once").onclick=()=>setAccess("once");
+  document.getElementById("access-open")?.addEventListener("click",()=>setAccess("open"));
+  document.getElementById("access-lock")?.addEventListener("click",()=>setAccess("lock"));
+}
+
 function memberDialog(id){
   const m=memberOf(id); if(!m) return;
   const n=state.juz.filter(j=>j.ownerId===id).length;
@@ -3536,8 +3568,8 @@ function memberDialog(id){
         <span>${m.exempt
           ?"سيُطلب منه تفعيل تلغرام في المرة القادمة"
           :"لمن لا تلغرام على هاتفه، فيدخل ويحجز بنفسه"}</span></button>`:""}
-      ${m.locked?`<button class="mact" id="m-release"><b>افتح الاسم</b>
-        <span>ليدخل به من جهاز آخر إن غيّر هاتفه</span></button>`:""}
+      ${m.id!==state.organizerId?`<button class="mact" id="m-release"><b>${m.openPermanently?"إدارة فتح الاسم":"افتح الاسم"}</b>
+        <span>${m.openPermanently?"الاسم مفتوح على جميع الأجهزة":"فتح لمرة واحدة أو فتح دائم"}</span></button>`:""}
       <button class="mact" id="m-merge"><b>ادمجه في اسم آخر</b>
         <span>تنتقل أجزاؤه وتذكيره، ويُحذف هذا الاسم</span></button>
       <button class="mact danger" id="m-remove"><b>احذفه</b>
@@ -3550,14 +3582,7 @@ function memberDialog(id){
   const msgBtn=document.getElementById("m-msg");
   if(msgBtn) msgBtn.onclick=()=>messageDialog(id,m.name);
   const rel=document.getElementById("m-release");
-  if(rel) rel.onclick=async()=>{
-    if(!await appConfirm(`سيُفتح اسم «${m.name}» ليدخل به من أي جهاز.\nافعل هذا لمن غيّر هاتفه أو مسح متصفحه.`,{title:"فتح الاسم",ok:"افتح الاسم"})) return;
-    try{
-      const r=await rpc("release_name",{p_code:code,p_org_code:orgCode(),p_id:id,p_device:deviceId()});
-      if(!r.ok) return toast(r.error||"تعذّر الفتح");
-      closeLayer(); await refresh(); toast("فُتح الاسم");
-    }catch(e){ toast("تعذّر الاتصال"); }
-  };
+  if(rel) rel.onclick=()=>nameAccessDialog(id);
   const ex=document.getElementById("m-exempt");
   if(ex) ex.onclick=async()=>{
     const on=!m.exempt;
