@@ -4662,9 +4662,9 @@ if("serviceWorker" in navigator){
       }
     }else if(data.type==="OFFLINE_LIBRARY_INCOMPLETE"){
       rememberOfflineLibrary(false);
-      if(!navigator.onLine){
+      if(!navigator.onLine||Number(data.failed)>0){
         hideOfflineProgress(0);
-        if(lastOfflinePercent>0)showToast("توقف التجهيز مؤقتًا، وسيُستأنف عند عودة الاتصال");
+        if(lastOfflinePercent>0||Number(data.failed)>0)showToast("لم يكتمل التجهيز؛ ستُستكمل الملفات الناقصة عند المحاولة مجدداً");
       }
     }else if(data.type==="OFFLINE_LIBRARY_PROGRESS"){
       paintOfflineProgress(data.done,data.total);
@@ -4759,3 +4759,4 @@ if("serviceWorker" in navigator){
 </script>
 </body>
 </html>
+
