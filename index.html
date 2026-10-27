@@ -4293,11 +4293,8 @@ function zkRootBack(){
   zkConfirmNativeExit();
 }
 window.addEventListener("popstate",()=>zkRootBack());
-document.getElementById("zk-launch-quran")?.addEventListener("click",async event=>{
+document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{
   event.preventDefault();
-  if(navigator.onLine){
-    try{await fetch("reader.html",{cache:"reload"})}catch(_){ }
-  }
   location.href="reader.html?home=1&from=zad";
 });
 document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
@@ -4377,3 +4374,4 @@ let syncTimer=setInterval(syncState,15000);
 </script>
 </body>
 </html>
+
