@@ -11,17 +11,18 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v130";
+const SHELL_STAGE_CACHE="zad-shell-stage-v131";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
-const RUNTIME_CACHE="zad-runtime-v130";
+const RUNTIME_CACHE="zad-runtime-v131";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
 
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
 const QUL_HEADER="https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf";
 
 const REQUIRED_SHELL=["./index.html","./reader.html"];
+const SHELL_FETCH_URLS={"./index.html":"./","./reader.html":"./reader"};
 const SHELL_ALIASES={
   "./":"./index.html",
   "./reader":"./reader.html",
@@ -130,7 +131,7 @@ async function refreshRequiredShellAtomically(){
   let staged=false;
   try{
     const results=await Promise.all(REQUIRED_SHELL.map(async url=>{
-      const req=requestFor(url,{reload:true});
+      const req=requestFor(SHELL_FETCH_URLS[url],{reload:true});
       try{
         const response=await fetch(req);
         if(!cacheable(response))return false;
@@ -258,7 +259,12 @@ async function shellFallback(url){
   for(const name of [SHELL_CACHE,SHELL_BACKUP_CACHE]){
     const cache=await caches.open(name);
     const hit=await cache.match(requestFor(key),{ignoreSearch:true});
-    if(hit)return hit;
+    if(hit){
+      // Older caches can contain a redirected response. Navigation requests
+      // cannot use it directly, even when its final status is 200.
+      if(hit.redirected)return new Response(hit.body,{status:hit.status,statusText:hit.statusText,headers:hit.headers});
+      return hit;
+    }
   }
   return null;
 }
@@ -508,4 +514,5 @@ self.addEventListener("message",event=>{
   if(data.type==="CACHE_AUDIO_PACKAGE")event.waitUntil(cacheAudioResources(data.resources,data.tag));
   if(data.type==="CACHE_AUDIO_URLS")event.waitUntil(cacheAudioResources((data.urls||[]).map(url=>({url,kind:"audio"})),data.tag));
 });
+
 
