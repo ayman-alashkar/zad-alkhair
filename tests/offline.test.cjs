@@ -40,25 +40,25 @@ test('shell survives offline startup and query-string reader navigation',async()
   e.setFetch(async()=>{throw Error('offline')});
   const root=await e.run("networkFirstDocument(new Request('https://example.test/'))");
   const reader=await e.run("networkFirstDocument(new Request('https://example.test/reader.html?home=1&from=zad'))");
-  assert.match(await root.text(),/index.html/);
-  assert.match(await reader.text(),/reader.html/);
+  assert.match(await root.text(),/ok:https:\/\/example\.test\/$/);
+  assert.match(await reader.text(),/ok:https:\/\/example\.test\/reader$/);
   await assert.rejects(e.run("networkFirstDocument(new Request('https://example.test/other/'))"),/offline/);
 });
 
 test('known shell falls back on server error or a stalled network',async()=>{
   const e=setup();await e.run('ensureOfflineShell()');
   e.setFetch(async()=>new Response('server error',{status:503}));
-  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/'))")).text(),/index.html/);
+  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/'))")).text(),/ok:https:\/\/example\.test\/$/);
   e.setFetch((r,opts)=>new Promise((resolve,reject)=>opts.signal.addEventListener('abort',()=>reject(Error('timeout')))));
-  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/reader'))")).text(),/reader.html/);
+  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/reader'))")).text(),/ok:https:\/\/example\.test\/reader$/);
 });
 
 test('failed shell refresh retains last good pages',async()=>{
   const e=setup();await e.run('ensureOfflineShell()');
-  e.setFetch(async r=>r.url.endsWith('/reader.html')?new Response('failure',{status:503}):new Response('new index'));
+  e.setFetch(async r=>r.url.endsWith('/reader')?new Response('failure',{status:503}):new Response('new index'));
   await e.run('ensureOfflineShell()');
   e.setFetch(async()=>{throw Error('offline')});
-  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/'))")).text(),/ok:.*index.html/);
+  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/'))")).text(),/ok:https:\/\/example\.test\/$/);
 });
 
 test('offline library resumes only missing files and restores readiness markers',async()=>{
@@ -90,6 +90,31 @@ test('concurrent shell refreshes share one staging operation',async()=>{
   const e=setup();
   const result=await e.run('Promise.all([ensureOfflineShell(),ensureOfflineShell(),ensureOfflineShell()])');
   assert.deepEqual(Array.from(result),[true,true,true]);
-  assert.equal(e.calls.filter(u=>u.endsWith('/index.html')).length,1);
-  assert.equal(e.calls.filter(u=>u.endsWith('/reader.html')).length,1);
+  assert.equal(e.calls.filter(u=>u==='https://example.test/').length,1);
+  assert.equal(e.calls.filter(u=>u==='https://example.test/reader').length,1);
 });
+
+test('existing redirected shell responses remain usable for offline navigation',async()=>{
+  const http=require('node:http');
+  const server=http.createServer((req,res)=>{
+    if(req.url==='/redirect'){res.writeHead(302,{Location:'/page'});res.end();return}
+    res.writeHead(200,{'Content-Type':'text/html'});res.end('<h1>Saved page</h1>');
+  });
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  try{
+    const redirected=await fetch('http://127.0.0.1:'+server.address().port+'/redirect');
+    assert.equal(redirected.redirected,true);
+    const e=setup(),cache=await e.run('caches.open("zad-shell-stable-v1")');
+    await cache.put(new Request('https://example.test/index.html'),redirected.clone());
+    await cache.put(new Request('https://example.test/reader.html'),redirected.clone());
+    e.setFetch(async()=>{throw Error('offline')});
+    const home=await e.run("networkFirstDocument(new Request('https://example.test/',{redirect:'manual'}))");
+    const reader=await e.run("networkFirstDocument(new Request('https://example.test/reader',{redirect:'manual'}))");
+    for(const response of [home,reader]){
+      assert.equal(response.redirected,false);
+      assert.equal(response.headers.get('content-type'),'text/html');
+      assert.equal(await response.text(),'<h1>Saved page</h1>');
+    }
+  }finally{await new Promise(resolve=>server.close(resolve))}
+});
+
