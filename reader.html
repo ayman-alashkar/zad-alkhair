@@ -2870,10 +2870,12 @@ const MIN_LINE_PX=24;
    جزءًا من بكسل صفقةٌ خاسرة: تخسر الصفحةَ كاملةً وتكسب ما لا يكاد يُرى. */
 const FLOOR_TOLERANCE=.90;
 
+const pageFitJobs=new WeakMap();
 function fitPage(p){
   const root=document.querySelector(`.page[data-page="${p}"]`);
   if(!root)return;
   const stage=root.querySelector(".page-stage"),host=root.querySelector(".mushaf");
+  if(!stage||!host)return;
   const normal=[...host.querySelectorAll(".line-inner:not(.surah-line):not(.bismillah-line)")];
   if(!normal.length)return;
 
@@ -2883,13 +2885,19 @@ function fitPage(p){
   const surahBase=p<=2?116:108;
   const basBase=p<=2?102:96;
 
-  normal.forEach(x=>x.style.fontSize=base+"px");
   const surahs=[...host.querySelectorAll(".surah-line")];
   const bases=[...host.querySelectorAll(".bismillah-line")];
-  surahs.forEach(x=>x.style.fontSize=surahBase+"px");
-  bases.forEach(x=>x.style.fontSize=basBase+"px");
+  const job={};
+  pageFitJobs.set(root,job);
+  const isCurrent=()=>pageFitJobs.get(root)===job&&root.isConnected&&root.querySelector(".mushaf")===host;
 
   requestAnimationFrame(()=>{
+    if(!isCurrent()||stage.clientWidth<=0||stage.clientHeight<=0)return;
+    // Reset and measure in the same frame. Superseded fits must never measure
+    // a previous fit's scaled text as though it still had the base font size.
+    normal.forEach(x=>x.style.fontSize=base+"px");
+    surahs.forEach(x=>x.style.fontSize=surahBase+"px");
+    bases.forEach(x=>x.style.fontSize=basBase+"px");
     // Always measure from a neutral layout: no scrollbar stealing width, no
     // gap calculated by a previous fit, and no reserved banner height left
     // over from one. Otherwise an earlier result pollutes rawH and the Quran
@@ -2966,6 +2974,7 @@ function fitPage(p){
     host.style.justifyContent=overflows?"flex-start":"center";
 
     requestAnimationFrame(()=>{
+      if(!isCurrent())return;
       // Render the *visible ink* of the ready-made QUL glyph, then crop the
       // canvas to that ink. This avoids the large internal font metrics that
       // can make the decorative header look tiny. Its CSS width is
@@ -4759,4 +4768,5 @@ if("serviceWorker" in navigator){
 </script>
 </body>
 </html>
+
 
