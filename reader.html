@@ -2151,6 +2151,103 @@ html[data-theme="dark"] .timer-wheel-wrap:before{border-color:rgba(228,201,128,.
 .timer-nudge:focus-visible,.timer-value:focus-visible{outline:2px solid var(--ui-gold);outline-offset:-3px;border-radius:8px}
 .timer-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.timer-presets button{flex:1;font:inherit;border:1px solid #8885;border-radius:10px;padding:9px;background:transparent;color:inherit;cursor:pointer}
 @media(prefers-reduced-motion:reduce){.qari-marquee.moving span{animation:none}.qari-marquee{overflow:auto;pointer-events:auto}}
+
+/* One ivory, emerald and brushed-gold surface system for the player and its sheets. */
+.audio-panel,.player-backdrop{
+  --p-surface:rgba(255,251,242,.94);--p-raised:rgba(255,254,249,.78);
+  --p-well:rgba(230,216,184,.22);--p-ink:#173E35;--p-muted:#746C57;
+  --p-line:rgba(169,131,58,.30);--p-gold:#96702D;
+  --p-selected:rgba(213,178,101,.18);--p-shadow:rgba(69,52,21,.17);
+  --p-action:linear-gradient(135deg,#F1DFA8 0%,#D5B16A 60%,#C69B4B 100%);
+  --p-on-action:#253B2F;
+}
+html[data-theme="dark"] .audio-panel,html[data-theme="dark"] .player-backdrop{
+  --p-surface:rgba(8,38,33,.95);--p-raised:rgba(255,246,217,.045);
+  --p-well:rgba(0,0,0,.12);--p-ink:#FFF5DC;--p-muted:#C1BBA7;
+  --p-line:rgba(228,201,128,.23);--p-gold:#E4C980;
+  --p-selected:rgba(228,201,128,.11);--p-shadow:rgba(0,0,0,.34);
+  --p-action:linear-gradient(135deg,#F4E4B2 0%,#E4C980 65%,#C9A355 100%);
+}
+html #audioPanel{
+  width:min(560px,calc(100vw - 24px));max-width:560px;left:50%;right:auto;transform:translateX(-50%);
+  bottom:calc(12px + env(safe-area-inset-bottom));padding:20px 18px 16px;border-radius:26px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.10),transparent 70%),var(--p-surface)!important;
+  color:var(--p-ink);border:1px solid var(--p-line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 14px 48px -12px var(--p-shadow);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+}
+html body.player-on.player-expanded #audioPanel{display:block}
+body.player-on.player-expanded .bottom{opacity:0;visibility:hidden;pointer-events:none}
+#audioPanel .audio-top{display:grid;grid-template-columns:40px 40px minmax(0,1fr) 40px 40px;gap:7px}
+#audioPanel .audio-round{width:40px;height:40px}
+#audioPanel .audio-round,#audioPanel .audio-control:not(.audio-main),#audioPanel .audio-pill,#audioPanel .audio-qari-wrap{
+  background:var(--p-raised)!important;color:var(--p-gold)!important;
+  border:1px solid var(--p-line);border-color:var(--p-line)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+#audioPanel .audio-qari-wrap{height:40px;border-radius:12px;color:var(--p-ink)!important}
+#audioPanel .qari-marquee{inset-inline:12px}
+#audioPanel .qari-marquee span{font-size:11px;font-weight:500}
+#audioPanel .audio-timer small{color:var(--p-muted);opacity:1;font-size:8px}
+#audioPanel .audio-collapse{width:54px;height:28px;top:-16px;border-radius:17px 17px 0 0;background:var(--p-surface)!important;color:var(--p-gold);border-color:var(--p-line);box-shadow:none}
+#audioPanel .audio-collapse svg{width:18px;height:18px}
+#audioPanel .audio-now-row{position:relative;display:flex;align-items:center;justify-content:center;min-height:70px;margin:13px 0 9px;padding-inline:62px}
+#audioPanel .audio-now-copy{min-width:0;text-align:center;display:grid;gap:5px}
+#audioPanel .audio-eyebrow{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--p-gold);font-size:9px;font-weight:500;line-height:1.4}
+#audioPanel .audio-eyebrow:before,#audioPanel .audio-eyebrow:after{content:"";height:1px;width:24px;background:var(--p-line)}
+#audioPanel .audio-now{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;column-gap:9px;row-gap:2px;white-space:normal;overflow:visible;opacity:1;margin:0;line-height:1.7;color:var(--p-ink)}
+#audioPanel .audio-surah-title{font-size:19px;font-weight:600;letter-spacing:-.4px}
+#audioPanel .audio-ayah-label{font-size:10px;color:var(--p-muted)}
+#audioPanel .audio-queue-link{position:absolute;inset-inline-end:0;top:50%;transform:translateY(-50%);width:34px;height:34px;border:1px solid var(--p-line);color:var(--p-gold);background:var(--p-raised)}
+#audioPanel .audio-queue-link span{background:var(--p-action);color:var(--p-on-action);box-shadow:0 0 0 2px var(--p-surface)}
+#audioPanel .audio-progress-row{margin:0 1px;gap:8px;grid-template-columns:38px minmax(0,1fr) 38px}
+#audioPanel .audio-progress-time{font-size:9px;color:var(--p-muted)}
+#audioPanel .audio-progress:before{background:var(--p-line);height:3px}
+#audioPanel .audio-progress i{background:linear-gradient(90deg,#C69B4B,#E4C980);height:3px}
+#audioPanel #progressSeek::-webkit-slider-thumb{background:#D5B16A;border-color:var(--p-surface);width:12px;height:12px;box-shadow:0 0 0 1px var(--p-line)}
+#audioPanel #progressSeek::-moz-range-thumb{background:#D5B16A;border-color:var(--p-surface)}
+#audioPanel .audio-controls{display:grid;grid-template-columns:48px minmax(32px,1fr) 70px minmax(32px,1fr) 48px;gap:8px;align-items:center;margin-top:9px}
+#audioPanel .audio-control{width:44px;height:44px;justify-self:center}
+#audioPanel .audio-control svg{width:21px;height:21px}
+html #audioPanel #panelPlay.audio-main{width:64px;height:64px;background:var(--p-action)!important;color:var(--p-on-action)!important;border:1px solid rgba(187,146,63,.5)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 6px 18px -8px rgba(167,120,29,.65);font-size:22px}
+#audioPanel .audio-pill{height:38px;font-size:10px;padding-inline:8px}
+html #audioPanel #continuousBtn,html #audioPanel #continuousBtn.active{
+  background:var(--p-raised)!important;color:var(--p-muted)!important;border-color:var(--p-line)!important;
+  outline:none;box-shadow:none;font-size:9px;font-weight:500;position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);width:58px;height:30px;
+}
+html #audioPanel #continuousBtn.active,html #audioPanel #repeatBtn.active{background:var(--p-selected)!important;color:var(--p-gold)!important;border-color:var(--p-gold)!important;box-shadow:none}
+#audioPanel button:focus-visible,#audioPanel .audio-qari-wrap:focus-within{outline:2px solid var(--p-gold);outline-offset:3px}
+#audioPanel .audio-round:hover,#audioPanel .audio-control:not(.audio-main):hover,#audioPanel .audio-pill:hover{border-color:var(--p-gold);background:var(--p-selected)!important}
+#audioPanel #stopPlayer{border-color:transparent;background:transparent!important;color:var(--p-muted)!important}
+.player-backdrop{background:rgba(3,22,18,.42);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+html .player-backdrop .sheet{background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.08),transparent 70%),var(--p-surface)!important;color:var(--p-ink);border:1px solid var(--p-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 22px 65px -20px var(--p-shadow)}
+.player-backdrop .sheethead{border-color:var(--p-line)}
+html .player-backdrop .sheethead h3{color:var(--p-ink)!important}
+.player-backdrop .sheethead:after{background:var(--p-gold)}
+html .player-backdrop .close-sheet,.player-backdrop .queue-toolbar button,.player-backdrop .queue-actions button,.player-backdrop .timer-presets button{
+  background:var(--p-raised);color:var(--p-ink);border:1px solid var(--p-line);border-radius:11px;
+}
+html .player-backdrop .field select{background:var(--p-raised);color:var(--p-ink);border-color:var(--p-line)}
+html .player-backdrop .field label,.player-backdrop .player-hint,.player-backdrop .timer-column-title,.player-backdrop .timer-nudge{color:var(--p-muted);opacity:1}
+html .player-backdrop .apply{background:var(--p-action)!important;color:var(--p-on-action)!important;border:1px solid var(--p-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 5px 16px -10px rgba(167,120,29,.5);font-weight:600}
+.player-backdrop .queue-row{background:var(--p-raised);border-color:var(--p-line)}
+.player-backdrop .queue-row.current{background:var(--p-selected);border-color:var(--p-gold)}
+.player-backdrop .queue-track,.player-backdrop .queue-handle{color:var(--p-ink)}
+.player-backdrop .queue-track small{color:var(--p-muted);opacity:1}
+.player-backdrop .timer-wheel-wrap{background:var(--p-well);border-color:var(--p-line)}
+html .player-backdrop .timer-wheel-wrap:before{background:var(--p-selected);border-color:var(--p-line)}
+html .player-backdrop .timer-value{color:var(--p-muted)}
+html .player-backdrop .timer-value[aria-selected="true"]{color:var(--p-ink)}
+.player-backdrop .timer-presets button:hover,.player-backdrop .queue-toolbar button:hover{background:var(--p-selected);border-color:var(--p-gold)}
+@media(max-width:390px){
+  html #audioPanel{width:calc(100vw - 16px);padding-inline:12px}
+  #audioPanel .audio-top{grid-template-columns:36px 36px minmax(0,1fr) 36px 36px;gap:5px}
+  #audioPanel .audio-round{width:36px;height:36px}
+  #audioPanel .audio-qari-wrap{height:36px}
+  #audioPanel .audio-controls{grid-template-columns:40px minmax(28px,1fr) 62px minmax(28px,1fr) 40px;gap:5px}
+  #audioPanel .audio-control{width:38px;height:40px}
+  html #audioPanel #panelPlay.audio-main{width:58px;height:58px}
+}
+@media(min-width:900px){html #audioPanel{bottom:24px;padding:20px 22px 18px}#audioPanel .audio-now-row{min-height:76px;margin:14px 0 8px}#audioPanel .audio-surah-title{font-size:22px}}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
@@ -2224,11 +2321,12 @@ html[data-theme="dark"] .timer-wheel-wrap:before{border-color:rgba(228,201,128,.
     </button>
   </div>
   <div class="audio-now-row">
-    <div class="audio-now" id="audioNow">—</div>
+    <div class="audio-now-copy"><span class="audio-eyebrow">التلاوة الآن</span><div class="audio-now" id="audioNow">—</div></div>
     <button type="button" class="audio-queue-link" id="queueBtn" aria-label="فتح قائمة التشغيل" title="قائمة التشغيل">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h10M4 16h7"/><path d="m16 14 5 3-5 3Z"/></svg>
       <span id="queueCount">٠</span>
     </button>
+    <button type="button" class="audio-pill audio-continuous" id="continuousBtn" aria-label="استمرار التلاوة بعد الآية المحددة" title="استمرار التلاوة">متابعة</button>
   </div>
   <div class="audio-progress-row" aria-label="تقدم التلاوة">
     <span class="audio-progress-time" id="audioTimeCurrent" dir="ltr">٠:٠٠</span>
@@ -2250,7 +2348,6 @@ html[data-theme="dark"] .timer-wheel-wrap:before{border-color:rgba(228,201,128,.
     <button type="button" class="audio-control audio-repeat" id="repeatBtn" aria-label="التكرار">
       <svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>
     </button>
-    <button type="button" class="audio-pill audio-continuous" id="continuousBtn" aria-label="استمرار التلاوة بعد الآية المحددة" title="استمرار التلاوة">متابعة</button>
   </div>
 </section>
 
@@ -4169,7 +4266,7 @@ function installMediaSession(){
 }
 function updatePlayer(){
   const v=verseParts(`${play.surah}:${play.current}`);
-  document.getElementById("audioNow").textContent=`سورة ${v.sname} · الآية ${ar(play.current)}`;
+  document.getElementById("audioNow").innerHTML=`<span class="audio-surah-title">سورة ${escapeHtml(v.sname)}</span><span class="audio-ayah-label">الآية ${ar(play.current)}</span>`;
   document.getElementById("speedBtn").textContent=(play.speed===1?"1.0":String(play.speed))+"×";
   const rb=document.getElementById("repeatBtn"),labels={off:"التكرار متوقف",one:"تكرار السورة باستمرار",all:"تكرار قائمة التشغيل"};
   rb.classList.toggle("active",repeatMode!=="off");
@@ -4692,6 +4789,7 @@ document.getElementById("audioJump").onclick=()=>{
     <div class="field"><label>الآية</label><select id="jumpAyah">${audioAyahOptions(initialS,initialA)}</select></div>
     <button type="button" class="apply" id="applyAudioJump">تشغيل</button>
   </div>`);
+  b.classList.add("player-backdrop");
   const ss=b.querySelector("#jumpSurah"),aa=b.querySelector("#jumpAyah");
   ss.onchange=()=>{
     const s=Number(ss.value)||1;
@@ -4716,6 +4814,7 @@ document.getElementById("audioSettings").onclick=()=>{
     <div class="grid2"><div class="field"><label>تكرار المجموعة</label><select id="grp"><option>1</option><option>2</option><option>3</option><option>5</option><option>10</option></select></div><div class="field"><label>تكرار كل آية</label><select id="each"><option>1</option><option>2</option><option>3</option><option>5</option><option>10</option></select></div></div>
     <div class="field"><label>السرعة</label><select id="speed"><option value=".75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div>
     <button type="button" class="apply" id="applyAudio">تطبيق وتشغيل</button></div>`);
+  b.classList.add("player-backdrop");
   b.querySelector("#grp").value=String(play.repeatGroup);b.querySelector("#each").value=String(play.repeatAyah);b.querySelector("#speed").value=String(play.speed);
   b.querySelector("#applyAudio").onclick=async()=>{
     reciter=RECITERS.find(r=>r.id===b.querySelector("#qari").value)||defaultReciter();playbackRequestId++;audio.pause();activeSegment=null;activeTimingRows=null;releaseAudioPreload();basmalaFallbackTarget=null;delete audio.dataset.source;delete audio.dataset.playMode;audio.removeAttribute("src");audio.load();storageJsonSet(STORAGE_KEYS.qari,reciter);
@@ -4761,6 +4860,7 @@ document.getElementById("sleepTimer").onclick=()=>{
     <button type="button" class="apply" id="startSleep">بدء المؤقت</button>
     <div class="queue-toolbar"><button type="button" id="endSurahTimer">بعد نهاية السورة</button><button type="button" id="cancelSleep">إلغاء المؤقت</button></div>
   </div>`);
+  b.classList.add("player-backdrop");
   const wheels=[...b.querySelectorAll(".timer-wheel")];
   function mark(i,v){
     values[i]=Math.max(0,Math.min(units[i].max,v));
@@ -4819,6 +4919,7 @@ function openPlaybackQueue(){
     <ol class="queue-list" id="queueList"></ol>
     <div class="queue-toolbar"><button type="button" id="queueStart">تشغيل القائمة</button><button type="button" id="queueClear">مسح القائمة</button></div>
   </div>`);
+  b.classList.add("player-backdrop");
   const list=b.querySelector("#queueList");
   function render(){
     list.innerHTML=playbackQueue.length?playbackQueue.map((item,i)=>`<li class="queue-row ${queueActive&&i===queueIndex?"current":""}" data-index="${i}">
