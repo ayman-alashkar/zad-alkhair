@@ -2336,6 +2336,31 @@ html .toast{white-space:normal;line-height:1.7;font-size:11px}
   html .quran-index .quran-index-actions{gap:4px}
   html .quran-index-row-main{grid-template-columns:minmax(0,1fr) 30px;gap:5px}
 }
+
+/* Verse context belongs to its own header cell; notifications sit below the toolbar. */
+html .topbar{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:calc(9px + env(safe-area-inset-top)) 13px 12px;
+  background:linear-gradient(180deg,var(--reader-surface) 0%,var(--reader-surface) 70%,transparent 100%);
+}
+html .topbar .quran-home-link{grid-column:1;grid-row:1;color:var(--reader-ink)!important;white-space:nowrap}
+html .topbar .top-actions{grid-column:3;grid-row:1;gap:7px;min-width:max-content}
+html .topbar .iconbtn{width:40px;height:40px;background:var(--reader-raised)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
+html .topbar .iconbtn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:3px}
+html .topbar .iconbtn:active{background:var(--reader-selected)!important}
+.reader-context{
+  grid-column:2;grid-row:1;justify-self:center;min-width:0;width:100%;max-width:190px;min-height:40px;
+  display:grid;align-content:center;gap:1px;padding:4px 7px;border:1px solid var(--reader-line);border-radius:13px;
+  background:var(--reader-raised);color:var(--reader-ink);text-align:center;pointer-events:none;
+  opacity:0;transition:opacity .16s;overflow:hidden;
+}
+.reader-context.show{opacity:1}
+.context-surah{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;font-weight:500;line-height:1.4}
+.context-ayah{display:block;font-size:9px;line-height:1.4;color:var(--reader-muted)}
+html .toast{top:calc(70px + env(safe-area-inset-top))}
+@media(max-width:350px){html .topbar{padding-inline:9px;column-gap:5px}html .topbar .top-actions{gap:5px}}
+@media(min-width:900px){.context-surah{font-size:11px}.context-ayah{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.reader-context{transition:none}}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
@@ -2359,6 +2384,7 @@ html .toast{white-space:normal;line-height:1.7;font-size:11px}
 
 <header class="chrome topbar">
   <button class="brand brand-home quran-home-link" id="quranHomeBtn" type="button" aria-label="فتح فهرس القرآن">الفهرس</button>
+  <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="top-actions">
     <button type="button" class="iconbtn" id="themeBtn" aria-label="الوضع"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg></button>
     <button type="button" class="iconbtn" id="bookmarkBtn" aria-label="العلامات المرجعية"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg></button>
@@ -2439,7 +2465,7 @@ html .toast{white-space:normal;line-height:1.7;font-size:11px}
   </div>
 </section>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="notice" id="notice">الجزء ١ · الحزب ١</div>
 <audio id="audio" preload="auto"></audio>
 <audio id="audioPreload" preload="auto" aria-hidden="true"></audio>
@@ -3242,7 +3268,20 @@ function fitPage(p){
   });
 }
 
+function clearVerseContext(){
+  const context=document.getElementById("readerContext");if(!context)return;
+  clearTimeout(context._t);context.classList.remove("show");context.replaceChildren();context.removeAttribute("title");
+}
+function showVerseContext(v){
+  const context=document.getElementById("readerContext");if(!context)return;
+  clearTimeout(context._t);
+  context.innerHTML=`<span class="context-surah">سورة ${escapeHtml(v.sname)}</span> <span class="context-ayah">الآية ${ar(v.a)}</span>`;
+  context.title=`سورة ${v.sname} · الآية ${ar(v.a)}`;
+  context.classList.add("show");showToolsFor(5400);
+  context._t=setTimeout(clearVerseContext,5000);
+}
 function clearVerseSelection(){
+  clearVerseContext();
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   selectedKey=null;selectedAnchor=null;closeMenu();
 }
@@ -3255,7 +3294,7 @@ function selectVerse(k,anchor,force=false){
   selectedKey=k;selectedAnchor=anchor||selectedAnchor;
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach(x=>x.classList.add("selected"));
-  const v=verseParts(k);showToast(`سورة ${v.sname} · الآية ${ar(v.a)}`);
+  const v=verseParts(k);showVerseContext(v);
   return true;
 }
 
