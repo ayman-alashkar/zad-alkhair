@@ -4840,6 +4840,17 @@ function setSleepTimer(seconds){
   tick();sleepTimerId=setInterval(tick,1000);
 }
 document.addEventListener("visibilitychange",()=>{checkSleepTimer();if(!document.hidden)updateReciterMarquee()});
+let timerHapticStamp=-Infinity;
+function timerHaptic(duration=8){
+  // Enhancement only: unsupported/disabled vibration must never interrupt the timer.
+  try{
+    if(typeof navigator.vibrate!=="function"||document.hidden)return;
+    if(typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+    const now=performance.now();
+    if(duration<16&&now-timerHapticStamp<65)return;
+    timerHapticStamp=now;navigator.vibrate(duration);
+  }catch(_){ }
+}
 document.getElementById("sleepTimer").onclick=()=>{
   const remaining=sleepDeadline?Math.max(0,Math.ceil((sleepDeadline-Date.now())/1000)):1800;
   const values=[Math.floor(remaining/3600),Math.floor(remaining%3600/60),remaining%60];
@@ -4862,34 +4873,36 @@ document.getElementById("sleepTimer").onclick=()=>{
   </div>`);
   b.classList.add("player-backdrop");
   const wheels=[...b.querySelectorAll(".timer-wheel")];
-  function mark(i,v){
+  function mark(i,v,feedback=false){
+    const previous=values[i];
     values[i]=Math.max(0,Math.min(units[i].max,v));
+    if(feedback&&values[i]!==previous)timerHaptic();
     wheels[i].querySelectorAll("[role=option]").forEach(option=>option.setAttribute("aria-selected",String(Number(option.dataset.value)===values[i])));
     wheels[i].setAttribute("aria-activedescendant",`timerOption${i}_${values[i]}`);
   }
-  function choose(i,v,smooth=false){
-    mark(i,v);
+  function choose(i,v,smooth=false,feedback=true){
+    mark(i,v,feedback);
     wheels[i].scrollTo({top:values[i]*44,behavior:smooth&&!matchMedia("(prefers-reduced-motion: reduce)").matches?"smooth":"instant"});
   }
   wheels.forEach((wheel,i)=>{
-    wheel.addEventListener("scroll",()=>mark(i,Math.round(wheel.scrollTop/44)),{passive:true});
+    wheel.addEventListener("scroll",()=>mark(i,Math.round(wheel.scrollTop/44),true),{passive:true});
     wheel.onclick=e=>{const option=e.target.closest("[data-value]");if(option)choose(i,Number(option.dataset.value),true)};
     wheel.onkeydown=e=>{
       const shifts={ArrowUp:-1,ArrowDown:1,PageUp:-5,PageDown:5};
       if(e.key in shifts){e.preventDefault();choose(i,values[i]+shifts[e.key])}
       else if(e.key==="Home"||e.key==="End"){e.preventDefault();choose(i,e.key==="Home"?0:units[i].max)}
     };
-    choose(i,values[i]);
+    choose(i,values[i],false,false);
   });
   b.querySelectorAll("[data-nudge]").forEach(button=>button.onclick=()=>{const i=Number(button.dataset.nudge);choose(i,values[i]+Number(button.dataset.step))});
-  b.querySelectorAll("[data-min]").forEach(button=>button.onclick=()=>{const seconds=Number(button.dataset.min)*60;choose(0,Math.floor(seconds/3600));choose(1,seconds%3600/60);choose(2,0)});
+  b.querySelectorAll("[data-min]").forEach(button=>button.onclick=()=>{const seconds=Number(button.dataset.min)*60;choose(0,Math.floor(seconds/3600),false,false);choose(1,seconds%3600/60,false,false);choose(2,0,false,false);timerHaptic()});
   b.querySelector("#startSleep").onclick=()=>{
     // Read actual wheel positions so a tap during inertial scrolling uses the visible value.
-    wheels.forEach((wheel,i)=>choose(i,Math.round(wheel.scrollTop/44)));
+    wheels.forEach((wheel,i)=>choose(i,Math.round(wheel.scrollTop/44),false,false));
     const seconds=values[0]*3600+values[1]*60+values[2];
-    if(!seconds){showToast("اختر مدة أكبر من صفر");return}setSleepTimer(seconds);b.remove();
+    if(!seconds){showToast("اختر مدة أكبر من صفر");return}setSleepTimer(seconds);timerHaptic(18);b.remove();
   };
-  b.querySelector("#endSurahTimer").onclick=()=>{clearSleepTimer();sleepAfterSurah=true;continuousMode=true;continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,"1");updatePlayer();document.getElementById("timerLabel").textContent="نهاية";b.remove()};
+  b.querySelector("#endSurahTimer").onclick=()=>{clearSleepTimer();sleepAfterSurah=true;continuousMode=true;continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,"1");updatePlayer();document.getElementById("timerLabel").textContent="نهاية";timerHaptic(18);b.remove()};
   b.querySelector("#cancelSleep").onclick=()=>{clearSleepTimer();b.remove()};
 };
 
