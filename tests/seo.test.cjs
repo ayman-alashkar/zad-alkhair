@@ -9,8 +9,8 @@ const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 test("sitemap contains every canonical discovery page once",()=>{
   const xml=read("sitemap.xml");
   const urls=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>match[1]);
-  assert.equal(urls.length,154);
-  assert.equal(new Set(urls).size,154);
+  assert.equal(urls.length,156);
+  assert.equal(new Set(urls).size,156);
   assert.ok(urls.includes("https://zad-alkhair.net/"));
   assert.ok(urls.includes("https://zad-alkhair.net/quran/"));
   assert.ok(urls.includes("https://zad-alkhair.net/khatmahs/"));
@@ -33,7 +33,7 @@ test("Quran discovery pages expose useful crawlable links",()=>{
   const quran=read("quran/index.html");
   assert.equal((quran.match(/href="\/surah\/\d+\/"/g)||[]).length,114);
   assert.equal((quran.match(/href="\/juz\/\d+\/"/g)||[]).length,30);
-  assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,5);
+  assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,7);
   const mulk=read("surah/67/index.html");
   assert.match(mulk,/سورة الملك بصوت فضيلة الشيخ أيمن سويد/);
   assert.match(mulk,/qari=Ayman_Sowaid_64kbps/);
@@ -43,10 +43,10 @@ test("Quran discovery pages expose useful crawlable links",()=>{
 
 test("Quran, reciter and surah pages use the approved concise copy",()=>{
   const quran=read("quran/index.html");
-  const quranDescription="اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: فضيلة الشيخ أيمن سويد وفضيلة الشيخ عبد الرشيد الصوفي وفضيلة الشيخ ماهر المعيقلي وفضيلة الشيخ محمد صديق المنشاوي وفضيلة الشيخ محمود خليل الحصري.";
+  const quranDescription="اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: فضيلة الشيخ أيمن سويد، وفضيلة الشيخ عبد الرشيد الصوفي، وفضيلة الشيخ علي جابر، وفضيلة الشيخ ماهر المعيقلي، وفضيلة الشيخ محمود الحمود، وفضيلة الشيخ محمد صديق المنشاوي، وفضيلة الشيخ محمود خليل الحصري.";
   assert.match(quran,new RegExp(`<meta name="description" content="${quranDescription}">`));
   assert.match(quran,new RegExp(`<meta property="og:description" content="${quranDescription}">`));
-  assert.match(quran,/مصحف المدينة QCF4/);
+  assert.match(quran,/مصحف المدينة/);
   assert.match(quran,/>افتح المصحف الشريف<\/a>/);
   assert.match(quran,/>ثبّت التطبيق<\/a>/);
   assert.match(quran,/<strong>فضيلة الشيخ أيمن سويد<\/strong>/);
@@ -141,7 +141,7 @@ test("every local social preview image exists",()=>{
     "index.html","reader.html","install/index.html","quran/index.html","about/index.html","khatmahs/index.html",
     ...Array.from({length:114},(_,i)=>`surah/${i+1}/index.html`),
     ...Array.from({length:30},(_,i)=>`juz/${i+1}/index.html`),
-    ..."ayman-suwaid abdul-rashid-sufi maher-al-muaiqly mohamed-siddiq-al-minshawi mahmoud-khalil-al-husary".split(" ").map(slug=>`quran/reciters/${slug}/index.html`)
+    ..."ayman-suwaid abdul-rashid-sufi ali-jaber maher-al-muaiqly mahmoud-al-hamoud mohamed-siddiq-al-minshawi mahmoud-khalil-al-husary".split(" ").map(slug=>`quran/reciters/${slug}/index.html`)
   ];
   for(const relative of htmlFiles){
     const html=read(relative);
@@ -176,18 +176,23 @@ test("group khatmahs have a dedicated descriptive page",()=>{
   assert.doesNotMatch(page,/<h2>القراءة من داخل الختمة<\/h2>/);
 });
 
-test("discovery pages reuse the app visual identity without overlapping breadcrumbs",()=>{
-  const css=read("seo-pages.css");
-  assert.match(css,/body::before\{/);
-  assert.match(css,/background-size:84px 144px/);
-  assert.match(css,/-webkit-mask-image:linear-gradient\(90deg,#000,transparent 44%,transparent 56%,#000\)/);
-  assert.match(css,/\.breadcrumbs\{[\s\S]*?width:max-content;[\s\S]*?margin:-25px auto 16px;/);
-  assert.match(css,/main\{[\s\S]*?linear-gradient\(145deg,var\(--surface\),var\(--paper\)\)/);
+test("every guide page uses the shared accessible appearance control and pre-paint theme script",()=>{
   const urls=[...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]));
   for(const url of urls){
     const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
-    const html=read(relative);
-    if(html.includes("seo-pages.css"))assert.match(html,/href="\/seo-pages\.css\?v=20260828"/,relative);
+    const html=read(relative);if(!html.includes("seo-pages.css"))continue;
+    assert.equal((html.match(/id="guideTheme"/g)||[]).length,1,relative);
+    assert.equal((html.match(/src="\/seo-pages.js\?v=144"/g)||[]).length,1,relative);
+    assert.ok(html.indexOf('/seo-pages.js?v=144')<html.indexOf('/seo-pages.css?v=144'),relative);
+    assert.match(html,/aria-label="تفعيل الوضع الليلي" aria-pressed="false"/);
   }
-  assert.match(read("scripts/build-seo-pages.cjs"),/href="\/seo-pages\.css\?v=20260828"/);
+});
+test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
+  for(const [slug,id] of [["ali-jaber","AliJaber_Hafs"],["mahmoud-al-hamoud","MahmoudAlHamoud_Surah"]]){
+    const page=read(`quran/reciters/${slug}/index.html`);
+    assert.equal((page.match(new RegExp(`qari=${id}&amp;play=1`,"g"))||[]).length,114);
+    assert.match(read("quran/index.html"),new RegExp(`/quran/reciters/${slug}/`));
+    for(let n=1;n<=114;n++)assert.ok(read(`surah/${n}/index.html`).includes(`qari=${id}&amp;play=1`));
+  }
+  assert.match(read("quran/reciters/mahmoud-al-hamoud/index.html"),/متابعة الآيات وتحديد الأجزاء غير متاحين/);
 });
