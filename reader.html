@@ -2098,6 +2098,32 @@ html[data-theme="dark"] .quran-hub-menu button small,
 html[data-theme="dark"] .field label{color:rgba(255,249,234,.62)}
 html[data-theme="dark"] .quran-option-copy strong{color:var(--ivory)}
 html[data-theme="dark"] .quran-index-head-action{color:var(--ivory)}
+
+/* Player transport and readable reciter name. Native select stays accessible. */
+.audio-qari-wrap{position:relative;flex:1;min-width:0;overflow:hidden;height:38px;border-radius:10px;background:var(--brand-soft,rgba(15,92,80,.08))}
+.audio-qari-wrap .audio-qari{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.qari-marquee{position:absolute;inset:0 10px;overflow:hidden;display:flex;align-items:center;direction:rtl;pointer-events:none}
+.qari-marquee span{display:block;flex-shrink:0;white-space:nowrap;font-size:12px}
+.qari-marquee.moving span{animation:qari-scroll var(--qari-duration,14s) ease-in-out infinite}
+@keyframes qari-scroll{0%,15%{transform:translateX(0)}75%,90%{transform:translateX(var(--qari-distance))}100%{transform:translateX(0)}}
+.audio-qari-wrap:focus-within{outline:2px solid var(--brand);outline-offset:2px}
+.audio-repeat{position:relative}.audio-repeat small{position:absolute;bottom:1px;inset-inline-end:2px;font-size:10px;line-height:1}
+.audio-queue-link{display:block;margin:3px auto 6px;border:0;background:none;color:inherit;font:inherit;font-size:11px;cursor:pointer;padding:5px 14px}
+.audio-queue-link span{background:var(--brand-soft,rgba(15,92,80,.1));border-radius:12px;padding:1px 7px;margin-inline-start:4px}
+.queue-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-block:12px}
+.queue-toolbar button,.queue-actions button{font:inherit;border:1px solid #8885;border-radius:9px;background:transparent;color:inherit;padding:8px;cursor:pointer}
+.queue-list{display:grid;gap:8px;max-height:42vh;overflow:auto;padding:0;list-style:none;touch-action:pan-y}
+.queue-row{display:flex;align-items:center;gap:8px;padding:10px;border:1px solid #8884;border-radius:12px}
+.queue-row.current{border-color:var(--brand,#0f5c50);background:var(--brand-soft,rgba(15,92,80,.08))}
+.queue-track{flex:1;min-width:0;text-align:right;background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+.queue-track small{display:block;opacity:.65;font-size:11px;margin-top:4px}
+.queue-actions{display:flex;gap:4px}.queue-actions button{padding:7px;min-width:32px}.queue-actions button:disabled{opacity:.3;cursor:default}
+.queue-handle{cursor:grab;touch-action:none;padding:8px;color:inherit;background:none;border:0;font-size:20px}
+.queue-row.dragging{opacity:.55}.queue-empty,.player-hint{font-size:12px;line-height:1.9;opacity:.75}
+.timer-digits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;direction:ltr;margin:16px 0}
+.timer-digits label{text-align:center;font-size:12px}.timer-digits input{display:block;width:100%;box-sizing:border-box;text-align:center;font:inherit;font-size:26px;padding:12px 2px;border:1px solid #8885;border-radius:12px;color:inherit;background:transparent;margin-top:8px}
+.timer-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.timer-presets button{flex:1;font:inherit;border:1px solid #8885;border-radius:10px;padding:9px;background:transparent;color:inherit;cursor:pointer}
+@media(prefers-reduced-motion:reduce){.qari-marquee.moving span{animation:none}.qari-marquee{overflow:auto;pointer-events:auto}}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
@@ -2162,7 +2188,7 @@ html[data-theme="dark"] .quran-index-head-action{color:var(--ivory)}
       <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 9v4l3 2M9 2h6M12 2v3"/></svg>
       <small id="timerLabel">—</small>
     </button>
-    <select class="audio-qari" id="panelQari" aria-label="القارئ"></select>
+    <div class="audio-qari-wrap"><div class="qari-marquee" aria-hidden="true"><span id="qariName"></span></div><select class="audio-qari" id="panelQari" aria-label="اختيار القارئ"></select></div>
     <button type="button" class="audio-round" id="audioJump" aria-label="اختيار السورة والآية" title="الانتقال إلى سورة وآية">
       <svg viewBox="0 0 24 24"><path d="M5 6h10M5 12h7M5 18h10"/><path d="m16 10 3 2-3 2"/></svg>
     </button>
@@ -2171,6 +2197,7 @@ html[data-theme="dark"] .quran-index-head-action{color:var(--ivory)}
     </button>
   </div>
   <div class="audio-now" id="audioNow">—</div>
+  <button type="button" class="audio-queue-link" id="queueBtn" aria-label="فتح قائمة انتظار التشغيل">قائمة الانتظار <span id="queueCount">٠</span></button>
   <div class="audio-progress-row" aria-label="تقدم التلاوة">
     <span class="audio-progress-time" id="audioTimeCurrent" dir="ltr">٠:٠٠</span>
     <div class="audio-progress">
@@ -2407,6 +2434,12 @@ let play={surah:1,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGrou
 let continuousMode=storageGet(STORAGE_KEYS.continuous,"0")==="1";
 let activeSegment=null,activeTimingRows=null,segmentAdvancing=false,playbackRequestId=0,continuousStopRef=null;
 let primedEveryAyahSrc="",primedTimedSurahSrc="",pendingSurahBasmala=false,basmalaFallbackTarget=null;
+let repeatMode="off";
+let audioRetryTimer=null,audioRetryKey="",audioRetryCount=0,playbackWanted=false;
+let sleepDeadline=0,sleepAfterSurah=false;
+const savedQueue=storageJsonGet("zad:player:queue:v1",{})||{};
+let playbackQueue=Array.isArray(savedQueue.items)?savedQueue.items.filter(x=>x&&Number.isInteger(x.s)&&x.s>=1&&x.s<=114&&typeof x.id==="string").slice(0,300):[];
+let queueActive=false,queueIndex=-1;
 let mp3ReadsPromise=null;
 const timedReadCache=new Map(),mp3TimingCache=new Map(),maherQulTimingCache=new Map();
 const PAGE_DATA_CACHE_LIMIT=12;
@@ -3720,7 +3753,7 @@ async function shareHubPayload(payload){
   try{if(navigator.share)await navigator.share({title:payload.title,url:payload.url});else await copyText(payload.url,"تم نسخ رابط المشاركة")}
   catch(e){if(e?.name!=="AbortError")showToast("تعذّرت المشاركة الآن")}
 }
-function setIndexPlaybackBoundary(stop){continuousStopRef=stop||null}
+function setIndexPlaybackBoundary(stop){detachQueue();if(stop)repeatMode="off";continuousStopRef=stop||null}
 async function playSurahFromHub(s,closeHub){
   s=Number(s)||1;
   if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(s,{chooseWhenMultiple:true}))return;
@@ -4028,14 +4061,28 @@ function populateReciters(){
   const q=document.getElementById("panelQari");
   q.innerHTML=RECITERS.map(r=>`<option value="${escapeHtml(r.id)}" ${r.id===reciter.id?"selected":""}>${escapeHtml(r.name)}</option>`).join("");
 }
+function updateReciterMarquee(){
+  const label=document.getElementById("qariName"),wrap=label.parentElement;
+  if(label.textContent!==reciter.name){label.textContent=reciter.name;wrap.classList.remove("moving")}
+  document.getElementById("panelQari").title=reciter.name;
+  requestAnimationFrame(()=>{
+    const distance=Math.max(0,label.scrollWidth-wrap.clientWidth);
+    label.style.setProperty("--qari-distance",distance+"px");
+    label.style.setProperty("--qari-duration",Math.max(12,distance/22+6)+"s");
+    wrap.classList.toggle("moving",distance>2);
+  });
+}
+window.addEventListener("resize",updateReciterMarquee);
 function showPlayer(expand=true){
   document.body.classList.add("player-on");
   document.body.classList.toggle("player-expanded",!!expand);
-  populateReciters();
+  populateReciters();updateReciterMarquee();
 }
 function collapsePlayer(){document.body.classList.remove("player-expanded")}
 function expandPlayer(){if(document.body.classList.contains("player-on"))document.body.classList.add("player-expanded")}
 function stopPlayer(){
+  playbackWanted=false;
+  clearTimeout(audioRetryTimer);audioRetryTimer=null;
   playbackRequestId++;
   audio.pause();audioPreload.pause();
   activeSegment=null;activeTimingRows=null;segmentAdvancing=false;primedEveryAyahSrc="";
@@ -4079,10 +4126,10 @@ function updateMediaSessionState(){
 function installMediaSession(){
   if(!("mediaSession" in navigator))return;
   const set=(name,fn)=>{try{navigator.mediaSession.setActionHandler(name,fn)}catch(_){ }};
-  set("play",async()=>{try{if(audio.src&&!audio.ended)await audio.play();else await playCurrent(false)}catch(_){ }});
-  set("pause",()=>audio.pause());
-  set("previoustrack",()=>movePlayerTo(previousAyahRef(play.surah,play.current)));
-  set("nexttrack",()=>movePlayerTo(nextAyahRef(play.surah,play.current)));
+  set("play",async()=>{try{playbackWanted=true;audioRetryCount=0;if(queueActive&&audio.ended&&atSurahEnd()&&!nextSurahRef()){await playQueueEntry(0);return}if(audio.src&&!audio.ended)await audio.play();else await playCurrent(false)}catch(_){ }});
+  set("pause",()=>{playbackWanted=false;playbackRequestId++;clearTimeout(audioRetryTimer);audioRetryTimer=null;audio.pause()});
+  set("previoustrack",()=>stepPlayer(-1));
+  set("nexttrack",()=>stepPlayer(1));
   set("seekbackward",details=>{const step=Number(details?.seekOffset)||10;try{audio.currentTime=Math.max(0,(audio.currentTime||0)-step)}catch(_){ }});
   set("seekforward",details=>{const step=Number(details?.seekOffset)||10;try{audio.currentTime=Math.min(Number.isFinite(audio.duration)?audio.duration:Infinity,(audio.currentTime||0)+step)}catch(_){ }});
   set("seekto",details=>{if(Number.isFinite(details?.seekTime)){try{audio.currentTime=details.seekTime}catch(_){ }}});
@@ -4090,11 +4137,19 @@ function installMediaSession(){
 }
 function updatePlayer(){
   const v=verseParts(`${play.surah}:${play.current}`);
-  document.getElementById("audioNow").textContent=`${reciter.name} · سورة ${v.sname} · الآية ${ar(play.current)}`;
+  document.getElementById("audioNow").textContent=`سورة ${v.sname} · الآية ${ar(play.current)}`;
   document.getElementById("speedBtn").textContent=(play.speed===1?"1.0":String(play.speed))+"×";
-  const rb=document.getElementById("repeatBtn"),repeatActive=(play.repeatAyah>1||play.repeatGroup>1||(play.repeatSurah||1)>1);
-  rb.classList.toggle("active",repeatActive);
-  rb.setAttribute("aria-label",continuousMode?"تكرار السورة":"تكرار الآية");rb.title=continuousMode?"تكرار السورة":"تكرار الآية";
+  const rb=document.getElementById("repeatBtn"),labels={off:"التكرار متوقف",one:"تكرار السورة باستمرار",all:"تكرار قائمة الانتظار"};
+  rb.classList.toggle("active",repeatMode!=="off");
+  rb.setAttribute("aria-label",labels[repeatMode]);rb.title=labels[repeatMode];
+  rb.dataset.repeat=repeatMode;
+  rb.setAttribute("aria-pressed",String(repeatMode!=="off"));
+  let badge=rb.querySelector("small");if(!badge){badge=document.createElement("small");rb.appendChild(badge)}
+  badge.textContent=repeatMode==="one"?"١":repeatMode==="all"?"∞":"";
+  document.getElementById("queueCount").textContent=ar(playbackQueue.length);
+  updateReciterMarquee();
+  document.getElementById("audioPrev").setAttribute("aria-label",queueActive?"السورة السابقة في القائمة":"الآية السابقة");
+  document.getElementById("audioNext").setAttribute("aria-label",queueActive?"السورة التالية في القائمة":"الآية التالية");
   const c=document.getElementById("continuousBtn");if(c){c.classList.toggle("active",continuousMode);c.textContent=continuousMode?"مستمر":"متابعة"}
   updateMediaSessionMetadata();
   if(!progressSeeking)paintAudioProgress();
@@ -4136,7 +4191,7 @@ function nextPlaybackRefForPriming(){
   if(continuousMode){
     if(play.current>=maxAyah(play.surah)&&(play.repeatSurah||1)>1&&(play.repeatSurahLeft||1)>1)return {s:play.surah,a:1};
     if(continuousStopRef&&play.surah===continuousStopRef.s&&play.current===continuousStopRef.a)return null;
-    return nextAyahRef(play.surah,play.current);
+    return atSurahEnd()?nextSurahRef():nextAyahRef(play.surah,play.current);
   }
   return null;
 }
@@ -4168,9 +4223,9 @@ async function primeNextTimedSurah(){
   if(!continuousMode||!isTimedProvider()||audio.dataset.playMode!=="gapless"||!document.body.classList.contains("player-on"))return;
   if(continuousStopRef&&Number(play.surah)===Number(continuousStopRef.s)&&Number(play.current)>=Number(continuousStopRef.a))return;
   if((play.repeatSurah||1)>1&&(play.repeatSurahLeft||1)>1)return;
-  const nextSurah=Number(play.surah)+1;
-  if(nextSurah>114)return;
-  const guard=`${reciter.id}:${play.surah}:${play.current}`;
+  const next=nextSurahRef();if(!next||sleepAfterSurah)return;
+  const nextSurah=next.s;
+  const guard=`${reciter.id}:${play.surah}`;
   try{
     let src="";
     if(reciter.provider==="mp3quran-timed"){
@@ -4179,7 +4234,7 @@ async function primeNextTimedSurah(){
     }else if(reciter.provider==="qul-maher"){
       src=(await getMaherQulTiming(nextSurah)).src;
     }
-    if(!src||guard!==`${reciter.id}:${play.surah}:${play.current}`||!continuousMode)return;
+    if(!src||guard!==`${reciter.id}:${play.surah}`||!continuousMode||nextSurahRef()?.s!==nextSurah||!document.body.classList.contains("player-on"))return;
     if(src===primedTimedSurahSrc)return;
     primedTimedSurahSrc=src;primedEveryAyahSrc="";
     audioPreload.pause();audioPreload.src=src;audioPreload.preload="auto";audioPreload.load();
@@ -4196,7 +4251,7 @@ function clearSurahBasmalaPrelude(){
 }
 
 async function playEveryAyahBasmalaPrelude(requestId,keepExpanded){
-  if(reciter.provider!=="ayah"||!reciter.everyAyahId||!reciter.ayahBasmalaPrelude)return false;
+  if(requestId!==playbackRequestId||reciter.provider!=="ayah"||!reciter.everyAyahId||!reciter.ayahBasmalaPrelude)return false;
   // Approved contract for per-ayah reciters:
   // same-reciter Fatiha 1:1 supplies the basmala before a new surah.
   const target={s:play.surah,a:play.current};
@@ -4213,6 +4268,7 @@ async function playEveryAyahBasmalaPrelude(requestId,keepExpanded){
   }
   audio.playbackRate=play.speed;
   updatePlayer();showPlayer(keepExpanded);
+  if(checkSleepTimer()||requestId!==playbackRequestId)return;
   await audio.play();
   if(requestId===playbackRequestId)syncPlay();
   return true;
@@ -4247,9 +4303,31 @@ function advanceTimedSegmentWithoutPause(){
   return true;
 }
 
+function handleAudioFailure(error,requestId){
+  if(!playbackWanted||requestId!==playbackRequestId)return;
+  const key=`${reciter.id}:${play.surah}:${play.current}`;
+  if(key!==audioRetryKey){audioRetryKey=key;audioRetryCount=0}
+  const retryable=navigator.onLine&&error?.name!=="NotAllowedError"&&error?.name!=="NotSupportedError";
+  if(retryable&&audioRetryCount<2){
+    if(audioRetryTimer)return;
+    const delay=1000*(++audioRetryCount);
+    showToast("انقطع تحميل التلاوة؛ جارٍ إعادة المحاولة…");
+    audioRetryTimer=setTimeout(()=>{
+      audioRetryTimer=null;
+      if(requestId!==playbackRequestId||checkSleepTimer())return;
+      delete audio.dataset.source;playCurrent(false);
+    },delay);
+  }else{
+    showToast(error?.name==="NotAllowedError"?"اضغط تشغيل لمتابعة التلاوة":navigator.onLine?"تعذّر تحميل التلاوة. اضغط تشغيل للمحاولة مجدداً":AUDIO_OFFLINE_UNAVAILABLE);
+    syncPlay();
+  }
+}
 async function playCurrent(expand=false){
-  if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(play.surah))return false;
+  playbackWanted=true;
+  clearTimeout(audioRetryTimer);audioRetryTimer=null;
   const requestId=++playbackRequestId;
+  if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(play.surah))return false;
+  if(requestId!==playbackRequestId)return;
   const keepExpanded=expand||document.body.classList.contains("player-expanded");
   resetAudioProgress();
   updatePlayer();showPlayer(keepExpanded);
@@ -4260,6 +4338,7 @@ async function playCurrent(expand=false){
     if(ayahSourceId){
       if(shouldPlaySurahBasmala(play.surah,play.current)){
         const handled=await playEveryAyahBasmalaPrelude(requestId,keepExpanded);
+        if(requestId!==playbackRequestId)return;
         if(handled)return;
         clearSurahBasmalaPrelude();
       }
@@ -4277,6 +4356,7 @@ async function playCurrent(expand=false){
       }
 
       audio.playbackRate=play.speed;
+      if(checkSleepTimer()||requestId!==playbackRequestId)return;
       await audio.play();
       if(requestId!==playbackRequestId)return;
       syncPlay();
@@ -4293,7 +4373,6 @@ async function playCurrent(expand=false){
       audio.dataset.playMode="gapless";
 
       if(audio.dataset.source!==src){
-        audio.pause();
         audio.src=src;
         audio.dataset.source=src;
         audio.preload="auto";
@@ -4315,6 +4394,7 @@ async function playCurrent(expand=false){
       }
 
       audio.playbackRate=play.speed;
+      if(checkSleepTimer()||requestId!==playbackRequestId)return;
       await audio.play();
       if(requestId===playbackRequestId){syncPlay();primeNextTimedSurah()}
       return;
@@ -4325,12 +4405,13 @@ async function playCurrent(expand=false){
     if(requestId!==playbackRequestId)return;
     console.error(e);
     activeSegment=null;activeTimingRows=null;
-    showToast(navigator.onLine?"تعذّر تشغيل هذا القارئ الآن":AUDIO_OFFLINE_UNAVAILABLE);
+    handleAudioFailure(e,requestId);
   }
 }
 async function startSelected(){
   if(!selectedKey){showToast("اختر آية أولًا");return}
   const v=verseParts(selectedKey);
+  detachQueue();
   pendingSurahBasmala=false;basmalaFallbackTarget=null;
   continuousStopRef=null;
   play={surah:v.s,from:v.a,to:v.a,current:v.a,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:1};
@@ -4342,10 +4423,12 @@ document.getElementById("collapsePlayer").onclick=collapsePlayer;
 document.getElementById("stopPlayer").onclick=stopPlayer;
 document.getElementById("panelPlay").onclick=async()=>{
   if(audio.paused){
+    playbackWanted=true;audioRetryCount=0;
+    if(queueActive&&audio.ended&&atSurahEnd()&&!nextSurahRef()){await playQueueEntry(0);return}
     if(activeSegment&&audio.currentTime>=activeSegment.end-.08)await playCurrent(false);
     else if(audio.src&&!audio.ended)await audio.play();
     else await playCurrent(false);
-  }else audio.pause();
+  }else{playbackWanted=false;playbackRequestId++;clearTimeout(audioRetryTimer);audioRetryTimer=null;audio.pause()}
   syncPlay();
 };
 function previousAyahRef(s,a){
@@ -4362,16 +4445,26 @@ function nextAyahRef(s,a){
 }
 async function movePlayerTo(ref){
   if(!ref)return;continuousStopRef=null;const changedSurah=ref.s!==play.surah;
+  if(changedSurah)detachQueue();
   // Manual previous/next seeks directly to the requested ayah.
   pendingSurahBasmala=false;basmalaFallbackTarget=null;
   play.surah=ref.s;play.current=ref.a;play.repeatAyahLeft=play.repeatAyah;
   if(changedSurah){play.from=ref.a;play.to=ref.a;play.repeatGroupLeft=play.repeatGroup}
   await playCurrent(false);
 }
-document.getElementById("audioPrev").onclick=async()=>movePlayerTo(previousAyahRef(play.surah,play.current));
-document.getElementById("audioNext").onclick=async()=>movePlayerTo(nextAyahRef(play.surah,play.current));
+async function stepPlayer(direction){
+  if(queueActive){
+    let index=queueIndex+direction;
+    if(repeatMode==="all")index=(index+playbackQueue.length)%playbackQueue.length;
+    if(index<0||index>=playbackQueue.length){showToast(direction>0?"هذه آخر سورة في القائمة":"هذه أول سورة في القائمة");return}
+    await playQueueEntry(index);return;
+  }
+  await movePlayerTo(direction>0?nextAyahRef(play.surah,play.current):previousAyahRef(play.surah,play.current));
+}
+document.getElementById("audioPrev").onclick=()=>stepPlayer(-1);
+document.getElementById("audioNext").onclick=()=>stepPlayer(1);
 document.getElementById("continuousBtn").onclick=()=>{
-  continuousMode=!continuousMode;continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,continuousMode?"1":"0");
+  continuousMode=!continuousMode;repeatMode="off";detachQueue();continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,continuousMode?"1":"0");
   play.repeatAyah=1;play.repeatAyahLeft=1;play.repeatSurah=1;play.repeatSurahLeft=1;
   updatePlayer();primeNextEveryAyah();if(continuousMode)primeNextTimedSurah();
   showToast(continuousMode?"ستستمر التلاوة بعد الآية المحددة":"ستتوقف التلاوة عند نهاية التحديد");
@@ -4392,18 +4485,36 @@ document.getElementById("speedBtn").onclick=()=>{
   audio.playbackRate=play.speed;updatePlayer();
 };
 document.getElementById("repeatBtn").onclick=()=>{
-  if(continuousMode){
-    const on=(play.repeatSurah||1)<=1;play.repeatSurah=on?2:1;play.repeatSurahLeft=play.repeatSurah;
-    play.repeatAyah=1;play.repeatAyahLeft=1;play.repeatGroup=1;play.repeatGroupLeft=1;
-    showToast(on?"سيُعاد كلُّ سورة مرةً كاملة":"أُلغي تكرار السورة");
-  }else{
-    const on=!(play.repeatAyah>1||play.repeatGroup>1);play.repeatAyah=on?2:1;play.repeatAyahLeft=play.repeatAyah;
-    play.repeatSurah=1;play.repeatSurahLeft=1;play.repeatGroup=1;play.repeatGroupLeft=1;
-    showToast(on?"ستُعاد الآية مرةً":"أُلغي تكرار الآية");
+  repeatMode=repeatMode==="off"?"one":repeatMode==="one"&&queueActive&&playbackQueue.length?"all":"off";
+  if(repeatMode!=="off"){
+    continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");continuousStopRef=null;
+    play.repeatAyah=play.repeatAyahLeft=play.repeatGroup=play.repeatGroupLeft=play.repeatSurah=play.repeatSurahLeft=1;
   }
-  updatePlayer();primeNextEveryAyah();
+  updatePlayer();primeNextEveryAyah();primeNextTimedSurah();
+  showToast(repeatMode==="one"?"ستتكرر السورة حتى تلغي التكرار":repeatMode==="all"?"ستتكرر قائمة الانتظار كاملة":"أُلغي التكرار");
 };
+/* Transport policy: queue entries are complete surahs using the selected reciter. */
+function nextSurahRef(){
+  if(repeatMode==="one")return {s:play.surah,a:1};
+  if(queueActive){
+    const next=queueIndex+1;
+    if(next<playbackQueue.length)return {s:playbackQueue[next].s,a:1};
+    return repeatMode==="all"&&playbackQueue.length?{s:playbackQueue[0].s,a:1}:null;
+  }
+  return play.surah<114?{s:play.surah+1,a:1}:null;
+}
+function atSurahEnd(){return Number(play.current)>=Number(maxAyah(play.surah))}
+function detachQueue(){queueActive=false;queueIndex=-1;if(repeatMode==="all")repeatMode="off"}
+function stopAtTimerBoundary(){
+  if(sleepAfterSurah&&atSurahEnd()){clearSleepTimer();playbackRequestId++;playbackWanted=false;audio.pause();syncPlay();completeAudioProgress();showToast("توقف الاستماع بعد نهاية السورة");return true}
+  return checkSleepTimer();
+}
 async function finishCurrentAyah(){
+  if(stopAtTimerBoundary())return;
+  if(continuousMode&&atSurahEnd()&&repeatMode==="one"){
+    play.current=play.from=play.to=1;pendingSurahBasmala=play.surah!==1&&play.surah!==9;
+    await playCurrent(false);return;
+  }
   if(play.repeatAyahLeft>1){play.repeatAyahLeft--;await playCurrent(false);return}
   play.repeatAyahLeft=play.repeatAyah;
   if(play.current<play.to){play.current++;await playCurrent(false);return}
@@ -4414,9 +4525,10 @@ async function finishCurrentAyah(){
       pendingSurahBasmala=(play.surah!==1&&play.surah!==9);await playCurrent(false);return;
     }
     if(continuousStopRef&&play.surah===continuousStopRef.s&&play.current===continuousStopRef.a){
-      continuousStopRef=null;audio.pause();syncPlay();completeAudioProgress();return;
+      continuousStopRef=null;playbackWanted=false;audio.pause();syncPlay();completeAudioProgress();return;
     }
-    const previousSurah=play.surah,n=nextAyahRef(play.surah,play.current);
+    const previousSurah=play.surah,n=atSurahEnd()?nextSurahRef():nextAyahRef(play.surah,play.current);
+    if(atSurahEnd()&&n&&queueActive&&repeatMode!=="one")queueIndex=(queueIndex+1)%playbackQueue.length;
     if(n){
       if(n.s!==previousSurah)play.repeatSurahLeft=play.repeatSurah||1;
       const changedSurah=n.s!==play.surah;play.surah=n.s;play.current=n.a;
@@ -4430,9 +4542,20 @@ async function finishCurrentAyah(){
       await playCurrent(false);return;
     }
   }
-  audio.pause();syncPlay();completeAudioProgress();
+  playbackWanted=false;audio.pause();syncPlay();completeAudioProgress();
+}
+function reconcileTimedPosition(ended=false){
+  if(audio.dataset.playMode!=="gapless"||!activeTimingRows||!continuousMode||play.repeatAyah>1||play.repeatGroup>1)return;
+  let row=ended?activeTimingRows[activeTimingRows.length-1]:timingRowAt(audio.currentTime);
+  if(continuousStopRef&&continuousStopRef.s===play.surah&&Number(row?.ayah)>continuousStopRef.a)row=activeTimingRows.find(x=>Number(x.ayah)===continuousStopRef.a);
+  if(!row||Number(row.ayah)===play.current)return;
+  play.current=Number(row.ayah);
+  activeSegment={start:Number(row.start_time)/1000,end:Number(row.end_time)/1000};
+  updatePlayer();syncPlaybackSelectionInBackground(++playbackRequestId);
 }
 audio.ontimeupdate=()=>{
+  if(checkSleepTimer())return;
+  reconcileTimedPosition();
   if(!progressSeeking)paintAudioProgress();
   updateMediaSessionPosition();
   if(activeSegment){
@@ -4473,7 +4596,10 @@ progressSeek.addEventListener("change",e=>{
 progressSeek.addEventListener("pointercancel",()=>{progressSeeking=false;paintAudioProgress()});
 audio.addEventListener("loadedmetadata",()=>paintAudioProgress());
 audio.addEventListener("durationchange",()=>{paintAudioProgress();updateMediaSessionPosition(true)});
-audio.onplay=syncPlay;audio.onpause=syncPlay;
+audio.onplay=()=>{if(!checkSleepTimer())syncPlay()};audio.onpause=syncPlay;
+audio.addEventListener("error",()=>{
+  if(audio.error?.code===2&&document.body.classList.contains("player-on"))handleAudioFailure(new Error("audio network"),playbackRequestId);
+});
 installMediaSession();
 audio.onended=async()=>{
   if(audio.dataset.playMode==="basmala"){
@@ -4489,6 +4615,7 @@ audio.onended=async()=>{
   // final timestamp callback. Treat the file ending as a valid completion
   // for BOTH timed-surah and ayah-by-ayah modes.
   if(segmentAdvancing)return;
+  reconcileTimedPosition(true);
   segmentAdvancing=true;
   try{await finishCurrentAyah()}
   finally{segmentAdvancing=false}
@@ -4532,7 +4659,7 @@ document.getElementById("audioJump").onclick=()=>{
   };
   b.querySelector("#applyAudioJump").onclick=async()=>{
     const s=Number(ss.value)||1,start=audioStartSelection(s,aa.value),a=start.ayah;
-    pendingSurahBasmala=start.basmala;basmalaFallbackTarget=null;
+    detachQueue();pendingSurahBasmala=start.basmala;basmalaFallbackTarget=null;
     play.surah=s;play.from=a;play.to=a;play.current=a;
     continuousStopRef=null;play.repeatAyahLeft=play.repeatAyah;
     play.repeatGroup=1;play.repeatGroupLeft=1;play.repeatSurah=1;play.repeatSurahLeft=1;
@@ -4553,29 +4680,125 @@ document.getElementById("audioSettings").onclick=()=>{
   b.querySelector("#applyAudio").onclick=async()=>{
     reciter=RECITERS.find(r=>r.id===b.querySelector("#qari").value)||defaultReciter();playbackRequestId++;audio.pause();activeSegment=null;activeTimingRows=null;releaseAudioPreload();basmalaFallbackTarget=null;delete audio.dataset.source;delete audio.dataset.playMode;audio.removeAttribute("src");audio.load();storageJsonSet(STORAGE_KEYS.qari,reciter);
     const start=audioStartSelection(s,b.querySelector("#from").value),f=start.ayah,t=+b.querySelector("#to").value;if(t<f){showToast("اختر نهاية بعد البداية");return}
-    pendingSurahBasmala=start.basmala;continuousStopRef=null;
+    detachQueue();repeatMode="off";pendingSurahBasmala=start.basmala;continuousStopRef=null;
     play={surah:s,from:f,to:t,current:f,repeatAyah:+b.querySelector("#each").value,repeatAyahLeft:+b.querySelector("#each").value,repeatGroup:+b.querySelector("#grp").value,repeatGroupLeft:+b.querySelector("#grp").value,repeatSurah:1,repeatSurahLeft:1,speed:+b.querySelector("#speed").value};
     b.remove();await playCurrent(true)
   }
 };
 
 function clearSleepTimer(){
-  clearTimeout(sleepTimerId);sleepTimerId=null;
+  clearInterval(sleepTimerId);sleepTimerId=null;sleepDeadline=0;sleepAfterSurah=false;
   const l=document.getElementById("timerLabel");if(l)l.textContent="—";
 }
-function setSleepTimer(minutes){
-  clearSleepTimer();
-  if(!minutes)return;
-    document.getElementById("timerLabel").textContent=ar(minutes)+"د";
-  sleepTimerId=setTimeout(()=>{audio.pause();syncPlay();showToast("توقف الاستماع بانتهاء المؤقت");clearSleepTimer()},minutes*60000);
+function checkSleepTimer(){
+  if(!sleepDeadline||Date.now()<sleepDeadline)return false;
+  clearSleepTimer();playbackWanted=false;playbackRequestId++;clearTimeout(audioRetryTimer);audioRetryTimer=null;audio.pause();syncPlay();showToast("توقف الاستماع بانتهاء المؤقت");return true;
 }
+function setSleepTimer(seconds){
+  clearSleepTimer();if(!seconds)return;
+  sleepDeadline=Date.now()+seconds*1000;
+  const tick=()=>{if(!checkSleepTimer())document.getElementById("timerLabel").textContent=formatAudioTime(Math.ceil((sleepDeadline-Date.now())/1000))};
+  tick();sleepTimerId=setInterval(tick,1000);
+}
+document.addEventListener("visibilitychange",()=>{checkSleepTimer();if(!document.hidden)updateReciterMarquee()});
 document.getElementById("sleepTimer").onclick=()=>{
-  const b=sheet("مؤقت إيقاف التلاوة",`<div class="index-list">
-    ${[5,10,15,30].map(m=>`<button type="button" class="index-row" data-min="${m}"><b>${ar(m)} دقائق</b><small>إيقاف تلقائي</small></button>`).join("")}
-    <button type="button" class="index-row" data-min="0"><b>إلغاء المؤقت</b><small>استمرار التلاوة</small></button>
+  const remaining=sleepDeadline?Math.max(0,Math.ceil((sleepDeadline-Date.now())/1000)):1800;
+  const b=sheet("مؤقت إيقاف التلاوة",`<div class="settings">
+    <p class="player-hint">اختر المدة، أو أوقف التلاوة بعد نهاية السورة الحالية.</p>
+    <div class="timer-digits">
+      <label>ساعة<input id="timerHours" type="number" inputmode="numeric" min="0" max="23" value="${Math.floor(remaining/3600)}"></label>
+      <label>دقيقة<input id="timerMinutes" type="number" inputmode="numeric" min="0" max="59" value="${Math.floor(remaining%3600/60)}"></label>
+      <label>ثانية<input id="timerSeconds" type="number" inputmode="numeric" min="0" max="59" value="${remaining%60}"></label>
+    </div>
+    <div class="timer-presets">${[5,15,30,60].map(m=>`<button type="button" data-min="${m}">${ar(m)} د</button>`).join("")}</div>
+    <button type="button" class="apply" id="startSleep">بدء المؤقت</button>
+    <div class="queue-toolbar"><button type="button" id="endSurahTimer">بعد نهاية السورة</button><button type="button" id="cancelSleep">إلغاء المؤقت</button></div>
   </div>`);
-  b.querySelectorAll("[data-min]").forEach(x=>x.onclick=()=>{setSleepTimer(+x.dataset.min);b.remove()});
+  b.querySelectorAll("[data-min]").forEach(x=>x.onclick=()=>{const sec=Number(x.dataset.min)*60;b.querySelector("#timerHours").value=Math.floor(sec/3600);b.querySelector("#timerMinutes").value=sec%3600/60;b.querySelector("#timerSeconds").value=0});
+  b.querySelector("#startSleep").onclick=()=>{
+    const fields=["timerHours","timerMinutes","timerSeconds"].map(id=>b.querySelector("#"+id));
+    if(fields.some(x=>!x.checkValidity()||x.value===""||!Number.isInteger(Number(x.value)))){showToast("أدخل مدة صحيحة");return}
+    const seconds=Number(fields[0].value)*3600+Number(fields[1].value)*60+Number(fields[2].value);
+    if(!seconds){showToast("اختر مدة أكبر من صفر");return}setSleepTimer(seconds);b.remove();
+  };
+  b.querySelector("#endSurahTimer").onclick=()=>{clearSleepTimer();sleepAfterSurah=true;continuousMode=true;continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,"1");updatePlayer();document.getElementById("timerLabel").textContent="نهاية";b.remove()};
+  b.querySelector("#cancelSleep").onclick=()=>{clearSleepTimer();b.remove()};
 };
+
+function savePlaybackQueue(){storageJsonSet("zad:player:queue:v1",{items:playbackQueue});updatePlayer()}
+async function playQueueEntry(index){
+  if(!playbackQueue[index])return;
+  queueActive=true;queueIndex=index;continuousMode=true;continuousStopRef=null;
+  storageSet(STORAGE_KEYS.continuous,"1");
+  const s=playbackQueue[index].s;
+  play={surah:s,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
+  pendingSurahBasmala=s!==1&&s!==9;basmalaFallbackTarget=null;
+  await playCurrent(true);
+}
+function reorderQueue(from,to){
+  if(from<0||to<0||from>=playbackQueue.length||to>=playbackQueue.length||from===to)return;
+  const current=queueActive?playbackQueue[queueIndex]?.id:null;
+  playbackQueue.splice(to,0,playbackQueue.splice(from,1)[0]);
+  if(current)queueIndex=playbackQueue.findIndex(x=>x.id===current);
+  savePlaybackQueue();
+}
+function openPlaybackQueue(){
+  const b=sheet("قائمة انتظار التشغيل",`<div class="settings">
+    <p class="player-hint">رتّب السور بالسحب أو بالأسهم. تُشغَّل جميع السور بصوت القارئ المختار، وتُحفظ القائمة على هذا الجهاز.</p>
+    <div class="field"><label for="queueSurah">إضافة سورة</label><select id="queueSurah">${playerSurahOptions(play.surah)}</select></div>
+    <div class="queue-toolbar"><button type="button" id="queueNext">تشغيل تالياً</button><button type="button" id="queueAppend">إضافة إلى النهاية</button></div>
+    <div id="queueStatus" class="player-hint" role="status" aria-live="polite"></div>
+    <ol class="queue-list" id="queueList"></ol>
+    <div class="queue-toolbar"><button type="button" id="queueStart">تشغيل القائمة</button><button type="button" id="queueClear">مسح القائمة</button></div>
+  </div>`);
+  const list=b.querySelector("#queueList");
+  function render(){
+    list.innerHTML=playbackQueue.length?playbackQueue.map((item,i)=>`<li class="queue-row ${queueActive&&i===queueIndex?"current":""}" data-index="${i}">
+      <button type="button" class="queue-handle" aria-label="اسحب لترتيب سورة ${escapeHtml(verseParts(item.s+":1").sname)}">⠿</button>
+      <button type="button" class="queue-track" data-play="${i}">${ar(i+1)} · ${escapeHtml(verseParts(item.s+":1").sname)}<small>${queueActive&&i===queueIndex?"قيد التشغيل":"تشغيل السورة"}</small></button>
+      <span class="queue-actions"><button type="button" data-up="${i}" aria-label="نقل إلى الأعلى" ${i===0?"disabled":""}>↑</button><button type="button" data-down="${i}" aria-label="نقل إلى الأسفل" ${i===playbackQueue.length-1?"disabled":""}>↓</button><button type="button" data-remove="${i}" aria-label="حذف السورة">×</button></span></li>`).join(""):"<p class='queue-empty'>القائمة فارغة. أضف السور التي ترغب في سماعها.</p>";
+    b.querySelector("#queueStart").disabled=!playbackQueue.length;
+    list.querySelectorAll(".queue-handle").forEach(handle=>{
+      handle.onpointerdown=e=>{
+        if(e.button!==0)return;e.preventDefault();const row=handle.closest("[data-index]"),from=Number(row.dataset.index);
+        let target=from;handle.setPointerCapture(e.pointerId);row.classList.add("dragging");
+        handle.onpointermove=ev=>{const hit=document.elementFromPoint(ev.clientX,ev.clientY)?.closest("#queueList [data-index]");if(hit)target=Number(hit.dataset.index)};
+        handle.onpointerup=()=>{handle.onpointermove=null;handle.onpointerup=null;reorderQueue(from,target);render();b.querySelector("#queueStatus").textContent="تم ترتيب القائمة"};
+        handle.onpointercancel=()=>{row.classList.remove("dragging");handle.onpointermove=null;handle.onpointerup=null};
+      };
+    });
+  }
+  list.onclick=async e=>{
+    const button=e.target.closest("button");if(!button)return;
+    if(button.hasAttribute("data-play")){const i=Number(button.dataset.play);b.remove();await playQueueEntry(i);return}
+    if(button.hasAttribute("data-up"))reorderQueue(Number(button.dataset.up),Number(button.dataset.up)-1);
+    if(button.hasAttribute("data-down"))reorderQueue(Number(button.dataset.down),Number(button.dataset.down)+1);
+    if(button.hasAttribute("data-remove")){
+      const i=Number(button.dataset.remove);
+      // Removing the sounding entry leaves the audio playing outside the queue.
+      if(queueActive&&i===queueIndex)detachQueue();else if(queueActive&&i<queueIndex)queueIndex--;
+      playbackQueue.splice(i,1);savePlaybackQueue();
+    }
+    render();
+  };
+  function add(next){
+    if(playbackQueue.length>=300){showToast("القائمة ممتلئة");return}
+    // “Play next” attaches the currently sounding surah to a new queue.
+    if(next&&!queueActive&&document.body.classList.contains("player-on")){
+      playbackQueue.unshift({id:(typeof crypto.randomUUID==="function"?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)),s:play.surah});queueIndex=0;queueActive=true;
+      continuousMode=true;continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,"1");
+    }
+    const item={id:(typeof crypto.randomUUID==="function"?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)),s:Number(b.querySelector("#queueSurah").value)};
+    playbackQueue.splice(next&&queueActive?queueIndex+1:playbackQueue.length,0,item);
+    savePlaybackQueue();render();primeNextEveryAyah();primeNextTimedSurah();
+    b.querySelector("#queueStatus").textContent=next?"أُضيفت السورة للتشغيل تالياً":"أُضيفت السورة إلى نهاية القائمة";
+  }
+  b.querySelector("#queueNext").onclick=()=>add(true);b.querySelector("#queueAppend").onclick=()=>add(false);
+  b.querySelector("#queueStart").onclick=async()=>{b.remove();await playQueueEntry(0)};
+  b.querySelector("#queueClear").onclick=()=>{playbackQueue=[];detachQueue();savePlaybackQueue();render();b.querySelector("#queueStatus").textContent="مُسحت القائمة"};
+  render();
+}
+document.getElementById("queueBtn").onclick=openPlaybackQueue;
 
 populateReciters();
 /* ---------- theme + tap states ---------- */
