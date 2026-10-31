@@ -2212,7 +2212,7 @@ body.player-on.player-expanded .bottom{opacity:0;visibility:hidden;pointer-event
 #audioPanel .audio-queue-toggle:focus-visible{outline:2px solid var(--reader-gold);outline-offset:1px}
 #audioPanel .audio-queue-toggle-track{position:relative;width:30px;height:18px;border:1px solid var(--reader-line);border-radius:20px;background:var(--reader-line);transition:background .16s}
 #audioPanel .audio-queue-toggle-track:after{content:"";position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--reader-surface);transition:transform .16s}
-#audioPanel .audio-queue-toggle[aria-checked="true"] .audio-queue-toggle-track{background:var(--reader-gold);border-color:var(--reader-gold)}
+#audioPanel .audio-queue-toggle[aria-checked="true"] .audio-queue-toggle-track{background:var(--reader-action);border-color:var(--reader-gold)}
 #audioPanel .audio-queue-toggle[aria-checked="true"] .audio-queue-toggle-track:after{transform:translateX(-12px)}
 @media(prefers-reduced-motion:reduce){#audioPanel .audio-queue-toggle-track,#audioPanel .audio-queue-toggle-track:after{transition:none}}
 #audioPanel .audio-queue-link span{background:var(--reader-line);color:var(--reader-muted);box-shadow:0 0 0 2px var(--reader-surface)}
@@ -2384,7 +2384,7 @@ html .toast{top:calc(70px + env(safe-area-inset-top))}
 .queue-source-label input{position:absolute;inset-inline-end:0;width:48px;height:44px;margin:0;opacity:0;cursor:pointer}
 .queue-switch{width:44px;height:26px;flex:none;border:1px solid var(--reader-line);border-radius:20px;background:var(--reader-line);transition:background .16s;pointer-events:none;position:relative}
 .queue-switch::after{content:"";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--reader-surface);box-shadow:0 1px 3px #0002;transition:transform .16s}
-.queue-source-label input:checked+.queue-switch{background:var(--reader-gold);border-color:var(--reader-gold)}
+.queue-source-label input:checked+.queue-switch{background:var(--reader-action);border-color:var(--reader-gold)}
 .queue-source-label input:checked+.queue-switch::after{transform:translateX(-18px)}
 .queue-source-label input:focus-visible+.queue-switch{outline:2px solid var(--reader-gold);outline-offset:4px}
 .queue-source-label input:disabled+.queue-switch{opacity:.4}
