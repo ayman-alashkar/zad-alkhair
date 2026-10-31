@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0F5C50">
+<meta name="theme-color" content="#F5F0E4">
+<script>
+(()=>{try{const dark=localStorage.getItem("zad:qcf4:theme")==="dark";document.documentElement.dataset.theme=dark?"dark":"light";document.querySelector('meta[name="theme-color"]').content=dark?"#061F1D":"#F5F0E4"}catch(_){}})();
+</script>
 <script src="migration.js?v=117"></script>
 <title>القرآن العظيم | زاد الخير</title>
 <meta name="description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
@@ -2152,28 +2155,30 @@ html[data-theme="dark"] .timer-wheel-wrap:before{border-color:rgba(228,201,128,.
 .timer-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.timer-presets button{flex:1;font:inherit;border:1px solid #8885;border-radius:10px;padding:9px;background:transparent;color:inherit;cursor:pointer}
 @media(prefers-reduced-motion:reduce){.qari-marquee.moving span{animation:none}.qari-marquee{overflow:auto;pointer-events:auto}}
 
-/* One ivory, emerald and brushed-gold surface system for the player and its sheets. */
-.audio-panel,.player-backdrop{
-  --p-surface:rgba(255,251,242,.94);--p-raised:rgba(255,254,249,.78);
-  --p-well:rgba(230,216,184,.22);--p-ink:#173E35;--p-muted:#746C57;
-  --p-line:rgba(169,131,58,.30);--p-gold:#96702D;
-  --p-selected:rgba(213,178,101,.18);--p-shadow:rgba(69,52,21,.17);
-  --p-action:linear-gradient(135deg,#F1DFA8 0%,#D5B16A 60%,#C69B4B 100%);
-  --p-on-action:#253B2F;
+/* One ivory, emerald and brushed-gold surface system for the reader, player and every sheet. */
+:root{
+  color-scheme:light;
+  --reader-surface:rgba(255,251,242,.94);--reader-raised:rgba(255,254,249,.78);
+  --reader-well:rgba(230,216,184,.22);--reader-ink:#173E35;--reader-muted:#746C57;
+  --reader-line:rgba(169,131,58,.30);--reader-gold:#96702D;
+  --reader-selected:rgba(213,178,101,.18);--reader-shadow:rgba(69,52,21,.17);
+  --reader-action:linear-gradient(135deg,#F1DFA8 0%,#D5B16A 60%,#C69B4B 100%);
+  --reader-on-action:#253B2F;
 }
-html[data-theme="dark"] .audio-panel,html[data-theme="dark"] .player-backdrop{
-  --p-surface:rgba(8,38,33,.95);--p-raised:rgba(255,246,217,.045);
-  --p-well:rgba(0,0,0,.12);--p-ink:#FFF5DC;--p-muted:#C1BBA7;
-  --p-line:rgba(228,201,128,.23);--p-gold:#E4C980;
-  --p-selected:rgba(228,201,128,.11);--p-shadow:rgba(0,0,0,.34);
-  --p-action:linear-gradient(135deg,#F4E4B2 0%,#E4C980 65%,#C9A355 100%);
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --reader-surface:rgba(8,38,33,.95);--reader-raised:rgba(255,246,217,.045);
+  --reader-well:rgba(0,0,0,.12);--reader-ink:#FFF5DC;--reader-muted:#C1BBA7;
+  --reader-line:rgba(228,201,128,.23);--reader-gold:#E4C980;
+  --reader-selected:rgba(228,201,128,.11);--reader-shadow:rgba(0,0,0,.34);
+  --reader-action:linear-gradient(135deg,#F4E4B2 0%,#E4C980 65%,#C9A355 100%);
 }
 html #audioPanel{
   width:min(560px,calc(100vw - 24px));max-width:560px;left:50%;right:auto;transform:translateX(-50%);
   bottom:calc(12px + env(safe-area-inset-bottom));padding:20px 18px 16px;border-radius:26px;
-  background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.10),transparent 70%),var(--p-surface)!important;
-  color:var(--p-ink);border:1px solid var(--p-line);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 14px 48px -12px var(--p-shadow);
+  background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.10),transparent 70%),var(--reader-surface)!important;
+  color:var(--reader-ink);border:1px solid var(--reader-line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 14px 48px -12px var(--reader-shadow);
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
 }
 html body.player-on.player-expanded #audioPanel{display:block}
@@ -2181,63 +2186,63 @@ body.player-on.player-expanded .bottom{opacity:0;visibility:hidden;pointer-event
 #audioPanel .audio-top{display:grid;grid-template-columns:40px 40px minmax(0,1fr) 40px 40px;gap:7px}
 #audioPanel .audio-round{width:40px;height:40px}
 #audioPanel .audio-round,#audioPanel .audio-control:not(.audio-main),#audioPanel .audio-pill,#audioPanel .audio-qari-wrap{
-  background:var(--p-raised)!important;color:var(--p-gold)!important;
-  border:1px solid var(--p-line);border-color:var(--p-line)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  background:var(--reader-raised)!important;color:var(--reader-gold)!important;
+  border:1px solid var(--reader-line);border-color:var(--reader-line)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
 }
-#audioPanel .audio-qari-wrap{height:40px;border-radius:12px;color:var(--p-ink)!important}
+#audioPanel .audio-qari-wrap{height:40px;border-radius:12px;color:var(--reader-ink)!important}
 #audioPanel .qari-marquee{inset-inline:12px}
 #audioPanel .qari-marquee span{font-size:11px;font-weight:500}
-#audioPanel .audio-timer small{color:var(--p-muted);opacity:1;font-size:8px}
-#audioPanel .audio-collapse{width:54px;height:28px;top:-16px;border-radius:17px 17px 0 0;background:var(--p-surface)!important;color:var(--p-gold);border-color:var(--p-line);box-shadow:none}
+#audioPanel .audio-timer small{color:var(--reader-muted);opacity:1;font-size:8px}
+#audioPanel .audio-collapse{width:54px;height:28px;top:-16px;border-radius:17px 17px 0 0;background:var(--reader-surface)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
 #audioPanel .audio-collapse svg{width:18px;height:18px}
 #audioPanel .audio-now-row{position:relative;display:flex;align-items:center;justify-content:center;min-height:70px;margin:13px 0 9px;padding-inline:62px}
 #audioPanel .audio-now-copy{min-width:0;text-align:center;display:grid;gap:5px}
-#audioPanel .audio-eyebrow{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--p-gold);font-size:9px;font-weight:500;line-height:1.4}
-#audioPanel .audio-eyebrow:before,#audioPanel .audio-eyebrow:after{content:"";height:1px;width:24px;background:var(--p-line)}
-#audioPanel .audio-now{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;column-gap:9px;row-gap:2px;white-space:normal;overflow:visible;opacity:1;margin:0;line-height:1.7;color:var(--p-ink)}
+#audioPanel .audio-eyebrow{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--reader-gold);font-size:9px;font-weight:500;line-height:1.4}
+#audioPanel .audio-eyebrow:before,#audioPanel .audio-eyebrow:after{content:"";height:1px;width:24px;background:var(--reader-line)}
+#audioPanel .audio-now{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;column-gap:9px;row-gap:2px;white-space:normal;overflow:visible;opacity:1;margin:0;line-height:1.7;color:var(--reader-ink)}
 #audioPanel .audio-surah-title{font-size:19px;font-weight:600;letter-spacing:-.4px}
-#audioPanel .audio-ayah-label{font-size:10px;color:var(--p-muted)}
-#audioPanel .audio-queue-link{position:absolute;inset-inline-end:0;top:50%;transform:translateY(-50%);width:34px;height:34px;border:1px solid var(--p-line);color:var(--p-gold);background:var(--p-raised)}
-#audioPanel .audio-queue-link span{background:var(--p-action);color:var(--p-on-action);box-shadow:0 0 0 2px var(--p-surface)}
+#audioPanel .audio-ayah-label{font-size:10px;color:var(--reader-muted)}
+#audioPanel .audio-queue-link{position:absolute;inset-inline-end:0;top:50%;transform:translateY(-50%);width:34px;height:34px;border:1px solid var(--reader-line);color:var(--reader-gold);background:var(--reader-raised)}
+#audioPanel .audio-queue-link span{background:var(--reader-action);color:var(--reader-on-action);box-shadow:0 0 0 2px var(--reader-surface)}
 #audioPanel .audio-progress-row{margin:0 1px;gap:8px;grid-template-columns:38px minmax(0,1fr) 38px}
-#audioPanel .audio-progress-time{font-size:9px;color:var(--p-muted)}
-#audioPanel .audio-progress:before{background:var(--p-line);height:3px}
+#audioPanel .audio-progress-time{font-size:9px;color:var(--reader-muted)}
+#audioPanel .audio-progress:before{background:var(--reader-line);height:3px}
 #audioPanel .audio-progress i{background:linear-gradient(90deg,#C69B4B,#E4C980);height:3px}
-#audioPanel #progressSeek::-webkit-slider-thumb{background:#D5B16A;border-color:var(--p-surface);width:12px;height:12px;box-shadow:0 0 0 1px var(--p-line)}
-#audioPanel #progressSeek::-moz-range-thumb{background:#D5B16A;border-color:var(--p-surface)}
+#audioPanel #progressSeek::-webkit-slider-thumb{background:#D5B16A;border-color:var(--reader-surface);width:12px;height:12px;box-shadow:0 0 0 1px var(--reader-line)}
+#audioPanel #progressSeek::-moz-range-thumb{background:#D5B16A;border-color:var(--reader-surface)}
 #audioPanel .audio-controls{display:grid;grid-template-columns:48px minmax(32px,1fr) 70px minmax(32px,1fr) 48px;gap:8px;align-items:center;margin-top:9px}
 #audioPanel .audio-control{width:44px;height:44px;justify-self:center}
 #audioPanel .audio-control svg{width:21px;height:21px}
-html #audioPanel #panelPlay.audio-main{width:64px;height:64px;background:var(--p-action)!important;color:var(--p-on-action)!important;border:1px solid rgba(187,146,63,.5)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 6px 18px -8px rgba(167,120,29,.65);font-size:22px}
+html #audioPanel #panelPlay.audio-main{width:64px;height:64px;background:var(--reader-action)!important;color:var(--reader-on-action)!important;border:1px solid rgba(187,146,63,.5)!important;box-shadow:inset 0 1px 1px rgba(255,255,255,.6),0 6px 18px -8px rgba(167,120,29,.65);font-size:22px}
 #audioPanel .audio-pill{height:38px;font-size:10px;padding-inline:8px}
 html #audioPanel #continuousBtn,html #audioPanel #continuousBtn.active{
-  background:var(--p-raised)!important;color:var(--p-muted)!important;border-color:var(--p-line)!important;
+  background:var(--reader-raised)!important;color:var(--reader-muted)!important;border-color:var(--reader-line)!important;
   outline:none;box-shadow:none;font-size:9px;font-weight:500;position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);width:58px;height:30px;
 }
-html #audioPanel #continuousBtn.active,html #audioPanel #repeatBtn.active{background:var(--p-selected)!important;color:var(--p-gold)!important;border-color:var(--p-gold)!important;box-shadow:none}
-#audioPanel button:focus-visible,#audioPanel .audio-qari-wrap:focus-within{outline:2px solid var(--p-gold);outline-offset:3px}
-#audioPanel .audio-round:hover,#audioPanel .audio-control:not(.audio-main):hover,#audioPanel .audio-pill:hover{border-color:var(--p-gold);background:var(--p-selected)!important}
-#audioPanel #stopPlayer{border-color:transparent;background:transparent!important;color:var(--p-muted)!important}
-.player-backdrop{background:rgba(3,22,18,.42);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-html .player-backdrop .sheet{background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.08),transparent 70%),var(--p-surface)!important;color:var(--p-ink);border:1px solid var(--p-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 22px 65px -20px var(--p-shadow)}
-.player-backdrop .sheethead{border-color:var(--p-line)}
-html .player-backdrop .sheethead h3{color:var(--p-ink)!important}
-.player-backdrop .sheethead:after{background:var(--p-gold)}
-html .player-backdrop .close-sheet,.player-backdrop .queue-toolbar button,.player-backdrop .queue-actions button,.player-backdrop .timer-presets button{
-  background:var(--p-raised);color:var(--p-ink);border:1px solid var(--p-line);border-radius:11px;
+html #audioPanel #continuousBtn.active,html #audioPanel #repeatBtn.active{background:var(--reader-selected)!important;color:var(--reader-gold)!important;border-color:var(--reader-gold)!important;box-shadow:none}
+#audioPanel button:focus-visible,#audioPanel .audio-qari-wrap:focus-within{outline:2px solid var(--reader-gold);outline-offset:3px}
+#audioPanel .audio-round:hover,#audioPanel .audio-control:not(.audio-main):hover,#audioPanel .audio-pill:hover{border-color:var(--reader-gold);background:var(--reader-selected)!important}
+#audioPanel #stopPlayer{border-color:transparent;background:transparent!important;color:var(--reader-muted)!important}
+.backdrop{background:rgba(3,22,18,.42);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+html .backdrop .sheet{background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.08),transparent 70%),var(--reader-surface)!important;color:var(--reader-ink);border:1px solid var(--reader-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 22px 65px -20px var(--reader-shadow)}
+.backdrop .sheethead{border-color:var(--reader-line)}
+html .backdrop .sheethead h3,html .backdrop .quran-options-sheet .sheethead h3{color:var(--reader-ink)!important}
+.backdrop .sheethead:after{background:var(--reader-gold)}
+html .backdrop .close-sheet,html .backdrop .quran-options-sheet .close-sheet,.backdrop .queue-toolbar button,.backdrop .queue-actions button,.backdrop .timer-presets button{
+  background:var(--reader-raised);color:var(--reader-ink);border:1px solid var(--reader-line);border-radius:11px;
 }
-html .player-backdrop .field select{background:var(--p-raised);color:var(--p-ink);border-color:var(--p-line)}
-html .player-backdrop .field label,.player-backdrop .player-hint,.player-backdrop .timer-column-title,.player-backdrop .timer-nudge{color:var(--p-muted);opacity:1}
-html .player-backdrop .apply{background:var(--p-action)!important;color:var(--p-on-action)!important;border:1px solid var(--p-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 5px 16px -10px rgba(167,120,29,.5);font-weight:600}
-.player-backdrop .queue-row{background:var(--p-raised);border-color:var(--p-line)}
-.player-backdrop .queue-row.current{background:var(--p-selected);border-color:var(--p-gold)}
-.player-backdrop .queue-track,.player-backdrop .queue-handle{color:var(--p-ink)}
-.player-backdrop .queue-track small{color:var(--p-muted);opacity:1}
-.player-backdrop .timer-wheel-wrap{background:var(--p-well);border-color:var(--p-line)}
-html .player-backdrop .timer-wheel-wrap:before{background:var(--p-selected);border-color:var(--p-line)}
-html .player-backdrop .timer-value{color:var(--p-muted)}
-html .player-backdrop .timer-value[aria-selected="true"]{color:var(--p-ink)}
-.player-backdrop .timer-presets button:hover,.player-backdrop .queue-toolbar button:hover{background:var(--p-selected);border-color:var(--p-gold)}
+html .backdrop .field select{background:var(--reader-raised);color:var(--reader-ink);border-color:var(--reader-line)}
+html .backdrop .field label,.backdrop .player-hint,.backdrop .timer-column-title,.backdrop .timer-nudge{color:var(--reader-muted);opacity:1}
+html .backdrop .apply{background:var(--reader-action)!important;color:var(--reader-on-action)!important;border:1px solid var(--reader-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 5px 16px -10px rgba(167,120,29,.5);font-weight:600}
+.backdrop .queue-row{background:var(--reader-raised);border-color:var(--reader-line)}
+.backdrop .queue-row.current{background:var(--reader-selected);border-color:var(--reader-gold)}
+.backdrop .queue-track,.backdrop .queue-handle{color:var(--reader-ink)}
+.backdrop .queue-track small{color:var(--reader-muted);opacity:1}
+.backdrop .timer-wheel-wrap{background:var(--reader-well);border-color:var(--reader-line)}
+html .backdrop .timer-wheel-wrap:before{background:var(--reader-selected);border-color:var(--reader-line)}
+html .backdrop .timer-value{color:var(--reader-muted)}
+html .backdrop .timer-value[aria-selected="true"]{color:var(--reader-ink)}
+.backdrop .timer-presets button:hover,.backdrop .queue-toolbar button:hover{background:var(--reader-selected);border-color:var(--reader-gold)}
 @media(max-width:390px){
   html #audioPanel{width:calc(100vw - 16px);padding-inline:12px}
   #audioPanel .audio-top{grid-template-columns:36px 36px minmax(0,1fr) 36px 36px;gap:5px}
@@ -2248,6 +2253,89 @@ html .player-backdrop .timer-value[aria-selected="true"]{color:var(--p-ink)}
   html #audioPanel #panelPlay.audio-main{width:58px;height:58px}
 }
 @media(min-width:900px){html #audioPanel{bottom:24px;padding:20px 22px 18px}#audioPanel .audio-now-row{min-height:76px;margin:14px 0 8px}#audioPanel .audio-surah-title{font-size:22px}}
+
+/* Shared sizing, states and content layout. Mushaf glyph composition is unchanged. */
+html .backdrop .settings,html .backdrop .grid2,html .backdrop .field{min-width:0;max-width:100%}
+html .backdrop .settings{grid-template-columns:minmax(0,1fr)}
+html .backdrop .grid2{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+html .backdrop .field select,html .backdrop .field input{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+html .backdrop .field label{font-size:11px;line-height:1.6}
+html .backdrop .close-sheet{min-height:38px;min-width:54px;font-size:11px;padding:7px 11px}
+html .backdrop .audio-qari-choice,
+html .backdrop .audio-offline-checkrow,
+html .backdrop .audio-offline-actions button,
+html .backdrop .quran-hub-menu button,
+html .backdrop .tafsir-nav-btn,
+html .backdrop .quran-search-input{
+  background:var(--reader-raised);color:var(--reader-ink);border-color:var(--reader-line);
+}
+html .backdrop .audio-offline-prompt{color:var(--reader-ink)!important}
+html .backdrop .audio-offline-message,html .backdrop .author-note{
+  background:var(--reader-well);color:var(--reader-muted);border-color:var(--reader-line);
+}
+html .backdrop .quran-option-copy strong{color:var(--reader-ink)}
+html .backdrop .quran-option-icon{background:var(--reader-selected);color:var(--reader-gold);box-shadow:inset 0 0 0 1px var(--reader-line)}
+html .backdrop .quran-option-copy small,
+html .backdrop .audio-qari-choice small,
+html .backdrop .quran-search-status,
+html .backdrop .quran-search-result small{color:var(--reader-muted);font-size:10.5px;line-height:1.7}
+html .backdrop .quran-search-input:focus{border-color:var(--reader-gold);box-shadow:0 0 0 3px var(--reader-selected)}
+html .backdrop .quran-search-result{color:var(--reader-ink);border-color:var(--reader-line)}
+html .backdrop .quran-search-result:hover,html .backdrop .quran-search-result:focus-visible{background:var(--reader-selected)}
+html .backdrop .tafsir-nav-btn{min-height:40px;font-size:11px}
+html .backdrop .source{color:var(--reader-muted);font-size:10.5px;border-color:var(--reader-line)}
+html .backdrop .bookmark-title small,html .backdrop .bookmark-main small{font-size:10.5px}
+html .backdrop .queue-toolbar button,html .backdrop .timer-presets button{min-height:40px;font-size:12px}
+html .backdrop .queue-actions button{min-width:38px;min-height:38px}
+html .backdrop .audio-offline-actions button{min-height:42px}
+html .backdrop .empty-state{color:var(--reader-muted);border-color:var(--reader-line);line-height:1.8}
+html .backdrop button:disabled{opacity:.38;cursor:default;filter:saturate(.35);box-shadow:none}
+html .backdrop button:disabled:hover{background:var(--reader-raised);border-color:var(--reader-line)}
+html .backdrop button:focus-visible,html .backdrop select:focus-visible,html .backdrop input:focus-visible{
+  outline:2px solid var(--reader-gold);outline-offset:3px;
+}
+html .backdrop .bookmark-delete,html .quran-index .quran-bookmark-del{color:#9F3C36!important}
+html[data-theme="dark"] .backdrop .bookmark-delete,html[data-theme="dark"] .quran-index .quran-bookmark-del{color:#F0AAA0!important}
+html .backdrop .audio-offline-actions button.delete{color:#9F3C36;background:rgba(159,60,54,.06);border-color:rgba(159,60,54,.25)}
+html[data-theme="dark"] .backdrop .audio-offline-actions button.delete{color:#F0AAA0;background:rgba(240,170,160,.06);border-color:rgba(240,170,160,.25)}
+html .ayah-menu{
+  background:var(--reader-surface);color:var(--reader-ink);border-color:var(--reader-line);
+  box-shadow:0 10px 30px -10px var(--reader-shadow);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+html .ayah-menu:after{border-top-color:var(--reader-surface)}
+html .ayah-menu .menu-btn{width:54px;height:54px;color:var(--reader-ink);gap:4px}
+html .ayah-menu .menu-btn.wide{width:88px}
+html .ayah-menu .menu-btn.play{color:var(--reader-gold)}
+html .ayah-menu .menu-label{font-size:10px;line-height:1.3;opacity:1}
+html .ayah-menu .menu-btn:active{background:var(--reader-selected)}
+html .ayah-menu .menu-btn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:-2px}
+html .quran-index .quran-index-head-action,html .quran-index .quran-index-action{
+  background:var(--reader-raised);color:var(--reader-muted);border-color:var(--reader-line);
+  width:40px;height:40px;border-radius:11px;
+}
+html .quran-index .quran-index-head-action{color:var(--reader-ink)!important}
+html .quran-index .quran-index-action.play,html .quran-index .quran-index-action.download{color:var(--reader-gold)}
+html .quran-index .quran-index-action.download.downloaded{color:var(--brand)}
+html[data-theme="dark"] .quran-index .quran-index-action.download.downloaded{color:#A9D4C4;border-color:rgba(169,212,196,.35)}
+html .quran-index .quran-index-action.download.downloading{font-size:10px}
+html .quran-index .quran-index-head-action:hover,html .quran-index .quran-index-action:hover{background:var(--reader-selected);border-color:var(--reader-gold)}
+html .quran-index .quran-index-head-action:focus-visible,html .quran-index .quran-index-action:focus-visible,html .quran-index-tab:focus-visible{
+  outline:2px solid var(--reader-gold);outline-offset:2px;
+}
+html .quran-index .quran-index-action:disabled{opacity:.38;cursor:default}
+html .quran-index .quran-index-action.downloading:disabled{opacity:.86;cursor:wait}
+html .quran-index-meta,html .juz-accordion-title small,html .quran-bookmark-open small{font-size:10.5px}
+html .toast,html .notice{
+  background:var(--reader-surface);color:var(--reader-ink);border:1px solid var(--reader-line);
+  box-shadow:0 8px 25px -10px var(--reader-shadow);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  max-width:calc(100vw - 32px);text-align:center;
+}
+html .toast{white-space:normal;line-height:1.7;font-size:11px}
+@media(max-width:350px){
+  html .quran-index-row-with-actions{padding-inline:9px;column-gap:6px;grid-template-columns:32px minmax(0,1fr) auto}
+  html .quran-index .quran-index-actions{gap:4px}
+  html .quran-index-row-main{grid-template-columns:minmax(0,1fr) 30px;gap:5px}
+}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
@@ -4986,7 +5074,7 @@ populateReciters();
 /* ---------- theme + tap states ---------- */
 function setTheme(t){
   document.documentElement.dataset.theme=t;storageSet(STORAGE_KEYS.theme,t);
-  document.querySelector('meta[name="theme-color"]').content=t==="dark"?"#082D29":"#0F5C50";
+  document.querySelector('meta[name="theme-color"]').content=t==="dark"?"#061F1D":"#F5F0E4";
   document.getElementById("themeBtn").innerHTML=t==="dark"
     ?'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>'
     :'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2 12h2M20 12h2M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5"/></svg>';
