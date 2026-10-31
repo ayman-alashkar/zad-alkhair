@@ -36,7 +36,7 @@ test('repeat-one stays on the same surah through many completions',async()=>{
   for(let i=0;i<20;i++){f.ctx.play.current=4;await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,112);assert.equal(f.ctx.play.current,1)}
   assert.equal(f.ctx.played.length,20);
 });
-test('repeat button cycles off, one, all, off only for an active queue',()=>{
+test('repeat button cycles off, one, all, off when a list exists',()=>{
   const f=fixture(),click=()=>f.nodes.get('repeatBtn').onclick();
   click();assert.equal(f.ctx.repeatMode,'one');click();assert.equal(f.ctx.repeatMode,'off');
   f.ctx.queueActive=true;f.ctx.playbackQueue=[{s:112}];
@@ -107,4 +107,17 @@ test('short-surah playback crosses consecutive physical file ends then stops at 
   }
   f.ctx.activeTimingRows=Array.from({length:6},(_,i)=>({ayah:i+1,start_time:i*1000,end_time:(i+1)*1000}));
   await f.ctx.audio.onended();assert.equal(f.ctx.audio.paused,true);assert.equal(f.ctx.play.surah,114);assert.equal(f.ctx.play.current,6);
+});
+
+test('repeat-all can attach a saved list without replacing its order',async()=>{
+  const f=fixture();f.ctx.playbackQueue=[{id:'a',s:113},{id:'b',s:114}];
+  const click=()=>f.nodes.get('repeatBtn').onclick();click();click();
+  assert.equal(f.ctx.repeatMode,'all');assert.equal(f.ctx.queueActive,true);assert.equal(f.ctx.queueIndex,-1);
+  f.ctx.play.current=4;await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,113);assert.equal(f.ctx.queueIndex,0);
+  assert.equal(f.ctx.playbackQueue.length,2);assert.equal(f.ctx.playbackQueue[0].id,'a');
+});
+test('repeat-all attaches the current surah when already in the saved list',()=>{
+  const f=fixture();f.ctx.playbackQueue=[{id:'a',s:114},{id:'b',s:112}];
+  f.nodes.get('repeatBtn').onclick();f.nodes.get('repeatBtn').onclick();
+  assert.equal(f.ctx.queueIndex,1);assert.equal(f.run('nextSurahRef().s'),114);
 });

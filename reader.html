@@ -2108,8 +2108,25 @@ html[data-theme="dark"] .quran-index-head-action{color:var(--ivory)}
 @keyframes qari-scroll{0%,15%{transform:translateX(0)}75%,90%{transform:translateX(var(--qari-distance))}100%{transform:translateX(0)}}
 .audio-qari-wrap:focus-within{outline:2px solid var(--brand);outline-offset:2px}
 .audio-repeat{position:relative}.audio-repeat small{position:absolute;bottom:1px;inset-inline-end:2px;font-size:10px;line-height:1}
-.audio-queue-link{display:block;margin:3px auto 6px;border:0;background:none;color:inherit;font:inherit;font-size:11px;cursor:pointer;padding:5px 14px}
-.audio-queue-link span{background:var(--brand-soft,rgba(15,92,80,.1));border-radius:12px;padding:1px 7px;margin-inline-start:4px}
+.audio-panel{--player-accent:#082D29;--player-on-accent:#FFF9EA}
+html[data-theme="dark"] .audio-panel{--player-accent:#E4C980;--player-on-accent:#19332C}
+.audio-panel .audio-qari-wrap,
+.audio-panel #continuousBtn,
+html:not([data-theme="dark"]) .audio-panel #continuousBtn.active,
+html[data-theme="dark"] .audio-panel #continuousBtn.active{
+  background:var(--player-accent)!important;color:var(--player-on-accent)!important;border-color:var(--player-accent)!important;box-shadow:none;
+}
+.audio-panel #continuousBtn{font-weight:600}
+.audio-panel #continuousBtn.active{outline:1px solid var(--player-accent);outline-offset:3px}
+.audio-qari-wrap:focus-within{outline-color:var(--player-accent)}
+.audio-now-row{display:flex;align-items:center;gap:12px;margin:9px 2px 3px;min-width:0}
+.audio-now-row .audio-now{flex:1;min-width:0;margin:0}
+.audio-queue-link{position:relative;flex:0 0 34px;display:grid;place-items:center;width:34px;height:32px;border:0;border-radius:10px;background:transparent;color:var(--ui-muted);cursor:pointer;padding:5px}
+.audio-queue-link:hover,.audio-queue-link:focus-visible{color:var(--player-accent);background:color-mix(in srgb,var(--player-accent) 8%,transparent)}
+.audio-queue-link svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.audio-queue-link span{position:absolute;top:-3px;inset-inline-end:-3px;min-width:14px;height:14px;box-sizing:border-box;display:grid;place-items:center;background:var(--player-accent);color:var(--player-on-accent);border-radius:8px;padding:0 3px;font-size:8px;line-height:1}
+.audio-queue-link span:empty{display:none}
+@media(min-width:900px){.audio-now-row{grid-column:1;grid-row:2;margin:0}}
 .queue-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-block:12px}
 .queue-toolbar button,.queue-actions button{font:inherit;border:1px solid #8885;border-radius:9px;background:transparent;color:inherit;padding:8px;cursor:pointer}
 .queue-list{display:grid;gap:8px;max-height:42vh;overflow:auto;padding:0;list-style:none;touch-action:pan-y}
@@ -2120,8 +2137,18 @@ html[data-theme="dark"] .quran-index-head-action{color:var(--ivory)}
 .queue-actions{display:flex;gap:4px}.queue-actions button{padding:7px;min-width:32px}.queue-actions button:disabled{opacity:.3;cursor:default}
 .queue-handle{cursor:grab;touch-action:none;padding:8px;color:inherit;background:none;border:0;font-size:20px}
 .queue-row.dragging{opacity:.55}.queue-empty,.player-hint{font-size:12px;line-height:1.9;opacity:.75}
-.timer-digits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;direction:ltr;margin:16px 0}
-.timer-digits label{text-align:center;font-size:12px}.timer-digits input{display:block;width:100%;box-sizing:border-box;text-align:center;font:inherit;font-size:26px;padding:12px 2px;border:1px solid #8885;border-radius:12px;color:inherit;background:transparent;margin-top:8px}
+.timer-digits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;direction:ltr;margin:18px 0}
+.timer-column{text-align:center;min-width:0}.timer-column-title{font-size:12px;color:var(--ui-muted);margin-bottom:6px}
+.timer-wheel-wrap{position:relative;border:1px solid var(--ui-line);border-radius:15px;overflow:hidden;background:var(--ui-surface-2)}
+.timer-wheel-wrap:before{content:"";position:absolute;z-index:1;inset:44px 5px;border-block:1px solid color-mix(in srgb,var(--brand) 28%,transparent);border-radius:9px;background:color-mix(in srgb,var(--brand) 8%,transparent);pointer-events:none}
+.timer-wheel{height:132px;box-sizing:border-box;overflow-y:auto;padding-block:44px;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;position:relative;z-index:2}
+.timer-wheel::-webkit-scrollbar{display:none}
+.timer-value{height:44px;width:100%;display:block;flex-shrink:0;scroll-snap-align:center;border:0;padding:0;background:transparent;color:var(--ui-muted);font:500 24px Alexandria,system-ui,sans-serif;font-variant-numeric:tabular-nums;cursor:pointer;opacity:.55}
+.timer-value[aria-selected="true"]{color:#082D29;font-weight:700;opacity:1}
+html[data-theme="dark"] .timer-value[aria-selected="true"]{color:#E4C980}
+html[data-theme="dark"] .timer-wheel-wrap:before{border-color:rgba(228,201,128,.3);background:rgba(228,201,128,.08)}
+.timer-nudge{display:block;width:100%;height:30px;padding:0;border:0;background:transparent;color:var(--ui-muted);font-size:20px;cursor:pointer}
+.timer-nudge:focus-visible,.timer-value:focus-visible{outline:2px solid var(--ui-gold);outline-offset:-3px;border-radius:8px}
 .timer-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.timer-presets button{flex:1;font:inherit;border:1px solid #8885;border-radius:10px;padding:9px;background:transparent;color:inherit;cursor:pointer}
 @media(prefers-reduced-motion:reduce){.qari-marquee.moving span{animation:none}.qari-marquee{overflow:auto;pointer-events:auto}}
 </style>
@@ -2196,8 +2223,13 @@ html[data-theme="dark"] .quran-index-head-action{color:var(--ivory)}
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 15 6l-.3-2.6h-4L10.4 6A8 8 0 0 0 8 7.1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1A8 8 0 0 0 10.4 18l.3 2.6h4L15 18a8 8 0 0 0 1.5-1.1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"/></svg>
     </button>
   </div>
-  <div class="audio-now" id="audioNow">—</div>
-  <button type="button" class="audio-queue-link" id="queueBtn" aria-label="فتح قائمة انتظار التشغيل">قائمة الانتظار <span id="queueCount">٠</span></button>
+  <div class="audio-now-row">
+    <div class="audio-now" id="audioNow">—</div>
+    <button type="button" class="audio-queue-link" id="queueBtn" aria-label="فتح قائمة التشغيل" title="قائمة التشغيل">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h10M4 16h7"/><path d="m16 14 5 3-5 3Z"/></svg>
+      <span id="queueCount">٠</span>
+    </button>
+  </div>
   <div class="audio-progress-row" aria-label="تقدم التلاوة">
     <span class="audio-progress-time" id="audioTimeCurrent" dir="ltr">٠:٠٠</span>
     <div class="audio-progress">
@@ -4139,14 +4171,14 @@ function updatePlayer(){
   const v=verseParts(`${play.surah}:${play.current}`);
   document.getElementById("audioNow").textContent=`سورة ${v.sname} · الآية ${ar(play.current)}`;
   document.getElementById("speedBtn").textContent=(play.speed===1?"1.0":String(play.speed))+"×";
-  const rb=document.getElementById("repeatBtn"),labels={off:"التكرار متوقف",one:"تكرار السورة باستمرار",all:"تكرار قائمة الانتظار"};
+  const rb=document.getElementById("repeatBtn"),labels={off:"التكرار متوقف",one:"تكرار السورة باستمرار",all:"تكرار قائمة التشغيل"};
   rb.classList.toggle("active",repeatMode!=="off");
   rb.setAttribute("aria-label",labels[repeatMode]);rb.title=labels[repeatMode];
   rb.dataset.repeat=repeatMode;
   rb.setAttribute("aria-pressed",String(repeatMode!=="off"));
   let badge=rb.querySelector("small");if(!badge){badge=document.createElement("small");rb.appendChild(badge)}
   badge.textContent=repeatMode==="one"?"١":repeatMode==="all"?"∞":"";
-  document.getElementById("queueCount").textContent=ar(playbackQueue.length);
+  document.getElementById("queueCount").textContent=playbackQueue.length?ar(playbackQueue.length):"";
   updateReciterMarquee();
   document.getElementById("audioPrev").setAttribute("aria-label",queueActive?"السورة السابقة في القائمة":"الآية السابقة");
   document.getElementById("audioNext").setAttribute("aria-label",queueActive?"السورة التالية في القائمة":"الآية التالية");
@@ -4485,13 +4517,21 @@ document.getElementById("speedBtn").onclick=()=>{
   audio.playbackRate=play.speed;updatePlayer();
 };
 document.getElementById("repeatBtn").onclick=()=>{
-  repeatMode=repeatMode==="off"?"one":repeatMode==="one"&&queueActive&&playbackQueue.length?"all":"off";
+  repeatMode=repeatMode==="off"?"one":repeatMode==="one"&&playbackQueue.length?"all":"off";
+  if(repeatMode==="all"&&!queueActive){
+    queueIndex=playbackQueue.findIndex(item=>item.s===play.surah);
+    if(queueIndex<0){
+      // Finish the current surah, then begin the saved list in its exact order.
+      queueIndex=-1;
+    }
+    queueActive=true;
+  }
   if(repeatMode!=="off"){
     continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");continuousStopRef=null;
     play.repeatAyah=play.repeatAyahLeft=play.repeatGroup=play.repeatGroupLeft=play.repeatSurah=play.repeatSurahLeft=1;
   }
   updatePlayer();primeNextEveryAyah();primeNextTimedSurah();
-  showToast(repeatMode==="one"?"ستتكرر السورة حتى تلغي التكرار":repeatMode==="all"?"ستتكرر قائمة الانتظار كاملة":"أُلغي التكرار");
+  showToast(repeatMode==="one"?"ستتكرر السورة حتى تلغي التكرار":repeatMode==="all"?"ستتكرر قائمة التشغيل كاملة":"أُلغي التكرار");
 };
 /* Transport policy: queue entries are complete surahs using the selected reciter. */
 function nextSurahRef(){
@@ -4703,22 +4743,50 @@ function setSleepTimer(seconds){
 document.addEventListener("visibilitychange",()=>{checkSleepTimer();if(!document.hidden)updateReciterMarquee()});
 document.getElementById("sleepTimer").onclick=()=>{
   const remaining=sleepDeadline?Math.max(0,Math.ceil((sleepDeadline-Date.now())/1000)):1800;
+  const values=[Math.floor(remaining/3600),Math.floor(remaining%3600/60),remaining%60];
+  const units=[{name:"ساعة",max:23},{name:"دقيقة",max:59},{name:"ثانية",max:59}];
   const b=sheet("مؤقت إيقاف التلاوة",`<div class="settings">
-    <p class="player-hint">اختر المدة، أو أوقف التلاوة بعد نهاية السورة الحالية.</p>
+    <p class="player-hint">مرّر الأرقام لاختيار المدة، أو أوقف التلاوة بعد نهاية السورة الحالية.</p>
     <div class="timer-digits">
-      <label>ساعة<input id="timerHours" type="number" inputmode="numeric" min="0" max="23" value="${Math.floor(remaining/3600)}"></label>
-      <label>دقيقة<input id="timerMinutes" type="number" inputmode="numeric" min="0" max="59" value="${Math.floor(remaining%3600/60)}"></label>
-      <label>ثانية<input id="timerSeconds" type="number" inputmode="numeric" min="0" max="59" value="${remaining%60}"></label>
+      ${units.map((unit,i)=>`<div class="timer-column">
+        <div class="timer-column-title" id="timerUnit${i}">${unit.name}</div>
+        <button type="button" class="timer-nudge" data-nudge="${i}" data-step="-1" aria-label="إنقاص ${unit.name}">⌃</button>
+        <div class="timer-wheel-wrap"><div class="timer-wheel" data-unit="${i}" role="listbox" tabindex="0" aria-labelledby="timerUnit${i}">
+          ${Array.from({length:unit.max+1},(_,v)=>`<button type="button" class="timer-value" role="option" tabindex="-1" data-value="${v}" id="timerOption${i}_${v}" aria-selected="${v===values[i]}">${ar(String(v).padStart(2,"0"))}</button>`).join("")}
+        </div></div>
+        <button type="button" class="timer-nudge" data-nudge="${i}" data-step="1" aria-label="زيادة ${unit.name}">⌄</button>
+      </div>`).join("")}
     </div>
     <div class="timer-presets">${[5,15,30,60].map(m=>`<button type="button" data-min="${m}">${ar(m)} د</button>`).join("")}</div>
     <button type="button" class="apply" id="startSleep">بدء المؤقت</button>
     <div class="queue-toolbar"><button type="button" id="endSurahTimer">بعد نهاية السورة</button><button type="button" id="cancelSleep">إلغاء المؤقت</button></div>
   </div>`);
-  b.querySelectorAll("[data-min]").forEach(x=>x.onclick=()=>{const sec=Number(x.dataset.min)*60;b.querySelector("#timerHours").value=Math.floor(sec/3600);b.querySelector("#timerMinutes").value=sec%3600/60;b.querySelector("#timerSeconds").value=0});
+  const wheels=[...b.querySelectorAll(".timer-wheel")];
+  function mark(i,v){
+    values[i]=Math.max(0,Math.min(units[i].max,v));
+    wheels[i].querySelectorAll("[role=option]").forEach(option=>option.setAttribute("aria-selected",String(Number(option.dataset.value)===values[i])));
+    wheels[i].setAttribute("aria-activedescendant",`timerOption${i}_${values[i]}`);
+  }
+  function choose(i,v,smooth=false){
+    mark(i,v);
+    wheels[i].scrollTo({top:values[i]*44,behavior:smooth&&!matchMedia("(prefers-reduced-motion: reduce)").matches?"smooth":"instant"});
+  }
+  wheels.forEach((wheel,i)=>{
+    wheel.addEventListener("scroll",()=>mark(i,Math.round(wheel.scrollTop/44)),{passive:true});
+    wheel.onclick=e=>{const option=e.target.closest("[data-value]");if(option)choose(i,Number(option.dataset.value),true)};
+    wheel.onkeydown=e=>{
+      const shifts={ArrowUp:-1,ArrowDown:1,PageUp:-5,PageDown:5};
+      if(e.key in shifts){e.preventDefault();choose(i,values[i]+shifts[e.key])}
+      else if(e.key==="Home"||e.key==="End"){e.preventDefault();choose(i,e.key==="Home"?0:units[i].max)}
+    };
+    choose(i,values[i]);
+  });
+  b.querySelectorAll("[data-nudge]").forEach(button=>button.onclick=()=>{const i=Number(button.dataset.nudge);choose(i,values[i]+Number(button.dataset.step))});
+  b.querySelectorAll("[data-min]").forEach(button=>button.onclick=()=>{const seconds=Number(button.dataset.min)*60;choose(0,Math.floor(seconds/3600));choose(1,seconds%3600/60);choose(2,0)});
   b.querySelector("#startSleep").onclick=()=>{
-    const fields=["timerHours","timerMinutes","timerSeconds"].map(id=>b.querySelector("#"+id));
-    if(fields.some(x=>!x.checkValidity()||x.value===""||!Number.isInteger(Number(x.value)))){showToast("أدخل مدة صحيحة");return}
-    const seconds=Number(fields[0].value)*3600+Number(fields[1].value)*60+Number(fields[2].value);
+    // Read actual wheel positions so a tap during inertial scrolling uses the visible value.
+    wheels.forEach((wheel,i)=>choose(i,Math.round(wheel.scrollTop/44)));
+    const seconds=values[0]*3600+values[1]*60+values[2];
     if(!seconds){showToast("اختر مدة أكبر من صفر");return}setSleepTimer(seconds);b.remove();
   };
   b.querySelector("#endSurahTimer").onclick=()=>{clearSleepTimer();sleepAfterSurah=true;continuousMode=true;continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,"1");updatePlayer();document.getElementById("timerLabel").textContent="نهاية";b.remove()};
@@ -4743,7 +4811,7 @@ function reorderQueue(from,to){
   savePlaybackQueue();
 }
 function openPlaybackQueue(){
-  const b=sheet("قائمة انتظار التشغيل",`<div class="settings">
+  const b=sheet("قائمة التشغيل",`<div class="settings">
     <p class="player-hint">رتّب السور بالسحب أو بالأسهم. تُشغَّل جميع السور بصوت القارئ المختار، وتُحفظ القائمة على هذا الجهاز.</p>
     <div class="field"><label for="queueSurah">إضافة سورة</label><select id="queueSurah">${playerSurahOptions(play.surah)}</select></div>
     <div class="queue-toolbar"><button type="button" id="queueNext">تشغيل تالياً</button><button type="button" id="queueAppend">إضافة إلى النهاية</button></div>
