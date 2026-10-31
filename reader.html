@@ -2195,15 +2195,28 @@ body.player-on.player-expanded .bottom{opacity:0;visibility:hidden;pointer-event
 #audioPanel .audio-timer small{color:var(--reader-muted);opacity:1;font-size:8px}
 #audioPanel .audio-collapse{width:54px;height:28px;top:-16px;border-radius:17px 17px 0 0;background:var(--reader-surface)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
 #audioPanel .audio-collapse svg{width:18px;height:18px}
-#audioPanel .audio-now-row{position:relative;display:flex;align-items:center;justify-content:center;min-height:70px;margin:13px 0 9px;padding-inline:62px}
+#audioPanel .audio-now-row{position:relative;display:flex;align-items:center;justify-content:center;min-height:70px;margin:13px 0 9px;padding-inline:62px;padding-inline-end:96px}
 #audioPanel .audio-now-copy{min-width:0;text-align:center;display:grid;gap:5px}
 #audioPanel .audio-eyebrow{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--reader-gold);font-size:9px;font-weight:500;line-height:1.4}
 #audioPanel .audio-eyebrow:before,#audioPanel .audio-eyebrow:after{content:"";height:1px;width:24px;background:var(--reader-line)}
 #audioPanel .audio-now{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;column-gap:9px;row-gap:2px;white-space:normal;overflow:visible;opacity:1;margin:0;line-height:1.7;color:var(--reader-ink)}
 #audioPanel .audio-surah-title{font-size:19px;font-weight:600;letter-spacing:-.4px}
 #audioPanel .audio-ayah-label{font-size:10px;color:var(--reader-muted)}
-#audioPanel .audio-queue-link{position:absolute;inset-inline-end:0;top:50%;transform:translateY(-50%);width:34px;height:34px;border:1px solid var(--reader-line);color:var(--reader-gold);background:var(--reader-raised)}
-#audioPanel .audio-queue-link span{background:var(--reader-action);color:var(--reader-on-action);box-shadow:0 0 0 2px var(--reader-surface)}
+#audioPanel .audio-queue-tools{position:absolute;inset-inline-end:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:0}
+#audioPanel .audio-queue-link{position:relative;inset:auto;top:auto;transform:none;flex:0 0 44px;width:44px;height:44px;border:1px solid transparent;color:var(--reader-muted);background:transparent;opacity:.7}
+#audioPanel .audio-queue-link.active{color:var(--reader-gold);opacity:1}
+#audioPanel .audio-queue-link:hover,#audioPanel .audio-queue-link:focus-visible{background:var(--reader-selected);opacity:1}
+#audioPanel .audio-queue-link span{top:1px;inset-inline-end:0}
+#audioPanel .audio-queue-toggle{display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:10px;background:transparent;color:var(--reader-muted);cursor:pointer;flex:none}
+#audioPanel .audio-queue-toggle:disabled{opacity:.35;cursor:default}
+#audioPanel .audio-queue-toggle:focus-visible{outline:2px solid var(--reader-gold);outline-offset:1px}
+#audioPanel .audio-queue-toggle-track{position:relative;width:30px;height:18px;border:1px solid var(--reader-line);border-radius:20px;background:var(--reader-line);transition:background .16s}
+#audioPanel .audio-queue-toggle-track:after{content:"";position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--reader-surface);transition:transform .16s}
+#audioPanel .audio-queue-toggle[aria-checked="true"] .audio-queue-toggle-track{background:var(--reader-gold);border-color:var(--reader-gold)}
+#audioPanel .audio-queue-toggle[aria-checked="true"] .audio-queue-toggle-track:after{transform:translateX(-12px)}
+@media(prefers-reduced-motion:reduce){#audioPanel .audio-queue-toggle-track,#audioPanel .audio-queue-toggle-track:after{transition:none}}
+#audioPanel .audio-queue-link span{background:var(--reader-line);color:var(--reader-muted);box-shadow:0 0 0 2px var(--reader-surface)}
+#audioPanel .audio-queue-link.active span{background:var(--reader-gold);color:var(--reader-on-action)}
 #audioPanel .audio-progress-row{margin:0 1px;gap:8px;grid-template-columns:38px minmax(0,1fr) 38px}
 #audioPanel .audio-progress-time{font-size:9px;color:var(--reader-muted)}
 #audioPanel .audio-progress:before{background:var(--reader-line);height:3px}
@@ -2448,10 +2461,13 @@ html .toast{top:calc(70px + env(safe-area-inset-top))}
   </div>
   <div class="audio-now-row">
     <div class="audio-now-copy"><span class="audio-eyebrow">التلاوة الآن</span><div class="audio-now" id="audioNow">—</div></div>
+    <div class="audio-queue-tools">
     <button type="button" class="audio-queue-link" id="queueBtn" aria-label="فتح قائمة التشغيل" title="قائمة التشغيل">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h10M4 16h7"/><path d="m16 14 5 3-5 3Z"/></svg>
       <span id="queueCount">٠</span>
     </button>
+    <button type="button" class="audio-queue-toggle" id="queueToggle" role="switch" aria-label="التشغيل من القائمة" aria-checked="false" disabled title="أضف سوراً إلى القائمة لتفعيلها"><span class="audio-queue-toggle-track" aria-hidden="true"></span></button>
+    </div>
     <button type="button" class="audio-pill audio-continuous" id="continuousBtn" aria-label="استمرار التلاوة بعد الآية المحددة" title="استمرار التلاوة">متابعة</button>
   </div>
   <div class="audio-progress-row" aria-label="تقدم التلاوة">
@@ -4415,6 +4431,7 @@ function updatePlayer(){
   let badge=rb.querySelector("small");if(!badge){badge=document.createElement("small");rb.appendChild(badge)}
   badge.textContent=repeatMode==="one"?"١":repeatMode==="all"?"∞":"";
   document.getElementById("queueCount").textContent=playbackQueue.length?ar(playbackQueue.length):"";
+  syncQueueControls();
   updateReciterMarquee();
   document.getElementById("audioPrev").setAttribute("aria-label",queueActive?"السورة السابقة في القائمة":"الآية السابقة");
   document.getElementById("audioNext").setAttribute("aria-label",queueActive?"السورة التالية في القائمة":"الآية التالية");
@@ -5037,6 +5054,17 @@ document.getElementById("sleepTimer").onclick=()=>{
   b.querySelector("#cancelSleep").onclick=()=>{clearSleepTimer();b.remove()};
 };
 
+function syncQueueControls(){
+  const button=document.getElementById("queueBtn"),toggle=document.getElementById("queueToggle");
+  button.classList.toggle("active",queueActive);
+  button.title=queueActive?"قائمة التشغيل مفعّلة":"قائمة التشغيل غير مفعّلة";
+  button.setAttribute("aria-label",`فتح قائمة التشغيل — ${queueActive?"مفعّلة":"غير مفعّلة"}`);
+  toggle.setAttribute("aria-checked",String(queueActive));toggle.disabled=!playbackQueue.length;
+  toggle.title=!playbackQueue.length?"أضف سوراً إلى القائمة لتفعيلها":queueActive?"إيقاف التشغيل من القائمة":"تفعيل التشغيل من القائمة";
+  const enabled=document.getElementById("queueEnabled"),hint=document.getElementById("queueSourceHint");
+  if(enabled){enabled.checked=queueActive;enabled.disabled=!playbackQueue.length}
+  if(hint)hint.textContent=!playbackQueue.length?"أضف سوراً لتفعيل التشغيل من القائمة.":queueActive?"يتابع المشغّل حسب ترتيب قائمتك بعد السورة الحالية.":"المتابعة حسب ترتيب المصحف، وتبقى قائمتك محفوظة.";
+}
 function setQueuePlayback(enabled){
   if(enabled&&!playbackQueue.length)return false;
   if(enabled){
@@ -5082,8 +5110,7 @@ function openPlaybackQueue(){
   b.classList.add("player-backdrop");
   const list=b.querySelector("#queueList");
   function render(){
-    const enabled=b.querySelector("#queueEnabled");enabled.checked=queueActive;enabled.disabled=!playbackQueue.length;
-    b.querySelector("#queueSourceHint").textContent=!playbackQueue.length?"أضف سوراً لتفعيل التشغيل من القائمة.":queueActive?"يتابع المشغّل حسب ترتيب قائمتك بعد السورة الحالية.":"المتابعة حسب ترتيب المصحف، وتبقى قائمتك محفوظة.";
+    syncQueueControls();
     list.innerHTML=playbackQueue.length?playbackQueue.map((item,i)=>`<li class="queue-row ${queueActive&&i===queueIndex?"current":""}" data-index="${i}">
       <button type="button" class="queue-handle" aria-label="اسحب لترتيب سورة ${escapeHtml(verseParts(item.s+":1").sname)}">⠿</button>
       <button type="button" class="queue-track" data-play="${i}">${ar(i+1)} · ${escapeHtml(verseParts(item.s+":1").sname)}<small>${queueActive&&i===queueIndex?"قيد التشغيل":"تشغيل السورة"}</small></button>
@@ -5131,6 +5158,9 @@ function openPlaybackQueue(){
   render();
 }
 document.getElementById("queueBtn").onclick=openPlaybackQueue;
+document.getElementById("queueToggle").onclick=()=>{
+  if(setQueuePlayback(!queueActive))showToast(queueActive?"فُعّل التشغيل من القائمة":"المتابعة حسب ترتيب المصحف. قائمتك محفوظة");
+};
 
 populateReciters();
 /* ---------- theme + tap states ---------- */

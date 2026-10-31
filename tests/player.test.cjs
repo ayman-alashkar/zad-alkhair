@@ -148,3 +148,19 @@ test('empty list cannot be enabled and switching a paused player does not start 
   assert.equal(f.ctx.audio.paused,true);assert.equal(f.ctx.played.length,0);
   assert.equal(f.ctx.repeatMode,'one');assert.equal(f.run('nextSurahRef().s'),112);
 });
+
+test('panel and sheet queue switches share state, including an empty saved list',()=>{
+  const node=()=>({attributes:{},classes:new Set(),classList:{toggle(name,on){on?this.owner.classes.add(name):this.owner.classes.delete(name)}},setAttribute(name,value){this.attributes[name]=value}});
+  const nodes=new Map(['queueBtn','queueToggle','queueEnabled','queueSourceHint'].map(id=>{const n=node();n.classList.owner=n;return [id,n]}));
+  const context=vm.createContext({document:{getElementById:id=>nodes.get(id)||null},queueActive:false,playbackQueue:[]});
+  vm.runInContext(chunk('function syncQueueControls(', 'function setQueuePlayback('),context);
+  const sync=()=>vm.runInContext('syncQueueControls()',context);
+  sync();assert.equal(nodes.get('queueToggle').disabled,true);assert.equal(nodes.get('queueEnabled').disabled,true);
+  context.playbackQueue=[{id:'saved',s:112}];context.queueActive=true;sync();
+  assert.equal(nodes.get('queueToggle').attributes['aria-checked'],'true');assert.equal(nodes.get('queueToggle').disabled,false);
+  assert.equal(nodes.get('queueEnabled').checked,true);assert.equal(nodes.get('queueBtn').classes.has('active'),true);
+  context.queueActive=false;sync();assert.equal(nodes.get('queueToggle').attributes['aria-checked'],'false');
+  assert.equal(nodes.get('queueEnabled').checked,false);assert.equal(nodes.get('queueBtn').classes.has('active'),false);
+  assert.equal(context.playbackQueue[0].id,'saved');assert.match(nodes.get('queueSourceHint').textContent,/محفوظة/);
+  nodes.delete('queueEnabled');nodes.delete('queueSourceHint');sync(); // The sheet can be closed.
+});
