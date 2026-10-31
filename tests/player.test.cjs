@@ -17,7 +17,7 @@ function fixture(){
     showToast(){},formatAudioTime:x=>String(x),played:[],
     async playCurrent(){this.played.push([this.play.surah,this.play.current])},
     syncPlaybackSelectionInBackground(){},clearSurahBasmalaPrelude(){},savePlaybackQueue(){},
-    storageSet(){},STORAGE_KEYS:{continuous:'continuous'},primeNextEveryAyah(){},primeNextTimedSurah(){}
+    storageSet(){},STORAGE_KEYS:{continuous:'continuous'},primeNextEveryAyah(){},primeNextTimedSurah(){},releaseAudioPreload(){}
   });
   vm.runInContext(`async function playCurrent(){played.push([play.surah,play.current])}`,ctx);
   vm.runInContext(chunk('function previousAyahRef(', 'async function movePlayerTo('),ctx);
@@ -27,6 +27,7 @@ function fixture(){
   vm.runInContext(chunk('function nextPlaybackRefForPriming(){','function releaseAudioPreload('),ctx);
   vm.runInContext(chunk('function handleAudioFailure(', 'async function playCurrent('),ctx);
   vm.runInContext(chunk('function reorderQueue(', 'function openPlaybackQueue('),ctx);
+  vm.runInContext(chunk('function setQueuePlayback(', 'function savePlaybackQueue('),ctx);
   vm.runInContext(chunk('audio.onended=async()=>{','function opts('),ctx);
   vm.runInContext(chunk('document.getElementById("repeatBtn").onclick=', '/* Transport policy:'),ctx);
   return {ctx,run:code=>vm.runInContext(code,ctx),nodes};
@@ -36,9 +37,9 @@ test('repeat-one stays on the same surah through many completions',async()=>{
   for(let i=0;i<20;i++){f.ctx.play.current=4;await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,112);assert.equal(f.ctx.play.current,1)}
   assert.equal(f.ctx.played.length,20);
 });
-test('repeat button cycles off, one, all, off when a list exists',()=>{
+test('repeat button cycles off, one, all, off for either playback source',()=>{
   const f=fixture(),click=()=>f.nodes.get('repeatBtn').onclick();
-  click();assert.equal(f.ctx.repeatMode,'one');click();assert.equal(f.ctx.repeatMode,'off');
+  click();assert.equal(f.ctx.repeatMode,'one');click();assert.equal(f.ctx.repeatMode,'all');click();assert.equal(f.ctx.repeatMode,'off');
   f.ctx.queueActive=true;f.ctx.playbackQueue=[{s:112}];
   click();assert.equal(f.ctx.repeatMode,'one');click();assert.equal(f.ctx.repeatMode,'all');click();assert.equal(f.ctx.repeatMode,'off');
 });
@@ -109,15 +110,41 @@ test('short-surah playback crosses consecutive physical file ends then stops at 
   await f.ctx.audio.onended();assert.equal(f.ctx.audio.paused,true);assert.equal(f.ctx.play.surah,114);assert.equal(f.ctx.play.current,6);
 });
 
-test('repeat-all can attach a saved list without replacing its order',async()=>{
-  const f=fixture();f.ctx.playbackQueue=[{id:'a',s:113},{id:'b',s:114}];
-  const click=()=>f.nodes.get('repeatBtn').onclick();click();click();
-  assert.equal(f.ctx.repeatMode,'all');assert.equal(f.ctx.queueActive,true);assert.equal(f.ctx.queueIndex,-1);
-  f.ctx.play.current=4;await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,113);assert.equal(f.ctx.queueIndex,0);
-  assert.equal(f.ctx.playbackQueue.length,2);assert.equal(f.ctx.playbackQueue[0].id,'a');
-});
-test('repeat-all attaches the current surah when already in the saved list',()=>{
-  const f=fixture();f.ctx.playbackQueue=[{id:'a',s:114},{id:'b',s:112}];
+test('disabled saved list stays disabled when selecting repeat-all',async()=>{
+  const f=fixture();f.ctx.playbackQueue=[{id:'a',s:114},{id:'b',s:113}];
   f.nodes.get('repeatBtn').onclick();f.nodes.get('repeatBtn').onclick();
-  assert.equal(f.ctx.queueIndex,1);assert.equal(f.run('nextSurahRef().s'),114);
+  assert.equal(f.ctx.repeatMode,'all');assert.equal(f.ctx.queueActive,false);
+  f.ctx.play.current=4;await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,113);
+  f.ctx.play.surah=114;f.ctx.play.current=6;await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,1);
+  assert.deepEqual(Array.from(f.ctx.playbackQueue,x=>x.id),['a','b']);
+});
+test('source switch preserves sounding audio and the saved order, applying at the boundary',async()=>{
+  const f=fixture();f.ctx.playbackQueue=[{id:'a',s:114},{id:'b',s:113}];
+  f.ctx.audio.currentTime=12.5;f.ctx.repeatMode='all';
+  const before=JSON.stringify(f.ctx.play),request=f.ctx.playbackRequestId;
+  assert.equal(f.run('setQueuePlayback(true)'),true);
+  assert.equal(f.ctx.queueIndex,-1);assert.equal(JSON.stringify(f.ctx.play),before);
+  assert.equal(f.ctx.audio.currentTime,12.5);assert.equal(f.ctx.audio.paused,false);
+  assert.equal(f.ctx.playbackRequestId,request);assert.equal(f.ctx.played.length,0);
+  f.ctx.play.current=4;assert.equal(f.run('nextPlaybackRefForPriming().s'),114);
+  await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,114);assert.equal(f.ctx.queueIndex,0);
+  f.run('setQueuePlayback(false)');assert.equal(f.ctx.repeatMode,'all');assert.equal(f.ctx.played.length,1);
+  assert.equal(f.ctx.audio.currentTime,12.5);assert.equal(f.ctx.audio.paused,false);
+  f.ctx.play.current=6;assert.equal(f.run('nextPlaybackRefForPriming().s'),1);
+  await f.run('finishCurrentAyah()');assert.equal(f.ctx.play.surah,1);
+  assert.deepEqual(Array.from(f.ctx.playbackQueue,x=>x.id),['a','b']);
+});
+test('enabling a saved list attaches to the current entry and preserves its position on repeated enable',()=>{
+  const f=fixture();f.ctx.playbackQueue=[{id:'a',s:114},{id:'b',s:112},{id:'c',s:112}];
+  f.run('setQueuePlayback(true)');assert.equal(f.ctx.queueIndex,1);
+  f.ctx.queueIndex=2;f.run('setQueuePlayback(true)');assert.equal(f.ctx.queueIndex,2);
+  f.ctx.play.current=4;assert.equal(f.run('nextSurahRef()'),null);
+  f.ctx.repeatMode='all';assert.equal(f.run('nextSurahRef().s'),114);
+});
+test('empty list cannot be enabled and switching a paused player does not start it',()=>{
+  const f=fixture();assert.equal(f.run('setQueuePlayback(true)'),false);assert.equal(f.ctx.queueActive,false);
+  f.ctx.playbackQueue=[{id:'a',s:114}];f.ctx.audio.paused=true;f.ctx.repeatMode='one';
+  f.run('setQueuePlayback(true)');f.run('setQueuePlayback(false)');
+  assert.equal(f.ctx.audio.paused,true);assert.equal(f.ctx.played.length,0);
+  assert.equal(f.ctx.repeatMode,'one');assert.equal(f.run('nextSurahRef().s'),112);
 });

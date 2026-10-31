@@ -2361,6 +2361,18 @@ html .toast{top:calc(70px + env(safe-area-inset-top))}
 @media(max-width:350px){html .topbar{padding-inline:9px;column-gap:5px}html .topbar .top-actions{gap:5px}}
 @media(min-width:900px){.context-surah{font-size:11px}.context-ayah{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.reader-context{transition:none}}
+
+.queue-source{padding:14px;border:1px solid var(--reader-line);border-radius:15px;background:var(--reader-raised)}
+.queue-source-label{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px;cursor:pointer;font-size:13px;color:var(--reader-ink)}
+.queue-source-label input{position:absolute;inset-inline-end:0;width:48px;height:44px;margin:0;opacity:0;cursor:pointer}
+.queue-switch{width:44px;height:26px;flex:none;border:1px solid var(--reader-line);border-radius:20px;background:var(--reader-line);transition:background .16s;pointer-events:none;position:relative}
+.queue-switch::after{content:"";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--reader-surface);box-shadow:0 1px 3px #0002;transition:transform .16s}
+.queue-source-label input:checked+.queue-switch{background:var(--reader-gold);border-color:var(--reader-gold)}
+.queue-source-label input:checked+.queue-switch::after{transform:translateX(-18px)}
+.queue-source-label input:focus-visible+.queue-switch{outline:2px solid var(--reader-gold);outline-offset:4px}
+.queue-source-label input:disabled+.queue-switch{opacity:.4}
+.queue-source .player-hint{margin:6px 0 0}
+@media(prefers-reduced-motion:reduce){.queue-switch,.queue-switch::after{transition:none}}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
@@ -4395,7 +4407,7 @@ function updatePlayer(){
   const v=verseParts(`${play.surah}:${play.current}`);
   document.getElementById("audioNow").innerHTML=`<span class="audio-surah-title">سورة ${escapeHtml(v.sname)}</span><span class="audio-ayah-label">الآية ${ar(play.current)}</span>`;
   document.getElementById("speedBtn").textContent=(play.speed===1?"1.0":String(play.speed))+"×";
-  const rb=document.getElementById("repeatBtn"),labels={off:"التكرار متوقف",one:"تكرار السورة باستمرار",all:"تكرار قائمة التشغيل"};
+  const rb=document.getElementById("repeatBtn"),labels={off:"التكرار متوقف",one:"تكرار السورة باستمرار",all:queueActive?"تكرار قائمة التشغيل":"تكرار المصحف"};
   rb.classList.toggle("active",repeatMode!=="off");
   rb.setAttribute("aria-label",labels[repeatMode]);rb.title=labels[repeatMode];
   rb.dataset.repeat=repeatMode;
@@ -4741,21 +4753,13 @@ document.getElementById("speedBtn").onclick=()=>{
   audio.playbackRate=play.speed;updatePlayer();
 };
 document.getElementById("repeatBtn").onclick=()=>{
-  repeatMode=repeatMode==="off"?"one":repeatMode==="one"&&playbackQueue.length?"all":"off";
-  if(repeatMode==="all"&&!queueActive){
-    queueIndex=playbackQueue.findIndex(item=>item.s===play.surah);
-    if(queueIndex<0){
-      // Finish the current surah, then begin the saved list in its exact order.
-      queueIndex=-1;
-    }
-    queueActive=true;
-  }
+  repeatMode=repeatMode==="off"?"one":repeatMode==="one"?"all":"off";
   if(repeatMode!=="off"){
     continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");continuousStopRef=null;
     play.repeatAyah=play.repeatAyahLeft=play.repeatGroup=play.repeatGroupLeft=play.repeatSurah=play.repeatSurahLeft=1;
   }
   updatePlayer();primeNextEveryAyah();primeNextTimedSurah();
-  showToast(repeatMode==="one"?"ستتكرر السورة حتى تلغي التكرار":repeatMode==="all"?"ستتكرر قائمة التشغيل كاملة":"أُلغي التكرار");
+  showToast(repeatMode==="one"?"ستتكرر السورة حتى تلغي التكرار":repeatMode==="all"?(queueActive?"ستتكرر قائمة التشغيل كاملة":"ستستمر التلاوة حسب ترتيب المصحف وتعود إلى أوله بعد سورة الناس"):"أُلغي التكرار");
 };
 /* Transport policy: queue entries are complete surahs using the selected reciter. */
 function nextSurahRef(){
@@ -4765,7 +4769,7 @@ function nextSurahRef(){
     if(next<playbackQueue.length)return {s:playbackQueue[next].s,a:1};
     return repeatMode==="all"&&playbackQueue.length?{s:playbackQueue[0].s,a:1}:null;
   }
-  return play.surah<114?{s:play.surah+1,a:1}:null;
+  return play.surah<114?{s:play.surah+1,a:1}:repeatMode==="all"?{s:1,a:1}:null;
 }
 function atSurahEnd(){return Number(play.current)>=Number(maxAyah(play.surah))}
 function detachQueue(){queueActive=false;queueIndex=-1;if(repeatMode==="all")repeatMode="off"}
@@ -5033,6 +5037,18 @@ document.getElementById("sleepTimer").onclick=()=>{
   b.querySelector("#cancelSleep").onclick=()=>{clearSleepTimer();b.remove()};
 };
 
+function setQueuePlayback(enabled){
+  if(enabled&&!playbackQueue.length)return false;
+  if(enabled){
+    if(!queueActive)queueIndex=playbackQueue.findIndex(item=>item.s===play.surah);
+    queueActive=true;
+    play.repeatAyah=play.repeatAyahLeft=play.repeatGroup=play.repeatGroupLeft=play.repeatSurah=play.repeatSurahLeft=1;
+  }else{queueActive=false;queueIndex=-1}
+  // Only change what follows the sounding surah; never restart or pause it.
+  continuousMode=true;continuousStopRef=null;storageSet(STORAGE_KEYS.continuous,"1");
+  updatePlayer();releaseAudioPreload();primeNextEveryAyah();primeNextTimedSurah();
+  return true;
+}
 function savePlaybackQueue(){storageJsonSet("zad:player:queue:v1",{items:playbackQueue});updatePlayer()}
 async function playQueueEntry(index){
   if(!playbackQueue[index])return;
@@ -5052,6 +5068,10 @@ function reorderQueue(from,to){
 }
 function openPlaybackQueue(){
   const b=sheet("قائمة التشغيل",`<div class="settings">
+    <div class="queue-source">
+      <label class="queue-source-label" for="queueEnabled"><span>التشغيل من القائمة</span><input type="checkbox" role="switch" id="queueEnabled" aria-describedby="queueSourceHint"><span class="queue-switch" aria-hidden="true"></span></label>
+      <p id="queueSourceHint" class="player-hint"></p>
+    </div>
     <p class="player-hint">رتّب السور بالسحب أو بالأسهم. تُشغَّل جميع السور بصوت القارئ المختار، وتُحفظ القائمة على هذا الجهاز.</p>
     <div class="field"><label for="queueSurah">إضافة سورة</label><select id="queueSurah">${playerSurahOptions(play.surah)}</select></div>
     <div class="queue-toolbar"><button type="button" id="queueNext">تشغيل تالياً</button><button type="button" id="queueAppend">إضافة إلى النهاية</button></div>
@@ -5062,6 +5082,8 @@ function openPlaybackQueue(){
   b.classList.add("player-backdrop");
   const list=b.querySelector("#queueList");
   function render(){
+    const enabled=b.querySelector("#queueEnabled");enabled.checked=queueActive;enabled.disabled=!playbackQueue.length;
+    b.querySelector("#queueSourceHint").textContent=!playbackQueue.length?"أضف سوراً لتفعيل التشغيل من القائمة.":queueActive?"يتابع المشغّل حسب ترتيب قائمتك بعد السورة الحالية.":"المتابعة حسب ترتيب المصحف، وتبقى قائمتك محفوظة.";
     list.innerHTML=playbackQueue.length?playbackQueue.map((item,i)=>`<li class="queue-row ${queueActive&&i===queueIndex?"current":""}" data-index="${i}">
       <button type="button" class="queue-handle" aria-label="اسحب لترتيب سورة ${escapeHtml(verseParts(item.s+":1").sname)}">⠿</button>
       <button type="button" class="queue-track" data-play="${i}">${ar(i+1)} · ${escapeHtml(verseParts(item.s+":1").sname)}<small>${queueActive&&i===queueIndex?"قيد التشغيل":"تشغيل السورة"}</small></button>
@@ -5102,6 +5124,7 @@ function openPlaybackQueue(){
     savePlaybackQueue();render();primeNextEveryAyah();primeNextTimedSurah();
     b.querySelector("#queueStatus").textContent=next?"أُضيفت السورة للتشغيل تالياً":"أُضيفت السورة إلى نهاية القائمة";
   }
+  b.querySelector("#queueEnabled").onchange=e=>{setQueuePlayback(e.target.checked);render();b.querySelector("#queueStatus").textContent=queueActive?"فُعّل التشغيل من القائمة دون تغيير السورة الحالية":"أُوقف التشغيل من القائمة. قائمتك محفوظة"};
   b.querySelector("#queueNext").onclick=()=>add(true);b.querySelector("#queueAppend").onclick=()=>add(false);
   b.querySelector("#queueStart").onclick=async()=>{b.remove();await playQueueEntry(0)};
   b.querySelector("#queueClear").onclick=()=>{playbackQueue=[];detachQueue();savePlaybackQueue();render();b.querySelector("#queueStatus").textContent="مُسحت القائمة"};
