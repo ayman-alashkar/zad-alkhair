@@ -11,11 +11,11 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v136";
+const SHELL_STAGE_CACHE="zad-shell-stage-v137";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
-const RUNTIME_CACHE="zad-runtime-v136";
+const RUNTIME_CACHE="zad-runtime-v137";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
 
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
@@ -251,6 +251,30 @@ async function cacheFirst(request,primaryCache){
   return response;
 }
 
+// The installed-app manifest must not stay pinned to an old theme in a cache-first route.
+async function freshManifest(request){
+  const key=requestFor("./manifest.json");
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),2000);
+  let response=null,failure=null;
+  try{
+    response=await fetch(request,{cache:"no-cache",signal:controller.signal});
+    if(response.ok){
+      const data=await response.clone().json();
+      if(!data||typeof data!=="object"||Array.isArray(data))throw new Error("invalid manifest");
+      try{const runtime=await caches.open(RUNTIME_CACHE);await runtime.put(key,response.clone())}catch(_){}
+      return response;
+    }
+  }catch(error){failure=error}
+  finally{clearTimeout(timer)}
+  for(const name of [RUNTIME_CACHE,SHELL_CACHE,SHELL_BACKUP_CACHE]){
+    const cache=await caches.open(name),hit=await cache.match(key,{ignoreSearch:true});
+    if(hit)return hit;
+  }
+  if(response)return response;
+  throw failure||new Error("manifest unavailable");
+}
+
 function isReaderPath(pathname){return /\/reader(?:\.html)?\/?$/i.test(pathname)}
 function isIndexPath(pathname){return pathname==="/"||/\/index\.html$/i.test(pathname)}
 async function shellFallback(url){
@@ -353,6 +377,10 @@ self.addEventListener("fetch",event=>{
   if(request.method!=="GET")return;
   const url=new URL(request.url);
 
+  if(url.origin===self.location.origin&&url.pathname===new URL("./manifest.json",self.registration.scope).pathname){
+    event.respondWith(freshManifest(request));
+    return;
+  }
   if(isAudioUrl(url,request)){
     event.respondWith(audioFetch(request));
     return;

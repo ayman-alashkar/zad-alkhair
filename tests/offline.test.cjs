@@ -118,3 +118,31 @@ test('existing redirected shell responses remain usable for offline navigation',
   }finally{await new Promise(resolve=>server.close(resolve))}
 });
 
+
+
+test('manifest refresh prefers current network data and caches a canonical offline copy',async()=>{
+  const e=setup();
+  const old='{"theme_color":"#0F5C50"}',fresh='{"theme_color":"#082D29"}';
+  const shell=await e.run('caches.open(SHELL_CACHE)');await shell.put(new Request('https://example.test/manifest.json'),new Response(old));
+  let cacheMode='';e.setFetch(async(r,opts)=>{cacheMode=opts.cache;return new Response(fresh)});
+  assert.equal(await (await e.run("freshManifest(new Request('https://example.test/manifest.json?v=137'))")).text(),fresh);
+  assert.equal(cacheMode,'no-cache');
+  e.setFetch(async()=>{throw Error('offline')});
+  assert.equal(await (await e.run("freshManifest(new Request('https://example.test/manifest.json'))")).text(),fresh);
+});
+
+test('manifest refresh retains the valid shell copy on server error or invalid JSON',async()=>{
+  const e=setup(),stored='{"name":"Zad","theme_color":"#082D29"}';
+  const shell=await e.run('caches.open(SHELL_CACHE)');await shell.put(new Request('https://example.test/manifest.json'),new Response(stored));
+  for(const response of [new Response('error',{status:503}),new Response('<html>not a manifest</html>')]){
+    e.setFetch(async()=>response.clone());
+    assert.equal(await (await e.run("freshManifest(new Request('https://example.test/manifest.json'))")).text(),stored);
+  }
+});
+
+test('a stalled manifest request falls back without blocking offline app metadata',async()=>{
+  const e=setup(),stored='{"theme_color":"#082D29"}';
+  const shell=await e.run('caches.open(SHELL_CACHE)');await shell.put(new Request('https://example.test/manifest.json'),new Response(stored));
+  e.setFetch((r,opts)=>new Promise((resolve,reject)=>opts.signal.addEventListener('abort',()=>reject(Error('timeout')))));
+  assert.equal(await (await e.run("freshManifest(new Request('https://example.test/manifest.json'))")).text(),stored);
+});
