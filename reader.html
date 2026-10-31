@@ -2195,11 +2195,11 @@ body.player-on.player-expanded .bottom{opacity:0;visibility:hidden;pointer-event
 #audioPanel .audio-timer small{color:var(--reader-muted);opacity:1;font-size:8px}
 #audioPanel .audio-collapse{width:54px;height:28px;top:-16px;border-radius:17px 17px 0 0;background:var(--reader-surface)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
 #audioPanel .audio-collapse svg{width:18px;height:18px}
-#audioPanel .audio-now-row{position:relative;display:flex;align-items:center;justify-content:center;min-height:70px;margin:13px 0 9px;padding-inline:62px;padding-inline-end:96px}
+#audioPanel .audio-now-row{position:relative;display:flex;align-items:center;justify-content:center;min-height:70px;margin:13px 0 9px;padding-inline:96px}
 #audioPanel .audio-now-copy{min-width:0;text-align:center;display:grid;gap:5px}
 #audioPanel .audio-eyebrow{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--reader-gold);font-size:9px;font-weight:500;line-height:1.4}
 #audioPanel .audio-eyebrow:before,#audioPanel .audio-eyebrow:after{content:"";height:1px;width:24px;background:var(--reader-line)}
-#audioPanel .audio-now{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap;column-gap:9px;row-gap:2px;white-space:normal;overflow:visible;opacity:1;margin:0;line-height:1.7;color:var(--reader-ink)}
+#audioPanel .audio-now{display:flex;flex-direction:column;align-items:center;justify-content:center;flex-wrap:wrap;column-gap:9px;row-gap:2px;white-space:normal;overflow:visible;opacity:1;margin:0;line-height:1.7;color:var(--reader-ink)}
 #audioPanel .audio-surah-title{font-size:19px;font-weight:600;letter-spacing:-.4px}
 #audioPanel .audio-ayah-label{font-size:10px;color:var(--reader-muted)}
 #audioPanel .audio-queue-tools{position:absolute;inset-inline-end:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:0}
@@ -2264,6 +2264,10 @@ html .backdrop .timer-value[aria-selected="true"]{color:var(--reader-ink)}
   #audioPanel .audio-controls{grid-template-columns:40px minmax(28px,1fr) 62px minmax(28px,1fr) 40px;gap:5px}
   #audioPanel .audio-control{width:38px;height:40px}
   html #audioPanel #panelPlay.audio-main{width:58px;height:58px}
+}
+@media(max-width:380px){
+  #audioPanel .audio-now-row{padding-inline:62px;min-height:88px}
+  #audioPanel .audio-queue-tools{flex-direction:column}
 }
 @media(min-width:900px){html #audioPanel{bottom:24px;padding:20px 22px 18px}#audioPanel .audio-now-row{min-height:76px;margin:14px 0 8px}#audioPanel .audio-surah-title{font-size:22px}}
 
