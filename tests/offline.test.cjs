@@ -28,7 +28,7 @@ function setup(){
   };
   const self={location:new URL('https://example.test/'),registration:{scope:'https://example.test/'},clients:{matchAll:async()=>[{postMessage:m=>messages.push(m)}]},addEventListener(){},skipWaiting:async()=>{}};
   let fetchImpl=async r=>new Response('ok:'+key(r));
-  const context=vm.createContext({self,caches,URL,Request,Response,AbortController,setTimeout,clearTimeout,console,
+  const context=vm.createContext({self,caches,URL,Request,Response,Headers,AbortController,setTimeout,clearTimeout,console,
     fetch:async(...args)=>{calls.push(key(args[0]));return fetchImpl(...args)}});
   vm.runInContext(source,context);
   return {run:s=>vm.runInContext(s,context),stores,messages,calls,setFetch:f=>fetchImpl=f};
@@ -116,4 +116,15 @@ test('existing redirected shell responses remain usable for offline navigation',
       assert.equal(await response.text(),'<h1>Saved page</h1>');
     }
   }finally{await new Promise(resolve=>server.close(resolve))}
+});
+
+test('whole-surah audio from the new host remains seekable from the existing offline cache',async()=>{
+  const e=setup(),url='https://media.way2quran.com/mahmoud-fayyad-al-hamoud/hafs-an-asim/112.mp3';
+  e.setFetch(async()=>new Response('audio-content',{headers:{'Content-Type':'audio/mpeg'}}));
+  const result=await e.run(`cacheAudioResources([{url:${JSON.stringify(url)},kind:"audio"}],"hamoud-test")`);
+  assert.equal(result.failed,0);
+  e.setFetch(async()=>{throw Error('offline')});
+  const full=await e.run(`audioFetch(new Request(${JSON.stringify(url)}))`);assert.equal(await full.text(),'audio-content');
+  const range=await e.run(`audioFetch(new Request(${JSON.stringify(url)},{headers:{Range:"bytes=0-3"}}))`);
+  assert.equal(range.status,206);assert.equal(range.headers.get('Content-Range'),'bytes 0-3/13');assert.equal(await range.text(),'audi');
 });

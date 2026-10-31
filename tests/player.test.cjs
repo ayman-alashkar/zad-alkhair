@@ -20,6 +20,7 @@ function fixture(){
     storageSet(){},STORAGE_KEYS:{continuous:'continuous'},primeNextEveryAyah(){},primeNextTimedSurah(){},releaseAudioPreload(){}
   });
   vm.runInContext(`async function playCurrent(){played.push([play.surah,play.current])}`,ctx);
+  vm.runInContext(chunk('function isSurahOnly(', 'function defaultReciter('),ctx);
   vm.runInContext(chunk('function previousAyahRef(', 'async function movePlayerTo('),ctx);
   vm.runInContext(chunk('function timingRowAt(', 'function seekAudioProgress('),ctx);
   vm.runInContext(chunk('function clearSleepTimer(){','document.addEventListener("visibilitychange"'),ctx);
@@ -163,4 +164,60 @@ test('panel and sheet queue switches share state, including an empty saved list'
   assert.equal(nodes.get('queueEnabled').checked,false);assert.equal(nodes.get('queueBtn').classes.has('active'),false);
   assert.equal(context.playbackQueue[0].id,'saved');assert.match(nodes.get('queueSourceHint').textContent,/محفوظة/);
   nodes.delete('queueEnabled');nodes.delete('queueSourceHint');sync(); // The sheet can be closed.
+});
+
+test('whole-surah recordings follow the queue once without fabricating ayah progress',async()=>{
+  const f=fixture();Object.assign(f.ctx,{reciter:{id:'hamoud',provider:'surah'},queueActive:true,queueIndex:0,playbackQueue:[{s:112},{s:114},{s:112}]});
+  f.ctx.audio.dataset.playMode='surah';
+  await f.ctx.audio.onended();assert.equal(f.ctx.play.surah,114);assert.equal(f.ctx.queueIndex,1);
+  await f.ctx.audio.onended();assert.equal(f.ctx.play.surah,112);assert.equal(f.ctx.queueIndex,2);
+  await f.ctx.audio.onended();assert.equal(f.ctx.audio.paused,true);assert.equal(f.ctx.played.length,2);
+  assert.equal(f.ctx.play.current,1);assert.equal(f.ctx.activeTimingRows,null);
+});
+test('whole-surah repeat handles one surah, playlist wrap and Quran wrap',async()=>{
+  const f=fixture();Object.assign(f.ctx,{reciter:{id:'hamoud',provider:'surah'},repeatMode:'one'});
+  await f.run('finishWholeSurah()');assert.equal(f.ctx.play.surah,112);
+  Object.assign(f.ctx,{repeatMode:'all',queueActive:true,queueIndex:1,playbackQueue:[{s:113},{s:112}]});
+  await f.run('finishWholeSurah()');assert.equal(f.ctx.play.surah,113);assert.equal(f.ctx.queueIndex,0);
+  f.ctx.queueActive=false;f.ctx.play.surah=114;await f.run('finishWholeSurah()');assert.equal(f.ctx.play.surah,1);
+});
+test('whole-surah playback stops at the end when continuation is disabled',async()=>{
+  const f=fixture();Object.assign(f.ctx,{reciter:{id:'hamoud',provider:'surah'},continuousMode:false});
+  await f.run('finishWholeSurah()');assert.equal(f.ctx.played.length,0);assert.equal(f.ctx.audio.paused,true);
+});
+test('whole-surah sleep deadline and end-of-surah timer override repeating',async()=>{
+  for(const kind of ['deadline','surah']){
+    const f=fixture();Object.assign(f.ctx,{reciter:{id:'hamoud',provider:'surah'},repeatMode:'one'});
+    if(kind==='deadline')f.ctx.sleepDeadline=9000;else f.ctx.sleepAfterSurah=true;
+    await f.run('finishWholeSurah()');assert.equal(f.ctx.played.length,0);assert.equal(f.ctx.audio.paused,true);assert.equal(f.ctx.playbackWanted,false);
+  }
+});
+test('whole-surah seeking changes time without a false selected ayah or request cancellation',()=>{
+  const f=fixture();f.ctx.reciter={provider:'surah'};f.ctx.audio.dataset.playMode='surah';f.ctx.audio.duration=200;
+  f.ctx.paintAudioProgress=()=>{};
+  f.run(chunk('function timedSurahProgressMode(){','function paintAudioProgress('));
+  f.run(chunk('function seekAudioProgress(', 'function populateReciters('));
+  f.run('seekAudioProgress(750)');assert.equal(f.ctx.audio.currentTime,150);assert.equal(f.ctx.play.current,1);assert.equal(f.ctx.playbackRequestId,1);
+});
+test('whole-surah source resets stale ayah restrictions before playing and uses no timing resolver',async()=>{
+  const f=fixture();Object.assign(f.ctx,{reciter:{id:'hamoud',provider:'surah',audioBase:'https://media.way2quran.com/mahmoud-fayyad-al-hamoud/hafs-an-asim/'},repeatMode:'all',queueActive:true,queueIndex:0,playbackQueue:[{s:112}],continuousStopRef:{s:112,a:3}});
+  Object.assign(f.ctx.play,{current:3,from:3,to:4,repeatAyah:5,repeatGroup:3});
+  f.ctx.document.body={classList:{contains:()=>false}};
+  f.ctx.resetAudioProgress=()=>{};f.ctx.showPlayer=()=>{};f.ctx.mediaReady=async()=>{};f.ctx.pad3=n=>String(n).padStart(3,'0');
+  f.ctx.audio.load=()=>{};f.ctx.audio.play=async()=>{};f.ctx.audio.currentTime=44;
+  f.ctx.getMp3Timing=()=>{throw Error('timings must not be requested')};
+  f.run(chunk('async function playCurrent(', 'async function startSelected('));
+  await f.run('playCurrent()');
+  assert.match(f.ctx.audio.src,/hafs-an-asim\/112\.mp3$/);assert.equal(f.ctx.audio.currentTime,0);
+  assert.equal(f.ctx.audio.dataset.playMode,'surah');assert.equal(f.ctx.activeSegment,null);assert.equal(f.ctx.activeTimingRows,null);
+  assert.equal(f.ctx.play.current,1);assert.equal(f.ctx.play.repeatAyah,1);assert.equal(f.ctx.play.repeatGroup,1);
+  assert.equal(f.ctx.continuousStopRef,null);assert.equal(f.ctx.repeatMode,'all');assert.equal(f.ctx.queueActive,true);
+});
+test('whole-surah preloading follows the active playlist source',async()=>{
+  const f=fixture();Object.assign(f.ctx,{reciter:{id:'hamoud',provider:'surah',audioBase:'https://media.way2quran.com/mahmoud-fayyad-al-hamoud/hafs-an-asim/'},queueActive:true,queueIndex:0,playbackQueue:[{s:112},{s:114}],primedTimedSurahSrc:'',primedEveryAyahSrc:''});
+  f.ctx.document.body={classList:{contains:()=>true}};f.ctx.audio.dataset.playMode='surah';f.ctx.pad3=n=>String(n).padStart(3,'0');
+  f.ctx.isTimedProvider=()=>false;f.ctx.audioPreload={pause(){},load(){}};
+  f.run(chunk('async function primeNextTimedSurah(){','function syncPlaybackSelectionInBackground('));
+  await f.run('primeNextTimedSurah()');assert.match(f.ctx.audioPreload.src,/114\.mp3$/);
+  f.ctx.sleepAfterSurah=true;f.ctx.audioPreload.src='unchanged';await f.run('primeNextTimedSurah()');assert.equal(f.ctx.audioPreload.src,'unchanged');
 });
