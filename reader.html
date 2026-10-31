@@ -2623,6 +2623,10 @@ const RECITERS=[
     timedReject:["السوسي","الدوري","شعبة","خلف","ورش","قالون"]
   },
   {
+    id:"Hudhaify_128kbps",name:"فضيلة الشيخ علي بن عبد الرحمن الحذيفي",
+    provider:"ayah",everyAyahId:"Hudhaify_128kbps",ayahBasmalaPrelude:true
+  },
+  {
     id:"AliJaber_Hafs",name:"فضيلة الشيخ علي جابر",
     provider:"mp3quran-timed",timedNames:["علي جابر"],
     timedPrefer:["حفص","عاصم"],timedRequireAny:["حفص","عاصم"]
@@ -2671,7 +2675,7 @@ function defaultReciter(){
 }
 function validateReciterConfig(){
   const allowed=new Set(["ayah","mp3quran-timed","qul-maher","surah"]);
-  if(RECITERS.length!==8)throw new Error("reciter config count");
+  if(RECITERS.length!==9)throw new Error("reciter config count");
   const ids=new Set(),names=new Set();
   for(const r of RECITERS){
     if(!r?.id||!r?.name||!allowed.has(r.provider))throw new Error("reciter config shape");

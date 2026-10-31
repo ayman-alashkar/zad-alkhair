@@ -10,6 +10,7 @@ const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 const reciters=[
   {slug:"ayman-suwaid",id:"Ayman_Sowaid_64kbps",display:"فضيلة الشيخ أيمن سويد"},
   {slug:"abdul-rashid-sufi",id:"AbdulRashidSufi_Hafs",display:"فضيلة الشيخ عبد الرشيد الصوفي"},
+  {slug:"ali-al-hudhaifi",id:"Hudhaify_128kbps",display:"فضيلة الشيخ علي بن عبد الرحمن الحذيفي"},
   {slug:"ali-jaber",id:"AliJaber_Hafs",display:"فضيلة الشيخ علي جابر"},
   {slug:"maher-al-muaiqly",id:"MaherAlMuaiqly128kbps",display:"فضيلة الشيخ ماهر المعيقلي"},
   {slug:"mahmoud-al-hamoud",id:"MahmoudAlHamoud_Surah",display:"فضيلة الشيخ محمود الحمود",surahOnly:true},

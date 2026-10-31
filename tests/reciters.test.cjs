@@ -8,7 +8,7 @@ function fixture(){
 }
 test('new reciters pass source validation and preserve the existing explicit default',()=>{
   const f=fixture();f.run('validateReciterConfig()');
-  assert.equal(f.run('RECITERS.length'),8);assert.equal(f.run('defaultReciter().id'),'Husary_128kbps');
+  assert.equal(f.run('RECITERS.length'),9);assert.equal(f.run('defaultReciter().id'),'Husary_128kbps');
   assert.equal(f.run('RECITERS.find(r=>r.id==="AliJaber_Hafs").provider'),'mp3quran-timed');
   assert.equal(f.run('isSurahOnly(RECITERS.find(r=>r.id==="MahmoudAlHamoud_Surah"))'),true);
 });
@@ -40,4 +40,15 @@ test('whole-surah playback opens the surah page without selecting a fabricated v
   f.run('function clearVerseSelection(){cleared++} function updatePage(){pageUpdates++}');
   f.run(chunk('async function syncPlaybackSelection(', 'function nextPlaybackRefForPriming('));
   await f.run('syncPlaybackSelection(2)');assert.equal(f.ctx.currentPage,604);assert.equal(f.ctx.pageUpdates,1);assert.equal(f.ctx.cleared,1);assert.deepEqual(f.ctx.ensured,[604]);
+});
+test('Hudhaifi uses the verified per-ayah recording and independently caches its surah and basmala',async()=>{
+  const f=fixture();f.ctx.reciter=f.run('RECITERS.find(r=>r.id==="Hudhaify_128kbps")');
+  assert.equal(f.ctx.reciter.provider,'ayah');assert.equal(f.ctx.reciter.everyAyahId,'Hudhaify_128kbps');assert.equal(f.ctx.reciter.ayahBasmalaPrelude,true);
+  Object.assign(f.ctx,{chapterMap:new Map([[112,{verses_count:4}]]),audioPackageKey:(s,r)=>r.id+':'+s,getMp3Timing:()=>{throw Error('no timestamp substitution')}});
+  f.run(chunk('function ayahAudioSourceId(', 'function compactArabic('));
+  f.run(chunk('async function buildSurahAudioPackage(', 'async function downloadedAudioPackagesForSurah('));
+  assert.equal(f.run('audioUrl(112,4)'),'https://everyayah.com/data/Hudhaify_128kbps/112004.mp3');
+  const pkg=await f.run('buildSurahAudioPackage(112,reciter)');assert.equal(pkg.ownedUrls.length,4);assert.equal(pkg.sharedUrls.length,1);
+  assert.ok(pkg.resources.every(x=>x.url.startsWith('https://everyayah.com/data/Hudhaify_128kbps/')));
+  assert.equal(pkg.sharedUrls[0],'https://everyayah.com/data/Hudhaify_128kbps/001001.mp3');
 });
