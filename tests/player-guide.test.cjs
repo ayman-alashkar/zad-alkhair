@@ -20,16 +20,25 @@ test('guide movie streams directly, preserves range responses, and cannot fall b
 });
 
 function pageFixture(online){
-  const events={},videoEvents={},buttonEvents={},src=new Map();
+  const events={},videoEvents={},buttonEvents={},overlayEvents={},src=new Map();
   const video={dataset:{src:'/Zad-Alkhair-Player-Guide.mp4'},currentTime:35,duration:110,paused:false,
     hasAttribute:k=>src.has(k),removeAttribute:k=>src.delete(k),pause(){this.paused=true},load(){this.currentTime=0},
     play(){this.paused=false;return Promise.resolve()},addEventListener:(k,fn)=>videoEvents[k]=fn};
   Object.defineProperty(video,'src',{set:v=>src.set('src',v)});
-  const elements={guideVideo:video,videoStatus:{textContent:''},startVideo:{hidden:false,addEventListener:(k,fn)=>buttonEvents[k]=fn},retryVideo:{hidden:true,addEventListener(){}},shareGuide:{hidden:true,addEventListener(){}},shareStatus:{textContent:''}};
+  const elements={guideVideo:video,videoStatus:{textContent:''},startVideo:{hidden:false,addEventListener:(k,fn)=>buttonEvents[k]=fn},playOverlay:{hidden:false,addEventListener:(k,fn)=>overlayEvents[k]=fn},retryVideo:{hidden:true,addEventListener(){}},shareGuide:{hidden:true,addEventListener(){}},shareStatus:{textContent:''}};
   const navigator={onLine:online};
   vm.runInNewContext(read('quran/player-guide/guide.js'),{navigator,window:{addEventListener:(k,fn)=>events[k]=fn},document:{getElementById:k=>elements[k]}});
-  return {video,events,videoEvents,buttonEvents,navigator,elements};
+  return {video,events,videoEvents,buttonEvents,overlayEvents,navigator,elements};
 }
+test('both the overlaid play button and initial video click attach the source and enable native controls',()=>{
+  for(const trigger of [f=>f.overlayEvents.click(),f=>f.videoEvents.click()]){
+    const f=pageFixture(true);assert.equal(f.video.hasAttribute('src'),false);
+    trigger(f);assert.equal(f.video.hasAttribute('src'),true);
+    assert.equal(f.video.controls,true);assert.equal(f.elements.playOverlay.hidden,true);
+  }
+  const offline=pageFixture(false);offline.overlayEvents.click();
+  assert.equal(offline.video.hasAttribute('src'),false);assert.equal(offline.elements.playOverlay.disabled,true);
+});
 test('online page and reconnect do not attach a video source until an explicit play click',()=>{
   const f=pageFixture(true);assert.equal(f.video.hasAttribute('src'),false);
   f.events.online();assert.equal(f.video.hasAttribute('src'),false);
@@ -48,6 +57,6 @@ test('page uses deferred video loading and a crawlable share image',()=>{
   const html=read('quran/player-guide/index.html');
   assert.match(html,/preload="none"/);assert.match(html,/controlslist="nodownload"/);
   assert.doesNotMatch(html,/<video[^>]*\ssrc=/);assert.doesNotMatch(html,/<a[^>]*\sdownload/);
-  assert.match(html,/<meta property="og:image" content="https:\/\/zad-alkhair.net\/social\/player-guide.jpg">/);
-  assert.ok(fs.statSync(__dirname+'/../social/player-guide.jpg').size>10000);
+  assert.match(html,/<meta property="og:image" content="https:\/\/zad-alkhair.net\/zad-alkhair-share.png">/);
+  assert.ok(fs.statSync(__dirname+'/../zad-alkhair-share.png').size>10000);
 });

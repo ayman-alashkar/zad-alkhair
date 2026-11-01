@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F5F0E4">
 <title>دليل مشغّل التلاوة بالفيديو | زاد الخير</title>
-<meta name="description" content="تعرّف على مشغّل التلاوة في زاد الخير: اختيار القارئ، وقائمة التشغيل، والتكرار، والمؤقت، والتنزيل. شرح بالفيديو في دقيقة و٥٠ ثانية.">
+<meta name="description" content="تعرّف على إعدادات مشغّل التلاوة في زاد الخير: اختيار القارئ، وقائمة التشغيل، والتكرار، والمؤقت، والتنزيل. شرح بالفيديو في دقيقة و٥٠ ثانية.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-video-preview:-1">
 <link rel="canonical" href="https://zad-alkhair.net/quran/player-guide/">
 <link rel="icon" href="/icons/zad-mark.svg" type="image/svg+xml">
@@ -17,17 +17,17 @@
 <meta property="og:site_name" content="زاد الخير">
 <meta property="og:url" content="https://zad-alkhair.net/quran/player-guide/">
 <meta property="og:title" content="دليل مشغّل التلاوة | زاد الخير">
-<meta property="og:description" content="تعرّف على مزايا الاستماع خطوة بخطوة. شاهد الدليل في دقيقة و٥٠ ثانية.">
-<meta property="og:image" content="https://zad-alkhair.net/social/player-guide.jpg">
-<meta property="og:image:secure_url" content="https://zad-alkhair.net/social/player-guide.jpg">
-<meta property="og:image:type" content="image/jpeg">
+<meta property="og:description" content="تعرّف على إعدادات مشغّل التلاوة. شاهد الدليل في دقيقة و٥٠ ثانية.">
+<meta property="og:image" content="https://zad-alkhair.net/zad-alkhair-share.png">
+<meta property="og:image:secure_url" content="https://zad-alkhair.net/zad-alkhair-share.png">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="675">
-<meta property="og:image:alt" content="دليل مشغّل التلاوة في زاد الخير — تعرّف على مزايا الاستماع خطوة بخطوة">
+<meta property="og:image:alt" content="زاد الخير — القرآن العظيم والختمات الجماعية ومواقيت الصلاة">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="دليل مشغّل التلاوة | زاد الخير">
-<meta name="twitter:description" content="شرح بالفيديو لمزايا الاستماع في زاد الخير.">
-<meta name="twitter:image" content="https://zad-alkhair.net/social/player-guide.jpg">
+<meta name="twitter:description" content="تعرّف على إعدادات مشغّل التلاوة في زاد الخير.">
+<meta name="twitter:image" content="https://zad-alkhair.net/zad-alkhair-share.png">
 <style>
 main.guide{max-width:930px;padding:clamp(18px,3.5vw,32px)}
 .guide-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,300px);align-items:center;gap:36px}
@@ -36,6 +36,14 @@ main.guide{max-width:930px;padding:clamp(18px,3.5vw,32px)}
 .guide-copy .lead{margin-bottom:18px}
 .guide-video{display:block;width:100%;height:auto;max-height:72svh;aspect-ratio:9/16;object-fit:contain;background:#082e29;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 35px -15px var(--shadow)}
 .guide-viewer{width:100%;max-width:340px;margin:0 auto}
+.guide-screen{position:relative}
+.guide-play-overlay{position:absolute;inset:0;display:grid;place-items:center;width:100%;padding:0;border:0;border-radius:18px;background:linear-gradient(transparent,rgba(8,46,41,.12));color:#FDF8EB;cursor:pointer}
+.guide-play-overlay span{display:grid;place-items:center;width:72px;height:72px;border:2px solid #E2C97E;border-radius:50%;background:rgba(8,46,41,.9);box-shadow:0 5px 24px #0005;transition:transform .15s}
+.guide-play-overlay svg{width:32px;height:32px;fill:currentColor}
+.guide-play-overlay:hover span{transform:scale(1.06)}
+.guide-play-overlay:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+.guide-play-overlay:disabled{cursor:default;opacity:.55}
+@media(prefers-reduced-motion:reduce){.guide-play-overlay span{transition:none}}
 .guide-note{font-size:11px;color:var(--muted);margin:16px 0 0;line-height:1.9}
 .guide-status{font-size:12px;color:var(--ink);line-height:1.9;min-height:1.9em;margin:12px 0 0}
 .guide-status:empty{display:none}
@@ -54,13 +62,16 @@ main.guide{max-width:930px;padding:clamp(18px,3.5vw,32px)}
       <span class="eyebrow">القرآن العظيم · دليل بالفيديو</span>
       <h1>دليل مشغّل التلاوة</h1>
       <span class="guide-duration">دقيقة و٥٠ ثانية</span>
-      <p class="lead">تعرّف على مزايا الاستماع خطوة بخطوة: اختيار القارئ، وقائمة التشغيل، والتكرار، والمؤقت، وتنزيل التلاوات.</p>
+      <p class="lead">تعرّف على إعدادات مشغّل التلاوة: اختيار القارئ، وقائمة التشغيل، والتكرار، والمؤقت، وتنزيل التلاوات.</p>
       <div class="actions"><a class="btn primary" href="/reader.html?home=1&amp;from=zad">افتح القرآن العظيم</a><button class="btn secondary" id="shareGuide" type="button" hidden>مشاركة الدليل</button></div>
       <p class="guide-note">تحتاج مشاهدة هذا الفيديو إلى اتصال بالإنترنت.</p>
       <p class="guide-status" id="shareStatus" role="status" aria-live="polite"></p>
     </div>
     <div class="guide-viewer">
-      <video class="guide-video" id="guideVideo" controls playsinline preload="none" controlslist="nodownload" poster="/media/player-guide-poster.jpg" width="1080" height="1920" aria-label="فيديو دليل مشغّل التلاوة" aria-describedby="videoStatus" data-src="/Zad-Alkhair-Player-Guide.mp4"></video>
+      <div class="guide-screen">
+        <video class="guide-video" id="guideVideo" playsinline preload="none" controlslist="nodownload" poster="/media/player-guide-poster.jpg" width="1080" height="1920" aria-label="فيديو دليل مشغّل التلاوة" aria-describedby="videoStatus" data-src="/Zad-Alkhair-Player-Guide.mp4"></video>
+        <button class="guide-play-overlay" id="playOverlay" type="button" aria-label="تشغيل الفيديو"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg></span></button>
+      </div>
       <button class="btn primary" id="startVideo" type="button">تشغيل الدليل</button>
       <p class="guide-status" id="videoStatus" role="status" aria-live="polite"></p>
       <button class="btn secondary" id="retryVideo" type="button" hidden>إعادة المحاولة</button>
@@ -69,6 +80,6 @@ main.guide{max-width:930px;padding:clamp(18px,3.5vw,32px)}
   </div>
 </main>
 <footer><nav class="footer-links" aria-label="روابط زاد الخير"><a href="/">الرئيسية</a><a href="/quran/">القرآن العظيم</a><a href="/install/">تثبيت التطبيق</a></nav></footer>
-<script src="/quran/player-guide/guide.js?v=1" defer></script>
+<script src="/quran/player-guide/guide.js?v=2" defer></script>
 </body>
 </html>
