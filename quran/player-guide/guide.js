@@ -4,6 +4,7 @@
   const status=document.getElementById('videoStatus');
   const retry=document.getElementById('retryVideo');
   const start=document.getElementById('startVideo');
+  const overlay=document.getElementById('playOverlay');
   const share=document.getElementById('shareGuide');
   const shareStatus=document.getElementById('shareStatus');
   const guideUrl='https://zad-alkhair.net/quran/player-guide/';
@@ -13,6 +14,7 @@
     retry.hidden=true;
     if(navigator.onLine===false){
       start.disabled=true;
+      overlay.disabled=true;
       if(video.hasAttribute('src')){
         resumeAt=video.currentTime||resumeAt;
         video.pause();video.removeAttribute('src');video.load();
@@ -21,16 +23,20 @@
       return;
     }
     start.disabled=false;
+    overlay.disabled=false;
     status.textContent='';
     if(started&&!video.hasAttribute('src'))video.src=video.dataset.src;
   }
-  start.addEventListener('click',()=>{
+  function playGuide(){
     if(navigator.onLine===false){connect();return}
-    started=true;connect();
+    started=true;video.controls=true;overlay.hidden=true;connect();
     video.play().catch(()=>{
       status.textContent='اضغط تشغيل في نافذة الفيديو لبدء المشاهدة.';
     });
-  });
+  }
+  start.addEventListener('click',playGuide);
+  overlay.addEventListener('click',playGuide);
+  video.addEventListener('click',()=>{if(!started)playGuide()});
   window.addEventListener('offline',connect);
   window.addEventListener('online',connect);
   video.addEventListener('loadedmetadata',()=>{
