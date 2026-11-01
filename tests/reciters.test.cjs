@@ -8,7 +8,7 @@ function fixture(){
 }
 test('new reciters pass source validation and preserve the existing explicit default',()=>{
   const f=fixture();f.run('validateReciterConfig()');
-  assert.equal(f.run('RECITERS.length'),9);assert.equal(f.run('defaultReciter().id'),'Husary_128kbps');
+  assert.equal(f.run('RECITERS.length'),10);assert.equal(f.run('defaultReciter().id'),'Husary_128kbps');
   assert.equal(f.run('RECITERS.find(r=>r.id==="AliJaber_Hafs").provider'),'mp3quran-timed');
   assert.equal(f.run('isSurahOnly(RECITERS.find(r=>r.id==="MahmoudAlHamoud_Surah"))'),true);
 });
@@ -16,6 +16,25 @@ test('Ali Jaber resolves only the matching Hafs recording',async()=>{
   const f=fixture();Object.assign(f.ctx,{mp3ReadsPromise:Promise.resolve([{id:99,name:'علي حجاج السويسي',rewaya:'حفص عن عاصم'},{id:76,name:'علي جابر',rewaya:'حفص عن عاصم',soar_count:114}]),timedReadCache:new Map()});
   f.run(chunk('function compactArabic(', 'async function getMp3Timing('));
   const r=await f.run('resolveMp3Read(RECITERS.find(r=>r.id==="AliJaber_Hafs"))');assert.equal(r.id,76);
+});
+test('Alafasy resolves Hafs, rejects other readings and retains the matching offline audio and timings',async()=>{
+  const f=fixture();
+  Object.assign(f.ctx,{mp3ReadsPromise:Promise.resolve([
+    {id:1,name:'مشاري العفاسي',rewaya:'ورش عن نافع',soar_count:114},
+    {id:123,name:'مشاري العفاسي',rewaya:'حفص عن عاصم',soar_count:114,folder_url:'https://cdn.mp3quran.net/audio/mishary-alafasy/r1/'},
+    {id:2,name:'علي جابر',rewaya:'حفص عن عاصم',soar_count:114}
+  ]),timedReadCache:new Map()});
+  f.run(chunk('function compactArabic(', 'async function getMp3Timing('));
+  const qari=f.run('RECITERS.find(r=>r.id==="MisharyAlafasy_Hafs")');
+  const read=await f.run('resolveMp3Read(RECITERS.find(r=>r.id==="MisharyAlafasy_Hafs"))');
+  assert.equal(read.id,123);
+  Object.assign(f.ctx,{ayahAudioSourceId:()=>'',audioPackageKey:(s,r)=>r.id+':'+s,MP3QURAN_READS_URL:'https://mp3quran.net/api/v3/ayat_timing/reads',getMp3Timing:async()=>({read})});
+  f.run(chunk('async function buildSurahAudioPackage(', 'async function downloadedAudioPackagesForSurah('));
+  f.ctx.alafasy=qari;
+  const pkg=await f.run('buildSurahAudioPackage(114,alafasy)');
+  assert.ok(pkg.urls.includes('https://cdn.mp3quran.net/audio/mishary-alafasy/r1/114.mp3'));
+  assert.ok(pkg.urls.includes('https://mp3quran.net/api/v3/ayat_timing?surah=114&read=123'));
+  assert.equal(pkg.key,'MisharyAlafasy_Hafs:114');
 });
 test('offline packages for whole-surah and timed reciters retain independent resources',async()=>{
   const f=fixture();Object.assign(f.ctx,{ayahAudioSourceId:()=>'',audioPackageKey:(s,r)=>r.id+':'+s,MP3QURAN_READS_URL:'https://mp3quran.net/api/v3/ayat_timing/reads',getMp3Timing:async()=>({read:{id:76,folder_url:'https://cdn.mp3quran.net/audio/ali-jaber/r1/'}})});

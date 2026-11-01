@@ -15,7 +15,8 @@ const reciters=[
   {slug:"maher-al-muaiqly",id:"MaherAlMuaiqly128kbps",display:"فضيلة الشيخ ماهر المعيقلي"},
   {slug:"mahmoud-al-hamoud",id:"MahmoudAlHamoud_Surah",display:"فضيلة الشيخ محمود الحمود",surahOnly:true},
   {slug:"mohamed-siddiq-al-minshawi",id:"Minshawy_Murattal_128kbps",display:"فضيلة الشيخ محمد صديق المنشاوي"},
-  {slug:"mahmoud-khalil-al-husary",id:"Husary_128kbps",display:"فضيلة الشيخ محمود خليل الحصري"}
+  {slug:"mahmoud-khalil-al-husary",id:"Husary_128kbps",display:"فضيلة الشيخ محمود خليل الحصري"},
+  {slug:"mishary-alafasy",id:"MisharyAlafasy_Hafs",display:"فضيلة الشيخ مشاري راشد العفاسي"}
 ];
 const reciterDescription=reciters.map(r=>r.display).join("، و");
 
