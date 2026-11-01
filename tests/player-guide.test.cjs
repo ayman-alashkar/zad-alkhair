@@ -57,6 +57,6 @@ test('page uses deferred video loading and a crawlable share image',()=>{
   const html=read('quran/player-guide/index.html');
   assert.match(html,/preload="none"/);assert.match(html,/controlslist="nodownload"/);
   assert.doesNotMatch(html,/<video[^>]*\ssrc=/);assert.doesNotMatch(html,/<a[^>]*\sdownload/);
-  assert.match(html,/<meta property="og:image" content="https:\/\/zad-alkhair.net\/social\/player-guide-card-v3.jpg">/);
-  assert.ok(fs.statSync(__dirname+'/../social/player-guide-card-v3.jpg').size>10000);
+  assert.match(html,/<meta property="og:image" content="https:\/\/zad-alkhair.net\/social\/player-guide-card-v4.jpg">/);
+  assert.ok(fs.statSync(__dirname+'/../social/player-guide-card-v4.jpg').size>10000);
 });
