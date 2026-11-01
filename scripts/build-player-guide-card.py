@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fontTools.ttLib import TTFont
 from PIL import Image, ImageDraw, ImageFont
+import cairosvg
 
 ROOT = Path(__file__).resolve().parent.parent
 SCALE = 3
@@ -40,7 +41,11 @@ image.paste(poster, (91*SCALE, 64*SCALE), mask)
 draw.rounded_rectangle((88*SCALE, 62*SCALE, 404*SCALE, 612*SCALE),
                        radius=25*SCALE, outline=GOLD, width=SCALE)
 
-text("زاد الخير", 1090, 139, 55, GOLD)
+mark_bytes = cairosvg.svg2png(url=str(ROOT / "icons/zad-mark.svg"),
+                             output_width=64*SCALE, output_height=64*SCALE)
+mark = Image.open(BytesIO(mark_bytes)).convert("RGBA")
+image.paste(mark, (1048*SCALE, 107*SCALE), mark)
+text("زاد الخير", 1028, 139, 55, GOLD)
 text("دليل مشغّل التلاوة", 1090, 268, 64, GREEN)
 text("تعرّف على إعدادات", 1090, 365, 29, "#647267", "alexandria-arabic-400-800")
 text("مشغّل التلاوة", 1090, 413, 29, "#647267", "alexandria-arabic-400-800")
@@ -52,4 +57,4 @@ draw.polygon([(1025*SCALE, 520*SCALE), (1025*SCALE, 547*SCALE),
               (1048*SCALE, 533.5*SCALE)], fill=GREEN)
 
 image.resize((1200, 675), Image.Resampling.LANCZOS).save(
-    ROOT / "social/player-guide-card-v4.jpg", quality=94, optimize=True)
+    ROOT / "social/player-guide-card-v5.jpg", quality=94, optimize=True)
