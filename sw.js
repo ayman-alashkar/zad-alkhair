@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v147";
+const SHELL_STAGE_CACHE="zad-shell-stage-v148";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -354,6 +354,11 @@ self.addEventListener("fetch",event=>{
   if(request.method!=="GET")return;
   const url=new URL(request.url);
 
+  // Guide movies are streamed only: never read or write the offline caches.
+  if(request.destination==="video"||/\.(?:mp4|webm)$/i.test(url.pathname)){
+    event.respondWith(fetch(request,{cache:"no-store"}));
+    return;
+  }
   if(isAudioUrl(url,request)){
     event.respondWith(audioFetch(request));
     return;

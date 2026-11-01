@@ -9,8 +9,8 @@ const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 test("sitemap contains every canonical discovery page once",()=>{
   const xml=read("sitemap.xml");
   const urls=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>match[1]);
-  assert.equal(urls.length,158);
-  assert.equal(new Set(urls).size,158);
+  assert.equal(urls.length,159);
+  assert.equal(new Set(urls).size,159);
   assert.ok(urls.includes("https://zad-alkhair.net/"));
   assert.ok(urls.includes("https://zad-alkhair.net/quran/"));
   assert.ok(urls.includes("https://zad-alkhair.net/khatmahs/"));
