@@ -14,5 +14,6 @@
   "source_publishable_true": 6236,
   "source_verified_text_exact": 6236,
   "source_exact_character_audit_true": 6236,
-  "fadl_sha256_matches": 60
+  "fadl_sha256_matches": 60,
+  "scope": "Original source import, before cross-reference normalization. Run npm run validate:tafsir for current published-file validation."
 }

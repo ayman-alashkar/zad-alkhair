@@ -1,0 +1,205 @@
+{
+  "captured_at": "2026-11-02",
+  "baseline": "1e369f0f44899745381a5a711460fc7c8d9077c5",
+  "branches": [
+    {
+      "branch": "fix/guide-share-brand-logo",
+      "head_sha": "3018695790a1372fb44f2545627a442357804bae",
+      "merged_pr": 27,
+      "merged_at": "2026-11-01T18:10:03Z",
+      "merge_commit": "1e369f0f44899745381a5a711460fc7c8d9077c5"
+    },
+    {
+      "branch": "fix/restore-original-guide-card",
+      "head_sha": "002376dcec8e8519e0175ac93a85de43c7a54021",
+      "merged_pr": 26,
+      "merged_at": "2026-11-01T18:01:24Z",
+      "merge_commit": "35316f5d9f61709f2f2307e819b14189a474069a"
+    },
+    {
+      "branch": "fix/native-player-guide-card",
+      "head_sha": "3cdfd63e4f5448587cf5f6ff73f016fdf9b54b81",
+      "merged_pr": 25,
+      "merged_at": "2026-11-01T17:55:48Z",
+      "merge_commit": "2773a1f75bebf54d604784422312a18c7f773918"
+    },
+    {
+      "branch": "fix/player-guide-video-share-card",
+      "head_sha": "928d3a92746badc4fef9539d9e956a320727c027",
+      "merged_pr": 24,
+      "merged_at": "2026-11-01T17:51:10Z",
+      "merge_commit": "93955639e7dbe348e9629f769df5b4bbb2674be6"
+    },
+    {
+      "branch": "fix/player-guide-play-and-sharing",
+      "head_sha": "3cb97251e7c21d50f6cfd89d82cbe5a4ae768eda",
+      "merged_pr": 23,
+      "merged_at": "2026-11-01T17:43:04Z",
+      "merge_commit": "a5111452de46f802f63e98c5f259dd9cc7c3cb5c"
+    },
+    {
+      "branch": "feat/online-player-video-guide",
+      "head_sha": "a5d5cbfec82b8ab218d71452c356bf3f7f6015e3",
+      "merged_pr": 22,
+      "merged_at": "2026-11-01T17:32:48Z",
+      "merge_commit": "2518af4586d5799a43002e03762f226a76b14c93"
+    },
+    {
+      "branch": "feat/ali-hudhaifi-reciter",
+      "head_sha": "1efd2291d60649276c92c4f20dcd2925e7a1a36e",
+      "merged_pr": 21,
+      "merged_at": "2026-10-31T16:05:11Z",
+      "merge_commit": "b10d5352459803aa3c149bcbb85f5ce6cb821a35"
+    },
+    {
+      "branch": "design/unified-guide-and-new-reciters",
+      "head_sha": "0c5552f34e418c9c4dae97ab905c51a41a487285",
+      "merged_pr": 20,
+      "merged_at": "2026-10-31T15:46:42Z",
+      "merge_commit": "679173a328e9397129d93481a173664a573101da"
+    },
+    {
+      "branch": "feat/ali-jaber-mahmoud-hamoud",
+      "head_sha": "dce8143998b76108679d880be4a8e0d33faec739",
+      "merged_pr": 19,
+      "merged_at": "2026-10-31T14:52:43Z",
+      "merge_commit": "2b7bcd0e8af17c1f5a452447412df77da844117e"
+    },
+    {
+      "branch": "fix/playlist-toggle-gold",
+      "head_sha": "8c8a557f9cc0c6f2d511061b02d51ae3a29eb9d1",
+      "merged_pr": 18,
+      "merged_at": "2026-10-31T14:15:09Z",
+      "merge_commit": "050ee628a1d4d8fdc4d9dd323e86a1076c294833"
+    },
+    {
+      "branch": "fix/center-player-surah-title",
+      "head_sha": "90fc548230a3ee0beeb9eb877fcff1e82e943944",
+      "merged_pr": 17,
+      "merged_at": "2026-10-31T14:06:02Z",
+      "merge_commit": "0f73e4a7ab7ba61d9fc2db05c07365d0d0699319"
+    },
+    {
+      "branch": "feat/quick-playlist-toggle",
+      "head_sha": "b7279a8a5f850305959f0ea5b6862b5d365b7042",
+      "merged_pr": 16,
+      "merged_at": "2026-10-31T13:57:14Z",
+      "merge_commit": "efc1f4288bc285137cae15735e0cc853f8ee679b"
+    },
+    {
+      "branch": "feat/playlist-playback-switch",
+      "head_sha": "48fe436072e0175ea22842b1743869b230e32644",
+      "merged_pr": 15,
+      "merged_at": "2026-10-31T13:46:44Z",
+      "merge_commit": "3e920257f36f256f1cdc07cae4f1d19578070971"
+    },
+    {
+      "branch": "cleanup/remove-manifest-bar-workaround",
+      "head_sha": "0a9826fd4c6ba2a7126fdaa8d6db2135688a5b34",
+      "merged_pr": 14,
+      "merged_at": "2026-10-31T08:05:39Z",
+      "merge_commit": "75eb16c3321df871413b6c4662ccdad53f8f25b0"
+    },
+    {
+      "branch": "fix/reader-header-context-overlap",
+      "head_sha": "106eaf6888c6b12fc556fbf84070bdaf4d8f58ad",
+      "merged_pr": 13,
+      "merged_at": "2026-10-31T07:53:18Z",
+      "merge_commit": "b9f8bfb138fef66a5b3459df2692b4086441d1dd"
+    },
+    {
+      "branch": "design/reader-identity-consistency",
+      "head_sha": "cca7063e5c5d1490d06a17a04b172e8eb64c792a",
+      "merged_pr": 12,
+      "merged_at": "2026-10-31T07:26:20Z",
+      "merge_commit": "9ee55bdaef6cc956e1536a26be7c851fa2f70b71"
+    },
+    {
+      "branch": "feat/timer-haptic-feedback",
+      "head_sha": "f32742a48cfa0670a8bec1b843896c514989728d",
+      "merged_pr": 11,
+      "merged_at": "2026-10-31T06:46:35Z",
+      "merge_commit": "5c3a73c40c52d4f02385f1608982381fac5a100d"
+    },
+    {
+      "branch": "design/player-quran-gold-ivory",
+      "head_sha": "7aa1763abcfee5a237209604a3f998e9d03b1125",
+      "merged_pr": 10,
+      "merged_at": "2026-10-31T06:42:13Z",
+      "merge_commit": "6588485924439845b0cc6318869d732bfaee7c2c"
+    },
+    {
+      "branch": "fix/player-theme-timer-wheels",
+      "head_sha": "2e364687c6aeca4affeedc33f38dc143d2142a3c",
+      "merged_pr": 9,
+      "merged_at": "2026-10-31T06:05:17Z",
+      "merge_commit": "e5cb2b3b4be7cd0c824cd7218d406b9ff212a4b7"
+    },
+    {
+      "branch": "fix/player-queue-repeat-timer",
+      "head_sha": "0e8857422f1df7179c1eebb72602bdb2b7eed18a",
+      "merged_pr": 8,
+      "merged_at": "2026-10-31T05:43:58Z",
+      "merge_commit": "df4505470eed8333692dc6a2dad984556324c87f"
+    },
+    {
+      "branch": "fix/reader-page-fitting-race",
+      "head_sha": "0269d066989b3c341a4d5f8fb3bc9716ac228b47",
+      "merged_pr": 7,
+      "merged_at": "2026-10-27T06:37:04Z",
+      "merge_commit": "e5e5ccc19e5c70828c883c8b5019845409267c3d"
+    },
+    {
+      "branch": "fix/offline-redirected-shell",
+      "head_sha": "64a54ede22f8e8b5ade62d55a8ebf7109c488b2d",
+      "merged_pr": 6,
+      "merged_at": "2026-10-27T05:54:25Z",
+      "merge_commit": "f5d66ca3fa19adeca9ad32ccee376e4142eaa551"
+    },
+    {
+      "branch": "fix/offline-reliability-20261027",
+      "head_sha": "a34d2a9d826a27b22c91060d199a8fffcb5da426",
+      "merged_pr": 5,
+      "merged_at": "2026-10-27T05:43:24Z",
+      "merge_commit": "58b62b23f497f91549e6bb0bdcd439c792da2f41"
+    },
+    {
+      "branch": "fix/organizer-name-access",
+      "head_sha": "8cd7cf21f9096c530bc2796b5dc817ebf9ecd0f6",
+      "merged_pr": 4,
+      "merged_at": "2026-10-27T05:26:21Z",
+      "merge_commit": "3905f709e7bcae8995ee59937c016a4be7148430"
+    },
+    {
+      "branch": "fix/offline-reader-first-launch",
+      "head_sha": "44ea9fb68ae147071de9c046a6831f29a767672a",
+      "merged_pr": 3,
+      "merged_at": "2026-08-28T20:32:57Z",
+      "merge_commit": "e9a5ad508ef372674b743622ff5f136bdd6b466e"
+    },
+    {
+      "branch": "codex/final-domain-transition",
+      "head_sha": "e0cc30106c2bc1becf474f5f511c24ca3515d0c2",
+      "merged_pr": 2,
+      "merged_at": "2026-08-26T10:56:55Z",
+      "merge_commit": "f5a66fbe171d97b63dae7fc719eb9cb131be5606"
+    },
+    {
+      "branch": "codex/domain-migration-bridge-v112",
+      "head_sha": "1effd2efc0e92b7c8664df66c9f04467ce2156a4",
+      "merged_pr": 1,
+      "merged_at": "2026-08-25T16:19:04Z",
+      "merge_commit": "443afdbaeb079f2b04a878ddb9d344c0671af6d0"
+    },
+    {
+      "branch": "codex/seo-content-home-20260827",
+      "head_sha": "9ee334ef29580a672ee5b5b231f18613d4a8066d",
+      "merged_by_ancestry": true
+    }
+  ],
+  "cleanup_status": "The 28 historical branches listed below were deleted by the user; a fresh GitHub read confirmed only the two branches in verified_remaining remain.",
+  "verified_remaining": [
+    "main",
+    "cleanup/project-foundations-20261102"
+  ]
+}

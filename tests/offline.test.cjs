@@ -1,38 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const vm=require('node:vm');
-const fs=require('node:fs');
-const source=fs.readFileSync(process.env.SW_PATH||__dirname+'/../sw.js','utf8');
-
-function setup(){
-  const stores=new Map(),messages=[],calls=[];
-  const key=r=>typeof r==='string'?r:r.url;
-  class Cache {
-    constructor(){this.items=new Map()}
-    async match(r,opts={}) {
-      const url=key(r);
-      if(this.items.has(url))return this.items.get(url).clone();
-      if(opts.ignoreSearch){
-        const u=new URL(url);u.search='';
-        for(const [k,v] of this.items){const vurl=new URL(k);vurl.search='';if(vurl.href===u.href)return v.clone()}
-      }
-    }
-    async put(r,v){this.items.set(key(r),v.clone())}
-    async delete(r){return this.items.delete(key(r))}
-  }
-  const caches={
-    async open(name){if(!stores.has(name))stores.set(name,new Cache());return stores.get(name)},
-    async keys(){return [...stores.keys()]},
-    async delete(name){return stores.delete(name)},
-    async match(r,opts){for(const cache of stores.values()){const hit=await cache.match(r,opts);if(hit)return hit}}
-  };
-  const self={location:new URL('https://example.test/'),registration:{scope:'https://example.test/'},clients:{matchAll:async()=>[{postMessage:m=>messages.push(m)}]},addEventListener(){},skipWaiting:async()=>{}};
-  let fetchImpl=async r=>new Response('ok:'+key(r));
-  const context=vm.createContext({self,caches,URL,Request,Response,Headers,AbortController,setTimeout,clearTimeout,console,
-    fetch:async(...args)=>{calls.push(key(args[0]));return fetchImpl(...args)}});
-  vm.runInContext(source,context);
-  return {run:s=>vm.runInContext(s,context),stores,messages,calls,setFetch:f=>fetchImpl=f};
-}
+const {setup}=require('./helpers/service-worker.cjs');
 
 test('shell survives offline startup and query-string reader navigation',async()=>{
   const e=setup();
@@ -127,4 +95,40 @@ test('whole-surah audio from the new host remains seekable from the existing off
   const full=await e.run(`audioFetch(new Request(${JSON.stringify(url)}))`);assert.equal(await full.text(),'audio-content');
   const range=await e.run(`audioFetch(new Request(${JSON.stringify(url)},{headers:{Range:"bytes=0-3"}}))`);
   assert.equal(range.status,206);assert.equal(range.headers.get('Content-Range'),'bytes 0-3/13');assert.equal(await range.text(),'audi');
+});
+
+test('a truncated cached Baqarah file is replaced without touching other downloads',async()=>{
+  const e=setup(),cache=await e.run('caches.open(TAFSIR_CACHE)');
+  const url='https://example.test/data/tafsir/al-wajeez/002.json';
+  await cache.put(url,new Response('Warning: truncated output'));
+  await cache.put('https://example.test/data/tafsir/al-wajeez/001.json',new Response('untouched tafsir'));
+  const audio=await e.run('caches.open(AUDIO_CACHE)');
+  await audio.put('https://example.test/recording.mp3',new Response('untouched audio'));
+  const bytes=require('node:fs').readFileSync(__dirname+'/../data/tafsir/al-wajeez/002.json','utf8');
+  e.setFetch(async(request,options)=>{assert.equal(request.url,url);assert.equal(options.cache,'no-store');return new Response(bytes)});
+  await e.run('repairCachedBaqarah()');
+  assert.equal((await (await cache.match(url)).json()).surah,2);
+  assert.equal(await (await cache.match('https://example.test/data/tafsir/al-wajeez/001.json')).text(),'untouched tafsir');
+  assert.equal(await (await audio.match('https://example.test/recording.mp3')).text(),'untouched audio');
+  e.calls.length=0;await e.run('repairCachedBaqarah()');assert.deepEqual(e.calls,[]);
+});
+
+test('offline repair invalidates only a broken file and readiness marker so download can resume',async()=>{
+  const e=setup(),cache=await e.run('caches.open(TAFSIR_CACHE)');
+  const url='https://example.test/data/tafsir/al-wajeez/002.json';
+  const marker='https://example.test/__zad_tafsir_alwajeez_v1_ready__';
+  await cache.put(url,new Response('truncated'));await cache.put(marker,new Response('ready'));
+  e.setFetch(async()=>{throw Error('offline')});
+  await e.run('repairCachedBaqarah()');
+  assert.equal(await cache.match(url),undefined);assert.equal(await cache.match(marker),undefined);
+  assert.equal((await e.run('packState()')).tafsirReady,false);
+});
+
+test('a failed repair cannot cache an invalid or incomplete replacement',async()=>{
+  for(const response of [new Response('failure',{status:503}),new Response('{}'),new Response('{"surah":2,"ayahs":{}}')]){
+    const e=setup(),cache=await e.run('caches.open(TAFSIR_CACHE)');
+    const url='https://example.test/data/tafsir/al-wajeez/002.json';
+    await cache.put(url,new Response('truncated'));e.setFetch(async()=>response);
+    await e.run('repairCachedBaqarah()');assert.equal(await cache.match(url),undefined);
+  }
 });

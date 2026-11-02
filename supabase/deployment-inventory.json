@@ -1,0 +1,205 @@
+{
+  "captured_at": "2026-11-02",
+  "project_ref": "webqpbcijjbawatykoxe",
+  "edge_functions": [
+    {
+      "slug": "telegram-webhook",
+      "version": 21,
+      "verify_jwt": false,
+      "bundle_sha256": "567bede6f656f3e0fd8bc80a1e7053d38eefb11dd175a60050afc5b2d8537aef"
+    },
+    {
+      "slug": "send-reminders",
+      "version": 24,
+      "verify_jwt": false,
+      "bundle_sha256": "753c573b64231ae1d75000a867f5085aa3a9c03a7de618dd74b511b9a0759928"
+    },
+    {
+      "slug": "notify-done",
+      "version": 13,
+      "verify_jwt": false,
+      "bundle_sha256": "7943b2c76b5c6f6a81137277bd632a368215c83968a8eec517eb2c03ff97edbf"
+    },
+    {
+      "slug": "cancel-khatmah",
+      "version": 5,
+      "verify_jwt": false,
+      "bundle_sha256": "ba847e28a029a0e3f2626b5fd55be3844fcd01697099a3627eab0c3a76e30c97"
+    },
+    {
+      "slug": "send-message",
+      "version": 9,
+      "verify_jwt": false,
+      "bundle_sha256": "a7805010fe4bc9f4bb0a0079befad0a7f62d754817f1d62752c1cb52e094a723"
+    },
+    {
+      "slug": "announce",
+      "version": 9,
+      "verify_jwt": false,
+      "bundle_sha256": "12601e56535740907cf05d644672d5a85c905ef931be7aea2f407c7234d134ba"
+    },
+    {
+      "slug": "migration-handoff",
+      "version": 4,
+      "verify_jwt": false,
+      "bundle_sha256": "69f475422b849ac8e9a51b7fadc9b59ce6b4a6f73580ad05100ab7a454fb01c9"
+    },
+    {
+      "slug": "telegram-migration",
+      "version": 3,
+      "verify_jwt": false,
+      "bundle_sha256": "001c257af4ab3d6e530eaf0ca1ab9ba5a3a208e2136a85649a5225039e4a57b1"
+    },
+    {
+      "slug": "send-completions",
+      "version": 1,
+      "verify_jwt": false,
+      "bundle_sha256": "c1bfae2a797295fcca3cc900e0cb4ab3d692922a0388dfea2c531be42a71391e"
+    }
+  ],
+  "migrations": [
+    {
+      "version": "20260821045610",
+      "name": "fix_multidevice_telegram_relink"
+    },
+    {
+      "version": "20260825030952",
+      "name": "add_pwa_install_analytics"
+    },
+    {
+      "version": "20260825173018",
+      "name": "add_origin_migration_handoffs"
+    },
+    {
+      "version": "20260826051821",
+      "name": "add_idempotent_telegram_domain_migration"
+    },
+    {
+      "version": "20260826052952",
+      "name": "cleanup_expired_telegram_migration_tokens"
+    },
+    {
+      "version": "20260830052131",
+      "name": "make_telegram_migration_redeem_idempotent"
+    },
+    {
+      "version": "20260830161825",
+      "name": "retire_telegram_migration_subsystem"
+    },
+    {
+      "version": "20261027052531",
+      "name": "organizer_name_access_modes"
+    },
+    {
+      "version": "20261101062026",
+      "name": "instant_durable_khatmah_completion_notifications"
+    }
+  ],
+  "tables": [
+    {
+      "schema": "private",
+      "name": "completed_khatmahs",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "events",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "juz",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "khatmah",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "khatmah_creation_log",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "member_domain_migrations",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "members",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "notification_deliveries",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "origin_migration_handoffs",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "pwa_installs",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "reading_history",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "round_requests",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "share_pending",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "public",
+      "name": "share_wait",
+      "rls_enabled": true,
+      "policies": 0
+    }
+  ],
+  "cron": [
+    {
+      "jobname": "zad-cleanup",
+      "schedule": "0 3 * * 0",
+      "active": true
+    },
+    {
+      "jobname": "zad-completion-retries",
+      "schedule": "* * * * *",
+      "active": true
+    },
+    {
+      "jobname": "zad-reminders",
+      "schedule": "*/5 * * * *",
+      "active": true
+    }
+  ],
+  "limits": [
+    "Migration history begins after initial database creation; these files alone do not reconstruct the complete baseline.",
+    "Cron command bodies and secret values are deliberately excluded."
+  ]
+}

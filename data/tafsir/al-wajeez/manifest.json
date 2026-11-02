@@ -41,7 +41,7 @@
       "ayah_count": 286,
       "first_key": "2:1",
       "last_key": "2:286",
-      "sha256": "f5107e7d07c76408f8c272d6082867e97663304da2b258faadd0a70969c9feda",
+      "sha256": "08eaa1bafbb2e10ee0aa041be40c46805d32110b7f019c25bcfcc38d4844279b",
       "bytes": 219142
     },
     {
@@ -61,8 +61,8 @@
       "ayah_count": 176,
       "first_key": "4:1",
       "last_key": "4:176",
-      "sha256": "a3c76c567a374a2a032d3f66ddd9ff4db8b8db26699638d950a988ac850a534f",
-      "bytes": 135472
+      "sha256": "f0d8fb09843172e94e1b793b0f88da7bea6c6c900d4a9b96b5a62544ab1ab5d3",
+      "bytes": 135479
     },
     {
       "surah": 5,
@@ -71,7 +71,7 @@
       "ayah_count": 120,
       "first_key": "5:1",
       "last_key": "5:120",
-      "sha256": "b590c423bab72751b9ec63761e601144259ccd91c321174ce49b99bb4a154ce4",
+      "sha256": "4a50f55a71d36aae2e3193f6797c87f52d7603e985897c196a642a9f7a94903d",
       "bytes": 95733
     },
     {
@@ -81,7 +81,7 @@
       "ayah_count": 165,
       "first_key": "6:1",
       "last_key": "6:165",
-      "sha256": "76e77aeb8b967e6ed64ad607a47910e02a9e363117edfd56d9ce19350be0175e",
+      "sha256": "f0297234d1f07ed29d32d6c34ef52ebd014aaa6fadef8922c13ea8691afe3706",
       "bytes": 103888
     },
     {
@@ -181,7 +181,7 @@
       "ayah_count": 128,
       "first_key": "16:1",
       "last_key": "16:128",
-      "sha256": "98a9d55b76f6d85aed2551058a38283e93f402d1d863922681330e3f98c3b26a",
+      "sha256": "9b27688b9d45898e640277992c44bc8916a29bcf847066ed5749257067d4c754",
       "bytes": 66810
     },
     {
@@ -1169,5 +1169,6 @@
     "file": "fadl.json",
     "sha256": "30fdb38ddaf9558da580d1a8a17f8b81fc087618e37791e1014aac07aed4ff88",
     "bytes": 30870
-  }
+  },
+  "normalization_note": "Source-package checks describe the original import. Published cross-references use verse/surah order; file hashes above and per-record hashes describe the current published data."
 }

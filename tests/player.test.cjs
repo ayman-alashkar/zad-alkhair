@@ -2,13 +2,12 @@ const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
-const html=fs.readFileSync(__dirname+'/../reader.html','utf8');
-const chunk=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
+const source=name=>fs.readFileSync(__dirname+'/../src/reader/'+name+'.js','utf8');
 function fixture(){
   const nodes=new Map();
-  const document={getElementById(id){if(!nodes.has(id))nodes.set(id,{textContent:''});return nodes.get(id)}};
-  const ctx=vm.createContext({document,console,reciter:{id:"husary"},Date:{now:()=>10000},clearInterval(){},setInterval:()=>1,
-    audio:{dataset:{playMode:'gapless'},currentTime:0,paused:false,pause(){this.paused=true}},
+  const document={addEventListener(){},querySelectorAll:()=>[],body:{classList:{contains:()=>false}},getElementById(id){if(!nodes.has(id))nodes.set(id,{textContent:'',addEventListener(){}});return nodes.get(id)}};
+  const mocks={document,console,window:{addEventListener(){}},reciter:{id:"husary"},Date:{now:()=>10000},clearInterval(){},setInterval:()=>1,
+    audio:{dataset:{playMode:'gapless'},currentTime:0,paused:false,addEventListener(){},pause(){this.paused=true}},
     play:{surah:112,current:1,from:1,to:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1},
     repeatMode:'off',continuousMode:true,continuousStopRef:null,queueActive:false,queueIndex:-1,playbackQueue:[],
     playbackWanted:true,audioRetryTimer:null,audioRetryKey:'',audioRetryCount:0,clearTimeout(){},setTimeout(){return 1},navigator:{onLine:true},AUDIO_OFFLINE_UNAVAILABLE:'offline',sleepAfterSurah:false,sleepDeadline:0,sleepTimerId:null,playbackRequestId:1,segmentAdvancing:false,
@@ -17,21 +16,20 @@ function fixture(){
     showToast(){},formatAudioTime:x=>String(x),played:[],
     async playCurrent(){this.played.push([this.play.surah,this.play.current])},
     syncPlaybackSelectionInBackground(){},clearSurahBasmalaPrelude(){},savePlaybackQueue(){},
-    storageSet(){},STORAGE_KEYS:{continuous:'continuous'},primeNextEveryAyah(){},primeNextTimedSurah(){},releaseAudioPreload(){}
-  });
+    storageSet(){},STORAGE_KEYS:{continuous:'continuous'},primeNextEveryAyah(){},primeNextTimedSurah(){},releaseAudioPreload(){},
+    populateReciters(){},syncReciterCapabilities(){},installMediaSession(){}
+  };
+  const ctx=vm.createContext({...mocks});
+  for(const name of ['reciters','player-ui'])vm.runInContext(source(name),ctx);
+  // Register real transport/queue controls while keeping browser media effects
+  // outside this deterministic policy fixture.
+  for(const name of ['populateReciters','syncReciterCapabilities','installMediaSession'])ctx[name]=mocks[name];
+  for(const name of ['audio-playback','transport-controls','playlist','playlist-ui'])vm.runInContext(source(name),ctx);
+  const actual={playCurrent:ctx.playCurrent,primeNextTimedSurah:ctx.primeNextTimedSurah};
+  Object.assign(ctx,mocks);
   vm.runInContext(`async function playCurrent(){played.push([play.surah,play.current])}`,ctx);
-  vm.runInContext(chunk('function isSurahOnly(', 'function defaultReciter('),ctx);
-  vm.runInContext(chunk('function previousAyahRef(', 'async function movePlayerTo('),ctx);
-  vm.runInContext(chunk('function timingRowAt(', 'function seekAudioProgress('),ctx);
-  vm.runInContext(chunk('function clearSleepTimer(){','document.addEventListener("visibilitychange"'),ctx);
-  vm.runInContext(chunk('function nextSurahRef(){','audio.ontimeupdate='),ctx);
-  vm.runInContext(chunk('function nextPlaybackRefForPriming(){','function releaseAudioPreload('),ctx);
-  vm.runInContext(chunk('function handleAudioFailure(', 'async function playCurrent('),ctx);
-  vm.runInContext(chunk('function reorderQueue(', 'function openPlaybackQueue('),ctx);
-  vm.runInContext(chunk('function setQueuePlayback(', 'function savePlaybackQueue('),ctx);
-  vm.runInContext(chunk('audio.onended=async()=>{','function opts('),ctx);
-  vm.runInContext(chunk('document.getElementById("repeatBtn").onclick=', '/* Transport policy:'),ctx);
-  return {ctx,run:code=>vm.runInContext(code,ctx),nodes};
+
+  return {ctx,run:code=>vm.runInContext(code,ctx),nodes,actual};
 }
 test('repeat-one stays on the same surah through many completions',async()=>{
   const f=fixture();f.ctx.repeatMode='one';
@@ -154,7 +152,7 @@ test('panel and sheet queue switches share state, including an empty saved list'
   const node=()=>({attributes:{},classes:new Set(),classList:{toggle(name,on){on?this.owner.classes.add(name):this.owner.classes.delete(name)}},setAttribute(name,value){this.attributes[name]=value}});
   const nodes=new Map(['queueBtn','queueToggle','queueEnabled','queueSourceHint'].map(id=>{const n=node();n.classList.owner=n;return [id,n]}));
   const context=vm.createContext({document:{getElementById:id=>nodes.get(id)||null},queueActive:false,playbackQueue:[]});
-  vm.runInContext(chunk('function syncQueueControls(', 'function setQueuePlayback('),context);
+  vm.runInContext(source('playlist'),context);
   const sync=()=>vm.runInContext('syncQueueControls()',context);
   sync();assert.equal(nodes.get('queueToggle').disabled,true);assert.equal(nodes.get('queueEnabled').disabled,true);
   context.playbackQueue=[{id:'saved',s:112}];context.queueActive=true;sync();
@@ -195,8 +193,6 @@ test('whole-surah sleep deadline and end-of-surah timer override repeating',asyn
 test('whole-surah seeking changes time without a false selected ayah or request cancellation',()=>{
   const f=fixture();f.ctx.reciter={provider:'surah'};f.ctx.audio.dataset.playMode='surah';f.ctx.audio.duration=200;
   f.ctx.paintAudioProgress=()=>{};
-  f.run(chunk('function timedSurahProgressMode(){','function paintAudioProgress('));
-  f.run(chunk('function seekAudioProgress(', 'function populateReciters('));
   f.run('seekAudioProgress(750)');assert.equal(f.ctx.audio.currentTime,150);assert.equal(f.ctx.play.current,1);assert.equal(f.ctx.playbackRequestId,1);
 });
 test('whole-surah source resets stale ayah restrictions before playing and uses no timing resolver',async()=>{
@@ -206,7 +202,7 @@ test('whole-surah source resets stale ayah restrictions before playing and uses 
   f.ctx.resetAudioProgress=()=>{};f.ctx.showPlayer=()=>{};f.ctx.mediaReady=async()=>{};f.ctx.pad3=n=>String(n).padStart(3,'0');
   f.ctx.audio.load=()=>{};f.ctx.audio.play=async()=>{};f.ctx.audio.currentTime=44;
   f.ctx.getMp3Timing=()=>{throw Error('timings must not be requested')};
-  f.run(chunk('async function playCurrent(', 'async function startSelected('));
+  f.ctx.playCurrent=f.actual.playCurrent;
   await f.run('playCurrent()');
   assert.match(f.ctx.audio.src,/hafs-an-asim\/112\.mp3$/);assert.equal(f.ctx.audio.currentTime,0);
   assert.equal(f.ctx.audio.dataset.playMode,'surah');assert.equal(f.ctx.activeSegment,null);assert.equal(f.ctx.activeTimingRows,null);
@@ -217,7 +213,7 @@ test('whole-surah preloading follows the active playlist source',async()=>{
   const f=fixture();Object.assign(f.ctx,{reciter:{id:'hamoud',provider:'surah',audioBase:'https://media.way2quran.com/mahmoud-fayyad-al-hamoud/hafs-an-asim/'},queueActive:true,queueIndex:0,playbackQueue:[{s:112},{s:114}],primedTimedSurahSrc:'',primedEveryAyahSrc:''});
   f.ctx.document.body={classList:{contains:()=>true}};f.ctx.audio.dataset.playMode='surah';f.ctx.pad3=n=>String(n).padStart(3,'0');
   f.ctx.isTimedProvider=()=>false;f.ctx.audioPreload={pause(){},load(){}};
-  f.run(chunk('async function primeNextTimedSurah(){','function syncPlaybackSelectionInBackground('));
+  f.ctx.primeNextTimedSurah=f.actual.primeNextTimedSurah;
   await f.run('primeNextTimedSurah()');assert.match(f.ctx.audioPreload.src,/114\.mp3$/);
   f.ctx.sleepAfterSurah=true;f.ctx.audioPreload.src='unchanged';await f.run('primeNextTimedSurah()');assert.equal(f.ctx.audioPreload.src,'unchanged');
 });

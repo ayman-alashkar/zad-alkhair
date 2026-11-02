@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v148";
+const SHELL_STAGE_CACHE="zad-shell-stage-v149";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -224,6 +224,33 @@ async function cleanupOldCaches(){
   }
 }
 
+/* A historical export truncated 002.json. Repair only that invalid cached file;
+   retain all valid Quran, Tafsir and audio downloads, including offline users. */
+async function repairCachedBaqarah(){
+  const cache=await caches.open(TAFSIR_CACHE);
+  const request=requestFor("./data/tafsir/al-wajeez/002.json");
+  const saved=await cache.match(request);
+  if(!saved)return;
+  async function valid(response){
+    try{
+      const data=await response.clone().json();
+      return data.schema_version===1&&data.source_id==="wahba_al_zuhayli_al_wajeez"&&
+        data.surah===2&&Object.keys(data.ayahs).length===286&&
+        Array.from({length:286},(_,i)=>data.ayahs[i+1]).every(r=>typeof r?.text==="string"&&typeof r?.sha256==="string");
+    }catch(_){return false}
+  }
+  if(await valid(saved))return;
+  await cache.delete(request);
+  await cache.delete(requestFor(TAFSIR_MARKER));
+  try{
+    const response=await fetch(request,{cache:"no-store"});
+    if(response.ok&&await valid(response)){
+      await cache.put(request,response);
+      if(await allPresent(cache,TAFSIR_REQUIRED))await markReady(cache,TAFSIR_MARKER,"tafsir-alwajeez-v1");
+    }
+  }catch(_){/* The normal offline-library download can resume this one file. */}
+}
+
 self.addEventListener("install",event=>{
   event.waitUntil((async()=>{
     await migrateLegacyShell();
@@ -236,6 +263,7 @@ self.addEventListener("activate",event=>{
   event.waitUntil((async()=>{
     await migrateLegacyShell();
     await migrateLegacyOfflinePack();
+    await repairCachedBaqarah();
     await cleanupOldCaches();
     await self.clients.claim();
   })());

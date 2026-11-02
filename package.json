@@ -1,0 +1,16 @@
+{
+  "name": "zad-alkhair",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Arabic Quran reader and group khatma PWA",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "build": "node scripts/build-app.cjs && node scripts/build-seo-pages.cjs",
+    "check:generated": "node scripts/build-app.cjs --check && node scripts/build-seo-pages.cjs --check",
+    "check:syntax": "node scripts/check-syntax.cjs",
+    "validate:tafsir": "node scripts/validate-tafsir.mjs",
+    "test": "node --test tests/*.test.cjs",
+    "check": "npm run check:syntax && npm run check:generated && npm run validate:tafsir && npm test",
+    "dev": "node scripts/serve.cjs"
+  }
+}

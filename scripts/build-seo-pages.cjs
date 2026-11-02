@@ -7,42 +7,20 @@ const esc=value=>String(value).replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;","
 const json=value=>JSON.stringify(value).replace(/</g,"\\u003c");
 const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 
-const reciters=[
-  {slug:"ayman-suwaid",id:"Ayman_Sowaid_64kbps",display:"فضيلة الشيخ أيمن سويد"},
-  {slug:"abdul-rashid-sufi",id:"AbdulRashidSufi_Hafs",display:"فضيلة الشيخ عبد الرشيد الصوفي"},
-  {slug:"ali-al-hudhaifi",id:"Hudhaify_128kbps",display:"فضيلة الشيخ علي بن عبد الرحمن الحذيفي"},
-  {slug:"ali-jaber",id:"AliJaber_Hafs",display:"فضيلة الشيخ علي جابر"},
-  {slug:"maher-al-muaiqly",id:"MaherAlMuaiqly128kbps",display:"فضيلة الشيخ ماهر المعيقلي"},
-  {slug:"mahmoud-al-hamoud",id:"MahmoudAlHamoud_Surah",display:"فضيلة الشيخ محمود الحمود",surahOnly:true},
-  {slug:"mohamed-siddiq-al-minshawi",id:"Minshawy_Murattal_128kbps",display:"فضيلة الشيخ محمد صديق المنشاوي"},
-  {slug:"mahmoud-khalil-al-husary",id:"Husary_128kbps",display:"فضيلة الشيخ محمود خليل الحصري"},
-  {slug:"mishary-alafasy",id:"MisharyAlafasy_Hafs",display:"فضيلة الشيخ مشاري راشد العفاسي"}
-];
+const {reciters,surahs,juz}=require("../src/discovery/catalog.json");
 const reciterDescription=reciters.map(r=>r.display).join("، و");
+const check=process.argv.includes("--check");
+const changed=new Set();
+function write(relative,content){
+  const file=path.join(root,relative);
+  if(fs.existsSync(file)&&fs.readFileSync(file,"utf8")===content)return;
+  changed.add(relative);
+  if(check)return;
+  fs.mkdirSync(path.dirname(file),{recursive:true});
+  fs.writeFileSync(file,content);
+}
 
-function readSurahs(){
-  return Array.from({length:114},(_,i)=>{
-    const n=i+1,file=path.join(root,"surah",String(n),"index.html"),src=fs.readFileSync(file,"utf8");
-    const name=(src.match(/<title>سورة ([^|<]+?)\s*\|/)||src.match(/<h1>سورة ([^—|<]+?)(?:\s|<)/)||[])[1];
-    const verses=(src.match(/name="zk:verses" content="(\d+)"/)||src.match(/rawAyah[\s\S]{0,160}?<=\s*(\d+)/)||[])[1];
-    if(!name||!verses)throw new Error(`تعذّر استخراج بيانات السورة ${n}`);
-    return {n,name:name.trim().replace(/\s+مكتوبة[\s\S]*$/,"").trim(),verses:Number(verses)};
-  });
-}
-function readJuz(){
-  return Array.from({length:30},(_,i)=>{
-    const n=i+1,file=path.join(root,"juz",String(n),"index.html"),src=fs.readFileSync(file,"utf8");
-    const title=(src.match(/<title>(الجزء [^|<]+?)\s*\|/)||[])[1];
-    const desc=(src.match(/<meta name="description" content="([^"]+)"/)||[])[1];
-    if(!title||!desc)throw new Error(`تعذّر استخراج بيانات الجزء ${n}`);
-    return {
-      n,
-      title:title.trim().replace(/\s+من القرآن[\s\S]*$/,"").trim(),
-      desc:desc.replace(/، مع التفسير الوجيز[\s\S]*$/,"").replace(/\.$/,"")+"."
-    };
-  });
-}
-function head({title,description,canonical,image="/zad-alkhair-share.png",type="website",jsonLd,extra=""}){
+function head({title,description,canonical,image="/social/zad-alkhair-share.png",type="website",jsonLd,extra=""}){
   const url=`${site}${canonical}`,imageUrl=`${site}${image}`;
   return `<!doctype html>
 <html lang="ar" dir="rtl">
@@ -97,32 +75,40 @@ function quranPage(surahs,juz){
   const reciterCards=reciters.map(r=>`<a class="card link reciter-card" href="/quran/reciters/${r.slug}/"><strong>${esc(r.display)}</strong><small${r.surahOnly?' class="surah-only"':""}>${r.surahOnly?"الاستماع إلى السور كاملة":"القراءة ومتابعة الآيات"}</small></a>`).join("");
   const surahLinks=surahs.map(s=>`<a class="item" href="/surah/${s.n}/"><span>سورة ${esc(s.name)}</span><small>آياتها: ${arNum(s.verses)}</small></a>`).join("");
   const juzLinks=juz.map(j=>`<a class="item" href="/juz/${j.n}/">${esc(j.title)}</a>`).join("");
-  return `${head({title,description,canonical,image:"/zad-alkhair-share.png",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["القرآن العظيم"]])}<main><h1>القرآن العظيم في زاد الخير</h1><p class="lead">اقرأ القرآن العظيم في مصحف المدينة، مع التفسير الوجيز للدكتور وهبة الزحيلي، وإمكانية الاستماع إلى تلاوات نخبة من القراء.</p><div class="actions"><a class="btn primary" href="/reader.html?home=1&amp;from=zad">افتح المصحف الشريف</a><a class="btn secondary" href="/quran/player-guide/">دليل مشغّل التلاوة</a><a class="btn secondary" href="/install/">ثبّت التطبيق</a></div><h2>الاستماع إلى القرآن بصوت القراء:</h2><div class="reciter-grid">${reciterCards}</div><h2 id="surahs">سور القرآن الكريم</h2><p>اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها.</p><nav class="link-grid surah-grid" aria-label="فهرس سور القرآن">${surahLinks}</nav><h2 id="ajzaa">أجزاء القرآن الكريم</h2><nav class="link-grid" aria-label="فهرس أجزاء القرآن">${juzLinks}</nav><h2>القراءة والاستماع دون اتصال</h2><p>يمكن تنزيل القرآن الكريم والتفسير كاملين للقراءة دون اتصال، كما يمكن تنزيل التلاوات التي تختارها سورةً سورةً للاستماع إليها لاحقًا.</p></main>${footer}</body></html>`;
+  return `${head({title,description,canonical,image:"/social/zad-alkhair-share.png",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["القرآن العظيم"]])}<main><h1>القرآن العظيم في زاد الخير</h1><p class="lead">اقرأ القرآن العظيم في مصحف المدينة، مع التفسير الوجيز للدكتور وهبة الزحيلي، وإمكانية الاستماع إلى تلاوات نخبة من القراء.</p><div class="actions"><a class="btn primary" href="/reader.html?home=1&amp;from=zad">افتح المصحف الشريف</a><a class="btn secondary" href="/quran/player-guide/">دليل مشغّل التلاوة</a><a class="btn secondary" href="/install/">ثبّت التطبيق</a></div><h2>الاستماع إلى القرآن بصوت القراء:</h2><div class="reciter-grid">${reciterCards}</div><h2 id="surahs">سور القرآن الكريم</h2><p>اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها.</p><nav class="link-grid surah-grid" aria-label="فهرس سور القرآن">${surahLinks}</nav><h2 id="ajzaa">أجزاء القرآن الكريم</h2><nav class="link-grid" aria-label="فهرس أجزاء القرآن">${juzLinks}</nav><h2>القراءة والاستماع دون اتصال</h2><p>يمكن تنزيل القرآن الكريم والتفسير كاملين للقراءة دون اتصال، كما يمكن تنزيل التلاوات التي تختارها سورةً سورةً للاستماع إليها لاحقًا.</p></main>${footer}</body></html>`;
 }
 function reciterPage(r,surahs){
   const title=`القرآن الكريم بصوت ${r.display} — استماع وقراءة | زاد الخير`,canonical=`/quran/reciters/${r.slug}/`;
   const description=r.surahOnly?`استمع إلى سور القرآن الكريم كاملة بصوت ${r.display} في زاد الخير. متابعة الآيات وتحديد الأجزاء غير متاحين بهذا الصوت.`:`اختر سورة من القرآن الكريم للاستماع إليها بصوت ${r.display} وقراءتها مع التفسير الوجيز في زاد الخير.`;
   const schema={"@context":"https://schema.org","@type":"CollectionPage",name:`القرآن الكريم بصوت ${r.display}`,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}};
   const links=surahs.map(s=>`<a class="item" href="/reader.html?surah=${s.n}&amp;ayah=1&amp;qari=${encodeURIComponent(r.id)}&amp;play=1" aria-label="سورة ${esc(s.name)} بصوت ${esc(r.display)}">سورة ${esc(s.name)}</a>`).join("");
-  return `${head({title,description,canonical,image:"/zad-alkhair-share.png",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["القرآن العظيم","/quran/"],[r.display]])}<main><div class="eyebrow">تلاوات القرآن الكريم</div><h1>القرآن الكريم بصوت ${esc(r.display)}</h1><p class="note">اختر سورة من القائمة، لتسمعها بصوت ${esc(r.display)} وتقرأها في ذات الوقت.</p>${r.surahOnly?'<p class="note">هذا القارئ متاح للاستماع إلى السور كاملة، مع قائمة التشغيل والتكرار والمؤقت والتنزيل. متابعة الآيات وتحديد الأجزاء غير متاحين بهذا الصوت.</p>':""}<nav class="link-grid" aria-label="سور القرآن بصوت ${esc(r.display)}">${links}</nav><div class="actions"><a class="btn secondary" href="/quran/">العودة إلى فهرس القرآن</a></div></main>${footer}</body></html>`;
+  return `${head({title,description,canonical,image:"/social/zad-alkhair-share.png",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["القرآن العظيم","/quran/"],[r.display]])}<main><div class="eyebrow">تلاوات القرآن الكريم</div><h1>القرآن الكريم بصوت ${esc(r.display)}</h1><p class="note">اختر سورة من القائمة، لتسمعها بصوت ${esc(r.display)} وتقرأها في ذات الوقت.</p>${r.surahOnly?'<p class="note">هذا القارئ متاح للاستماع إلى السور كاملة، مع قائمة التشغيل والتكرار والمؤقت والتنزيل. متابعة الآيات وتحديد الأجزاء غير متاحين بهذا الصوت.</p>':""}<nav class="link-grid" aria-label="سور القرآن بصوت ${esc(r.display)}">${links}</nav><div class="actions"><a class="btn secondary" href="/quran/">العودة إلى فهرس القرآن</a></div></main>${footer}</body></html>`;
 }
 
-const surahs=readSurahs(),juz=readJuz();
-for(const s of surahs)fs.writeFileSync(path.join(root,"surah",String(s.n),"index.html"),surahPage(s));
-for(const j of juz)fs.writeFileSync(path.join(root,"juz",String(j.n),"index.html"),juzPage(j));
-fs.mkdirSync(path.join(root,"quran"),{recursive:true});
-fs.writeFileSync(path.join(root,"quran","index.html"),quranPage(surahs,juz));
-for(const r of reciters){const dir=path.join(root,"quran","reciters",r.slug);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,"index.html"),reciterPage(r,surahs))}
+for(const s of surahs)write(`surah/${s.n}/index.html`,surahPage(s));
+for(const j of juz)write(`juz/${j.n}/index.html`,juzPage(j));
+write("quran/index.html",quranPage(surahs,juz));
+for(const r of reciters)write(`quran/reciters/${r.slug}/index.html`,reciterPage(r,surahs));
 for(const relative of ["about/index.html","khatmahs/index.html"]){
-  const file=path.join(root,relative);let html=fs.readFileSync(file,"utf8");
+  let html=fs.readFileSync(path.join(root,"src/discovery",relative.replace("/index.html",".html")),"utf8");
   html=html.replace(/<header class="site-head">[\s\S]*?<\/header>/,siteHead)
     .replace(/<meta name="theme-color" content="[^"]+">/,'<meta name="theme-color" content="#F5F0E4">')
     .replace(/<script src="\/seo-pages\.js[^"]*"><\/script>\s*/g,"")
     .replace(/<link rel="stylesheet" href="\/seo-pages\.css[^"]*">/,'<script src="/seo-pages.js?v=144"></script>\n<link rel="stylesheet" href="/seo-pages.css?v=144">');
-  fs.writeFileSync(file,html);
+  write(relative,html);
 }
 const urls=["/","/quran/","/quran/player-guide/","/khatmahs/","/about/","/install/",...reciters.map(r=>`/quran/reciters/${r.slug}/`),...surahs.map(s=>`/surah/${s.n}/`),...juz.map(j=>`/juz/${j.n}/`)];
+// Preserve dates and ordering for unchanged pages; rebuilding alone is not a modification.
+const previous=fs.existsSync(path.join(root,"sitemap.xml"))?fs.readFileSync(path.join(root,"sitemap.xml"),"utf8"):"";
+const dates=new Map([...previous.matchAll(/<url><loc>([^<]+)<\/loc><lastmod>([^<]+)<\/lastmod><\/url>/g)].map(m=>[m[1],m[2]]));
+const wanted=new Set(urls.map(u=>site+u));
+const ordered=[...dates.keys()].filter(u=>wanted.has(u));
+for(const u of wanted)if(!ordered.includes(u))ordered.push(u);
 const today=new Date().toISOString().slice(0,10);
-fs.writeFileSync(path.join(root,"sitemap.xml"),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u=>`  <url><loc>${site}${u}</loc><lastmod>${today}</lastmod></url>`).join("\n")}\n</urlset>\n`);
-fs.writeFileSync(path.join(root,"robots.txt"),`User-agent: *\nAllow: /\n\nSitemap: ${site}/sitemap.xml\n`);
-console.log(`Generated ${surahs.length} surah pages, ${juz.length} juz pages, ${reciters.length} reciter pages and ${urls.length} sitemap URLs.`);
+const lastmod=u=>changed.has(u===site+"/"?"index.html":u.slice(site.length+1)+"index.html")?today:dates.get(u)||today;
+write("sitemap.xml",`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${ordered.map(u=>`  <url><loc>${u}</loc><lastmod>${lastmod(u)}</lastmod></url>`).join("\n")}\n</urlset>\n`);
+write("robots.txt",`User-agent: *\nAllow: /\n\nSitemap: ${site}/sitemap.xml\n`);
+if(check&&changed.size){
+  console.error("Stale generated files; run npm run build:",...changed);
+  process.exitCode=1;
+}else console.log(`${check?"Checked":"Generated"} ${surahs.length} surah pages, ${juz.length} juz pages, ${reciters.length} reciter pages and ${urls.length} sitemap URLs.`);

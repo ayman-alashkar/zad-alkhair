@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="زاد الخير">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" href="/icons/icon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="/icons/zad-mark.svg" sizes="any" type="image/svg+xml">
+<meta name="theme-color" content="#F5F0E4">
+<script>
+(()=>{try{const dark=localStorage.getItem("zad:qcf4:theme")==="dark";document.documentElement.dataset.theme=dark?"dark":"light";document.querySelector('meta[name="theme-color"]').content=dark?"#061F1D":"#F5F0E4"}catch(_){}})();
+</script>
+<script src="migration.js?v=117"></script>
+<title>القرآن العظيم | زاد الخير</title>
+<meta name="description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
+<meta name="robots" content="noindex,follow">
+<link rel="canonical" href="https://zad-alkhair.net/quran/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ar_AR">
+<meta property="og:site_name" content="زاد الخير">
+<meta property="og:url" content="https://zad-alkhair.net/reader">
+<meta property="og:title" content="القرآن العظيم | زاد الخير">
+<meta property="og:description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
+<meta property="og:image" content="https://zad-alkhair.net/social/zad-alkhair-share.png">
+<meta property="og:image:secure_url" content="https://zad-alkhair.net/social/zad-alkhair-share.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="675">
+<meta property="og:image:alt" content="القرآن العظيم — قارئ زاد الخير">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://zad-alkhair.net/reader">
+<meta name="twitter:title" content="القرآن العظيم | زاد الخير">
+<meta name="twitter:description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
+<meta name="twitter:image" content="https://zad-alkhair.net/social/zad-alkhair-share.png">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+
+<style><!-- @inline styles.css --></style>
+</head>
+<body class="hidden-tools zad-identity">
+<div class="reader" id="reader">
+  <div class="track" id="track"></div>
+  <div class="loading" id="loading">تحميل مصحف المدينة QCF4…</div>
+</div>
+
+<div class="quran-offline-setup" id="offlineSetup" aria-live="polite" aria-atomic="true">
+  <div class="quran-offline-card">
+    <div class="quran-offline-head">
+      <div class="quran-offline-title" id="offlineSetupTitle">جارٍ تجهيز القرآن والتفسير للعمل دون اتصال</div>
+      <div class="quran-offline-percent" id="offlineSetupPercent">٠٪</div>
+    </div>
+    <div class="quran-offline-note">يتم هذا مرة واحدة فقط</div>
+    <div class="quran-offline-track" role="progressbar" aria-label="تقدم تنزيل القرآن والتفسير" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="offlineSetupTrack">
+      <i class="quran-offline-fill" id="offlineSetupFill"></i>
+    </div>
+  </div>
+</div>
+
+<header class="chrome topbar">
+  <button class="brand brand-home quran-home-link" id="quranHomeBtn" type="button" aria-label="فتح فهرس القرآن">الفهرس</button>
+  <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div class="top-actions">
+    <button type="button" class="iconbtn" id="themeBtn" aria-label="الوضع"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg></button>
+    <button type="button" class="iconbtn" id="bookmarkBtn" aria-label="العلامات المرجعية"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg></button>
+    <button type="button" class="iconbtn zad-return-btn" id="backBtn" aria-label="العودة إلى زاد الخير" title="العودة إلى زاد الخير"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M11 6h4.5a4.5 4.5 0 1 1 0 9H4"/><path d="M7 12s-3 2.21-3 3s3 3 3 3"/></g></svg></button>
+  </div>
+</header>
+
+<footer class="chrome bottom">
+  <button type="button" class="navbtn bottom-prev" id="prevBtn" aria-label="الصفحة السابقة"><svg viewBox="0 0 24 24"><path d="M8 5l7 7-7 7"/></svg></button>
+  <button type="button" class="tool" id="tafsirBtn"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M5.333 3c2.46-.003 4.836.887 6.667 2.5V21a10.07 10.07 0 0 0-6.667-2.5c-1.562 0-2.343 0-2.688-.22a1.16 1.16 0 0 1-.424-.425C2 17.51 2 16.895 2 15.663v-9.26c0-1.428 0-2.141.549-2.72c.548-.579 1.11-.609 2.234-.668Q5.056 3 5.333 3m13.334 0A10.07 10.07 0 0 0 12 5.5V21a10.07 10.07 0 0 1 6.667-2.5c1.562 0 2.343 0 2.688-.22c.207-.133.291-.218.424-.425c.221-.345.221-.96.221-2.192v-9.26c0-1.428 0-2.141-.549-2.72s-1.11-.609-2.234-.668Q18.944 3 18.667 3"/><path d="M19 7.326a10.4 10.4 0 0 0-2 .13m2 3.55q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.681m4 2.819q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.68M5 7.326a10.4 10.4 0 0 1 2 .13m-2 3.55q.166-.005.333-.005A10.1 10.1 0 0 1 9 11.682m-4 2.819q.166-.005.333-.005a10.1 10.1 0 0 1 3.667.68"/></g></svg><span>التفسير</span></button>
+  <button type="button" class="tool primary" id="listenBtn"><span>▶</span><span>استماع</span></button>
+  <button type="button" class="navbtn bottom-next" id="nextBtn" aria-label="الصفحة التالية"><svg viewBox="0 0 24 24"><path d="M16 5l-7 7 7 7"/></svg></button>
+</footer>
+
+<nav class="desktop-page-nav" aria-label="التنقل بين صفحات المصحف">
+  <button type="button" class="desktop-page-btn" id="desktopNextBtn" aria-label="الصفحة التالية">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 5l-7 7 7 7"/></svg>
+  </button>
+  <button type="button" class="desktop-page-btn" id="desktopPrevBtn" aria-label="الصفحة السابقة">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l7 7-7 7"/></svg>
+  </button>
+</nav>
+
+<div class="ayah-menu" id="ayahMenu"></div>
+
+<button type="button" class="audio-fab" id="audioFab" aria-label="إظهار مشغل التلاوة">
+  <span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+</button>
+
+<section class="audio-panel" id="audioPanel" aria-label="مشغل التلاوة">
+  <button type="button" class="audio-collapse" id="collapsePlayer" aria-label="إخفاء المشغل">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="audio-top">
+    <button type="button" class="audio-round" id="stopPlayer" aria-label="إغلاق المشغل">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <button type="button" class="audio-round audio-timer" id="sleepTimer" aria-label="مؤقت الإيقاف">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M12 9v4l3 2M9 2h6M12 2v3"/></svg>
+      <small id="timerLabel">—</small>
+    </button>
+    <div class="audio-qari-wrap"><div class="qari-marquee" aria-hidden="true"><span id="qariName"></span></div><select class="audio-qari" id="panelQari" aria-label="اختيار القارئ"></select></div>
+    <button type="button" class="audio-round" id="audioJump" aria-label="اختيار السورة والآية" title="الانتقال إلى سورة وآية">
+      <svg viewBox="0 0 24 24"><path d="M5 6h10M5 12h7M5 18h10"/><path d="m16 10 3 2-3 2"/></svg>
+    </button>
+    <button type="button" class="audio-round" id="audioSettings" aria-label="إعدادات الاستماع">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 15 6l-.3-2.6h-4L10.4 6A8 8 0 0 0 8 7.1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1A8 8 0 0 0 10.4 18l.3 2.6h4L15 18a8 8 0 0 0 1.5-1.1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"/></svg>
+    </button>
+  </div>
+  <div class="audio-now-row">
+    <div class="audio-now-copy"><span class="audio-eyebrow">التلاوة الآن</span><div class="audio-now" id="audioNow">—</div></div>
+    <div class="audio-queue-tools">
+    <button type="button" class="audio-queue-link" id="queueBtn" aria-label="فتح قائمة التشغيل" title="قائمة التشغيل">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h10M4 16h7"/><path d="m16 14 5 3-5 3Z"/></svg>
+      <span id="queueCount">٠</span>
+    </button>
+    <button type="button" class="audio-queue-toggle" id="queueToggle" role="switch" aria-label="التشغيل من القائمة" aria-checked="false" disabled title="أضف سوراً إلى القائمة لتفعيلها"><span class="audio-queue-toggle-track" aria-hidden="true"></span></button>
+    </div>
+    <button type="button" class="audio-pill audio-continuous" id="continuousBtn" aria-label="استمرار التلاوة بعد الآية المحددة" title="استمرار التلاوة">متابعة</button>
+  </div>
+  <div class="audio-progress-row" aria-label="تقدم التلاوة">
+    <span class="audio-progress-time" id="audioTimeCurrent" dir="ltr">٠:٠٠</span>
+    <div class="audio-progress">
+      <i id="progressFill"></i>
+      <input id="progressSeek" type="range" min="0" max="1000" value="0" step="1" dir="rtl" aria-label="الانتقال في التلاوة">
+    </div>
+    <span class="audio-progress-time" id="audioTimeTotal" dir="ltr">٠:٠٠</span>
+  </div>
+  <div class="audio-controls">
+    <button type="button" class="audio-pill" id="speedBtn">1.0×</button>
+    <button type="button" class="audio-control" id="audioPrev" aria-label="الآية السابقة">
+      <svg viewBox="0 0 24 24"><path d="M6 5v14M9 6l9 6-9 6Z"/></svg>
+    </button>
+    <button type="button" class="audio-control audio-main" id="panelPlay" aria-label="تشغيل أو إيقاف">▶</button>
+    <button type="button" class="audio-control" id="audioNext" aria-label="الآية التالية">
+      <svg viewBox="0 0 24 24"><path d="M18 5v14M15 6l-9 6 9 6Z"/></svg>
+    </button>
+    <button type="button" class="audio-control audio-repeat" id="repeatBtn" aria-label="التكرار">
+      <svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg>
+    </button>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="notice" id="notice">الجزء ١ · الحزب ١</div>
+<audio id="audio" preload="auto"></audio>
+<audio id="audioPreload" preload="auto" aria-hidden="true"></audio>
+
+<!-- التفسير الوجيز: بيانات الإنتاج المحققة مضمّنة محليًا للاختبار Offline -->
+
+<script><!-- @inline app.js --></script>
+</body>
+</html>
