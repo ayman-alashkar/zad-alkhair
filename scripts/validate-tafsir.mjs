@@ -1,8 +1,9 @@
-// node validate-tafsir.mjs
+// node scripts/validate-tafsir.mjs
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import path from 'node:path';
-const root = process.argv[2] || new URL('./data/tafsir/al-wajeez/', import.meta.url).pathname;
+import { fileURLToPath } from 'node:url';
+const root = process.argv[2] || fileURLToPath(new URL('../data/tafsir/al-wajeez/', import.meta.url));
 const index = JSON.parse(fs.readFileSync(path.join(root,'index.json'),'utf8'));
 const manifest = JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));
 if(index.surah_files.length!==114) throw new Error('Expected 114 surah files');

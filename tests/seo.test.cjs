@@ -131,7 +131,7 @@ test("reader accepts a validated reciter deep link",()=>{
   assert.match(reader,/<meta name="robots" content="noindex,follow">/);
   assert.match(reader,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/quran\/">/);
   assert.match(reader,/<meta property="og:url" content="https:\/\/zad-alkhair\.net\/reader">/);
-  assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/zad-alkhair-share\.png">/);
+  assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/social\/zad-alkhair-share\.png">/);
   assert.match(reader,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
   assert.match(reader,/if\(entry\.qari\)\{/);
   assert.match(reader,/if\(entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);

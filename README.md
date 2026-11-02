@@ -27,7 +27,9 @@ npm run check
 | المظهر المشترك لصفحات الاكتشاف | `seo-pages.css` و`seo-pages.js` |
 | دليل الفيديو | `quran/player-guide/` |
 | العمل دون اتصال | `sw.js` |
-| التفسير | `data/tafsir/al-wajeez/` |
+| التفسير وبيانات مصادر الصوت | `data/tafsir/al-wajeez/` و`data/maher-timing-source.json` |
+| صور المشاركة ومصادرها | `social/` |
+| سكربتات البناء والتحقق | `scripts/` |
 | الوظائف الخلفية | `supabase/functions/` |
 | سجل ترحيلات قاعدة البيانات المنشورة | `supabase/migrations/` |
 
