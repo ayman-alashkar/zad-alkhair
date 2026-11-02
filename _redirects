@@ -1,0 +1,5 @@
+# Retain previously shared image URLs while keeping one current guide card.
+/social/player-guide.jpg /social/player-guide-card-v5.jpg 301
+/social/player-guide-card-v3.jpg /social/player-guide-card-v5.jpg 301
+/social/player-guide-card-v4.jpg /social/player-guide-card-v5.jpg 301
+/icons/migration-ready-v114.svg /icons/migration-ready-v115.svg 301

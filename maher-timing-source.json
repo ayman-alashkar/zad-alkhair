@@ -5,5 +5,6 @@
   "upstream_timestamps_tree": "bb3cab219edddb3ba34770f5db0d43d1c6a35188",
   "files": 114,
   "strategy": "immutable commit pin",
-  "reader": "zad-reader-v58-pinned-maher-timings.html"
+  "reader": "reader.html",
+  "original_export_reader": "zad-reader-v58-pinned-maher-timings.html"
 }
