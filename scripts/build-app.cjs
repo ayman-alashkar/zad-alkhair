@@ -4,6 +4,7 @@
 // separate for editing; emitted HTML retains the original inline execution order.
 const fs = require("node:fs");
 const path = require("node:path");
+const { readAppScript } = require("./app-source.cjs");
 const root = path.resolve(__dirname, "..");
 const check = process.argv.includes("--check");
 let stale = false;
@@ -14,7 +15,7 @@ for (const [name, output] of [["home", "index.html"], ["reader", "reader.html"]]
   for (const file of ["styles.css", "app.js"]) {
     const marker = `<!-- @inline ${file} -->`;
     if (html.split(marker).length !== 2) throw Error(`Expected one ${marker} in ${name}`);
-    const source = fs.readFileSync(path.join(dir, file), "utf8");
+    const source = file === "app.js" ? readAppScript(dir) : fs.readFileSync(path.join(dir, file), "utf8");
     const closing = file.endsWith(".js") ? /<\/script[\s>]/i : /<\/style[\s>]/i;
     if (closing.test(source)) throw Error(`Unsafe inline closing tag in ${name}/${file}`);
     html = html.replace(marker, () => source);

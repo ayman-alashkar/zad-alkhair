@@ -196,5 +196,10 @@
       "head_sha": "9ee334ef29580a672ee5b5b231f18613d4a8066d",
       "merged_by_ancestry": true
     }
+  ],
+  "cleanup_status": "The 28 historical branches listed below were deleted by the user; a fresh GitHub read confirmed only the two branches in verified_remaining remain.",
+  "verified_remaining": [
+    "main",
+    "cleanup/project-foundations-20261102"
   ]
 }

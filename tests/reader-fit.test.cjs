@@ -2,10 +2,7 @@ const test=require("node:test");
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const vm=require("node:vm");
-const html=fs.readFileSync(process.env.READER_PATH||__dirname+"/../reader.html","utf8");
-const start=html.indexOf("const pageFitJobs=new WeakMap();");
-const end=html.indexOf("\nfunction clearVerseSelection()",start);
-if(start<0||end<0)throw Error("Page fitting implementation not found");
+const source=fs.readFileSync(__dirname+"/../src/reader/page-fit.js","utf8");
 
 function fixture(){
   const frames=[];
@@ -24,7 +21,7 @@ function fixture(){
     INK_GUARD:.45,MIN_LINE_PX:24,FLOOR_TOLERANCE:.90,
     surahGlyphAspect:()=>1,renderSurahHeaderCanvas(){}
   });
-  vm.runInContext(html.slice(start,end),ctx);
+  vm.runInContext(source,ctx);
   return {ctx,root,stage,host,normals,run:()=>vm.runInContext("fitPage(42)",ctx),
     frame(){const pending=frames.splice(0);pending.forEach(f=>f())}};
 }
