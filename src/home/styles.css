@@ -1528,3 +1528,9 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 .hero::before,.juz-panel::before{content:"";display:block;position:absolute;border:0;border-radius:0;top:-60px;left:-60px;width:calc(100% + 620px);height:calc(100% + 460px);
   z-index:-1;pointer-events:none;opacity:.05;background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:ztFlow 60s linear infinite}
 @media (prefers-reduced-motion:reduce){.hero::before,.juz-panel::before{animation:none}}
+
+/* Same-origin navigations to and from the Quran reader cross-fade instead of flashing;
+   the section tabs share one name so they hold still. Browsers without support ignore this. */
+@view-transition{navigation:auto}
+.zk-tabs{view-transition-name:zad-tabs}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}

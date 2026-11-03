@@ -2445,6 +2445,11 @@ html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);
   html[data-theme="dark"] .reader-app-tabs a[aria-current="page"]{background:rgba(228,201,128,.11)}
   .reader-app-tabs a[aria-current="page"]::before{display:none}
 }
+
+/* Same as the home page: cross-fade between the two app pages; the tabs hold still. */
+@view-transition{navigation:auto}
+.reader-app-tabs{view-transition-name:zad-tabs}
+@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
