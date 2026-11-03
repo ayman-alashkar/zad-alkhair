@@ -211,6 +211,10 @@ function ptTick(){
   }catch(e){}
 }
 
+/* يذكّر بالطريقة المعتمدة في البلد إن اختار القارئ غيرها. */
+function ptMethodHint(L,method){
+  return method===L[2]?`الطريقة المعتمدة في ${L[0]}.`:`المعتمدة في ${L[0]}: ${PT_METHODS[L[2]]}.`;
+}
 function ptSetupDialog(){
   const cur=ptGet();
   let li=cur?PT_LANDS.findIndex(L=>L[0]===cur.land):-1;
@@ -242,7 +246,7 @@ function ptSetupDialog(){
       <details class="ptadv"${adv?" open":""}><summary>إعدادات متقدمة</summary>
         <div class="field-row" style="margin:.5rem 0 0"><label>طريقة الحساب</label>
           <select class="field" id="pt-method">${meths}</select>
-          <p class="hint">تُختار تلقائيًّا بحسب البلد، ولا حاجة لتغييرها في الغالب.</p>
+          <p class="hint" id="pt-method-hint">${ptMethodHint(L,method)}</p>
         </div>
       </details>
       <div class="actions">
@@ -259,11 +263,11 @@ function ptSetupDialog(){
     };
     $("pt-city").onchange=e=>{ci=+e.target.value;};
     $("pt-madhab").onchange=e=>{madhab=e.target.value;};
-    $("pt-method").onchange=e=>{method=e.target.value;touched=true;};
+    $("pt-method").onchange=e=>{method=e.target.value;touched=method!==PT_LANDS[li][2];$("pt-method-hint").textContent=ptMethodHint(PT_LANDS[li],method);};
     $("pt-ok").onclick=()=>{
       const L2=PT_LANDS[li], c=L2[3][ci];
       ptSave({land:L2[0],city:c[0],lat:c[1],lng:c[2],tz:c[3]||L2[1],method,madhab});
-      render(); prayerDialog();
+      render(); closeLayer();
     };
     if($("pt-del")) $("pt-del").onclick=()=>{
       localStorage.removeItem(PT_KEY); closeLayer(); render();

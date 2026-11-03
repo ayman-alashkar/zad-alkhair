@@ -1481,6 +1481,92 @@ body::before{inset:-60px -320px -220px -60px;opacity:.03;
    (solid #061F1D, a soft gold glow at the top, the rosette at 3%). */
 html{background:#061F1D}
 body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.07),transparent 34rem),#061F1D!important}
+
+/* ═══ Prayer-times screen (prayer-screen.js): the second page of the home layer ═══ */
+.zt-page[hidden]{display:none}
+.zp-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;min-height:64px}
+.zp-head h2{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:32px;line-height:1.35;color:var(--zt-ink)}
+.zp-head p{margin:0;font-size:13px;color:var(--zt-muted)}
+.zp-change{flex:none;min-height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border:1px solid var(--zt-line);border-radius:14px;
+  background:var(--zt-surface);color:var(--zt-gold);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.zp-change svg,.zp-step svg,.zp-pin svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.zp-grid{display:grid;gap:16px}
+.zp-still .zt-rise,.zp-still .zt-arc-fill,.zp-still .zt-sun-dot{animation:none}
+.zp-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.zp-grid>.zp-col:last-child{animation-delay:.12s}
+
+.zp-daynav{display:flex;align-items:center;gap:8px}
+.zp-step{flex:none;width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid var(--zt-line);border-radius:14px;
+  background:var(--zt-surface);color:var(--zt-ink);cursor:pointer}
+.zp-step svg{width:20px;height:20px}
+.zp-step.flat{border-color:transparent;background:transparent;color:var(--zt-muted)}
+.zp-daytitle{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
+.zp-daytitle b{font-size:15px;color:var(--zt-ink)}
+.zp-daytitle>span{font-size:12px;line-height:1.6;color:var(--zt-muted)}
+
+.zp-hero .zt-arc-label{inset:30px 0 0}
+.zp-hero-cap{font-size:12px;color:rgba(255,249,234,.74)}
+.zp-empty .zt-prayer-empty{padding:16px 4px 10px}
+.zp-pin{width:60px;height:60px;border-radius:20px;display:grid;place-items:center;background:rgba(228,201,128,.14);color:#E4C980}
+.zp-pin svg{width:30px;height:30px;stroke-width:1.6}
+
+.zp-table{padding:6px 8px;border:1px solid var(--zt-line);border-radius:22px;background:var(--zt-surface)}
+.zp-table ol{list-style:none;margin:0;padding:0}
+.zp-table li{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 12px;border-radius:15px;color:var(--zt-ink)}
+.zp-table li.sun{color:var(--zt-muted)}
+.zp-table li.past{opacity:.5}
+.zp-table li.now{background:var(--zt-gold-soft);font-weight:700}
+.zp-name{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:15px}
+.zp-tag{padding:2px 8px;border-radius:99px;background:var(--zt-gold);color:var(--zt-surface);font-size:10px;font-weight:700}
+.zp-left{font-size:11px;font-weight:500;color:var(--zt-muted)}
+.zp-time{flex:none;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.zp-today{align-self:center;min-height:44px;padding:0 18px;border:1px solid var(--zt-line);border-radius:14px;background:var(--zt-surface);
+  color:var(--zt-gold);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+
+.zp-cal{padding:16px 14px 14px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
+.zp-cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;text-align:center}
+.zp-cal-head h3{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:24px;line-height:1.3}
+.zp-cal-head span{font-size:11px;color:var(--zt-muted)}
+.zp-week,.zp-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.zp-week{margin-bottom:4px}
+.zp-week span{text-align:center;font-size:11px;font-weight:600;color:var(--zt-muted)}
+.zp-week span:last-child{color:var(--zt-gold)}
+.zp-days{gap:3px}
+.zp-days button{position:relative;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;
+  border:1px solid transparent;border-radius:13px;background:transparent;color:var(--zt-ink);font:inherit;cursor:pointer;transition:background .2s ease}
+.zp-days button:hover{background:var(--zt-gold-soft)}
+.zp-days b{font-size:15px;font-weight:500;line-height:1.2}
+.zp-days small{font-size:9px;line-height:1.2;opacity:.75}
+.zp-days .today{border-color:var(--zt-gold)}
+.zp-days .today b,.zp-days .sel b{font-weight:700}
+.zp-days .sel,.zp-days .sel:hover{background:var(--zt-active);color:var(--zt-on-active)}
+.zp-cal i{display:block;width:6px;height:6px;box-sizing:border-box;border-radius:50%}
+.zp-days i{position:absolute;top:5px;left:5px}
+.zp-cal i.ev{background:var(--zt-gold)}
+.zp-cal i.wh{border:1.5px solid var(--zt-gold)}
+.zp-days .sel i.ev{background:var(--zt-on-active)}
+.zp-days .sel i.wh{border-color:var(--zt-on-active)}
+.zp-legend{list-style:none;margin:14px 0 0;padding:12px 4px 0;border-top:1px solid var(--zt-line);display:flex;flex-direction:column;gap:8px}
+.zp-legend li{display:flex;align-items:center;gap:10px;font-size:13px}
+.zp-legend i{flex:none;width:8px;height:8px}
+.zp-legend span{flex:1}
+.zp-legend small{font-size:12px;color:var(--zt-muted);text-align:end}
+.zp-adj-row{margin:12px 4px 0;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--zt-muted)}
+.zp-adj-toggle{min-height:44px;padding:0 12px;border:0;border-radius:12px;background:transparent;color:var(--zt-gold);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.zp-adj{margin-top:6px;display:flex;align-items:center;gap:8px;padding:6px;border:1px solid var(--zt-line);border-radius:16px;background:var(--zt-bg);
+  animation:ztRise .35s cubic-bezier(.2,.8,.2,1) both}
+.zp-adj span{flex:1;text-align:center;font-size:13px;font-weight:600}
+.zp-adj button{width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:12px;background:var(--zt-surface);color:var(--zt-ink);font:inherit;font-size:20px;cursor:pointer}
+.zp-adj button:disabled{opacity:.35;cursor:default}
+
+@media (min-width:860px){
+  .zp-head h2{font-size:42px}
+  .zp-head p{font-size:15px}
+  .zp-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+  .zp-hero .zt-arc-label{inset:44px 0 0}
+  .zp-days button{height:56px}
+  .zp-days b{font-size:17px}
+}
 </style>
 
 
@@ -1492,7 +1578,7 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 <section class="zk-launch zk-today" id="zk-launch" aria-label="زاد الخير">
   <div class="zt-pattern" aria-hidden="true"></div>
   <div class="zt-scroll">
-    <div class="zt-page">
+    <div class="zt-page" id="zt-today-page">
       <header class="zt-head zt-rise">
         <div class="zt-brand">
           <span class="zt-mark"><img class="zk-launch-mark" src="icons/zad-mark.svg" alt="" width="40" height="40"></span>
@@ -1536,6 +1622,7 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
         <div class="zt-reading zt-rise" id="zt-reading"></div>
       </div>
     </div>
+    <div class="zt-page zp-page" id="zt-prayer-page" hidden></div>
   </div>
 </section>
 
@@ -2027,6 +2114,10 @@ function ptTick(){
   }catch(e){}
 }
 
+/* يذكّر بالطريقة المعتمدة في البلد إن اختار القارئ غيرها. */
+function ptMethodHint(L,method){
+  return method===L[2]?`الطريقة المعتمدة في ${L[0]}.`:`المعتمدة في ${L[0]}: ${PT_METHODS[L[2]]}.`;
+}
 function ptSetupDialog(){
   const cur=ptGet();
   let li=cur?PT_LANDS.findIndex(L=>L[0]===cur.land):-1;
@@ -2058,7 +2149,7 @@ function ptSetupDialog(){
       <details class="ptadv"${adv?" open":""}><summary>إعدادات متقدمة</summary>
         <div class="field-row" style="margin:.5rem 0 0"><label>طريقة الحساب</label>
           <select class="field" id="pt-method">${meths}</select>
-          <p class="hint">تُختار تلقائيًّا بحسب البلد، ولا حاجة لتغييرها في الغالب.</p>
+          <p class="hint" id="pt-method-hint">${ptMethodHint(L,method)}</p>
         </div>
       </details>
       <div class="actions">
@@ -2075,11 +2166,11 @@ function ptSetupDialog(){
     };
     $("pt-city").onchange=e=>{ci=+e.target.value;};
     $("pt-madhab").onchange=e=>{madhab=e.target.value;};
-    $("pt-method").onchange=e=>{method=e.target.value;touched=true;};
+    $("pt-method").onchange=e=>{method=e.target.value;touched=method!==PT_LANDS[li][2];$("pt-method-hint").textContent=ptMethodHint(PT_LANDS[li],method);};
     $("pt-ok").onclick=()=>{
       const L2=PT_LANDS[li], c=L2[3][ci];
       ptSave({land:L2[0],city:c[0],lat:c[1],lng:c[2],tz:c[3]||L2[1],method,madhab});
-      render(); prayerDialog();
+      render(); closeLayer();
     };
     if($("pt-del")) $("pt-del").onclick=()=>{
       localStorage.removeItem(PT_KEY); closeLayer(); render();
@@ -4353,7 +4444,8 @@ function ztPaintChrome(){
 /* ── التاريخ ── */
 function ztPaintDates(){
   const now=new Date();
-  try{ztEl("zt-hijri").textContent=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura",{day:"numeric",month:"long",year:"numeric"}).format(now)}catch(_){}
+  /* التاريخ الهجري نفسه الذي تعرضه شاشة المواقيت (prayer-screen.js). */
+  try{ztEl("zt-hijri").textContent=zpHijriLong(zpTodayNoon())+" هـ"}catch(_){}
   try{ztEl("zt-greg").textContent=new Intl.DateTimeFormat("ar-EG",{weekday:"long",day:"numeric",month:"long"}).format(now)}catch(_){}
 }
 
@@ -4542,7 +4634,7 @@ function ztPaintTabs(){
   const tabs=ztEl("zk-tabs");
   if(!tabs)return;
   const onHome=document.body.classList.contains("zk-launch-open");
-  const current=onHome?"zk-tab-home":"zk-launch-zad";
+  const current=!onHome?"zk-launch-zad":ztView==="prayer"?"zk-launch-prayer":"zk-tab-home";
   ["zk-tab-home","zk-launch-quran","zk-launch-zad","zk-launch-prayer"].forEach((id,i)=>{
     const el=ztEl(id);if(!el)return;
     if(id===current){el.setAttribute("aria-current","page");tabs.style.setProperty("--zk-tab",String(i))}
@@ -4554,7 +4646,24 @@ function ztOnLaunchChange(){
   ztPaintTabs();ztPaintChrome();ztMenu(false);
   if(document.body.classList.contains("zk-launch-open"))ztRefresh();
 }
-function ztRefresh(){ztPaintDates();ztPrayerRender();ztReadingRender()}
+function ztRefresh(){
+  ztPaintDates();
+  if(ztView==="prayer")zpRender();
+  else{ztPrayerRender();ztReadingRender()}
+}
+/* صفحتان داخل طبقة الرئيسية: «اليوم» و«مواقيت الصلاة». */
+let ztView="today";
+function ztSetView(view){
+  ztView=view==="prayer"?"prayer":"today";
+  const today=ztEl("zt-today-page"),prayer=ztEl("zt-prayer-page");
+  if(today)today.hidden=ztView!=="today";
+  if(prayer)prayer.hidden=ztView!=="prayer";
+  const scroll=document.querySelector("#zk-launch .zt-scroll");
+  if(scroll)scroll.scrollTop=0;
+  if(ztView==="prayer")zpReset();
+  ztPaintTabs();ztMenu(false);
+  if(document.body.classList.contains("zk-launch-open"))ztRefresh();
+}
 
 /* ── قائمة «المزيد» ── */
 function ztMenu(open){
@@ -4575,16 +4684,250 @@ function ztMenu(open){
   document.addEventListener("click",event=>{if(!event.target.closest(".zt-menu-wrap"))ztMenu(false)});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")ztMenu(false)});
   ztEl("zt-help")?.addEventListener("click",()=>{ztMenu(false);document.body.classList.add("zk-launch-prayer");helpDialog()});
-  ztEl("zk-tab-home")?.addEventListener("click",()=>{zkShowLaunch();zkArmRootGuard()});
+  ztEl("zk-tab-home")?.addEventListener("click",()=>{zkShowLaunch();ztSetView("today");zkArmRootGuard()});
   /* بعد إغلاق أي نافذة (كاختيار المدينة) تُحدَّث البطاقات. */
   const layer=ztEl("layer");
   if(layer&&"MutationObserver" in window){
-    new MutationObserver(()=>{if(!layer.firstChild&&document.body.classList.contains("zk-launch-open"))ztPrayerRender()})
+    new MutationObserver(()=>{if(!layer.firstChild&&document.body.classList.contains("zk-launch-open"))ztRefresh()})
       .observe(layer,{childList:true});
   }
-  setInterval(()=>{if(!document.hidden&&document.body.classList.contains("zk-launch-open"))ztPrayerTick()},1000);
+  setInterval(()=>{
+    if(document.hidden||!document.body.classList.contains("zk-launch-open"))return;
+    ztView==="prayer"?zpTick():ztPrayerTick();
+  },1000);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&document.body.classList.contains("zk-launch-open"))ztRefresh()});
-  window.addEventListener("online",()=>{if(document.body.classList.contains("zk-launch-open"))ztReadingRender()});
+  window.addEventListener("online",()=>{if(document.body.classList.contains("zk-launch-open")&&ztView==="today")ztReadingRender()});
+})();
+/* ═══════════ شاشة مواقيت الصلاة ═══════════
+   صفحة ثانية داخل طبقة الرئيسية (#zk-launch)، يفتحها تبويب «مواقيت الصلاة».
+   المواقيت من حاسبة prayer.js، والتقويم الهجري من تقويم أم القرى في المتصفح
+   مع تصحيحات الإعلانات الرسمية في data/hijri-adjustments.json، ثم تعديل
+   القارئ نفسه (±يومين) إن اختاره. */
+const ZP_DAY=864e5;
+const ZP_ADJ_KEY="zad:hijri-adjust";
+const ZP_OFFICIAL_KEY="zad:hijri-official-v1";
+const ZP_OFFICIAL_URL="data/hijri-adjustments.json";
+const ZP_MONTHS=["محرم","صفر","ربيع الأول","ربيع الآخر","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"];
+const ZP_EVENTS={"1-1":"رأس السنة الهجرية","1-10":"يوم عاشوراء","9-1":"أول رمضان","10-1":"عيد الفطر","12-9":"يوم عرفة","12-10":"عيد الأضحى"};
+const ZP_WEEKDAYS=["س","ح","ن","ث","ر","خ","ج"];   /* السبت … الجمعة */
+
+/* ── التقويم الهجري ──
+   التاريخ يُمثَّل بطابع الساعة ١٢ ظهرًا (UTC) من اليوم الميلادي المقصود. */
+let zpOfficialMonths={};   /* {"1447-10":"2026-03-20"}: بداية الشهر كما أُعلنت */
+function zpReadOfficialCache(){
+  try{const v=JSON.parse(localStorage.getItem(ZP_OFFICIAL_KEY)||"null");if(v&&typeof v==="object")zpOfficialMonths=v}catch(_){}
+}
+function zpValidOfficial(data){
+  const months=data&&data.months;
+  if(!months||typeof months!=="object")return null;
+  const out={};
+  for(const [key,value] of Object.entries(months)){
+    if(/^\d{4}-(?:[1-9]|1[0-2])$/.test(key)&&/^\d{4}-\d{2}-\d{2}$/.test(String(value))&&!Number.isNaN(Date.parse(value+"T12:00:00Z")))out[key]=String(value);
+  }
+  return out;
+}
+/* من الشبكة أولًا، وما حُفظ آخر مرة عند انقطاعها. */
+async function zpLoadOfficial(){
+  try{
+    const response=await fetch(ZP_OFFICIAL_URL,{cache:"no-cache"});
+    if(!response.ok)return;
+    const months=zpValidOfficial(await response.json());
+    if(!months)return;
+    const changed=JSON.stringify(months)!==JSON.stringify(zpOfficialMonths);
+    zpOfficialMonths=months;
+    try{localStorage.setItem(ZP_OFFICIAL_KEY,JSON.stringify(months))}catch(_){}
+    if(changed)ztRefresh();
+  }catch(_){}
+}
+function zpAdj(){
+  try{const n=Math.round(Number(localStorage.getItem(ZP_ADJ_KEY))||0);return Math.max(-2,Math.min(2,n))}catch(_){return 0}
+}
+function zpSetAdj(n){
+  try{n?localStorage.setItem(ZP_ADJ_KEY,String(n)):localStorage.removeItem(ZP_ADJ_KEY)}catch(_){}
+}
+const zpUQFormat=(()=>{try{return new Intl.DateTimeFormat("en-US-u-ca-islamic-umalqura",{timeZone:"UTC",year:"numeric",month:"numeric",day:"numeric"})}catch(_){return null}})();
+function zpUQ(ts){
+  const p=Object.fromEntries(zpUQFormat.formatToParts(new Date(ts)).filter(x=>x.type!=="literal").map(x=>[x.type,parseInt(x.value,10)]));
+  return {y:p.year,m:p.month,d:p.day};
+}
+function zpOfficialStart(y,m){
+  const value=zpOfficialMonths[`${y}-${m}`];
+  return value?Date.parse(value+"T12:00:00Z"):null;
+}
+/* أم القرى، مصحّحًا ببدايات الشهور المعلنة (رؤية الهلال). */
+function zpHijriOfficial(ts){
+  const u=zpUQ(ts);
+  const next=u.m===12?[u.y+1,1]:[u.y,u.m+1];
+  const nextStart=zpOfficialStart(next[0],next[1]);
+  if(nextStart!=null&&ts>=nextStart)return {y:next[0],m:next[1],d:Math.round((ts-nextStart)/ZP_DAY)+1};
+  const start=zpOfficialStart(u.y,u.m);
+  if(start==null||ts>=start)return start==null?u:{y:u.y,m:u.m,d:Math.round((ts-start)/ZP_DAY)+1};
+  /* أُعلن الشهر متأخرًا عن أم القرى: هذا اليوم من الشهر السابق. */
+  const prev=u.m===1?[u.y-1,12]:[u.y,u.m-1];
+  const uqStart=ts-(u.d-1)*ZP_DAY;
+  const prevStart=zpOfficialStart(prev[0],prev[1])??(uqStart-ZP_DAY-(zpUQ(uqStart-ZP_DAY).d-1)*ZP_DAY);
+  return {y:prev[0],m:prev[1],d:Math.round((ts-prevStart)/ZP_DAY)+1};
+}
+function zpHijri(ts){return zpHijriOfficial(ts+zpAdj()*ZP_DAY)}
+const zpHijriLong=ts=>{const h=zpHijri(ts);return `${ztArabic(h.d)} ${ZP_MONTHS[h.m-1]} ${ztArabic(h.y)}`};
+const zpGreg=(ts,options)=>new Intl.DateTimeFormat("ar-EG",{timeZone:"UTC",...options}).format(new Date(ts));
+/* ظهر اليوم الحالي، بتوقيت المدينة المختارة إن وُجدت، وإلا بتوقيت الجهاز. */
+function zpTodayNoon(tz){
+  const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:tz||undefined,year:"numeric",month:"numeric",day:"numeric"})
+    .formatToParts(new Date()).filter(x=>x.type!=="literal").map(x=>[x.type,parseInt(x.value,10)]));
+  return Date.UTC(parts.year,parts.month-1,parts.day,12);
+}
+
+/* ── حالة الشاشة ── */
+/* zpAnimate: الحركة عند فتح الشاشة فقط، لا عند كل نقرة داخلها. */
+let zpDayOff=0,zpMonthOff=0,zpAdjOpen=false,zpHero=null,zpAnimate=true;
+
+function zpSafeCfg(){
+  if(typeof ptReady!=="function"||!ptReady())return null;
+  const cfg=ptGet();
+  if(!cfg)return null;
+  try{ptTimes(cfg);return cfg}catch(_){return null}
+}
+function zpPickCity(){document.body.classList.add("zk-launch-prayer");ptSetupDialog()}
+
+function zpDayHtml(cfg){
+  const now=Date.now(),todayNoon=zpTodayNoon(cfg.tz),dayNoon=todayNoon+zpDayOff*ZP_DAY;
+  const weekday=zpGreg(dayNoon,{weekday:"long"});
+  const title=zpDayOff===0?`اليوم، ${weekday}`:zpDayOff===1?`غدًا، ${weekday}`:zpDayOff===-1?`أمس، ${weekday}`:weekday;
+  const times=ptTimes(cfg,new Date(now+zpDayOff*ZP_DAY));
+  const isToday=zpDayOff===0;
+  const cur=isToday?ptCurrent(cfg):null,next=isToday?ptNext(cfg):null;
+  const rows=PT_ORDER.map(k=>{
+    const at=times[k].getTime(),isNow=k===cur,isNext=!!next&&next.today&&next.key===k;
+    const cls=[k==="sunrise"&&"sun",isNow&&"now",isToday&&at<=now&&!isNow&&"past"].filter(Boolean).join(" ");
+    return `<li class="${cls}"><span class="zp-name">${PT_NAMES[k]}${isNow?'<span class="zp-tag">وقتها الآن</span>':""}${isNext?`<span class="zp-left">بعد ${arDur((at-now)/6e4,true)}</span>`:""}</span><span class="zp-time"><bdi>${ptFmt(times[k],cfg.tz)}</bdi></span></li>`;
+  }).join("");
+  let hero="";
+  zpHero=null;
+  if(isToday){
+    const prayers=["fajr","dhuhr","asr","maghrib","isha"];
+    const passed=prayers.filter(k=>times[k].getTime()<=now);
+    const prevAt=passed.length?times[passed[passed.length-1]].getTime():ptTimes(cfg,new Date(now-ZP_DAY)).isha.getTime();
+    zpHero={prevAt,tz:cfg.tz,at:next.at.getTime()};
+    hero=`<section class="zt-prayer zp-hero" aria-label="الصلاة القادمة">
+      <div class="zt-prayer-top"><span>${cur?`وقت ${PT_NAMES[cur]} الآن`:"مواقيت اليوم"}</span><span class="zt-clock" id="zp-clock"></span></div>
+      <div class="zt-arc">
+        <svg viewBox="-8 -2 236 124" aria-hidden="true">
+          <path class="zt-arc-track" d="M 206 110 A 96 96 0 0 0 14 110"/>
+          <path class="zt-arc-fill" id="zp-arc-fill" d="M 206 110 A 96 96 0 0 0 14 110"/>
+          <g class="zt-sun-dot" id="zp-sun"><circle r="9" fill="#E4C980" opacity=".25"/><circle r="5" fill="#FFF4CD"/></g>
+        </svg>
+        <div class="zt-arc-label"><div class="zp-hero-cap">الصلاة القادمة</div><div class="zt-next-name">${PT_NAMES[next.key]}</div><div class="zt-countdown" id="zp-countdown"></div></div>
+      </div></section>`;
+  }
+  return `<div class="zp-daynav">
+      <button class="zp-step" type="button" data-zp-day="-1" aria-label="اليوم السابق"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      <div class="zp-daytitle"><b>${title}</b><span><span class="zt-hijri">${zpHijriLong(dayNoon)}</span> · ${zpGreg(dayNoon,{day:"numeric",month:"long",year:"numeric"})}</span></div>
+      <button class="zp-step" type="button" data-zp-day="1" aria-label="اليوم التالي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+    </div>
+    ${hero}
+    <section class="zp-table" aria-label="جدول المواقيت"><ol>${rows}</ol></section>`;
+}
+
+function zpCalendarHtml(todayNoon){
+  /* الشهر المعروض: نتحرك من اليوم شهرًا بعد شهر. */
+  let anchor=todayNoon;
+  for(let i=0;i<Math.abs(zpMonthOff);i++){
+    anchor=zpMonthOff>0?anchor+(31-zpHijri(anchor).d)*ZP_DAY:anchor-zpHijri(anchor).d*ZP_DAY;
+  }
+  const first=anchor-(zpHijri(anchor).d-1)*ZP_DAY,m0=zpHijri(first);
+  const days=[];
+  for(let ts=first;zpHijri(ts).m===m0.m&&days.length<31;ts+=ZP_DAY)days.push(ts);
+  const lead=(new Date(first).getUTCDay()+1)%7;
+  const selected=todayNoon+zpDayOff*ZP_DAY;
+  const cells=Array.from({length:lead},()=>"<span></span>");
+  const legend=[];
+  for(const ts of days){
+    const h=zpHijri(ts),ev=ZP_EVENTS[`${h.m}-${h.d}`];
+    /* الأيام البيض ١٣–١٥، إلا الثالث عشر من ذي الحجة فهو من أيام التشريق. */
+    const white=!ev&&h.d>=13&&h.d<=15&&!(h.m===12&&h.d===13);
+    const label=zpHijriLong(ts)+(ev?`، ${ev}`:white?"، من الأيام البيض":"");
+    const cls=[ts===selected&&"sel",ts===todayNoon&&"today"].filter(Boolean).join(" ");
+    cells.push(`<button type="button" class="${cls}" data-zp-pick="${Math.round((ts-todayNoon)/ZP_DAY)}" aria-label="${label}" aria-pressed="${ts===selected}">
+      <b>${ztArabic(h.d)}</b><small>${zpGreg(ts,{day:"numeric"})}</small>${ev?'<i class="ev" aria-hidden="true"></i>':white?'<i class="wh" aria-hidden="true"></i>':""}</button>`);
+    if(ev)legend.push(`<li><i class="ev" aria-hidden="true"></i><span>${ev}</span><small>${zpHijriLong(ts)} · ${zpGreg(ts,{day:"numeric",month:"long"})}</small></li>`);
+  }
+  const month=ZP_MONTHS[m0.m-1];
+  legend.push(`<li><i class="wh" aria-hidden="true"></i><span>الأيام البيض</span><small>${m0.m===12?`${ztArabic(14)}–${ztArabic(15)} ${month}، والثالث عشر من أيام التشريق`:`${ztArabic(13)}–${ztArabic(15)} ${month}`}</small></li>`);
+  const last=days[days.length-1],g1=zpGreg(first,{month:"long"}),g2=zpGreg(last,{month:"long"});
+  const greg=`${g1===g2?g1:`${g1} – ${g2}`} ${zpGreg(last,{year:"numeric"})}`;
+  const adj=zpAdj();
+  const adjNote=adj?`، معدّل ${adj>0?"+":"−"}${ztArabic(Math.abs(adj))}`:"";
+  const adjLabel=!adj?"بلا تعديل":`${adj>0?"متقدّم":"متأخّر"} ${Math.abs(adj)===1?"يومًا":"يومين"}`;
+  return `<section class="zp-cal" aria-label="التقويم الهجري">
+    <div class="zp-cal-head">
+      <button class="zp-step flat" type="button" data-zp-month="-1" aria-label="الشهر السابق"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+      <div><h3>${month} ${ztArabic(m0.y)}</h3><span>${greg}</span></div>
+      <button class="zp-step flat" type="button" data-zp-month="1" aria-label="الشهر التالي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+    </div>
+    <div class="zp-week" aria-hidden="true">${ZP_WEEKDAYS.map(d=>`<span>${d}</span>`).join("")}</div>
+    <div class="zp-days">${cells.join("")}</div>
+    <ul class="zp-legend">${legend.join("")}</ul>
+    <div class="zp-adj-row"><span>وفق التقويم المعتمد في السعودية${adjNote}</span>
+      <button type="button" class="zp-adj-toggle" data-zp-adj-toggle aria-expanded="${zpAdjOpen}">تعديل</button></div>
+    ${zpAdjOpen?`<div class="zp-adj" role="group" aria-label="تعديل التاريخ الهجري">
+      <button type="button" data-zp-adj="-1" aria-label="يوم إلى الخلف"${adj<=-2?" disabled":""}>−</button>
+      <span aria-live="polite">${adjLabel}</span>
+      <button type="button" data-zp-adj="1" aria-label="يوم إلى الأمام"${adj>=2?" disabled":""}>+</button></div>`:""}
+  </section>`;
+}
+
+function zpRender(){
+  const host=ztEl("zt-prayer-page");
+  if(!host)return;
+  const cfg=zpSafeCfg();
+  const todayNoon=zpTodayNoon(cfg&&cfg.tz);
+  const head=`<header class="zp-head zt-rise">
+      <div><h2>مواقيت الصلاة</h2>${cfg?`<p>${esc(cfg.city)}، ${esc(cfg.land)}</p>`:""}</div>
+      ${cfg?`<button class="zp-change" type="button" data-zp-city><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg><span>تغيير</span></button>`:""}
+    </header>`;
+  const day=cfg?zpDayHtml(cfg):(zpHero=null,`<section class="zt-prayer zp-empty"><div class="zt-prayer-empty">
+      <span class="zp-pin" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>
+      <h3>اختر مدينتك لعرض المواقيت</h3>
+      <button class="zt-btn-gold" type="button" data-zp-city>اختر مدينتك</button></div></section>`);
+  const back=zpDayOff||zpMonthOff?`<button class="zp-today" type="button" data-zp-today>العودة إلى اليوم</button>`:"";
+  host.classList.toggle("zp-still",!zpAnimate);zpAnimate=false;
+  host.innerHTML=`${head}<div class="zp-grid"><div class="zp-col zt-rise">${day}${back}</div><div class="zp-col zt-rise">${zpCalendarHtml(todayNoon)}</div></div>`;
+  zpTick();
+}
+function zpTick(){
+  if(!zpHero)return;
+  const now=Date.now(),left=zpHero.at-now;
+  if(left<=0){zpRender();return}
+  const s=Math.floor(left/1000),two=n=>String(n).padStart(2,"0");
+  const countdown=ztEl("zp-countdown");
+  if(countdown)countdown.innerHTML='بعد <bdi dir="ltr">'+ztArabic(Math.floor(s/3600)+":"+two(Math.floor(s/60)%60)+":"+two(s%60))+"</bdi>";
+  const clock=ztEl("zp-clock");
+  if(clock)clock.textContent="الآن "+ptFmt(new Date(),zpHero.tz);
+  const elapsed=Math.min(1,Math.max(0,(now-zpHero.prevAt)/Math.max(1,zpHero.at-zpHero.prevAt)));
+  const fill=ztEl("zp-arc-fill");
+  if(fill)fill.style.strokeDashoffset=(301.6*(1-elapsed)).toFixed(1);
+  const sun=ztEl("zp-sun");
+  if(sun){const a=Math.PI*elapsed;sun.style.transform=`translate(${(110+96*Math.cos(a)).toFixed(1)}px,${(110-96*Math.sin(a)).toFixed(1)}px)`}
+}
+function zpReset(){zpDayOff=0;zpMonthOff=0;zpAdjOpen=false;zpAnimate=true}
+
+(function zpInit(){
+  zpReadOfficialCache();
+  zpLoadOfficial();
+  const host=ztEl("zt-prayer-page");
+  if(!host)return;
+  host.addEventListener("click",event=>{
+    const el=event.target.closest("button");
+    if(!el||!host.contains(el))return;
+    if(el.hasAttribute("data-zp-city"))return zpPickCity();
+    if(el.hasAttribute("data-zp-today")){zpReset();return zpRender()}
+    if(el.hasAttribute("data-zp-adj-toggle")){zpAdjOpen=!zpAdjOpen;return zpRender()}
+    if(el.dataset.zpDay){zpDayOff+=Number(el.dataset.zpDay);zpMonthOff=0;return zpRender()}
+    if(el.dataset.zpMonth){zpMonthOff+=Number(el.dataset.zpMonth);return zpRender()}
+    if(el.dataset.zpPick!=null){zpDayOff=Number(el.dataset.zpPick);return zpRender()}
+    if(el.dataset.zpAdj){zpSetAdj(Math.max(-2,Math.min(2,zpAdj()+Number(el.dataset.zpAdj))));ztPaintDates();return zpRender()}
+  });
 })();
 
 /* ===================== الإقلاع ===================== */
@@ -4729,8 +5072,9 @@ function zkRootBack(){
   const topMenu=document.getElementById("tb-popover");
   if(topMenu&&!topMenu.hidden){closeTopMenu();zkArmRootGuard();return}
   if(!zkLaunchVisible()){
-    zkShowLaunch();zkArmRootGuard();return;
+    zkShowLaunch();ztSetView("today");zkArmRootGuard();return;
   }
+  if(ztView!=="today"){ztSetView("today");zkArmRootGuard();return}
   zkConfirmNativeExit();
 }
 window.addEventListener("popstate",()=>zkRootBack());
@@ -4739,7 +5083,10 @@ document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{
   location.href="reader.html?home=1&from=zad";
 });
 document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
-document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{document.body.classList.add("zk-launch-prayer");prayerDialog()});
+document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{
+  if(!zkLaunchVisible())zkShowLaunch();
+  ztSetView("prayer");zkArmRootGuard();
+});
 window.addEventListener("hashchange",()=>{
   const incoming=hashCode();
   if(incoming){
@@ -4754,8 +5101,9 @@ window.visualViewport?.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
 const zkIncomingKhatmah=zkCaptureIncomingKhatmah();
-if(zkIncomingKhatmah||new URLSearchParams(location.search).get("section")==="khatmahs"){zkHideLaunch();boot()}
-else zkShowLaunch();
+const zkSection=new URLSearchParams(location.search).get("section");
+if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
+else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard()
 
 /* PWA shell + offline Quran/Tafsir library. The index checks status only;

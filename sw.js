@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v154";
+const SHELL_STAGE_CACHE="zad-shell-stage-v155";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -403,6 +403,8 @@ self.addEventListener("fetch",event=>{
     event.respondWith(audioSupportFetch(request));
     return;
   }
+  /* تصحيحات التقويم الهجري: من الشبكة دائمًا، والصفحة تحفظ آخر نسخة بنفسها. */
+  if(url.origin===self.location.origin&&/\/data\/hijri-adjustments\.json$/.test(url.pathname))return;
   if(url.origin===self.location.origin&&/\/data\/tafsir\/al-wajeez\//.test(url.pathname)){
     event.respondWith(cacheFirst(request,TAFSIR_CACHE));
     return;

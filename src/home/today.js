@@ -31,7 +31,8 @@ function ztPaintChrome(){
 /* ── التاريخ ── */
 function ztPaintDates(){
   const now=new Date();
-  try{ztEl("zt-hijri").textContent=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura",{day:"numeric",month:"long",year:"numeric"}).format(now)}catch(_){}
+  /* التاريخ الهجري نفسه الذي تعرضه شاشة المواقيت (prayer-screen.js). */
+  try{ztEl("zt-hijri").textContent=zpHijriLong(zpTodayNoon())+" هـ"}catch(_){}
   try{ztEl("zt-greg").textContent=new Intl.DateTimeFormat("ar-EG",{weekday:"long",day:"numeric",month:"long"}).format(now)}catch(_){}
 }
 
@@ -220,7 +221,7 @@ function ztPaintTabs(){
   const tabs=ztEl("zk-tabs");
   if(!tabs)return;
   const onHome=document.body.classList.contains("zk-launch-open");
-  const current=onHome?"zk-tab-home":"zk-launch-zad";
+  const current=!onHome?"zk-launch-zad":ztView==="prayer"?"zk-launch-prayer":"zk-tab-home";
   ["zk-tab-home","zk-launch-quran","zk-launch-zad","zk-launch-prayer"].forEach((id,i)=>{
     const el=ztEl(id);if(!el)return;
     if(id===current){el.setAttribute("aria-current","page");tabs.style.setProperty("--zk-tab",String(i))}
@@ -232,7 +233,24 @@ function ztOnLaunchChange(){
   ztPaintTabs();ztPaintChrome();ztMenu(false);
   if(document.body.classList.contains("zk-launch-open"))ztRefresh();
 }
-function ztRefresh(){ztPaintDates();ztPrayerRender();ztReadingRender()}
+function ztRefresh(){
+  ztPaintDates();
+  if(ztView==="prayer")zpRender();
+  else{ztPrayerRender();ztReadingRender()}
+}
+/* صفحتان داخل طبقة الرئيسية: «اليوم» و«مواقيت الصلاة». */
+let ztView="today";
+function ztSetView(view){
+  ztView=view==="prayer"?"prayer":"today";
+  const today=ztEl("zt-today-page"),prayer=ztEl("zt-prayer-page");
+  if(today)today.hidden=ztView!=="today";
+  if(prayer)prayer.hidden=ztView!=="prayer";
+  const scroll=document.querySelector("#zk-launch .zt-scroll");
+  if(scroll)scroll.scrollTop=0;
+  if(ztView==="prayer")zpReset();
+  ztPaintTabs();ztMenu(false);
+  if(document.body.classList.contains("zk-launch-open"))ztRefresh();
+}
 
 /* ── قائمة «المزيد» ── */
 function ztMenu(open){
@@ -253,14 +271,17 @@ function ztMenu(open){
   document.addEventListener("click",event=>{if(!event.target.closest(".zt-menu-wrap"))ztMenu(false)});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")ztMenu(false)});
   ztEl("zt-help")?.addEventListener("click",()=>{ztMenu(false);document.body.classList.add("zk-launch-prayer");helpDialog()});
-  ztEl("zk-tab-home")?.addEventListener("click",()=>{zkShowLaunch();zkArmRootGuard()});
+  ztEl("zk-tab-home")?.addEventListener("click",()=>{zkShowLaunch();ztSetView("today");zkArmRootGuard()});
   /* بعد إغلاق أي نافذة (كاختيار المدينة) تُحدَّث البطاقات. */
   const layer=ztEl("layer");
   if(layer&&"MutationObserver" in window){
-    new MutationObserver(()=>{if(!layer.firstChild&&document.body.classList.contains("zk-launch-open"))ztPrayerRender()})
+    new MutationObserver(()=>{if(!layer.firstChild&&document.body.classList.contains("zk-launch-open"))ztRefresh()})
       .observe(layer,{childList:true});
   }
-  setInterval(()=>{if(!document.hidden&&document.body.classList.contains("zk-launch-open"))ztPrayerTick()},1000);
+  setInterval(()=>{
+    if(document.hidden||!document.body.classList.contains("zk-launch-open"))return;
+    ztView==="prayer"?zpTick():ztPrayerTick();
+  },1000);
   document.addEventListener("visibilitychange",()=>{if(!document.hidden&&document.body.classList.contains("zk-launch-open"))ztRefresh()});
-  window.addEventListener("online",()=>{if(document.body.classList.contains("zk-launch-open"))ztReadingRender()});
+  window.addEventListener("online",()=>{if(document.body.classList.contains("zk-launch-open")&&ztView==="today")ztReadingRender()});
 })();

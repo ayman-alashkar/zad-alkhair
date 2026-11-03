@@ -140,8 +140,9 @@ function zkRootBack(){
   const topMenu=document.getElementById("tb-popover");
   if(topMenu&&!topMenu.hidden){closeTopMenu();zkArmRootGuard();return}
   if(!zkLaunchVisible()){
-    zkShowLaunch();zkArmRootGuard();return;
+    zkShowLaunch();ztSetView("today");zkArmRootGuard();return;
   }
+  if(ztView!=="today"){ztSetView("today");zkArmRootGuard();return}
   zkConfirmNativeExit();
 }
 window.addEventListener("popstate",()=>zkRootBack());
@@ -150,7 +151,10 @@ document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{
   location.href="reader.html?home=1&from=zad";
 });
 document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
-document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{document.body.classList.add("zk-launch-prayer");prayerDialog()});
+document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{
+  if(!zkLaunchVisible())zkShowLaunch();
+  ztSetView("prayer");zkArmRootGuard();
+});
 window.addEventListener("hashchange",()=>{
   const incoming=hashCode();
   if(incoming){
@@ -165,8 +169,9 @@ window.visualViewport?.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
 const zkIncomingKhatmah=zkCaptureIncomingKhatmah();
-if(zkIncomingKhatmah||new URLSearchParams(location.search).get("section")==="khatmahs"){zkHideLaunch();boot()}
-else zkShowLaunch();
+const zkSection=new URLSearchParams(location.search).get("section");
+if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
+else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard()
 
 /* PWA shell + offline Quran/Tafsir library. The index checks status only;
