@@ -31,6 +31,7 @@
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <script src="../migration.js?v=117"></script>
 
+  <script src="/seo-pages.js?v=150"></script>
   <style>
     @font-face{
       font-family:"Aref Ruqaa";
@@ -241,6 +242,34 @@
       .service svg{width:28px;height:28px}
       button,.open{min-height:53px;font-size:.95rem}
     }
+
+    .identity .mark{width:80px;height:80px;border-radius:22px;margin-bottom:12px}
+    .identity .mark svg{width:62px;height:62px}
+    .identity h1{font-size:3.1rem}
+    .identity .motto{font-size:1.6rem}
+    .identity .divider{margin:12px auto 16px}
+    .install-title{font:700 1.9rem/1.7 "Aref Ruqaa",serif;text-align:center;margin:0;color:var(--green-deep)}
+    .install-intro{text-align:center;font-size:.78rem;line-height:1.9;margin:6px 0 18px;color:#72684f}
+    .device-options{display:flex;gap:6px;padding:5px;border:1px solid rgba(197,154,74,.3);border-radius:15px;background:var(--cream-deep);margin-bottom:12px}
+    .device-options button{flex:1;min-width:0;min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--green-deep);font-size:.75rem;font-weight:600;padding:6px;box-shadow:none}
+    .device-options button[aria-pressed="true"]{background:var(--green-deep);color:var(--cream)}
+    .manual{text-align:start;padding:16px;margin:0 0 14px;border:1px solid rgba(197,154,74,.3);border-radius:18px;background:rgba(197,154,74,.045)}
+    .manual h3{margin:0 0 12px;font-size:.84rem;color:var(--green-deep)}
+    .install-steps{list-style:none;counter-reset:install-step;padding:0;margin:0;display:grid;gap:14px}
+    .install-steps li{display:flex;align-items:center;gap:12px;font-size:.85rem;line-height:1.95;color:var(--green-ink);counter-increment:install-step}
+    .step-symbol{position:relative;display:grid;place-items:center;flex:none;width:42px;height:42px;border:1px solid rgba(197,154,74,.3);border-radius:12px;background:var(--cream-deep);color:var(--green)}
+    .step-symbol::before{content:counter(install-step);position:absolute;inset-inline-start:-5px;top:-7px;width:19px;height:19px;display:grid;place-items:center;border-radius:50%;background:var(--green-deep);color:var(--cream);font-size:10px}
+    .step-symbol svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+    .manual .browser-note{font-size:.7rem;line-height:1.9;margin:14px 0 0;padding-top:12px;border-top:1px solid rgba(197,154,74,.25);color:var(--green-ink)}
+    #install{background:linear-gradient(135deg,#F1DFA8,#D5B16A 65%,#C69B4B);color:#253B2F;border:1px solid #BC934A;box-shadow:0 8px 22px -12px rgba(90,61,19,.5)}
+    #hint{min-height:0;font-size:.76rem;line-height:1.9}
+    :focus-visible{outline:3px solid var(--gold-deep);outline-offset:3px}
+    html[data-theme=dark]{color-scheme:dark;--green:#E4C980;--green-deep:#FFF5DC;--green-ink:#E4DDC8;--cream:#061F1D;--cream-deep:#0D3029;--gold:#BFA163}
+    html[data-theme=dark] .frame{background:#082621;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+    html[data-theme=dark] .install-intro,html[data-theme=dark] #hint{color:#C1BBA7}
+    html[data-theme=dark] .mark{background:#0A473E}
+    html[data-theme=dark] .open{background:var(--cream-deep);border-color:rgba(228,201,128,.3)}
+    @media(prefers-reduced-motion:reduce){button,.open{transition:none}}
   </style>
 </head>
 <body>
@@ -282,13 +311,20 @@
       </div>
     </section>
 
+    <h2 class="install-title">أضف زاد الخير إلى جهازك</h2>
+    <p class="install-intro">افتحه من الشاشة الرئيسية، واستمتع بتجربة أقرب إليك.</p>
+    <div class="device-options" role="group" aria-label="اختر نوع جهازك">
+      <button type="button" data-device="android" aria-pressed="false">أندرويد</button>
+      <button type="button" data-device="ios" aria-pressed="false">آيفون / آيباد</button>
+      <button type="button" data-device="desktop" aria-pressed="false">الحاسب</button>
+    </div>
+    <section class="manual" id="manual" aria-label="خطوات التثبيت"></section>
     <div class="actions">
-      <button id="install" type="button" disabled><span class="btn-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5"/></svg><span>تثبيت زاد الخير</span></span></button>
+      <button id="install" type="button" disabled><span class="btn-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5"/></svg><span id="install-label">تثبيت التطبيق</span></span></button>
       <a class="open" id="open" href="../"><span class="btn-content"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5"/><path d="M10 14 19 5"/><path d="M19 14v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3"/></svg><span>فتح زاد الخير</span></span></a>
     </div>
 
-    <p id="hint">جاري تجهيز التثبيت…</p>
-    <div class="manual hidden" id="manual"></div>
+    <p id="hint" role="status" aria-live="polite">اختر جهازك لعرض خطوات التثبيت.</p>
   </main>
 
 <script>
@@ -360,15 +396,48 @@
   const ua=navigator.userAgent||'';
   const isIOS=/iPad|iPhone|iPod/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
 
-  function showManual(){
-    manual.classList.remove('hidden');
-    manual.innerHTML=isIOS
-      ? '<strong>على iPhone أو iPad:</strong> اضغط زر المشاركة في Safari، ثم اختر «إضافة إلى الشاشة الرئيسية».'
-      : '<strong>إذا لم تظهر نافذة التثبيت:</strong> افتح قائمة المتصفح ⋮ ثم اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».';
+  const label=document.getElementById('install-label');
+  const deviceButtons=[...document.querySelectorAll('[data-device]')];
+  const embedded=/FBAN|FBAV|Instagram|Line\/|; wv\)|Telegram/i.test(ua);
+  let selectedDevice=isIOS?'ios':/Android/i.test(ua)?'android':'desktop';
+  const symbols={
+    menu:'<circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>',
+    share:'<path d="M12 16V3m-4 4 4-4 4 4M5 12v8h14v-8"/>',
+    add:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8m-4-4h8"/>',
+    check:'<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    open:'<path d="M14 4h6v6M10 14 20 4M10 4H4v16h16v-6"/>'
+  };
+  function paintInstallAction(){
+    btn.disabled=false;
+    label.textContent=promptEvent?'ثبّت الآن':'عرض خطوات التثبيت';
   }
+  function showManual(){
+    const steps=selectedDevice==='ios'?[
+      ['open','افتح زاد الخير في متصفح Safari.'],
+      ['share','اضغط زر المشاركة في المتصفح.'],
+      ['add','اختر «إضافة إلى الشاشة الرئيسية»؛ قد تحتاج إلى تمرير قائمة المشاركة أو فتح «المزيد».'],
+      ['check','اضغط «إضافة» لتظهر أيقونة زاد الخير على شاشتك الرئيسية.']
+    ]:selectedDevice==='android'?[
+      ['menu','افتح قائمة المتصفح ⋮، ويُفضّل استخدام Chrome.'],
+      ['add','اختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»، بحسب ما يظهر في متصفحك.'],
+      ['check','أكّد الإضافة، ثم افتح زاد الخير من أيقونته على جهازك.']
+    ]:[
+      ['open','افتح زاد الخير في Chrome أو Edge على الحاسب.'],
+      ['add','اضغط أيقونة التثبيت في شريط العنوان، أو افتح قائمة المتصفح واختر خيار تثبيت الصفحة كتطبيق.'],
+      ['check','أكّد التثبيت ليفتح زاد الخير في نافذة خاصة به.']
+    ];
+    manual.classList.remove('hidden');
+    manual.innerHTML='<h3>خطوات التثبيت '+(selectedDevice==='ios'?'على آيفون وآيباد':selectedDevice==='android'?'على أندرويد':'على الحاسب')+'</h3><ol class="install-steps">'+steps.map(([icon,text])=>'<li><span class="step-symbol" aria-hidden="true"><svg viewBox="0 0 24 24">'+symbols[icon]+'</svg></span><span>'+text+'</span></li>').join('')+'</ol>'+(embedded?'<p class="browser-note">إذا فتحت الرابط داخل تطبيق مراسلة، افتحه أولاً في المتصفح الخارجي من قائمة التطبيق، ثم اتبع الخطوات أعلاه.</p>':'');
+    deviceButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.device===selectedDevice)));
+  }
+  deviceButtons.forEach(button=>button.addEventListener('click',()=>{selectedDevice=button.dataset.device;showManual()}));
+  showManual();
+  paintInstallAction();
 
   if(standalone){
     btn.classList.add('hidden');
+    manual.classList.add('hidden');
+    document.querySelector('.device-options').classList.add('hidden');
     hint.textContent='زاد الخير مثبت على جهازك بالفعل.';
     return;
   }
@@ -378,19 +447,21 @@
     promptEvent=e;
     btn.disabled=false;
     hint.textContent='اضغط الزر، ثم وافق على نافذة التثبيت.';
-    manual.classList.add('hidden');
+    paintInstallAction();
   });
 
   btn.addEventListener('click',async()=>{
     if(!promptEvent){
       hint.textContent='استخدم خطوات التثبيت المناسبة لمتصفحك.';
       showManual();
+      manual.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
       return;
     }
     btn.disabled=true;
-    await promptEvent.prompt();
-    const choice=await promptEvent.userChoice.catch(()=>null);
-    promptEvent=null;
+    const pending=promptEvent;promptEvent=null;
+    let choice=null;
+    try{await pending.prompt();choice=await pending.userChoice}catch(_){ }
+    paintInstallAction();
     if(choice&&choice.outcome==='accepted'){
       btn.classList.add('hidden');
       hint.textContent='تمت الموافقة على التثبيت. ستجد زاد الخير بين تطبيقاتك.';
@@ -408,17 +479,9 @@
     manual.classList.add('hidden');
   });
 
-  setTimeout(()=>{
-    if(!promptEvent&&!standalone){
-      btn.disabled=false;
-      if(isIOS){
-        hint.textContent='على iPhone يتم التثبيت من قائمة المشاركة في Safari.';
-        showManual();
-      }else{
-        hint.textContent='اضغط «تثبيت زاد الخير». إذا لم تظهر نافذة التثبيت، استخدم قائمة المتصفح.';
-      }
-    }
-  },1800);
+  if(!standalone)hint.textContent=embedded?'للتثبيت، افتح الرابط في المتصفح الخارجي أولاً.':isIOS?'اتبع خطوات Safari أعلاه لإضافة التطبيق.':'يمكنك اتباع الخطوات أعلاه؛ سيظهر زر «ثبّت الآن» عند إتاحة التثبيت المباشر.';
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+
 })();
 </script>
 </body>
