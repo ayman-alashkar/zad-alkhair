@@ -24,6 +24,18 @@ const appCards = [
 const written = {
   // البطاقة الأصلية كانت لقطة شاشة صغيرة (748×442)، فأعيدت كتابتها.
   "surah-060": { name: "الممتحنة", nameVowelled: "الْمُمْتَحَنَةِ", place: "مدنية", placeVowelled: "مَدَنِيَّة", verses: "١٣" },
+  // المصحف المدني (مصحف المدينة الذي يعرضه القارئ) يصنّفها مكية، والبطاقة الأصلية قالت مدنية.
+  "surah-083": { name: "المطففين", nameVowelled: "الْمُطَفِّفِينَ", place: "مكية", placeVowelled: "مَكِّيَّة", verses: "٣٦" },
+  // القاف المتطرفة في Aref Ruqaa بلا نقطتين، فتُقرأ «ٯ». بديل التطويل (jalt) هو شكلها المنقوط.
+  "surah-050": { name: "ق", nameVowelled: "ق", place: "مكية", placeVowelled: "مَكِّيَّة", verses: "٤٥", dottedQaf: true },
+  "surah-065": { name: "الطلاق", nameVowelled: "الطَّلَاقِ", place: "مدنية", placeVowelled: "مَدَنِيَّة", verses: "١٢", dottedQaf: true },
+  "surah-084": { name: "الانشقاق", nameVowelled: "الْانْشِقَاقِ", place: "مكية", placeVowelled: "مَكِّيَّة", verses: "٢٥", dottedQaf: true },
+  "surah-086": { name: "الطارق", nameVowelled: "الطَّارِقِ", place: "مكية", placeVowelled: "مَكِّيَّة", verses: "١٧", dottedQaf: true },
+  "surah-096": { name: "العلق", nameVowelled: "الْعَلَقِ", place: "مكية", placeVowelled: "مَكِّيَّة", verses: "١٩", dottedQaf: true },
+  "surah-113": { name: "الفلق", nameVowelled: "الْفَلَقِ", place: "مكية", placeVowelled: "مَكِّيَّة", verses: "٥", dottedQaf: true },
+  // البطاقة الأصلية بدأت الجزء الأول بسورة البقرة، وهو يبدأ بالفاتحة.
+  "juz-01": { juz: true, title: "الجزء الأول", titleVowelled: "الْجُزْءُ الْأَوَّلُ",
+    from: ["الفاتحة", "الْفَاتِحَةِ", "١"], to: ["البقرة", "الْبَقَرَةِ", "١٤١"] },
 };
 
 const font = fileUrl("social/cards/fonts/aref-ruqaa-ink-arabic-700.woff2");
@@ -41,21 +53,28 @@ body{margin:0}
 .data{display:flex;align-items:center;gap:26px;font-size:48px;line-height:1.6}
 .data .vowels{color:#14655A}.data .letters{color:#C29544}
 .data .sep{width:3px;height:40px;background:#14655A}.data .num{margin-inline-start:-8px;color:#14655A}
+.juzline{gap:16px;line-height:1.45}.juzline .num{margin-inline-start:0}
 .rule{display:flex;align-items:center;gap:14px;margin:2px 0 26px}.rule i{width:92px;height:1.5px;background:#C29544}.rule b{width:9px;height:9px;background:#C29544;transform:rotate(45deg)}
 </style></head><body>`;
 
 const twoTone = (vowelled, bare) => `<span class="vowels">${vowelled}</span><span class="letters">${bare}</span>`;
-const writtenSurah = w => `<div class="two title">${twoTone("سُورَةُ " + w.nameVowelled, "سورة " + w.name)}</div>
+const writtenSurah = w => `<div class="two title"${w.dottedQaf ? ' style="font-feature-settings:\'jalt\'"' : ""}>${twoTone("سُورَةُ " + w.nameVowelled, "سورة " + w.name)}</div>
 <div class="rule"><i></i><b></b><i></i></div>
 <div class="data"><span class="two">${twoTone(w.placeVowelled, w.place)}</span><span class="sep"></span><span class="two">${twoTone("آيَاتُهَا", "آياتها")}</span><span class="two num">${w.verses}</span></div>`;
+
+const juzLine = (word, [name, nameVowelled, verse]) =>
+  `<div class="data juzline"><span class="two">${twoTone(`${word} سُورَةِ ${nameVowelled} الآية رقم`, `${word} سورة ${name} الآية رقم`)}</span><span class="two num">${verse}</span></div>`;
+const writtenJuz = w => `<div class="two title" style="font-size:125px">${twoTone(w.titleVowelled, w.title)}</div>
+<div class="rule" style="margin-bottom:56px"><i></i><b></b><i></i></div>${juzLine("من", w.from)}${juzLine("إلى", w.to)}`;
 
 function contentCards() {
   const cards = [];
   for (let n = 1; n <= 114; n++) cards.push({ id: `surah-${String(n).padStart(3, "0")}`, kind: "surah", n });
   for (let n = 1; n <= 30; n++) cards.push({ id: `juz-${String(n).padStart(2, "0")}`, kind: "juz", n });
   return cards.map(card => {
-    const inner = written[card.id]
-      ? writtenSurah(written[card.id])
+    const w = written[card.id];
+    const inner = w
+      ? (w.juz ? writtenJuz(w) : writtenSurah(w))
       : `<img src="${fileUrl(`social/cards/lettering/${card.id}.png`)}" alt="" style="display:block">`;
     const html = `${contentHead}<div class="ground"><div class="card">${inner}</div><div class="address">zad-alkhair.net/${card.kind}/${card.n}</div></div></body></html>`;
     return { html, output: `social/${card.kind}/${card.id}-v2.jpg`, kind: card.kind };
