@@ -148,7 +148,7 @@ function zkRootBack(){
 window.addEventListener("popstate",()=>zkRootBack());
 document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{
   event.preventDefault();
-  location.href="reader.html?home=1&from=zad";
+  ztNavigateAfterTab("zk-launch-quran","reader.html?home=1&from=zad");
 });
 document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
 document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{
