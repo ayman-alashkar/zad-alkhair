@@ -1522,3 +1522,9 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
   .zp-days button{height:56px}
   .zp-days b{font-size:17px}
 }
+
+/* The home rosette, faintly, inside the khatmah's cream panels (as on the Today screen by day). */
+.hero,.juz-panel,.people-panel>.frame{position:relative;overflow:hidden;isolation:isolate}
+.hero::before,.juz-panel::before,.people-panel>.frame::before{content:"";display:block;position:absolute;border:0;border-radius:0;top:-60px;left:-60px;width:calc(100% + 620px);height:calc(100% + 460px);
+  z-index:-1;pointer-events:none;opacity:.05;background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:ztFlow 60s linear infinite}
+@media (prefers-reduced-motion:reduce){.hero::before,.juz-panel::before,.people-panel>.frame::before{animation:none}}

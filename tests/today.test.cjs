@@ -114,3 +114,16 @@ test("the prayer tab opens the in-app prayer screen, not the old dialog",()=>{
   assert.match(boot,/if\(ztView!=="today"\)\{ztSetView\("today"\)/);
   assert.match(read("src/home/app.js"),/@include today\.js \*\/\n\/\* @include prayer-screen\.js/);
 });
+test("calendar occasions: nights sit on the evening before, ranges list once",()=>{
+  const src=read("src/home/prayer-screen.js");
+  const ctx={};vm.createContext(ctx);
+  vm.runInContext(src.slice(src.indexOf("const ZP_EVENTS"),src.indexOf("const ZP_WEEKDAYS"))+";this.on=zpEventsOn",ctx);
+  const names=(m,d)=>[...ctx.on({m,d}).map(e=>e[2])];
+  assert.deepEqual(names(1,10),["يوم عاشوراء"]);
+  assert.deepEqual(names(7,27),["الإسراء والمعراج"]);
+  assert.deepEqual(names(8,14),["ليلة النصف من شعبان"]);
+  assert.match(names(9,26).join(),/ليلة القدر/);
+  assert.deepEqual(names(12,9),["يوم عرفة","العشر الأوائل من ذي الحجة"]);
+  assert.deepEqual(names(12,12),["أيام التشريق"]);
+  assert.deepEqual(names(3,12),[]);
+});

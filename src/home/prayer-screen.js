@@ -8,7 +8,21 @@ const ZP_ADJ_KEY="zad:hijri-adjust";
 const ZP_OFFICIAL_KEY="zad:hijri-official-v1";
 const ZP_OFFICIAL_URL="data/hijri-adjustments.json";
 const ZP_MONTHS=["محرم","صفر","ربيع الأول","ربيع الآخر","جمادى الأولى","جمادى الآخرة","رجب","شعبان","رمضان","شوال","ذو القعدة","ذو الحجة"];
-const ZP_EVENTS={"1-1":"رأس السنة الهجرية","1-10":"يوم عاشوراء","9-1":"أول رمضان","10-1":"عيد الفطر","12-9":"يوم عرفة","12-10":"عيد الأضحى"};
+/* المناسبات: [الشهر، اليوم، الاسم، آخر يوم إن كانت أيامًا، ليلة؟]
+   الليلة تبدأ بمغرب اليوم الذي قبلها، فتُعلَّم على ذلك اليوم: ليلة النصف من شعبان مساء ١٤ شعبان. */
+const ZP_EVENTS=[
+  [1,1,"رأس السنة الهجرية"],[1,9,"يوم تاسوعاء"],[1,10,"يوم عاشوراء"],
+  [7,27,"الإسراء والمعراج"],
+  [8,14,"ليلة النصف من شعبان",0,1],
+  [9,1,"أول رمضان"],[9,21,"العشر الأواخر من رمضان",30],[9,26,"ليلة السابع والعشرين، تُرجى فيها ليلة القدر",0,1],
+  [10,1,"عيد الفطر"],
+  [12,1,"العشر الأوائل من ذي الحجة",10],[12,8,"يوم التروية"],[12,9,"يوم عرفة"],[12,10,"عيد الأضحى"],[12,11,"أيام التشريق",13]
+];
+/* مناسبات يوم هجري: تُقدَّم المحددة بيوم واحد على الممتدة. */
+function zpEventsOn(h){
+  return ZP_EVENTS.filter(e=>e[0]===h.m&&(e[3]?h.d>=e[1]&&h.d<=e[3]:h.d===e[1]))
+    .sort((a,b)=>!!a[3]-!!b[3]);
+}
 const ZP_WEEKDAYS=["س","ح","ن","ث","ر","خ","ج"];   /* السبت … الجمعة */
 
 /* ── التقويم الهجري ──
@@ -143,14 +157,22 @@ function zpCalendarHtml(todayNoon){
   const cells=Array.from({length:lead},()=>"<span></span>");
   const legend=[];
   for(const ts of days){
-    const h=zpHijri(ts),ev=ZP_EVENTS[`${h.m}-${h.d}`];
+    const h=zpHijri(ts),events=zpEventsOn(h);
+    /* النقطة للأيام المحددة؛ الأيام الممتدة (كالعشر) تُذكر في القائمة وحدها كي لا يزدحم التقويم. */
+    const ev=events.some(e=>!e[3]||e[1]===h.d||e[2]==="أيام التشريق");
     /* الأيام البيض ١٣–١٥، إلا الثالث عشر من ذي الحجة فهو من أيام التشريق. */
-    const white=!ev&&h.d>=13&&h.d<=15&&!(h.m===12&&h.d===13);
-    const label=zpHijriLong(ts)+(ev?`، ${ev}`:white?"، من الأيام البيض":"");
+    const white=h.d>=13&&h.d<=15&&!(h.m===12&&h.d===13);
+    const names=events.map(e=>e[4]?`مساؤه ${e[2]}`:e[2]);
+    if(white)names.push("من الأيام البيض");
+    const label=zpHijriLong(ts)+(names.length?`، ${names.join("، ")}`:"");
     const cls=[ts===selected&&"sel",ts===todayNoon&&"today"].filter(Boolean).join(" ");
     cells.push(`<button type="button" class="${cls}" data-zp-pick="${Math.round((ts-todayNoon)/ZP_DAY)}" aria-label="${label}" aria-pressed="${ts===selected}">
       <b>${ztArabic(h.d)}</b><small>${zpGreg(ts,{day:"numeric"})}</small>${ev?'<i class="ev" aria-hidden="true"></i>':white?'<i class="wh" aria-hidden="true"></i>':""}</button>`);
-    if(ev)legend.push(`<li><i class="ev" aria-hidden="true"></i><span>${ev}</span><small>${zpHijriLong(ts)} · ${zpGreg(ts,{day:"numeric",month:"long"})}</small></li>`);
+    for(const e of events){
+      if(e[3]&&e[1]!==h.d)continue;   /* الممتدة تُذكر مرة واحدة، في أول أيامها */
+      const span=e[3]===30?`من ${ztArabic(e[1])} ${ZP_MONTHS[h.m-1]} إلى آخره`:e[3]?`${ztArabic(e[1])}–${ztArabic(e[3])} ${ZP_MONTHS[h.m-1]}`:zpHijriLong(ts);
+      legend.push(`<li><i class="ev" aria-hidden="true"></i><span>${e[2]}</span><small>${e[4]?"مساء ":""}${span} · ${zpGreg(ts,{day:"numeric",month:"long"})}</small></li>`);
+    }
   }
   const month=ZP_MONTHS[m0.m-1];
   legend.push(`<li><i class="wh" aria-hidden="true"></i><span>الأيام البيض</span><small>${m0.m===12?`${ztArabic(14)}–${ztArabic(15)} ${month}، والثالث عشر من أيام التشريق`:`${ztArabic(13)}–${ztArabic(15)} ${month}`}</small></li>`);
