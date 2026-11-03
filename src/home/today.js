@@ -5,6 +5,7 @@
 const ZT_THEME_KEY="zad:qcf4:theme";
 const ZT_KHATMAH_CACHE="zad:today-khatmah-v1";
 const ZT_LAST_POSITION="zad:qcf4:last-position";
+const ZT_JUZ_PROGRESS="zad:juz-progress-v1";   /* يكتبه القارئ */
 const ztEl=id=>document.getElementById(id);
 const ztArabic=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 
@@ -123,16 +124,28 @@ function ztReadingCard(summary){
     const where=summary.title?esc(summary.title):"ختمتك";
     if(pending.length){
       const j=pending[0].n,more=summary.mine.length>1?` · ${ztArabic(summary.mine.filter(x=>x.done).length+1)} من ${ztArabic(summary.mine.length)}`:"";
+      /* أبعد صفحة بلغها القارئ داخل هذا الجزء، يحفظها القارئ نفسه (recordJuzProgress). */
+      const [first,last]=JUZ_PAGES[j-1],total=last-first+1;
+      const reached=Number((ztReadJson(ZT_JUZ_PROGRESS)||{})[summary.code]?.[j]);
+      const started=reached>=first&&reached<=last;
+      const read=started?reached-first:0,atEnd=started&&reached===last;
+      const progress=started?`<div class="zt-progress">
+          <div class="zt-progress-row"><span>${atEnd?"وصلت إلى آخر صفحة في جزئك":`قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة`}</span><span>${started?`الصفحة ${ztArabic(reached)}`:""}</span></div>
+          <span class="zt-bar"><i style="width:${(atEnd?100:read/total*100).toFixed(1)}%"></i></span></div>`:"";
+      const readHref=started?`reader.html?page=${reached}&amp;code=${encodeURIComponent(summary.code)}`:readerLink(j,summary.code);
+      const readLabel=!started?"اقرأ جزءك":atEnd?"راجع جزءك":"تابع القراءة";
       host.innerHTML=`<section class="zt-card" aria-label="جزؤك في الختمة">
         <div class="zt-card-row"><div class="zt-card-text">
           <span class="zt-eyebrow">جزؤك في ${where}</span>
           <span class="zt-title">الجزء ${ztArabic(j)}</span>
           <span class="zt-sub">${esc(JUZ[j-1]||"")}${more}</span>
         </div>${ring}</div>
+        ${progress}
         <div class="zt-actions">
-          <a class="zt-btn" href="${readerLink(j,summary.code)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span>اقرأ جزءك</span></a>
-          <button class="zt-btn quiet" type="button" data-zt-open-khatmah>افتح الختمة</button>
-        </div></section>`;
+          <a class="zt-btn${atEnd?" quiet":""}" href="${readHref}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span>${readLabel}</span></a>
+          <button class="zt-btn${atEnd?" gold":" quiet"}" type="button" data-zt-complete="${j}">أتممت الجزء</button>
+        </div>
+        <button class="zt-link" type="button" data-zt-open-khatmah>افتح الختمة</button></section>`;
     }else if(summary.mine.length){
       host.innerHTML=`<section class="zt-card" aria-label="ختمتك"><div class="zt-card-row"><div class="zt-card-text">
           <span class="zt-eyebrow">${where}</span><span class="zt-title">أتممت أجزاءك، تقبّل الله منك</span></div>${ring}</div>
@@ -143,6 +156,7 @@ function ztReadingCard(summary){
         <div class="zt-actions"><button class="zt-btn" type="button" data-zt-open-khatmah>احجز جزءًا</button></div></section>`;
     }
     host.querySelectorAll("[data-zt-open-khatmah]").forEach(b=>b.onclick=()=>{zkHideLaunch();boot()});
+    host.querySelectorAll("[data-zt-complete]").forEach(b=>b.onclick=()=>ztCompleteJuz(summary.code,Number(b.dataset.ztComplete)));
     return;
   }
   /* بلا ختمة: من آخر صفحة في القارئ */
@@ -159,6 +173,18 @@ function ztReadingCard(summary){
       <span class="zt-sub">المصحف الشريف مع التفسير الوجيز</span></span>
       <span class="zt-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span></a>`;
   }
+}
+/* «أتممت الجزء»: يفتح الختمة ثم يستعمل الإتمام الموجود نفسه (act)، فيُبلَّغ الأعضاء
+   ويُعلَن الختم عند اكتماله وتُحفظ الرسائل إن انقطع الاتصال، كما من داخل الختمة. */
+async function ztCompleteJuz(khatmahCode,n){
+  if(activeKhatmahGet()!==khatmahCode)return;
+  zkHideLaunch();
+  await boot();
+  if(!state||!viewer||code!==khatmahCode)return;
+  const j=state.juz[n-1];
+  if(!j||j.ownerId!==viewer.id||j.status==="done")return;
+  if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(n)}؟ سيُبلَّغ أعضاء الختمة بذلك.`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
+  await act("done",n-1);
 }
 let ztReadingSeq=0;
 async function ztReadingRender(){

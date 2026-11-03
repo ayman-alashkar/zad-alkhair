@@ -22,7 +22,8 @@ test("home screen keeps the shared theme, real crawlable tabs and offline patter
   assert.match(sw,/"\.\/icons\/zad-rosette\.svg"/);
   assert.ok(fs.existsSync(path.join(root,"icons/zad-rosette.svg")));
   // The Today screen reads the khatmah into its own variables; it must never assign the app's globals.
-  assert.doesNotMatch(today,/(^|[^.\w])(code|viewer|state)\s*=[^=]/m);
+  // (A statement-position assignment; a query string such as "&code=" in a URL is not one.)
+  assert.doesNotMatch(today.replace(/(&amp;|[?&])(code|state|viewer)=/g,""),/(^|[\s;{(,])(code|viewer|state)\s*=[^=]/m);
   // Opening and closing the home screen keeps the tabs and browser colour in step.
   assert.equal((read("src/home/bootstrap.js").match(/ztOnLaunchChange\(\);/g)||[]).length,2);
 });
@@ -43,4 +44,23 @@ test("khatmah screens rely on the bottom tabs: no duplicate brand, Quran link or
   assert.doesNotMatch(read("src/home/views.js"),/data-home>الصفحة الرئيسية</);
   // One pattern everywhere: the rosette, never the old hexagonal lattice on top.
   assert.match(read("src/home/styles.css"),/body::before\{inset:[^}]*zad-rosette\.svg/);
+});
+
+test("juz page ranges on the home screen match the reader's",()=>{
+  const grab=(file)=>{const m=read(file).match(/const JUZ_PAGES=(\[\[.*?\]\]);/);assert.ok(m,file);return JSON.parse(m[1])};
+  assert.deepEqual(grab("src/home/quran-map.js"),grab("src/reader/state.js"));
+});
+
+test("the reader records the furthest page only inside the user's unfinished juz",()=>{
+  const src=read("src/reader/reading-tools.js");
+  const start=src.indexOf("const JUZ_PROGRESS_KEY"),end=src.indexOf("function saveReaderSurface");
+  const store=new Map();
+  const ctx={JUZ_PAGES:JSON.parse(read("src/reader/state.js").match(/const JUZ_PAGES=(\[\[.*?\]\]);/)[1]),
+    readerEntryParams:()=>({code:"",juz:null}),
+    storageJsonGet:(k,f)=>store.has(k)?JSON.parse(store.get(k)):f,
+    storageJsonSet:(k,v)=>store.set(k,JSON.stringify(v))};
+  vm.createContext(ctx);vm.runInContext(src.slice(start,end)+";this.record=recordJuzProgress",ctx);
+  store.set("zad:today-khatmah-v1",JSON.stringify({code:"ABCD",mine:[{n:23,done:false},{n:25,done:true}]}));
+  for(const page of [100,442,446,444,470,490])ctx.record(page);   // 100, 470: outside juz 23; 490: juz 25 is done
+  assert.deepEqual(JSON.parse(store.get("zad:juz-progress-v1")),{ABCD:{"23":446}});   // furthest, never moves back
 });

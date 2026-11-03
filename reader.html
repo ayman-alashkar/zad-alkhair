@@ -3438,6 +3438,36 @@ function archivePreviousVisit(item){
 }
 function saveLastPosition(){
   storageJsonSet(STORAGE_KEYS.lastPosition,{page:currentPage,savedAt:Date.now()});
+  recordJuzProgress(currentPage);
+}
+/* ── تقدّم المستخدم في أجزائه من الختمة ──
+   الرئيسية تحفظ ملخص الختمة النشطة (رمزها وأجزاء المستخدم). هنا يُحفظ أبعد صفحة
+   بلغها القارئ داخل كل جزء من أجزائه غير المكتملة؛ أي صفحة خارجها لا تؤثر.
+   رابط الختمة (?code=…&juz=…) يُحسب أيضًا، لمن فتح جزءه قبل أن يمر بالرئيسية. */
+const JUZ_PROGRESS_KEY="zad:juz-progress-v1";
+const juzProgressEntry=(()=>{try{const e=readerEntryParams();return e.code&&e.juz?{code:e.code,juz:e.juz}:null}catch(_){return null}})();
+function recordJuzProgress(page){
+  const p=Number(page);
+  if(!Number.isInteger(p))return;
+  const tracked=[];
+  const summary=storageJsonGet("zad:today-khatmah-v1",null);
+  if(summary&&summary.code&&Array.isArray(summary.mine))
+    for(const j of summary.mine)if(j&&!j.done)tracked.push([summary.code,Number(j.n)]);
+  if(juzProgressEntry)tracked.push([juzProgressEntry.code,juzProgressEntry.juz]);
+  if(!tracked.length)return;
+  const progress=storageJsonGet(JUZ_PROGRESS_KEY,{})||{};
+  let changed=false;
+  for(const [code,n] of tracked){
+    const range=JUZ_PAGES[n-1];
+    if(!range||p<range[0]||p>range[1])continue;
+    const byCode=progress[code]||(progress[code]={});
+    if(!(Number(byCode[n])>=p)){byCode[n]=p;changed=true}
+  }
+  if(!changed)return;
+  /* Only the khatmahs still in play are kept, so the record never grows without bound. */
+  const keep=new Set(tracked.map(([code])=>code));
+  for(const code of Object.keys(progress))if(!keep.has(code))delete progress[code];
+  storageJsonSet(JUZ_PROGRESS_KEY,progress);
 }
 function saveReaderSurface(surface,extra={}){
   storageJsonSet(STORAGE_KEYS.lastSurface,{surface,page:currentPage,savedAt:Date.now(),...extra});

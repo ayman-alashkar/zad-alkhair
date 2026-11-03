@@ -1348,8 +1348,19 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zt-btn{flex:1;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:15px;
   background:var(--zt-active);color:var(--zt-on-active);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:transform .15s ease}
 .zt-btn:active,.zt-continue:active{transform:scale(.98)}
+.zt-actions .zt-btn{white-space:nowrap}
+@media (max-width:350px){.zt-actions .zt-btn{padding:0 12px;gap:6px}}
 .zt-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .zt-btn.quiet{flex:0 0 auto;background:transparent;color:var(--zt-gold);border:1px solid var(--zt-line)}
+.zt-btn.gold{flex:0 0 auto;background:#C59A4A;color:#FFF9EA}
+:root[data-zk-theme="dark"] .zt-btn.gold{background:#E4C980;color:#173E35}
+.zt-progress{display:flex;flex-direction:column;gap:6px}
+.zt-progress-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:600}
+.zt-progress-row span:last-child{color:var(--zt-muted);font-weight:400;font-variant-numeric:tabular-nums}
+.zt-bar{display:block;height:6px;border-radius:6px;background:var(--zt-track);overflow:hidden}
+.zt-bar i{display:block;height:100%;border-radius:6px;background:var(--zt-gold);transform-origin:right center;animation:ztBar 1.4s cubic-bezier(.3,.8,.2,1) .5s both}
+@keyframes ztBar{from{transform:scaleX(0)}}
+.zt-link{align-self:center;min-height:40px;padding:0 12px;border:0;background:transparent;color:var(--zt-gold);font-size:13px;font-weight:600;cursor:pointer}
 .zt-done{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--zt-gold-soft);font-size:14px;font-weight:700}
 .zt-continue{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);
   color:var(--zt-ink);text-decoration:none;transition:transform .15s ease}
@@ -1369,8 +1380,9 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
   background:transparent;color:var(--zt-inactive);text-decoration:none;cursor:pointer;transition:color .3s ease;-webkit-tap-highlight-color:transparent}
 .zk-tab svg{width:23px;height:23px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .zk-tab span{font-size:11px;line-height:1.3;text-align:center;font-weight:500}
+@media (min-width:371px){.zk-tab span{white-space:nowrap}}
 .zk-tab[aria-current="page"]{color:var(--zt-active)}
-.zk-tab[aria-current="page"] span{font-weight:700}
+.zk-tab[aria-current="page"] span{font-weight:650}
 /* Khatmah screens keep their dark design; so does the bar over them. */
 body:not(.zk-launch-open) .zk-tabs{--zt-tabbar:rgba(5,29,27,.94);--zt-line:rgba(228,201,128,.18);--zt-active:#E4C980;--zt-inactive:#A9A390}
 body:not(.zk-launch-open){padding-bottom:calc(84px + env(safe-area-inset-bottom))}
