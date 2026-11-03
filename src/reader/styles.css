@@ -2377,8 +2377,9 @@ html body .quran-index .quran-index-actions{gap:var(--ix-btn-gap)}
 html body .quran-index .quran-index-action{width:var(--ix-btn);height:var(--ix-btn)}
 
 /* Zad's four sections under the Quran index (the same bar as on the home screen). */
-.reader-app-tabs{flex:none;position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));min-height:66px;padding:0 10px env(safe-area-inset-bottom);
-  direction:rtl;border-top:1px solid rgba(169,131,58,.26);background:rgba(255,251,242,.94);font-family:Alexandria,Tahoma,sans-serif;
+/* Same box as the home bar (.zk-tabs): 72px tall plus the safe area, blurred ground. */
+.reader-app-tabs{flex:none;position:relative;box-sizing:border-box;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:calc(72px + env(safe-area-inset-bottom));padding:0 10px env(safe-area-inset-bottom);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  direction:rtl;border-top:1px solid rgba(169,131,58,.26);background:rgba(255,251,242,.94);font-family:"Alexandria",Tahoma,Arial,sans-serif;
   --app-tab:#6B6350;--app-tab-on:#0D3C35}
 html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);background:rgba(8,38,33,.94);--app-tab:#A9A390;--app-tab-on:#E4C980}
 .reader-app-tabs a{position:relative;display:flex;transition:color .3s ease,background-color .3s ease;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px 2px;
@@ -2396,7 +2397,7 @@ html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);
 @media (max-width:350px){.reader-app-tabs span{font-size:10px}}
 /* On wide screens: a floating pill, never stretched across the window. */
 @media (min-width:860px){
-  .reader-app-tabs{align-self:center;display:flex;gap:4px;min-height:0;height:58px;margin:10px 0 calc(14px + env(safe-area-inset-bottom));padding:6px;
+  .reader-app-tabs{align-self:center;display:flex;gap:4px;min-height:0;height:58px;margin:10px 0 18px;padding:6px;
     border:1px solid rgba(169,131,58,.26);border-radius:20px;box-shadow:0 18px 40px -20px rgba(69,52,21,.28)}
   html[data-theme="dark"] .reader-app-tabs{border-color:rgba(228,201,128,.18);box-shadow:0 18px 40px -20px rgba(0,0,0,.55)}
   .reader-app-tabs a{flex-direction:row;gap:8px;padding:0 16px;border-radius:14px}
@@ -2410,3 +2411,8 @@ html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);
 @view-transition{navigation:auto}
 .reader-app-tabs{view-transition-name:zad-tabs}
 @media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+/* As on the home bar: labels reserve their bold width, so nothing shifts when the current tab changes. */
+@media (min-width:371px){
+.reader-app-tabs span[data-label]{display:inline-grid;text-rendering:optimizeLegibility;font-kerning:normal;font-synthesis:none;font-variant-ligatures:normal;font-optical-sizing:auto}
+.reader-app-tabs span[data-label]::after{content:attr(data-label);font-weight:650;height:0;visibility:hidden;pointer-events:none;white-space:nowrap}
+}
