@@ -222,3 +222,11 @@ test("new reciter pages and surah links use the exact player IDs and explain who
   }
   assert.match(read("quran/reciters/mahmoud-al-hamoud/index.html"),/متابعة الآيات وتحديد الأجزاء غير متاحين/);
 });
+test("«زاد الخير» leads to the Zad home screen from the khatmahs bar and the Quran index",()=>{
+  assert.match(read("src/home/bootstrap.js"),/tbHome\.onclick=\(\)=>\{zkShowLaunch\(\);zkArmRootGuard\(\)\}/);
+  const library=read("src/reader/library.js");
+  assert.match(library,/<div class="quran-index-head"><a class="quran-index-brand" href="\.\/\?zad=1"[^>]*>زاد الخير<\/a><div class="quran-index-title">القرآن العظيم<\/div>/);
+  assert.doesNotMatch(library,/العودة إلى الختمات الجماعية/);
+  assert.match(read("src/reader/styles.css"),/grid-template-columns:minmax\(max-content,1fr\) auto minmax\(max-content,1fr\)/);
+  assert.match(read("install/index.html"),/<h1>تثبيت تطبيق زاد الخير<\/h1>/);
+});

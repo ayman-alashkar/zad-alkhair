@@ -106,10 +106,10 @@ for(const j of juz)write(`juz/${j.n}/index.html`,juzPage(j));
 write("quran/index.html",quranPage(surahs,juz));
 for(const r of reciters)write(`quran/reciters/${r.slug}/index.html`,reciterPage(r,surahs));
 function installPage(){
-  const title="تثبيت زاد الخير على الهاتف والحاسب",canonical="/install/";
-  const description="ثبّت زاد الخير على آيفون أو أندرويد أو الحاسب، وافتحه من الشاشة الرئيسية كتطبيق مستقل.";
+  const title="تثبيت تطبيق زاد الخير",canonical="/install/";
+  const description="ثبّت تطبيق زاد الخير على آيفون أو أندرويد أو الحاسب من موقع zad-alkhair.net، دون متجر تطبيقات.";
   const graph={"@context":"https://schema.org","@graph":[{"@type":"WebPage",name:title,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}},{"@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"زاد الخير",item:`${site}/`},{"@type":"ListItem",position:2,name:"تثبيت التطبيق",item:`${site}${canonical}`}]}]};
-  return `${head({title,description,canonical,image:"/social/zad-alkhair-install-share.png",jsonLd:graph})}<body>${installSiteHead}${crumbs([["زاد الخير","/"],["تثبيت التطبيق"]])}<main><h1>تثبيت زاد الخير</h1><p class="lead">يعمل زاد الخير على الهاتف والحاسب كتطبيق مستقل يُفتح من الشاشة الرئيسية، دون متجر تطبيقات.</p><p class="note" id="installDone" hidden>زاد الخير مثبّت على هذا الجهاز. يمكنك فتحه من أيقونته، أو اتباع الخطوات لجهاز آخر.</p><section class="install-guide" id="installGuide" aria-label="خطوات التثبيت"></section><div class="actions"><a class="btn secondary" id="installOpen" href="/">فتح زاد الخير</a></div></main>${footer}<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{})</script></body></html>`;
+  return `${head({title,description,canonical,image:"/social/zad-alkhair-install-share.png",jsonLd:graph})}<body>${installSiteHead}${crumbs([["زاد الخير","/"],["تثبيت التطبيق"]])}<main><h1>تثبيت تطبيق زاد الخير</h1><p class="lead">يعمل زاد الخير على الهاتف والحاسب كتطبيق ويب مستقل، يمكن تحميله من موقع zad-alkhair.net دون الحاجة لمتجر تطبيقات. حجمه صغير، ولا يزيد إلا بما تختار تنزيله من التلاوات، وتصله التحديثات تلقائيًا دون أي خطوة منك.</p><p class="note" id="installDone" hidden>زاد الخير مثبّت على هذا الجهاز. يمكنك فتحه من أيقونته، أو اتباع الخطوات لجهاز آخر.</p><section class="install-guide" id="installGuide" aria-label="خطوات التثبيت"></section><div class="actions"><a class="btn secondary" id="installOpen" href="/">فتح زاد الخير</a></div></main>${footer}<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{})</script></body></html>`;
 }
 write("install/index.html",installPage());
 // Hand-written guide pages share the generated header, footer and asset version.
