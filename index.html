@@ -1606,6 +1606,129 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 .zk-tab span[data-label]{display:inline-grid;text-rendering:optimizeLegibility;font-kerning:normal;font-synthesis:none;font-variant-ligatures:normal;font-optical-sizing:auto}
 .zk-tab span[data-label]::after{content:attr(data-label);font-weight:650;height:0;visibility:hidden;pointer-events:none;white-space:nowrap}
 }
+
+/* ═══════════ صفحة الختمة: الشمسة ومفتاحها والوقت المتبقّي ═══════════
+   حلّت محلّ لوح الساعة الداكن داخل بطاقة العنوان. الشمسة للعرض فقط. */
+.kp{grid-area:orbs;position:relative;z-index:1;display:flex;flex-direction:column;gap:14px;padding-top:14px;border-top:1px solid rgba(197,154,74,.22)}
+.kp-row{display:flex;align-items:center;justify-content:center;gap:14px}
+.kp-ring{position:relative;flex:none;width:156px;height:156px}
+.kp-ring .shamsa{display:block;width:100%;height:100%;margin:0;overflow:visible}
+.kp-ring .kw{stroke-width:1;animation:kwIn .5s ease backwards}
+@keyframes kwIn{from{opacity:0}}
+.kp-ring .kw.done{fill:url(#kgold);stroke:#B88B3E}
+.kp-ring .kw.taken{fill:#0D3C35;stroke:#0D3C35}
+.kp-ring .kw.free{fill:rgba(23,62,53,.05);stroke:rgba(23,62,53,.28)}
+.kp-ring .kdot{fill:#8E6A28}
+.kp-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.kp-center b{font-family:var(--naskh);font-size:44px;line-height:1;color:#173E35;font-variant-numeric:tabular-nums}
+.kp-center span{margin-top:2px;font-size:11px;color:#6B6350}
+.kp-legend{flex:1;min-width:0;max-width:220px;display:flex;flex-direction:column;gap:9px;color:#173E35}
+.kp-eyebrow{font-size:12px;font-weight:600;color:#8E6A28}
+.kp-item{display:flex;align-items:center;gap:8px;font-size:13px}
+.kp-item>span{flex:1}
+.kp-item b{font-variant-numeric:tabular-nums}
+.kp-item i{flex:none;width:10px;height:10px;box-sizing:border-box;border-radius:3px}
+.kp-item .k-done{background:linear-gradient(#E9CF8C,#C59A4A)}
+.kp-item .k-take{background:#0D3C35}
+.kp-item .k-free{border:1.5px solid rgba(23,62,53,.35)}
+.kp-item .k-mine{position:relative}
+.kp-item .k-mine::after{content:"";position:absolute;inset:2px;border-radius:50%;background:#8E6A28}
+.kp-left{width:100%;min-height:46px;display:flex;align-items:center;gap:10px;margin:0;padding:0 14px;border:0;border-radius:14px;background:#0D3C35;color:#FFF9EA;font-family:inherit;cursor:pointer;text-align:start}
+.kp-left:hover{background:#0F4A40}
+.kp-left:focus-visible{outline:2px solid #C59A4A;outline-offset:2px}
+.kp-left svg{flex:none;width:18px;height:18px;fill:none;stroke:#E4C980;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.kp-lab{flex:1;min-width:0;font-size:12px;color:rgba(255,249,234,.75)}
+.kp-time{flex:none;font-size:15px;color:#E4C980;font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (min-width:861px){.kp-ring{width:210px;height:210px}.kp-center b{font-size:58px}.kp-row{gap:28px}}
+
+/* ═══════════ أجزاؤك ═══════════
+   رقم الجزء بشكل خلية الشبكة نفسها، فلا يتغيّر بين المحجوز والمقروء إلا لونه. */
+.myjuz{display:flex;flex-direction:column;gap:14px;margin-top:1rem;padding:16px 14px;border-radius:24px}
+.myjuz .sec-head{margin:0}
+.myjuz-sub{font-size:12px;color:var(--muted)}
+.jbadge{position:relative;flex:none;width:40px;height:50px;box-sizing:border-box;display:grid;place-items:center;border:1px solid rgba(13,60,53,.42);border-radius:20px 20px 9px 9px;background:linear-gradient(180deg,#F1F5F2 0%,#DFE9E4 100%);color:#0D3C35}
+.jbadge b{font-family:var(--ruqaa);font-size:19px;font-weight:700;line-height:1}
+.jbadge::after{content:"";position:absolute;bottom:0;inset-inline:9px;height:2px;border-radius:4px 4px 0 0;background:currentColor}
+.jbadge.done{border-color:#D4AE5C;background:#FCF8EC;color:#9A711F}
+.jbadge.free{border:1.5px dashed #CFC4AC;background:rgba(255,253,247,.9);color:#6B6350}
+.jbadge.free::after{display:none}
+.jbadge.big{width:58px;height:70px;border-radius:29px 29px 12px 12px}
+.jbadge.big b{font-size:26px}
+.jbadge.big::after{inset-inline:12px;height:3px}
+.myjuz-cur,.myjuz-open{display:flex;align-items:center;gap:14px;width:100%;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:start;cursor:pointer}
+.myjuz-open{gap:12px;min-height:66px}
+.myjuz-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.myjuz-order{font-size:12px;font-weight:600;color:#96702D}
+.myjuz-title{font-family:var(--ruqaa);font-size:25px;font-weight:700;line-height:1.4;color:var(--ink)}
+.myjuz-range{font-family:var(--naskh);font-size:15px;color:var(--muted)}
+.myjuz-text>strong:not(.myjuz-title){font-size:14px;font-weight:600}
+.myjuz-text>span:not(.myjuz-order):not(.myjuz-range){font-size:11.5px;color:var(--muted)}
+.myjuz-progress{display:flex;flex-direction:column;gap:6px}
+.myjuz-progress>div{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:600}
+.myjuz-progress>div span:last-child{font-weight:400;color:var(--muted)}
+.myjuz-bar{display:block;height:6px;border-radius:6px;background:rgba(19,40,35,.08);overflow:hidden}
+.myjuz-bar i{display:block;height:100%;border-radius:6px;background:#C59A4A}
+.myjuz-actions{display:flex;gap:8px}
+.myjuz-actions .btn{min-height:48px;margin:0;border-radius:15px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.myjuz-actions a.btn{flex:1;text-decoration:none;background:#0A473E;border-color:#0A473E;color:#FFF9EA}
+.myjuz-actions .btn.quiet{flex:0 0 auto;background:transparent;border:1px solid rgba(197,154,74,.5);color:#96702D}
+.myjuz-actions .btn.gold{flex:0 0 auto}
+.myjuz-actions a.btn.quiet{flex:1}
+.myjuz-actions .zk-icon{width:19px;height:19px}
+.myjuz-rows{display:flex;flex-direction:column;border-top:1px solid #E9E0CF}
+.myjuz-row{display:flex;align-items:center;gap:8px}
+.myjuz-row+.myjuz-row{border-top:1px solid #E9E0CF}
+.myjuz-read{flex:none;min-height:44px;display:inline-flex;align-items:center;padding:0 12px;color:#0A473E;font-size:13px;font-weight:600;text-decoration:none}
+.myjuz-pill{flex:none;padding:4px 10px;border-radius:99px;background:#F4E8CA;color:#8A6420;font-size:11px;font-weight:700}
+.myjuz-empty{display:flex;align-items:center;gap:14px}
+.myjuz-empty>div{display:flex;flex-direction:column}
+.myjuz-empty strong{font-family:var(--ruqaa);font-size:23px;font-weight:700;line-height:1.4}
+.myjuz-empty span{font-size:12px;color:var(--muted)}
+.myjuz.all-done .myjuz-empty strong{color:#8A6420}
+
+/* ═══════════ شبكة الأجزاء بألوان الشمسة، وفلترها ═══════════ */
+.cell{--state:#8A8270;border:1.5px dashed #CFC4AC;background:rgba(255,253,247,.9)}
+.cell .num{color:#173E35}
+.cell::before{background:transparent;border:1.5px solid var(--state);box-sizing:border-box;box-shadow:none}
+.cell::after{display:none}
+.cell.taken,.cell.done{border-style:solid;border-width:1px}
+.cell.taken::after,.cell.done::after{display:block}
+.cell.taken::before,.cell.done::before{background:var(--state);border:0}
+.cell.taken{--state:#0D3C35;border-color:rgba(13,60,53,.42);background:linear-gradient(180deg,#F1F5F2 0%,#DFE9E4 100%);box-shadow:0 12px 26px -24px rgba(14,72,58,.55)}
+.cell.taken::before{box-shadow:0 0 0 4px rgba(13,60,53,.12)}
+.cell.taken .num,.cell.taken .who{color:#0D3C35}
+.cell.taken .range{color:#4A5F58}
+.cell.done{--state:#C59A4A;border-color:#D4AE5C;background:#FCF8EC}
+.cell.done .num,.cell.done .who{color:#9A711F}
+.cell.mine{border-color:#C59A4A;box-shadow:0 0 0 3px rgba(197,154,74,.22),0 18px 34px -27px rgba(50,37,18,.64)}
+.legend .lg-free{color:#6B6350}
+.legend .lg-free::before{background:transparent;border:1.5px solid #8A8270;box-sizing:border-box}
+.legend .lg-take{color:#0D3C35}
+.legend .lg-take::before{background:#0D3C35}
+.grid.only-free .cell.taken,.grid.only-free .cell.done{display:none}
+.jfilter{display:flex;gap:6px;margin-inline-start:auto}
+.jfilter button{min-height:36px;padding:0 12px;border:1px solid #DDD2BD;border-radius:99px;background:#FFFDF7;color:var(--ink);font-family:inherit;font-size:12px;cursor:pointer}
+.jfilter button[aria-pressed="true"]{border-color:#0D3C35;background:#0D3C35;color:#FFF9EA;font-weight:600}
+.jfilter button:focus-visible{outline:2px solid #C59A4A;outline-offset:2px}
+
+/* ═══════════ المشاركون: مطويّة، ويفتحها من يريد ═══════════ */
+.people-panel>summary{list-style:none;cursor:pointer;margin:0;padding:.3rem .2rem;border-radius:14px;-webkit-tap-highlight-color:transparent}
+.people-panel>summary::-webkit-details-marker{display:none}
+.people-panel>summary:focus-visible{outline:2px solid rgba(228,201,128,.5);outline-offset:2px}
+.people-panel[open]>summary{margin-bottom:.8rem}
+.people-count{margin-inline-start:auto;color:var(--ivory);font-size:.78rem}
+.people-chev{flex:none;width:20px;height:20px;fill:none;stroke:var(--gold-hi);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s ease}
+.people-panel[open] .people-chev{transform:rotate(180deg)}
+.people-panel>summary.sec-head{flex-wrap:nowrap}
+
+/* ═══════════ نافذة الجزء: نقش الرئيسية متحرّكًا ═══════════
+   تتحرّك صورة الخلفية لا الطبقة نفسها، فلا تتجاوز الطبقة حدود النافذة
+   ولا تضيف مساحة تمرير. النافذة قصيرة العمر، فالكلفة محدودة. */
+.sheet{isolation:isolate}
+.sheet::before{content:"";display:block;position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:.05;
+  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:sheetFlow 60s linear infinite}
+@keyframes sheetFlow{to{background-position:-248.16px -164.95px}}
+@media (prefers-reduced-motion:reduce){.sheet::before,.kp-ring .kw{animation:none}}
 </style>
 
 
@@ -2091,21 +2214,6 @@ const ptNextLabel=cfg=>{
   return `${PT_NAMES[n.key]} بعد ${arDur((n.at-Date.now())/6e4,true)}`;
 };
 
-function ptLine(){
-  if(!ptReady()) return "";
-  return `<button class="prayer-fab" id="btn-prayer">
-    <span class="pt-icon">${PRAYER_ICON}</span>
-    <span class="pt-label">مواقيت الصلاة</span></button>`;
-}
-
-function ptNextLine(){
-  if(!ptReady()) return "";
-  const cfg=ptGet();
-  let tail=`<span class="pt-next pt-ask">حدّد مدينتك</span>`;
-  if(cfg){ try{ tail=`<span class="pt-next">${ptNextLabel(cfg)}</span>`; }catch(e){ tail=""; } }
-  return `<div class="next-prayer">${PRAYER_ICON}${tail}</div>`;
-}
-
 function prayerDialog(){
   if(!ptReady()) return toast("تعذّر تحميل حاسبة المواقيت");
   const cfg=ptGet();
@@ -2339,71 +2447,11 @@ const hourOptions=sel=>Array.from({length:24},(_,h)=>
 const fmtH=iso=>{try{return new Date(iso+"T12:00:00")
   .toLocaleDateString("ar-SA-u-ca-islamic-umalqura",{day:"numeric",month:"long"});}catch(e){return "";}};
 
-/* ═══════════ الساعة والعدّاد ═══════════
-   قرصها من قرص الشمسة نفسه: الحلقتان الذهبيتان بمقاسيهما،
-   والقلب المضيء بنصف قطره، فتقرأ العين الاثنتين أختين.
-   العقرب الثاني يمضي بزاوية متزايدة أبدًا، فلا يرتدّ عند الدقيقة. */
+/* ═══════════ موعد الختمة والوقت المتبقّي ═══════════ */
 const WEEKDAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const fmtClockG=iso=>{const d=new Date(iso+"T12:00:00");return `${WEEKDAYS[d.getDay()]} ${ar(d.getDate())} ${MONTHS[d.getMonth()]} ${ar(d.getFullYear())}`;};
 const fmtClockH=iso=>{try{return new Date(iso+"T12:00:00")
   .toLocaleDateString("ar-SA-u-ca-islamic-umalqura",{day:"numeric",month:"long",year:"numeric"});}catch(e){return "";}};
-const ZEP=Math.floor(Date.now()/1000), ZEPS=new Date().getSeconds();
-const zSecDeg=()=>((Math.floor(Date.now()/1000)-ZEP)+ZEPS)*6;
-
-function zClock(){
-  const C=160, pt=(r,d)=>{const a=(d-90)*Math.PI/180;
-    return[(C+r*Math.cos(a)).toFixed(1),(C+r*Math.sin(a)).toFixed(1)];};
-
-  let ticks="";
-  for(let i=0;i<60;i++){
-    const big=i%5===0, [x1,y1]=pt(big?112:120,i*6), [x2,y2]=pt(126,i*6);
-    ticks+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke-linecap="round"
-      stroke="${big?"#C08A2B":"#DCCBA8"}" stroke-width="${big?2.4:1}"/>`;
-  }
-  let nums="";
-  for(let i=1;i<=12;i++){
-    const [x,y]=pt(96,i*30);
-    nums+=`<text x="${x}" y="${(+y+7.5).toFixed(1)}" text-anchor="middle"
-      font-family="Amiri,serif" font-size="21" fill="#8C5A2E">${ar(i)}</text>`;
-  }
-  return `<svg class="zclock" id="zclock" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"
-      role="img" aria-label="الساعة الآن">
-    <circle cx="160" cy="160" r="142" fill="none" stroke="#C08A2B" stroke-opacity=".45"/>
-    <circle cx="160" cy="160" r="136" fill="none" stroke="#C08A2B" stroke-opacity=".22"/>
-    <circle cx="160" cy="160" r="130" fill="#FFFCF4"/>
-    ${ticks}${nums}
-    <circle cx="160" cy="160" r="68" fill="none" stroke="#C08A2B" stroke-opacity=".2"/>
-    <g id="zh"><path d="M160 84 L165.5 104 L163 182 L157 182 L154.5 104 Z" fill="#33291B"/></g>
-    <g id="zm"><path d="M160 50 L164 74 L162.2 186 L157.8 186 L156 74 Z" fill="#33291B"/></g>
-    <g id="zs">
-      <line x1="160" y1="192" x2="160" y2="40" stroke="#B4574E" stroke-width="1.7" stroke-linecap="round"/>
-      <circle cx="160" cy="181" r="6.5" fill="none" stroke="#B4574E" stroke-width="1.7"/>
-    </g>
-    <circle cx="160" cy="160" r="7.5" fill="#C08A2B"/>
-    <circle cx="160" cy="160" r="3.2" fill="#FFFCF4"/>
-  </svg>`;
-}
-
-function zOrb(){
-  return `<div class="zcol">
-    <div class="cdown">
-      <button class="cd-lab deadline-trigger" id="deadline-trigger" type="button"
-        aria-haspopup="dialog">الوقت المتبقّي لقراءة جزءك</button>
-      <div class="cd-cells">
-        <span class="cd-cell"><b id="cd-d">—</b><em>يوم</em></span>
-        <span class="cd-cell"><b id="cd-h">—</b><em>ساعة</em></span>
-        <span class="cd-cell"><b id="cd-m">—</b><em>دقيقة</em></span>
-        <span class="cd-cell"><b id="cd-s">—</b><em>ثانية</em></span>
-      </div>
-    </div>
-    ${zClock()}
-    <div class="cdate">
-      <span class="cd-g" id="cd-greg"></span>
-      <span class="cd-hij" id="cd-hij"></span>
-    </div>
-    ${ptNextLine()}
-  </div>`;
-}
 
 function deadlineDialog(){
   if(!state||!state.endDate) return;
@@ -2418,42 +2466,22 @@ function deadlineDialog(){
   document.getElementById("deadline-close").onclick=closeLayer;
 }
 
-let zDay="";
+/* الوقت المتبقّي حتى نهاية يوم الموعد، في لوحة التقدّم (khatmahProgress). */
+const dayWord=n=>n===1?"يوم":n===2?"يومان":n<=10?`${ar(n)} أيام`:`${ar(n)} يومًا`;
 function zTick(){
-  const face=document.getElementById("zclock");
-  if(!face) return;
-  const n=new Date(), s=n.getSeconds(), m=n.getMinutes(), h=n.getHours()%12;
-  const turn=(id,deg)=>{const e=document.getElementById(id);
-    if(e) e.setAttribute("transform",`rotate(${deg.toFixed(3)} 160 160)`);};
-  turn("zh",(h+m/60)*30);
-  turn("zm",(m+s/60)*6);
-  turn("zs",zSecDeg());
-
-  /* التاريخ يُعاد بناؤه عند تبدّل اليوم وحده */
-  const iso=todayISO(), g=document.getElementById("cd-greg"), hj=document.getElementById("cd-hij");
-  if(g&&(iso!==zDay||!g.textContent)){
-    zDay=iso;
-    g.textContent=fmtClockG(iso);
-    if(hj) hj.textContent=fmtClockH(iso);
-  }
-
-  /* العدّاد ينبض مع العقرب الثاني، إذ ينبعان من نبضة واحدة */
-  if(!state||!state.endDate) return;
-  const put=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
-  let left=new Date(state.endDate+"T23:59:59").getTime()-Date.now();
-  const lab=document.getElementById("deadline-trigger");   /* الصنف cd-lab، والمعرّف هذا */
+  const hms=document.getElementById("cd-hms");
+  if(!hms||!state||!state.endDate) return;
+  const days=document.getElementById("cd-days"), lab=document.getElementById("cd-lab");
+  const left=new Date(state.endDate+"T23:59:59").getTime()-Date.now();
   if(left<=0){
     if(lab) lab.textContent="انقضى وقت الختمة";
-    put("cd-d",ar(0));put("cd-h",ar(0));put("cd-m",ar(0));put("cd-s",ar(0));
+    if(days) days.textContent="";
+    hms.textContent=ar("00:00:00");
     return;
   }
-  if(lab&&lab.textContent!=="الوقت المتبقّي لقراءة جزءك") lab.textContent="الوقت المتبقّي لقراءة جزءك";
-  const t=Math.floor(left/1000);
-  const p=v=>ar(String(v).padStart(2,"0"));
-  put("cd-d",ar(Math.floor(t/86400)));
-  put("cd-h",p(Math.floor(t/3600)%24));
-  put("cd-m",p(Math.floor(t/60)%60));
-  put("cd-s",p(t%60));
+  const t=Math.floor(left/1000), p=v=>String(v).padStart(2,"0"), d=Math.floor(t/86400);
+  if(days) days.textContent=d?dayWord(d):"";
+  hms.textContent=ar(`${p(Math.floor(t/3600)%24)}:${p(Math.floor(t/60)%60)}:${p(t%60)}`);
 }
 /* حلقة تُصحّح انحرافها، فتقع كل نبضة على رأس الثانية */
 function zLoop(){ zTick(); setTimeout(zLoop, 1000-(Date.now()%1000)); }
@@ -2762,33 +2790,104 @@ const TG_ICON=`<svg class="tgicon" viewBox="0 0 24 24" xmlns="http://www.w3.org/
 const rule=()=>`<div class="rule"><i>◆ ◆ ◆</i></div>`;
 
 /* ===================== الشمسة ===================== */
+/* للعرض فقط: الذهبي لما تمّت قراءته، والأخضر الداكن للمحجوز، والإطار وحده للمتاح.
+   النقطة الذهبية خارج الحلقة تدلّ على أجزائك. الألوان نفسها في شبكة الأجزاء. */
 function shamsa(){
-  const cx=160,cy=160,r1=76,r2=126,n=30,step=360/n,gap=1.5;
-  const pt=(r,d)=>{const a=d*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];};
-  let w="";
-  for(let i=0;i<n;i++){
+  const cx=100,cy=100,r1=66,r2=90,step=12,gap=1.6;
+  const pt=(r,d)=>{const a=d*Math.PI/180;return[(cx+r*Math.cos(a)).toFixed(2),(cy+r*Math.sin(a)).toFixed(2)];};
+  let w="",dots="";
+  state.juz.forEach((j,i)=>{
     const a1=-90+i*step+gap/2,a2=-90+(i+1)*step-gap/2;
     const[x1,y1]=pt(r2,a1),[x2,y2]=pt(r2,a2),[x3,y3]=pt(r1,a2),[x4,y4]=pt(r1,a1);
-    const s=state.juz[i].status;
-    const fill=s==="done"?"url(#g)":s==="taken"?"#B9DED2":"#DCEDF3";
-    const st=s==="done"?"#C99A45":s==="taken"?"#287A65":"#2E7C97";
-    w+=`<path class="wedge" data-i="${i}" style="animation-delay:${i*18}ms"
-      d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z"
-      fill="${fill}" stroke="${st}" stroke-width="1.1"><title>الجزء ${i+1}</title></path>`;
-  }
+    const cls=j.status==="done"?"done":j.status==="taken"?"taken":"free";
+    w+=`<path class="kw ${cls}" style="animation-delay:${i*18}ms" d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z"/>`;
+    if(j.ownerId===viewer.id){const[x,y]=pt(97,-90+(i+.5)*step);dots+=`<circle class="kdot" cx="${x}" cy="${y}" r="2.8"/>`;}
+  });
   const done=state.juz.filter(j=>j.status==="done").length;
-  return `<svg class="shamsa" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" role="img"
-      aria-label="تمّت قراءة ${done} من ثلاثين جزءًا">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#F8E9C4"/><stop offset="1" stop-color="#E5C06B"/></linearGradient></defs>
-    <circle cx="160" cy="160" r="142" fill="none" stroke="#C99A45" stroke-opacity=".42"/>
-    <circle cx="160" cy="160" r="136" fill="none" stroke="#C99A45" stroke-opacity=".2"/>
-    ${w}
-    <circle cx="160" cy="160" r="68" fill="#FFFCF4" stroke="#C99A45" stroke-opacity=".5"/>
-    <circle cx="160" cy="160" r="62" fill="none" stroke="#C99A45" stroke-opacity=".27"/>
-    <text x="160" y="152" text-anchor="middle" font-family="Amiri,serif" font-size="50" fill="#C99A45">${ar(done)}</text>
-    <text x="160" y="184" text-anchor="middle" font-family="Amiri,serif" font-size="19" fill="#8A7657">من ٣٠ جزءًا</text>
+  return `<svg class="shamsa" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img"
+      aria-label="تمّت قراءة ${ar(done)} من ثلاثين جزءًا">
+    <defs><linearGradient id="kgold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9CF8C"/><stop offset="1" stop-color="#C59A4A"/></linearGradient></defs>
+    <circle cx="100" cy="100" r="62" fill="#FFFCF4" stroke="#C59A4A" stroke-opacity=".35"/>
+    ${w}${dots}
   </svg>`;
+}
+
+/* لوحة التقدّم: الشمسة ومفتاح ألوانها، وتحتها الوقت المتبقّي (يحدّثه zTick). */
+function khatmahProgress(){
+  const n=s=>state.juz.filter(s).length;
+  const done=n(j=>j.status==="done"),free=n(j=>j.status==="free"),mine=n(j=>j.ownerId===viewer.id);
+  return `<div class="kp">
+    <div class="kp-row">
+      <div class="kp-ring">${shamsa()}
+        <div class="kp-center" aria-hidden="true"><b>${ar(done)}</b><span>من ٣٠ جزءًا</span></div>
+      </div>
+      <div class="kp-legend">
+        <span class="kp-eyebrow">تقدّم الختمة</span>
+        <span class="kp-item"><i class="k-done"></i><span>تمّت قراءته</span><b>${ar(done)}</b></span>
+        <span class="kp-item"><i class="k-take"></i><span>قيد القراءة</span><b>${ar(30-done-free)}</b></span>
+        <span class="kp-item"><i class="k-free"></i><span>متاح</span><b>${ar(free)}</b></span>
+        ${mine?`<span class="kp-item"><i class="k-mine"></i><span>أجزاؤك</span><b>${ar(mine)}</b></span>`:""}
+      </div>
+    </div>
+    <button class="kp-left deadline-trigger" id="deadline-trigger" type="button" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+      <span class="kp-lab" id="cd-lab">الوقت المتبقّي لقراءة جزءك</span>
+      <b class="kp-time"><span id="cd-days"></span> <bdi dir="ltr" id="cd-hms">—</bdi></b>
+    </button>
+  </div>`;
+}
+
+/* ===================== أجزاؤك ===================== */
+const juzCountWord=n=>n===1?"جزء واحد":n===2?"جزءان":n<=10?`${ar(n)} أجزاء`:`${ar(n)} جزءًا`;
+function juzBadge(n,done,big=false){
+  return `<span class="jbadge ${done?"done":"taken"}${big?" big":""}" aria-hidden="true"><b>${ar(n)}</b></span>`;
+}
+/* أبعد صفحة بلغها القارئ داخل الجزء، كما يحفظها القارئ نفسه (recordJuzProgress). */
+function juzReading(n){
+  const [first,last]=JUZ_PAGES[n-1],total=last-first+1;
+  const reached=Number((ztReadJson(ZT_JUZ_PROGRESS)||{})[code]?.[n]);
+  const started=reached>=first&&reached<=last;
+  return {total,reached,started,read:started?reached-first:0,atEnd:started&&reached===last};
+}
+function myJuzCard(){
+  const mine=state.juz.map((j,i)=>({i,n:i+1,done:j.status==="done",own:j.ownerId===viewer.id})).filter(x=>x.own);
+  const head=(sub)=>`<div class="sec-head"><h2 class="sec">أجزاؤك</h2>${sub?`<span class="myjuz-sub">${sub}</span>`:""}</div>`;
+  if(!mine.length) return `<section class="frame myjuz">${head("")}
+      <div class="myjuz-empty"><span class="jbadge free big" aria-hidden="true"><b>+</b></span>
+        <div><strong>لم تحجز جزءًا بعد</strong><span>اختر جزءًا متاحًا من الأجزاء الثلاثين</span></div></div></section>`;
+  const doneCount=mine.filter(x=>x.done).length;
+  const sub=`${juzCountWord(mine.length)} · أتممت ${ar(doneCount)}`;
+  const pending=mine.filter(x=>!x.done);
+  if(!pending.length) return `<section class="frame myjuz all-done">${head(sub)}
+      <div class="myjuz-empty"><span class="jbadge done big" aria-hidden="true"><b>✓</b></span>
+        <div><strong>أتممت أجزاءك، تقبّل الله منك</strong><span>${mine.length===1?"الجزء":"الأجزاء"} ${mine.map(x=>ar(x.n)).join(" و")}</span></div></div></section>`;
+  const cur=pending[0],r=juzReading(cur.n);
+  const href=r.started?`reader.html?page=${r.reached}&amp;code=${encodeURIComponent(code)}`:readerLink(cur.n);
+  const readLabel=!r.started?"اقرأ جزءك":r.atEnd?"راجع جزءك":"تابع القراءة";
+  const order=mine.length>1?`<span class="myjuz-order">${ztJuzOrder(doneCount+1,mine.length)}</span>`:"";
+  const rows=mine.filter(x=>x!==cur).map(x=>{
+    const rr=juzReading(x.n);
+    const note=x.done?"":rr.started?` · قرأت ${ar(rr.read)} من ${ar(rr.total)} صفحة`:" · لم تبدأه بعد";
+    return `<div class="myjuz-row">
+      <button class="myjuz-open" type="button" data-sheet="${x.i}">${juzBadge(x.n,x.done)}
+        <span class="myjuz-text"><strong>الجزء ${ar(x.n)}</strong><span>${JUZ[x.i]}${note}</span></span></button>
+      ${x.done?`<span class="myjuz-pill">تمّت قراءته ✓</span>`:`<a class="myjuz-read" href="${readerLink(x.n)}">اقرأ</a>`}
+    </div>`;}).join("");
+  return `<section class="frame myjuz">${head(sub)}
+    <button class="myjuz-cur" type="button" data-sheet="${cur.i}">${juzBadge(cur.n,false,true)}
+      <span class="myjuz-text">${order}<strong class="myjuz-title">الجزء ${ar(cur.n)}</strong><span class="myjuz-range">${JUZ[cur.i]}</span></span>
+    </button>
+    <div class="myjuz-progress">
+      <div><span>${r.atEnd?"وصلت إلى آخر صفحة في جزئك":`قرأت ${ar(r.read)} من ${ar(r.total)} صفحة`}</span><span>${r.started?`الصفحة ${ar(r.reached)}`:""}</span></div>
+      <span class="myjuz-bar"><i style="width:${(r.atEnd?100:r.read/r.total*100).toFixed(1)}%"></i></span>
+    </div>
+    <div class="myjuz-actions">
+      <a class="btn${r.atEnd?" quiet":""}" href="${href}">${BOOK_ICON}<span>${readLabel}</span></a>
+      <button class="btn ${r.atEnd?"gold":"quiet"}" type="button" data-complete="${cur.i}">أتممت الجزء</button>
+    </div>
+    ${rows?`<div class="myjuz-rows">${rows}</div>`:""}
+  </section>`;
 }
 
 function cardShamsa(done,reserved){
@@ -3103,9 +3202,11 @@ function viewGate(){
   </div>`;
 }
 
+/* يبقيان كما اختارهما المستخدم حين يُعاد رسم الصفحة بعد كل تحديث. */
+let juzFilter="all", peopleOpen=false;
 function viewMain(){
   const done=state.juz.filter(j=>j.status==="done").length;
-  const taken=state.juz.filter(j=>j.status!=="free").length;
+  const free=state.juz.filter(j=>j.status==="free").length;
   const dl=daysLeft(state.endDate);
   const me=memberOf(viewer.id)||{};
 
@@ -3159,15 +3260,9 @@ function viewMain(){
       <div class="display">${esc(state.title)}</div>
       ${state.dedication?`<div class="dedication">على نية: ${esc(state.dedication)}</div>`:""}
     </div>
-    <div class="orbs">
-      <div class="shamsa-col">
-        ${shamsa()}
-        <div class="shamsa-meta"><em>محجوز</em><b>${ar(taken)} من ٣٠</b></div>
-      </div>
-      ${zOrb()}
-    </div>
+    ${khatmahProgress()}
   </div>
-  ${ptLine()}
+  ${myJuzCard()}
 
   ${me.linked?"":viewLinkCall()}
   ${done===30?viewKhatm():dl===0?viewOverdue():""}
@@ -3175,16 +3270,21 @@ function viewMain(){
   <div class="main-layout">
     <section class="juz-panel">
       <div class="sec-head"><h2 class="sec">الأجزاء الثلاثون</h2>
+        ${free?`<div class="jfilter" role="group" aria-label="عرض الأجزاء">
+          <button type="button" data-jf="all" aria-pressed="${juzFilter!=="free"}">الكل</button>
+          <button type="button" data-jf="free" aria-pressed="${juzFilter==="free"}">المتاحة ${ar(free)}</button>
+        </div>`:""}
         <div class="legend"><b class="lg-free">متاح</b><b class="lg-take">محجوز</b><b class="lg-done">تمّت قراءته</b></div>
       </div>
-      <div class="grid">${cells}</div>
+      <div class="grid${free&&juzFilter==="free"?" only-free":""}" id="juz-grid">${cells}</div>
     </section>
 
-    <aside class="people-panel">
-      <div class="sec-head"><h2 class="sec">المشاركون</h2>
-        <span style="color:var(--muted);font-size:.78rem">${ar((state.members||[]).length)}</span></div>
+    <details class="people-panel" id="people-panel"${peopleOpen?" open":""}>
+      <summary class="sec-head"><h2 class="sec">المشاركون</h2>
+        <span class="people-count">${ar((state.members||[]).length)}</span>
+        <svg class="people-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <div class="frame roster-list">${roster}</div>
-    </aside>
+    </details>
   </div>
 
   <div class="toolbar">
@@ -4203,9 +4303,8 @@ function bind(){
     const ok=await openBot();
     if(!ok) toast("تعذّر فتح تلغرام، تأكّد أنه مثبَّت");
   };
-  if($("zclock")) zTick();
+  if($("cd-hms")) zTick();
   if($("deadline-trigger")) $("deadline-trigger").onclick=deadlineDialog;
-  if($("btn-prayer")) $("btn-prayer").onclick=prayerDialog;
   if($("btn-leave")) $("btn-leave").onclick=leaveDialog;
   document.querySelectorAll("[data-mine]").forEach(b=>b.onclick=()=>{
     zkReplaceHash(b.dataset.mine); boot();
@@ -4297,7 +4396,20 @@ function bind(){
 
   if($("btn-logout")) $("btn-logout").onclick=logoutCurrent;
 
-  document.querySelectorAll(".cell,.wedge").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
+  document.querySelectorAll(".cell").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
+  document.querySelectorAll("[data-sheet]").forEach(el=>el.onclick=()=>openSheet(+el.dataset.sheet));
+  document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=async()=>{
+    const i=+b.dataset.complete;
+    if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(i+1)}؟ سيُبلَّغ أعضاء الختمة بذلك.`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
+    act("done",i);
+  });
+  /* الفلتر يبدّل صنفًا على الشبكة فقط، دون إعادة رسم الصفحة. */
+  document.querySelectorAll("[data-jf]").forEach(b=>b.onclick=()=>{
+    juzFilter=b.dataset.jf;
+    $("juz-grid")?.classList.toggle("only-free",juzFilter==="free");
+    document.querySelectorAll("[data-jf]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.jf===juzFilter)));
+  });
+  if($("people-panel")) $("people-panel").ontoggle=e=>{peopleOpen=e.target.open;};
   document.querySelectorAll("[data-member]").forEach(b=>b.onclick=()=>memberDialog(b.dataset.member));
 
 
