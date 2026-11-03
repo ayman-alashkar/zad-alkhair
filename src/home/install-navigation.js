@@ -31,8 +31,8 @@ pwaInstallButton?.addEventListener("click",async event=>{
   if(!pwaInstallPrompt)return;
   event.preventDefault();
   const prompt=pwaInstallPrompt;pwaInstallPrompt=null;
-  await prompt.prompt();
-  const choice=await prompt.userChoice.catch(()=>null);
+  let choice=null;
+  try{await prompt.prompt();choice=await prompt.userChoice}catch(_){location.href=pwaInstallButton.href;return}
   if(choice&&choice.outcome==="accepted")pwaInstallButton.hidden=true;
   else pwaPaintInstallButton();
 });

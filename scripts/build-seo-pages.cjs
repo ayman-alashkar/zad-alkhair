@@ -51,7 +51,14 @@ function head({title,description,canonical,image="/social/zad-alkhair-share.png"
 ${extra}${jsonLd?`<script type="application/ld+json">${json(jsonLd)}</script>\n`:""}</head>`;
 }
 const siteHead=`<header class="site-head"><a class="guide-home" href="/" aria-label="الصفحة الرئيسية لزاد الخير"><img class="mark" src="/icons/zad-mark-reverse.svg" alt=""><div><div class="brand">زاد الخير</div><div class="motto">كلامُ الباري يجمعُنا</div></div></a><button class="guide-theme" id="guideTheme" type="button" aria-label="تفعيل الوضع الليلي" aria-pressed="false" hidden></button></header>`;
-const footer=`<footer><nav class="footer-links" aria-label="روابط زاد الخير"><a href="/">الرئيسية</a><a href="/quran/">القرآن العظيم</a><a href="/khatmahs/">الختمات الجماعية</a><a href="/install/">تثبيت التطبيق</a><a href="/about/">عن زاد الخير</a></nav></footer>`;
+const navIcon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+const installIcon=navIcon('<path d="M12 3v11m-4-4 4 4 4-4M5 17v3h14v-3"/>');
+const footer=`<footer class="discovery-footer"><section class="footer-install" aria-label="تثبيت زاد الخير"><img src="/icons/icon-192.png" alt="" width="48" height="48"><div><strong>زاد الخير، أقرب إليك</strong><p>أضفه إلى جهازك، وافتحه من الشاشة الرئيسية.</p></div><a class="btn primary" href="/install/">${installIcon}<span>تثبيت التطبيق</span></a></section><nav class="footer-links" aria-label="روابط زاد الخير">${[
+["/","الرئيسية",'<path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3Z"/>'],
+["/quran/","القرآن العظيم",'<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>'],
+["/khatmahs/","الختمات الجماعية",'<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/>'],
+["/about/","عن زاد الخير",'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/>']
+].map(([href,label,path])=>`<a href="${href}">${navIcon(path)}<span>${label}</span></a>`).join("")}</nav><p class="footer-motto">كلامُ الباري يجمعُنا</p></footer>`;
 function crumbs(items){return `<nav class="breadcrumbs" aria-label="مسار الصفحة">${items.map((x,i)=>i===items.length-1?`<b>${esc(x[0])}</b>`:`<a href="${x[1]}">${esc(x[0])}</a><span>‹</span>`).join("")}</nav>`}
 
 function surahPage(s){
@@ -92,6 +99,7 @@ for(const r of reciters)write(`quran/reciters/${r.slug}/index.html`,reciterPage(
 for(const relative of ["about/index.html","khatmahs/index.html"]){
   let html=fs.readFileSync(path.join(root,"src/discovery",relative.replace("/index.html",".html")),"utf8");
   html=html.replace(/<header class="site-head">[\s\S]*?<\/header>/,siteHead)
+    .replace(/<footer>[\s\S]*?<\/footer>/,footer)
     .replace(/<meta name="theme-color" content="[^"]+">/,'<meta name="theme-color" content="#F5F0E4">')
     .replace(/<script src="\/seo-pages\.js[^"]*"><\/script>\s*/g,"")
     .replace(/<link rel="stylesheet" href="\/seo-pages\.css[^"]*">/,'<script src="/seo-pages.js?v=144"></script>\n<link rel="stylesheet" href="/seo-pages.css?v=144">');

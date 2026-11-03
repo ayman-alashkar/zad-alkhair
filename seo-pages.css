@@ -52,8 +52,17 @@ p{margin:8px 0 16px}
 .listen::after{content:'استماع ←';color:var(--gold);font-size:11px;font-weight:400;white-space:nowrap}
 .listen[data-surah-only]::after{content:'السورة كاملة ←'}
 footer{width:min(930px,calc(100% - 32px));margin:auto;padding:0 0 calc(26px + env(safe-area-inset-bottom));color:var(--muted);text-align:center;font-size:11px;line-height:1.9}
-.footer-links{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 18px}
-.footer-links a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;color:var(--muted)}
+.footer-install{display:flex;align-items:center;gap:16px;text-align:start;padding:22px;border:1px solid var(--line);border-radius:20px;background:var(--surface);margin-bottom:14px}
+.footer-install img{border-radius:13px;flex:none}
+.footer-install strong{color:var(--ink);font-size:15px;line-height:1.9}
+.footer-install p{margin:3px 0 0;font-size:11px;color:var(--muted)}
+.footer-install .btn{margin-inline-start:auto;gap:9px;flex-shrink:0}
+.footer-install svg,.footer-links svg{width:21px;height:21px;flex:none}
+.footer-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.footer-links a{display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--raised);text-decoration:none;color:var(--ink);font-size:11px}
+.footer-links svg{color:var(--gold)}
+.footer-motto{margin:18px auto 0;font:700 22px/1.8 'Aref Ruqaa',serif;color:var(--gold)}
+@media(max-width:640px){.footer-install{flex-wrap:wrap;gap:12px;padding:18px}.footer-install .btn{width:100%;margin:3px 0 0}.footer-install strong{font-size:13px}.footer-install p{font-size:10px}.footer-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
 :focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:8px}
 @media(hover:hover){.secondary:hover,.card.link:hover,.item:hover,.listen:hover,.guide-theme:hover{background:var(--selected);border-color:var(--gold)}.primary:hover{filter:brightness(1.04)}.footer-links a:hover{color:var(--gold)}}
 @media(max-width:640px){.site-head{padding:16px 0;gap:12px}.mark{width:36px;height:36px}.brand{font-size:30px}.motto{font-size:9px}.guide-home{gap:10px}.breadcrumbs{font-size:10px;gap:6px;margin-bottom:12px}main{padding:22px 18px;border-radius:20px}h1{font-size:29px}h2{margin-top:26px}.feature-grid,.reciter-grid{grid-template-columns:minmax(0,1fr)}.link-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.listen{gap:8px;flex-wrap:wrap}.listen::after{margin-inline-start:auto}.card{padding:16px}.lead{font-size:13px}.actions .btn{flex:1 1 auto}.item{font-size:12px}}

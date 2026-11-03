@@ -1074,12 +1074,12 @@ body.show-home-mine .tb-user,body.show-top-user .tb-user{opacity:1;transform:non
 .tb-popover{left:auto;inset-inline-end:max(.7rem,calc((100vw - 1220px)/2));transform:none}
 .app-help-footer{position:relative;z-index:2;width:min(1180px,calc(100% - 2rem));margin:1.6rem auto calc(1.3rem + env(safe-area-inset-bottom));text-align:center}
 .bottom-help{
-  -webkit-appearance:none;appearance:none;border:0;background:transparent;color:rgba(255,249,234,.58);
-  padding:.55rem .8rem;border-radius:10px;font-family:var(--sans);font-size:.68rem;cursor:pointer
+  -webkit-appearance:none;appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:.55rem;min-height:44px;border:1px solid rgba(228,201,128,.28);background:rgba(228,201,128,.055);color:var(--gold-hi);
+  padding:.65rem 1.1rem;border-radius:14px;font-family:var(--sans);font-size:.8rem;font-weight:650;line-height:1.5;cursor:pointer
 }
 .bottom-help:hover{color:var(--gold-hi);background:rgba(228,201,128,.06)}
 .bottom-help:focus-visible{outline:3px solid rgba(197,154,74,.25);outline-offset:2px}
-.bottom-help .zk-icon{width:.92rem;height:.92rem;vertical-align:-.18em;margin-inline-start:.25rem}
+.bottom-help .zk-icon{width:20px;height:20px;flex:none;margin:0;order:-1}
 @media(max-width:680px){
   .tb-reader{max-width:44%;font-size:1rem;padding-inline:.35rem}
   .tb-user{max-width:27vw!important}
@@ -1324,8 +1324,8 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zk-launch-option-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#0F5C50;background:transparent;box-shadow:none}
 .zk-launch-option:nth-child(1) .zk-launch-option-icon,.zk-launch-option:nth-child(2) .zk-launch-option-icon{color:#0F5C50;background:transparent;box-shadow:none}.zk-launch-option:nth-child(3) .zk-launch-option-icon{color:#9A6D25;background:transparent;box-shadow:none}
 .zk-launch-option-icon svg{display:block;width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.zk-launch-meta{position:absolute;z-index:4;left:87px;top:674px;width:326px;min-height:30px;display:flex;align-items:center;justify-content:center;gap:18px}
-.zk-launch-install{appearance:none;position:static;width:auto;min-height:28px;padding:3px 6px;border:0;background:transparent;color:#5F756D;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:650;line-height:1.4;text-decoration:none;transition:color .18s ease,opacity .18s ease}
+.zk-launch-meta{position:absolute;z-index:4;left:87px;top:664px;width:326px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:12px}
+.zk-launch-install{appearance:none;position:static;width:auto;min-height:44px;padding:10px 15px;border:1px solid #BC934A;border-radius:13px;background:linear-gradient(135deg,#F4E4B2,#D5B16A);color:#173E35;box-shadow:0 5px 14px -8px rgba(90,61,19,.5);display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:650;line-height:1.4;text-decoration:none;transition:color .18s ease,opacity .18s ease}
 .zk-launch-install[hidden]{display:none!important}
 .zk-launch-install:hover{color:#0F5C50}.zk-launch-install:focus-visible{outline:2px solid rgba(15,92,80,.22);outline-offset:2px;border-radius:10px}.zk-launch-install:active{transform:translateY(1px)}
 .zk-launch-install svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
@@ -1397,7 +1397,7 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
       </details>
       <a class="zk-launch-install" id="zk-launch-install" href="install/" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="m8 10 4 4 4-4"/><path d="M5 16.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2.5"/></svg>
-        <span>ثبّت التطبيق</span>
+        <span>تثبيت التطبيق</span>
       </a>
     </div>
   </div>
@@ -1540,8 +1540,8 @@ pwaInstallButton?.addEventListener("click",async event=>{
   if(!pwaInstallPrompt)return;
   event.preventDefault();
   const prompt=pwaInstallPrompt;pwaInstallPrompt=null;
-  await prompt.prompt();
-  const choice=await prompt.userChoice.catch(()=>null);
+  let choice=null;
+  try{await prompt.prompt();choice=await prompt.userChoice}catch(_){location.href=pwaInstallButton.href;return}
   if(choice&&choice.outcome==="accepted")pwaInstallButton.hidden=true;
   else pwaPaintInstallButton();
 });
