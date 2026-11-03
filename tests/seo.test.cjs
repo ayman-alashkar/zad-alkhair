@@ -48,7 +48,7 @@ test("Quran, reciter and surah pages use the approved concise copy",()=>{
   assert.match(quran,new RegExp(`<meta property="og:description" content="${quranDescription}">`));
   assert.match(quran,/مصحف المدينة/);
   assert.match(quran,/>افتح المصحف الشريف<\/a>/);
-  assert.match(quran,/>ثبّت التطبيق<\/a>/);
+  assert.doesNotMatch(quran,/>ثبّت التطبيق<\/a>/);
   assert.match(quran,/<strong>فضيلة الشيخ أيمن سويد<\/strong>/);
   assert.doesNotMatch(quran,/استماع وقراءة سور القرآن/);
   assert.match(quran,/اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها/);
@@ -183,10 +183,35 @@ test("every guide page uses the shared accessible appearance control and pre-pai
     const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
     const html=read(relative);if(!html.includes("seo-pages.css"))continue;
     assert.equal((html.match(/id="guideTheme"/g)||[]).length,1,relative);
-    assert.equal((html.match(/src="\/seo-pages.js\?v=144"/g)||[]).length,1,relative);
-    assert.ok(html.indexOf('/seo-pages.js?v=144')<html.indexOf('/seo-pages.css?v=144'),relative);
+    assert.equal((html.match(/src="\/seo-pages.js\?v=151"/g)||[]).length,1,relative);
+    assert.ok(html.indexOf('/seo-pages.js?v=151')<html.indexOf('/seo-pages.css?v=151'),relative);
     assert.match(html,/aria-label="تفعيل الوضع الليلي" aria-pressed="false"/);
   }
+});
+test("guide pages offer installation once, from the header menu",()=>{
+  const urls=[...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]));
+  for(const url of urls){
+    const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
+    const html=read(relative);if(!html.includes("seo-pages.css"))continue;
+    assert.match(html,/<link rel="manifest" href="\/manifest\.json">/,relative);
+    assert.doesNotMatch(html,/footer-install|أقرب إليك/,relative);
+    const footer=html.slice(html.indexOf("<footer"));
+    assert.doesNotMatch(footer,/href="\/install\/"/,relative);
+    if(relative==="install/index.html"){
+      assert.doesNotMatch(html,/id="installMenu"/);
+      assert.match(html,/id="installGuide"/);
+      assert.match(html,/id="installOpen" href="\/"/);
+    }else{
+      assert.equal((html.match(/id="installMenu"/g)||[]).length,1,relative);
+      assert.match(html,/<div class="install-menu" id="installMenu" hidden>/,relative);
+      const main=html.slice(html.indexOf("<main"),html.indexOf("</main>"));
+      assert.doesNotMatch(main,/href="\/install\/"/,relative);
+    }
+  }
+  assert.match(read("seo-pages.css"),/\.footer-links svg\{width:21px;height:21px/);
+  const script=read("seo-install.js");
+  assert.match(script,/id===myDevice&&promptEvent/);
+  assert.match(script,/p_event:'install_accepted'/);
 });
 test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
   for(const [slug,id] of [["mishary-alafasy","MisharyAlafasy_Hafs"],["ali-al-hudhaifi","Hudhaify_128kbps"],["ali-jaber","AliJaber_Hafs"],["mahmoud-al-hamoud","MahmoudAlHamoud_Surah"]]){

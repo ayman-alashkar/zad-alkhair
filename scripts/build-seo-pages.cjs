@@ -10,6 +10,7 @@ const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 const {reciters,surahs,juz}=require("../src/discovery/catalog.json");
 const reciterDescription=reciters.map(r=>r.display).join("، و");
 const check=process.argv.includes("--check");
+const assetVersion="151";
 const changed=new Set();
 function write(relative,content){
   const file=path.join(root,relative);
@@ -33,8 +34,10 @@ function head({title,description,canonical,image="/social/zad-alkhair-share.png"
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <link rel="canonical" href="${url}">
 <link rel="icon" href="/icons/zad-mark.svg" type="image/svg+xml">
-<script src="/seo-pages.js?v=144"></script>
-<link rel="stylesheet" href="/seo-pages.css?v=144">
+<link rel="manifest" href="/manifest.json">
+<script src="/seo-pages.js?v=${assetVersion}"></script>
+<link rel="stylesheet" href="/seo-pages.css?v=${assetVersion}">
+<script src="/seo-install.js?v=${assetVersion}" defer></script>
 <meta property="og:type" content="${type}">
 <meta property="og:locale" content="ar_AR">
 <meta property="og:site_name" content="زاد الخير">
@@ -50,10 +53,16 @@ function head({title,description,canonical,image="/social/zad-alkhair-share.png"
 <meta name="twitter:image" content="${imageUrl}">
 ${extra}${jsonLd?`<script type="application/ld+json">${json(jsonLd)}</script>\n`:""}</head>`;
 }
-const siteHead=`<header class="site-head"><a class="guide-home" href="/" aria-label="الصفحة الرئيسية لزاد الخير"><img class="mark" src="/icons/zad-mark-reverse.svg" alt=""><div><div class="brand">زاد الخير</div><div class="motto">كلامُ الباري يجمعُنا</div></div></a><button class="guide-theme" id="guideTheme" type="button" aria-label="تفعيل الوضع الليلي" aria-pressed="false" hidden></button></header>`;
+const brandLink=`<a class="guide-home" href="/" aria-label="الصفحة الرئيسية لزاد الخير"><img class="mark" src="/icons/zad-mark-reverse.svg" alt=""><div><div class="brand">زاد الخير</div><div class="motto">كلامُ الباري يجمعُنا</div></div></a>`;
+const themeButton=`<button class="guide-theme" id="guideTheme" type="button" aria-label="تفعيل الوضع الليلي" aria-pressed="false" hidden></button>`;
 const navIcon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 const installIcon=navIcon('<path d="M12 3v11m-4-4 4 4 4-4M5 17v3h14v-3"/>');
-const footer=`<footer class="discovery-footer"><section class="footer-install" aria-label="تثبيت زاد الخير"><img src="/icons/icon-192.png" alt="" width="48" height="48"><div><strong>زاد الخير، أقرب إليك</strong><p>أضفه إلى جهازك، وافتحه من الشاشة الرئيسية.</p></div><a class="btn primary" href="/install/">${installIcon}<span>تثبيت التطبيق</span></a></section><nav class="footer-links" aria-label="روابط زاد الخير">${[
+// The menu stays hidden until seo-pages.js confirms the app is not already installed.
+const installMenu=`<div class="install-menu" id="installMenu" hidden><button class="guide-install" id="guideInstall" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="installPanel">${installIcon}<span>حمّل التطبيق</span></button><div class="install-panel" id="installPanel" role="dialog" aria-label="تثبيت زاد الخير" tabindex="-1" hidden><div class="ip-head"><strong>أضف زاد الخير إلى جهازك</strong><button class="ip-close" type="button" aria-label="إغلاق">${navIcon('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div><div class="ip-body"></div></div></div>`;
+const siteHead=`<header class="site-head">${brandLink}<div class="head-tools">${installMenu}${themeButton}</div></header>`;
+// /install/ shows the guide inline, so its header carries only the theme control.
+const installSiteHead=`<header class="site-head">${brandLink}<div class="head-tools">${themeButton}</div></header>`;
+const footer=`<footer class="discovery-footer"><nav class="footer-links" aria-label="روابط زاد الخير">${[
 ["/","الرئيسية",'<path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3Z"/>'],
 ["/quran/","القرآن العظيم",'<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>'],
 ["/khatmahs/","الختمات الجماعية",'<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/>'],
@@ -82,7 +91,7 @@ function quranPage(surahs,juz){
   const reciterCards=reciters.map(r=>`<a class="card link reciter-card" href="/quran/reciters/${r.slug}/"><strong>${esc(r.display)}</strong><small${r.surahOnly?' class="surah-only"':""}>${r.surahOnly?"الاستماع إلى السور كاملة":"القراءة ومتابعة الآيات"}</small></a>`).join("");
   const surahLinks=surahs.map(s=>`<a class="item" href="/surah/${s.n}/"><span>سورة ${esc(s.name)}</span><small>آياتها: ${arNum(s.verses)}</small></a>`).join("");
   const juzLinks=juz.map(j=>`<a class="item" href="/juz/${j.n}/">${esc(j.title)}</a>`).join("");
-  return `${head({title,description,canonical,image:"/social/zad-alkhair-share.png",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["القرآن العظيم"]])}<main><h1>القرآن العظيم في زاد الخير</h1><p class="lead">اقرأ القرآن العظيم في مصحف المدينة، مع التفسير الوجيز للدكتور وهبة الزحيلي، وإمكانية الاستماع إلى تلاوات نخبة من القراء.</p><div class="actions"><a class="btn primary" href="/reader.html?home=1&amp;from=zad">افتح المصحف الشريف</a><a class="btn secondary" href="/quran/player-guide/">دليل مشغّل التلاوة</a><a class="btn secondary" href="/install/">ثبّت التطبيق</a></div><h2>الاستماع إلى القرآن بصوت القراء:</h2><div class="reciter-grid">${reciterCards}</div><h2 id="surahs">سور القرآن الكريم</h2><p>اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها.</p><nav class="link-grid surah-grid" aria-label="فهرس سور القرآن">${surahLinks}</nav><h2 id="ajzaa">أجزاء القرآن الكريم</h2><nav class="link-grid" aria-label="فهرس أجزاء القرآن">${juzLinks}</nav><h2>القراءة والاستماع دون اتصال</h2><p>يمكن تنزيل القرآن الكريم والتفسير كاملين للقراءة دون اتصال، كما يمكن تنزيل التلاوات التي تختارها سورةً سورةً للاستماع إليها لاحقًا.</p></main>${footer}</body></html>`;
+  return `${head({title,description,canonical,image:"/social/zad-alkhair-share.png",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["القرآن العظيم"]])}<main><h1>القرآن العظيم في زاد الخير</h1><p class="lead">اقرأ القرآن العظيم في مصحف المدينة، مع التفسير الوجيز للدكتور وهبة الزحيلي، وإمكانية الاستماع إلى تلاوات نخبة من القراء.</p><div class="actions"><a class="btn primary" href="/reader.html?home=1&amp;from=zad">افتح المصحف الشريف</a><a class="btn secondary" href="/quran/player-guide/">دليل مشغّل التلاوة</a></div><h2>الاستماع إلى القرآن بصوت القراء:</h2><div class="reciter-grid">${reciterCards}</div><h2 id="surahs">سور القرآن الكريم</h2><p>اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها.</p><nav class="link-grid surah-grid" aria-label="فهرس سور القرآن">${surahLinks}</nav><h2 id="ajzaa">أجزاء القرآن الكريم</h2><nav class="link-grid" aria-label="فهرس أجزاء القرآن">${juzLinks}</nav><h2>القراءة والاستماع دون اتصال</h2><p>يمكن تنزيل القرآن الكريم والتفسير كاملين للقراءة دون اتصال، كما يمكن تنزيل التلاوات التي تختارها سورةً سورةً للاستماع إليها لاحقًا.</p></main>${footer}</body></html>`;
 }
 function reciterPage(r,surahs){
   const title=`القرآن الكريم بصوت ${r.display} — استماع وقراءة | زاد الخير`,canonical=`/quran/reciters/${r.slug}/`;
@@ -96,13 +105,26 @@ for(const s of surahs)write(`surah/${s.n}/index.html`,surahPage(s));
 for(const j of juz)write(`juz/${j.n}/index.html`,juzPage(j));
 write("quran/index.html",quranPage(surahs,juz));
 for(const r of reciters)write(`quran/reciters/${r.slug}/index.html`,reciterPage(r,surahs));
-for(const relative of ["about/index.html","khatmahs/index.html"]){
-  let html=fs.readFileSync(path.join(root,"src/discovery",relative.replace("/index.html",".html")),"utf8");
-  html=html.replace(/<header class="site-head">[\s\S]*?<\/header>/,siteHead)
-    .replace(/<footer>[\s\S]*?<\/footer>/,footer)
+function installPage(){
+  const title="تثبيت زاد الخير على الهاتف والحاسب",canonical="/install/";
+  const description="ثبّت زاد الخير على آيفون أو أندرويد أو الحاسب، وافتحه من الشاشة الرئيسية كتطبيق مستقل.";
+  const graph={"@context":"https://schema.org","@graph":[{"@type":"WebPage",name:title,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}},{"@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"زاد الخير",item:`${site}/`},{"@type":"ListItem",position:2,name:"تثبيت التطبيق",item:`${site}${canonical}`}]}]};
+  return `${head({title,description,canonical,image:"/social/zad-alkhair-install-share.png",jsonLd:graph})}<body>${installSiteHead}${crumbs([["زاد الخير","/"],["تثبيت التطبيق"]])}<main><h1>تثبيت زاد الخير</h1><p class="lead">يعمل زاد الخير على الهاتف والحاسب كتطبيق مستقل يُفتح من الشاشة الرئيسية، دون متجر تطبيقات.</p><p class="note" id="installDone" hidden>زاد الخير مثبّت على هذا الجهاز. يمكنك فتحه من أيقونته، أو اتباع الخطوات لجهاز آخر.</p><section class="install-guide" id="installGuide" aria-label="خطوات التثبيت"></section><div class="actions"><a class="btn secondary" id="installOpen" href="/">فتح زاد الخير</a></div></main>${footer}<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{})</script></body></html>`;
+}
+write("install/index.html",installPage());
+// Hand-written guide pages share the generated header, footer and asset version.
+const assetTags=`<link rel="manifest" href="/manifest.json">\n<script src="/seo-pages.js?v=${assetVersion}"></script>\n<link rel="stylesheet" href="/seo-pages.css?v=${assetVersion}">\n<script src="/seo-install.js?v=${assetVersion}" defer></script>`;
+function shareShell(html){
+  return html.replace(/<header class="site-head">[\s\S]*?<\/header>/,siteHead)
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/,footer)
     .replace(/<meta name="theme-color" content="[^"]+">/,'<meta name="theme-color" content="#F5F0E4">')
-    .replace(/<script src="\/seo-pages\.js[^"]*"><\/script>\s*/g,"")
-    .replace(/<link rel="stylesheet" href="\/seo-pages\.css[^"]*">/,'<script src="/seo-pages.js?v=144"></script>\n<link rel="stylesheet" href="/seo-pages.css?v=144">');
+    .replace(/<link rel="manifest" href="\/manifest\.json">\s*/g,"")
+    .replace(/<script src="\/seo-(pages|install)\.js[^"]*"( defer)?><\/script>\s*/g,"")
+    .replace(/<link rel="stylesheet" href="\/seo-pages\.css[^"]*">/,assetTags);
+}
+write("quran/player-guide/index.html",shareShell(fs.readFileSync(path.join(root,"quran/player-guide/index.html"),"utf8")));
+for(const relative of ["about/index.html","khatmahs/index.html"]){
+  const html=shareShell(fs.readFileSync(path.join(root,"src/discovery",relative.replace("/index.html",".html")),"utf8"));
   write(relative,html);
 }
 const urls=["/","/quran/","/quran/player-guide/","/khatmahs/","/about/","/install/",...reciters.map(r=>`/quran/reciters/${r.slug}/`),...surahs.map(s=>`/surah/${s.n}/`),...juz.map(j=>`/juz/${j.n}/`)];

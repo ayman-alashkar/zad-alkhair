@@ -13,6 +13,39 @@ button,a{-webkit-tap-highlight-color:transparent}
 html:not([data-theme=dark]) .mark{content:url('/icons/zad-mark.svg')}
 .brand{font:700 34px/1.4 'Aref Ruqaa',serif;color:var(--ink)}
 .motto{font-size:10px;line-height:1.7;color:var(--muted)}
+.head-tools{position:relative;display:flex;align-items:center;gap:8px;flex:none}
+.install-menu[hidden]{display:none}
+.guide-install{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 14px;border:1px solid var(--line);border-radius:13px;background:var(--raised);color:var(--ink);font:600 12px/1 Alexandria,Tahoma,Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.guide-install svg{width:19px;height:19px;color:var(--gold);flex:none}
+.guide-install[aria-expanded=true]{background:var(--selected);border-color:var(--gold)}
+.install-panel{position:absolute;z-index:20;top:calc(100% + 10px);inset-inline-end:0;width:min(360px,calc(100vw - 32px));padding:18px;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 22px 50px -20px var(--shadow),0 2px 6px rgba(0,0,0,.06);text-align:start}
+html[data-theme=dark] .install-panel{background:#0A2B26;box-shadow:0 22px 50px -18px rgba(0,0,0,.6)}
+.install-panel[hidden]{display:none}
+.install-panel:focus{outline:none}
+.ip-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.ip-head strong{font:700 20px/1.6 'Aref Ruqaa',serif;color:var(--ink)}
+.ip-close{display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:10px;background:transparent;color:var(--muted);cursor:pointer}
+.ip-close svg{width:20px;height:20px}
+.ip-question{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.8}
+.ip-devices{display:grid;gap:8px}
+.ip-device{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--raised);color:var(--ink);font:600 13px/1.6 Alexandria,Tahoma,Arial,sans-serif;text-align:start;cursor:pointer}
+.ip-name{display:flex;flex-direction:column;flex:1;min-width:0}
+.ip-name small{font-size:10px;font-weight:500;color:var(--gold)}
+.ip-icon{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:11px;background:var(--selected);color:var(--gold)}
+.ip-icon svg,.ip-chevron svg,.ip-back svg,.ip-now svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ip-chevron{display:grid;color:var(--muted)}
+.ip-chevron svg{width:18px;height:18px}
+.ip-back{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:0 4px;border:0;background:transparent;color:var(--gold);font:500 12px/1.6 Alexandria,Tahoma,Arial,sans-serif;cursor:pointer}
+.ip-back svg{width:16px;height:16px}
+.ip-title{margin:6px 0 10px;font-size:14px;font-weight:600}
+.ip-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:step}
+.ip-steps li{display:flex;align-items:center;gap:12px;font-size:12px;line-height:1.9;max-width:none}
+.ip-now{width:100%;gap:8px;margin-top:16px;border:1px solid rgba(187,146,63,.5);cursor:pointer;font-family:inherit}
+.ip-note{margin:14px 0 0;font-size:11px;color:var(--muted);line-height:1.9}
+.install-guide{margin:22px 0 4px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--raised);max-width:560px}
+.install-guide .ip-title{font-size:15px}
+@media(hover:hover){.guide-install:hover,.ip-device:hover{background:var(--selected);border-color:var(--gold)}.ip-close:hover{color:var(--ink);background:var(--selected)}}
+@media(max-width:400px){.guide-install{padding:0 11px;font-size:11px}.head-tools{gap:6px}}
 .guide-theme{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:13px;background:var(--raised);color:var(--gold);cursor:pointer}
 .guide-theme[hidden]{display:none}
 .guide-theme svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -52,17 +85,12 @@ p{margin:8px 0 16px}
 .listen::after{content:'استماع ←';color:var(--gold);font-size:11px;font-weight:400;white-space:nowrap}
 .listen[data-surah-only]::after{content:'السورة كاملة ←'}
 footer{width:min(930px,calc(100% - 32px));margin:auto;padding:0 0 calc(26px + env(safe-area-inset-bottom));color:var(--muted);text-align:center;font-size:11px;line-height:1.9}
-.footer-install{display:flex;align-items:center;gap:16px;text-align:start;padding:22px;border:1px solid var(--line);border-radius:20px;background:var(--surface);margin-bottom:14px}
-.footer-install img{border-radius:13px;flex:none}
-.footer-install strong{color:var(--ink);font-size:15px;line-height:1.9}
-.footer-install p{margin:3px 0 0;font-size:11px;color:var(--muted)}
-.footer-install .btn{margin-inline-start:auto;gap:9px;flex-shrink:0}
-.footer-install svg,.footer-links svg{width:21px;height:21px;flex:none}
+.footer-links svg{width:21px;height:21px;flex:none}
 .footer-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .footer-links a{display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--raised);text-decoration:none;color:var(--ink);font-size:11px}
 .footer-links svg{color:var(--gold)}
 .footer-motto{margin:18px auto 0;font:700 22px/1.8 'Aref Ruqaa',serif;color:var(--gold)}
-@media(max-width:640px){.footer-install{flex-wrap:wrap;gap:12px;padding:18px}.footer-install .btn{width:100%;margin:3px 0 0}.footer-install strong{font-size:13px}.footer-install p{font-size:10px}.footer-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.footer-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
 :focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:8px}
 @media(hover:hover){.secondary:hover,.card.link:hover,.item:hover,.listen:hover,.guide-theme:hover{background:var(--selected);border-color:var(--gold)}.primary:hover{filter:brightness(1.04)}.footer-links a:hover{color:var(--gold)}}
 @media(max-width:640px){.site-head{padding:16px 0;gap:12px}.mark{width:36px;height:36px}.brand{font-size:30px}.motto{font-size:9px}.guide-home{gap:10px}.breadcrumbs{font-size:10px;gap:6px;margin-bottom:12px}main{padding:22px 18px;border-radius:20px}h1{font-size:29px}h2{margin-top:26px}.feature-grid,.reciter-grid{grid-template-columns:minmax(0,1fr)}.link-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.listen{gap:8px;flex-wrap:wrap}.listen::after{margin-inline-start:auto}.card{padding:16px}.lead{font-size:13px}.actions .btn{flex:1 1 auto}.item{font-size:12px}}
