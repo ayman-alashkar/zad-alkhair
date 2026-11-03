@@ -235,13 +235,12 @@ test("new reciter pages and surah links use the exact player IDs and explain who
   }
   assert.match(read("quran/reciters/mahmoud-al-hamoud/index.html"),/متابعة الآيات وتحديد الأجزاء غير متاحين/);
 });
-test("«زاد الخير» leads to the Zad home screen from the khatmahs bar and the Quran index",()=>{
-  assert.match(read("src/home/bootstrap.js"),/tbHome\.onclick=\(\)=>\{zkShowLaunch\(\);zkArmRootGuard\(\)\}/);
+test("the Quran index keeps its own title; the reader's back arrow leads to the home screen",()=>{
   const library=read("src/reader/library.js");
-  assert.match(library,/<div class="quran-index-head"><a class="quran-index-brand" href="\.\/\?zad=1"[^>]*>زاد الخير<\/a><div class="quran-index-title">القرآن العظيم<\/div>/);
+  assert.match(library,/<div class="quran-index-head"><div class="quran-index-title">القرآن العظيم<\/div>/);
+  assert.doesNotMatch(library,/quran-index-brand/);
   assert.doesNotMatch(library,/العودة إلى الختمات الجماعية/);
-  assert.match(read("src/reader/styles.css"),/grid-template-columns:minmax\(max-content,1fr\) auto minmax\(max-content,1fr\)/);
-  assert.match(read("src/reader/styles.css"),/html body .quran-index .quran-index-head-action\{width:38px;height:38px;background:transparent;border-color:transparent/);
+  assert.match(read("src/reader/reading-tools.js"),/zadReturnHeld=false;e\.preventDefault\(\);return\}\s*\/\*[^*]*\*\/\s*location\.href="\.\/";/);
   assert.match(read("install/index.html"),/<h1>تثبيت تطبيق زاد الخير<\/h1>/);
   // Surah rows and Juz separators must take every column measurement from the same variables.
   const css=read("src/reader/styles.css");
