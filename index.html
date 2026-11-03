@@ -1453,7 +1453,7 @@ body.show-top-user .topbar,body.show-home-mine .topbar{pointer-events:auto;
 body:not(.zk-launch-open){padding-top:max(4.4rem,calc(env(safe-area-inset-top) + 3.6rem))}
 
 /* النقش الموحّد: الوردة نفسها التي في الصفحة الرئيسية، بدل الشبكة السداسية القديمة. */
-body::before{inset:-60px -320px -220px -60px;opacity:.05;
+body::before{inset:-60px -320px -220px -60px;opacity:.03;
   background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat!important;
   -webkit-mask-image:none!important;mask-image:none!important;animation:ztFlow 60s linear infinite}
 .prayer-modal-head::before{inset:-60px -320px -220px -60px;opacity:.07;
@@ -1462,6 +1462,10 @@ body::before{inset:-60px -320px -220px -60px;opacity:.05;
 
 /* The «مواقيت الصلاة» tab replaces the old floating prayer button. */
 .prayer-fab{display:none!important}
+/* One dark ground everywhere: the khatmah screens take the home screen's night colours
+   (solid #061F1D, a soft gold glow at the top, the rosette at 3%). */
+html{background:#061F1D}
+body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.07),transparent 34rem),#061F1D!important}
 </style>
 
 
