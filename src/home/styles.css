@@ -1436,3 +1436,95 @@ body::before{inset:-60px -320px -220px -60px;opacity:.03;
    (solid #061F1D, a soft gold glow at the top, the rosette at 3%). */
 html{background:#061F1D}
 body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,rgba(228,201,128,.07),transparent 34rem),#061F1D!important}
+
+/* ═══ Prayer-times screen (prayer-screen.js): the second page of the home layer ═══ */
+.zt-page[hidden]{display:none}
+.zp-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;min-height:64px}
+.zp-head h2{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:32px;line-height:1.35;color:var(--zt-ink)}
+.zp-head p{margin:0;font-size:13px;color:var(--zt-muted)}
+.zp-change{flex:none;min-height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border:1px solid var(--zt-line);border-radius:14px;
+  background:var(--zt-surface);color:var(--zt-gold);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.zp-change svg,.zp-step svg,.zp-pin svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.zp-grid{display:grid;gap:16px}
+.zp-still .zt-rise,.zp-still .zt-arc-fill,.zp-still .zt-sun-dot{animation:none}
+.zp-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.zp-grid>.zp-col:last-child{animation-delay:.12s}
+
+.zp-daynav{display:flex;align-items:center;gap:8px}
+.zp-step{flex:none;width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid var(--zt-line);border-radius:14px;
+  background:var(--zt-surface);color:var(--zt-ink);cursor:pointer}
+.zp-step svg{width:20px;height:20px}
+.zp-step.flat{border-color:transparent;background:transparent;color:var(--zt-muted)}
+.zp-daytitle{flex:1;min-width:0;text-align:center;display:flex;flex-direction:column}
+.zp-daytitle b{font-size:15px;color:var(--zt-ink)}
+.zp-daytitle>span{font-size:12px;line-height:1.6;color:var(--zt-muted)}
+
+.zp-hero .zt-arc-label{inset:30px 0 0}
+.zp-hero-cap{font-size:12px;color:rgba(255,249,234,.74)}
+.zp-empty .zt-prayer-empty{padding:16px 4px 10px}
+.zp-pin{width:60px;height:60px;border-radius:20px;display:grid;place-items:center;background:rgba(228,201,128,.14);color:#E4C980}
+.zp-pin svg{width:30px;height:30px;stroke-width:1.6}
+
+.zp-table{padding:6px 8px;border:1px solid var(--zt-line);border-radius:22px;background:var(--zt-surface)}
+.zp-table ol{list-style:none;margin:0;padding:0}
+.zp-table li{display:flex;align-items:center;gap:12px;min-height:52px;padding:0 12px;border-radius:15px;color:var(--zt-ink)}
+.zp-table li.sun{color:var(--zt-muted)}
+.zp-table li.past{opacity:.5}
+.zp-table li.now{background:var(--zt-gold-soft);font-weight:700}
+.zp-name{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:15px}
+.zp-tag{padding:2px 8px;border-radius:99px;background:var(--zt-gold);color:var(--zt-surface);font-size:10px;font-weight:700}
+.zp-left{font-size:11px;font-weight:500;color:var(--zt-muted)}
+.zp-time{flex:none;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.zp-today{align-self:center;min-height:44px;padding:0 18px;border:1px solid var(--zt-line);border-radius:14px;background:var(--zt-surface);
+  color:var(--zt-gold);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+
+.zp-cal{padding:16px 14px 14px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
+.zp-cal-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;text-align:center}
+.zp-cal-head h3{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:24px;line-height:1.3}
+.zp-cal-head span{font-size:11px;color:var(--zt-muted)}
+.zp-week,.zp-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.zp-week{margin-bottom:4px}
+.zp-week span{text-align:center;font-size:11px;font-weight:600;color:var(--zt-muted)}
+.zp-week span:last-child{color:var(--zt-gold)}
+.zp-days{gap:3px}
+.zp-days button{position:relative;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;
+  border:1px solid transparent;border-radius:13px;background:transparent;color:var(--zt-ink);font:inherit;cursor:pointer;transition:background .2s ease}
+.zp-days button:hover{background:var(--zt-gold-soft)}
+.zp-days b{font-size:15px;font-weight:500;line-height:1.2}
+.zp-days small{font-size:9px;line-height:1.2;opacity:.75}
+.zp-days .today{border-color:var(--zt-gold)}
+.zp-days .today b,.zp-days .sel b{font-weight:700}
+.zp-days .sel,.zp-days .sel:hover{background:var(--zt-active);color:var(--zt-on-active)}
+.zp-cal i{display:block;width:6px;height:6px;box-sizing:border-box;border-radius:50%}
+.zp-days i{position:absolute;top:5px;left:5px}
+.zp-cal i.ev{background:var(--zt-gold)}
+.zp-cal i.wh{border:1.5px solid var(--zt-gold)}
+.zp-days .sel i.ev{background:var(--zt-on-active)}
+.zp-days .sel i.wh{border-color:var(--zt-on-active)}
+.zp-legend{list-style:none;margin:14px 0 0;padding:12px 4px 0;border-top:1px solid var(--zt-line);display:flex;flex-direction:column;gap:8px}
+.zp-legend li{display:flex;align-items:center;gap:10px;font-size:13px}
+.zp-legend i{flex:none;width:8px;height:8px}
+.zp-legend span{flex:1}
+.zp-legend small{font-size:12px;color:var(--zt-muted);text-align:end}
+.zp-adj-row{margin:12px 4px 0;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;font-size:12px;color:var(--zt-muted)}
+.zp-adj-toggle{min-height:44px;padding:0 12px;border:0;border-radius:12px;background:transparent;color:var(--zt-gold);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.zp-adj{margin-top:6px;display:flex;align-items:center;gap:8px;padding:6px;border:1px solid var(--zt-line);border-radius:16px;background:var(--zt-bg);
+  animation:ztRise .35s cubic-bezier(.2,.8,.2,1) both}
+.zp-adj span{flex:1;text-align:center;font-size:13px;font-weight:600}
+.zp-adj button{width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:12px;background:var(--zt-surface);color:var(--zt-ink);font:inherit;font-size:20px;cursor:pointer}
+.zp-adj button:disabled{opacity:.35;cursor:default}
+
+@media (min-width:860px){
+  .zp-head h2{font-size:42px}
+  .zp-head p{font-size:15px}
+  .zp-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+  .zp-hero .zt-arc-label{inset:44px 0 0}
+  .zp-days button{height:56px}
+  .zp-days b{font-size:17px}
+}
+
+/* The home rosette, faintly, inside the khatmah's title and juz panels (as on the Today screen by day). */
+.hero,.juz-panel{position:relative;overflow:hidden;isolation:isolate}
+.hero::before,.juz-panel::before{content:"";display:block;position:absolute;border:0;border-radius:0;top:-60px;left:-60px;width:calc(100% + 620px);height:calc(100% + 460px);
+  z-index:-1;pointer-events:none;opacity:.05;background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:ztFlow 60s linear infinite}
+@media (prefers-reduced-motion:reduce){.hero::before,.juz-panel::before{animation:none}}

@@ -64,3 +64,67 @@ test("the reader records the furthest page only inside the user's unfinished juz
   for(const page of [100,442,446,444,470,490])ctx.record(page);   // 100, 470: outside juz 23; 490: juz 25 is done
   assert.deepEqual(JSON.parse(store.get("zad:juz-progress-v1")),{ABCD:{"23":446}});   // furthest, never moves back
 });
+
+/* ── Prayer-times screen ── */
+function loadHijri(official,adj){
+  const src=read("src/home/prayer-screen.js");
+  const ctx={Intl,Date,Math,Number,String,Object,JSON,ztArabic:v=>String(v),
+    localStorage:{getItem:k=>k==="zad:hijri-adjust"?String(adj||0):null}};
+  vm.createContext(ctx);
+  vm.runInContext(src.slice(0,src.indexOf("/* ── حالة الشاشة ── */"))+";this.setOfficial=v=>{zpOfficialMonths=v};this.hijri=zpHijri;this.valid=zpValidOfficial",ctx);
+  ctx.setOfficial(official||{});
+  return ctx;
+}
+const noon=(y,m,d)=>Date.UTC(y,m-1,d,12);
+const ymd=h=>`${h.y}-${h.m}-${h.d}`;
+
+test("official month starts override the built-in Umm al-Qura table, later or earlier",()=>{
+  const plain=loadHijri({});
+  const at=d=>noon(2026,3,d);
+  /* The file's own entry: Eid al-Fitr 1447 fell on Friday 20 March 2026. */
+  const file=loadHijri({});file.setOfficial(file.valid(JSON.parse(read("data/hijri-adjustments.json"))));
+  assert.equal(ymd(file.hijri(at(19))),"1447-9-30");
+  assert.equal(ymd(file.hijri(at(20))),"1447-10-1");
+  /* Announced a day later than the table: Ramadan gains a day. */
+  const later=loadHijri({"1447-10":"2026-03-21"});
+  assert.equal(ymd(later.hijri(at(20))),"1447-9-"+(plain.hijri(at(19)).d+1));
+  assert.equal(ymd(later.hijri(at(21))),"1447-10-1");
+  assert.equal(ymd(later.hijri(at(25))),"1447-10-5");
+  /* Announced a day earlier: the last table day of Ramadan becomes 1 Shawwal. */
+  const earlier=loadHijri({"1447-10":"2026-03-19"});
+  assert.equal(ymd(earlier.hijri(at(18))),ymd(plain.hijri(at(18))));
+  assert.equal(ymd(earlier.hijri(at(19))),"1447-10-1");
+  assert.equal(ymd(earlier.hijri(at(20))),"1447-10-2");
+});
+test("the reader's own Hijri offset shifts the date and stays within ±2 days",()=>{
+  assert.equal(ymd(loadHijri({},1).hijri(noon(2026,11,3))),"1448-5-24");
+  assert.equal(ymd(loadHijri({},-9).hijri(noon(2026,11,3))),"1448-5-21");
+});
+test("the adjustments file is well formed and fetched past the service worker cache",()=>{
+  const ctx=loadHijri({});
+  const months=ctx.valid(JSON.parse(read("data/hijri-adjustments.json")));
+  assert.ok(Object.keys(months).length>0);
+  assert.deepEqual(Object.keys(ctx.valid({months:{"1447-13":"2026-01-01","1447-9":"bad"}})),[]);
+  assert.match(read("sw.js"),/hijri-adjustments\\\.json\$\/\.test\(url\.pathname\)\)return;/);
+});
+test("the prayer tab opens the in-app prayer screen, not the old dialog",()=>{
+  const boot=read("src/home/bootstrap.js"),html=read("src/home/index.html");
+  assert.match(html,/id="zt-prayer-page" hidden/);
+  assert.match(boot,/zk-launch-prayer"\)\?\.addEventListener\("click",\(\)=>\{\s*if\(!zkLaunchVisible\(\)\)zkShowLaunch\(\);\s*ztSetView\("prayer"\)/);
+  assert.match(boot,/if\(ztView!=="today"\)\{ztSetView\("today"\)/);
+  assert.match(read("src/home/app.js"),/@include today\.js \*\/\n\/\* @include prayer-screen\.js/);
+});
+test("calendar occasions: nights sit on the evening before, ranges list once",()=>{
+  const src=read("src/home/prayer-screen.js");
+  const ctx={};vm.createContext(ctx);
+  vm.runInContext(src.slice(src.indexOf("const ZP_EVENTS"),src.indexOf("const ZP_WEEKDAYS"))+";this.on=zpEventsOn",ctx);
+  const names=(m,d)=>[...ctx.on({m,d}).map(e=>e[2])];
+  assert.deepEqual(names(1,10),["يوم عاشوراء"]);
+  assert.deepEqual(names(7,27),["الإسراء والمعراج"]);
+  assert.deepEqual(names(8,14),["ليلة النصف من شعبان"]);
+  assert.match(names(9,26).join(),/ليلة القدر/);
+  assert.deepEqual(names(12,9),["يوم عرفة","العشر الأوائل من ذي الحجة"]);
+  assert.deepEqual(names(12,12),["أيام التشريق"]);
+  assert.deepEqual(names(3,12),["المولد النبوي"]);
+  assert.deepEqual(names(3,13),[]);
+});
