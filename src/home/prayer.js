@@ -229,8 +229,7 @@ function ptSetupDialog(){
     const meths=Object.keys(PT_METHODS).map(k=>
       `<option value="${k}"${k===method?" selected":""}>${PT_METHODS[k]}</option>`).join("");
     modal(`<div class="display" style="font-size:1.45rem">مواقيت الصلاة</div>
-      <p class="hint" style="text-align:center;margin:.3rem 0 1.1rem">
-        اختر مدينتك، فتُحسب المواقيت على جهازك.</p>
+      <div style="height:1.1rem"></div>
       <div class="field-row"><label>البلد</label>
         <select class="field" id="pt-land">${lands}</select></div>
       <div class="field-row"><label>المدينة</label>

@@ -1231,68 +1231,169 @@ html,body{max-width:100%;overflow-x:hidden}
 
 
 
-/* ═══════════ v109 · الصفحة الرئيسية كوحدة تصميم واحدة ═══════════
-   Canvas منطقي ثابت 500×780. كل عناصر المحراب ثابتة داخله، ولا يوجد أي
-   responsive sizing داخلي. عامل scale واحد يطبّق على البطاقة كلها بحسب
-   أصغر بعد متاح في الـviewport، لذلك تبقى جميع النسب مطابقة دائمًا. */
+/* ═══════════ الصفحة الرئيسية «اليوم» والشريط السفلي ═══════════
+   شاشة اليوم تبقى داخل حاوية الإطلاق القديمة (#zk-launch) فتعمل معها آلية
+   الفتح والإغلاق وزر الرجوع وروابط الختمات كما هي. ألوانها تتبع مفتاح
+   المظهر المشترك مع القارئ وصفحات الدليل (zad:qcf4:theme). شاشات الختمات
+   تبقى داكنة، فيأخذ الشريط السفلي فيها الطراز الداكن دائمًا. */
+:root,:root[data-zk-theme="light"]{
+  --zt-bg:#F5F0E4;--zt-surface:#FFFBF2;--zt-ink:#173E35;--zt-muted:#6B6350;--zt-line:rgba(169,131,58,.26);
+  --zt-gold:#8E6A28;--zt-gold-soft:rgba(197,154,74,.14);--zt-track:rgba(23,62,53,.10);--zt-hero:#0F5C50;
+  --zt-active:#0F5C50;--zt-on-active:#FFF9EA;--zt-tabbar:rgba(255,251,242,.94);--zt-inactive:#6B6350;
+  --zt-glow:rgba(213,177,106,.16);--zt-shadow:rgba(69,52,21,.28);--zt-pat:.04
+}
+:root[data-zk-theme="dark"]{
+  --zt-bg:#061F1D;--zt-surface:#0A2B26;--zt-ink:#FFF5DC;--zt-muted:#C1BBA7;--zt-line:rgba(228,201,128,.18);
+  --zt-gold:#E4C980;--zt-gold-soft:rgba(228,201,128,.11);--zt-track:rgba(255,245,220,.10);--zt-hero:#0C3B34;
+  --zt-active:#E4C980;--zt-on-active:#173E35;--zt-tabbar:rgba(8,38,33,.94);--zt-inactive:#A9A390;
+  --zt-glow:rgba(228,201,128,.07);--zt-shadow:rgba(0,0,0,.55);--zt-pat:.03
+}
 html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none!important}
-.zk-launch{
-  --zk-home-scale:1;--zk-home-cx:50vw;--zk-home-cy:50dvh;position:fixed;inset:0;z-index:120;display:none;overflow:hidden;
-  width:100%;height:100vh;height:100dvh;padding:0;overscroll-behavior:none;isolation:isolate;
-  color:var(--ink);font-family:var(--sans);
-  background:radial-gradient(circle at 50% -8%,rgba(228,201,128,.15),transparent 30rem),radial-gradient(circle at 10% 88%,rgba(73,161,140,.12),transparent 32rem),linear-gradient(154deg,#041A18 0%,#062521 48%,#0A3C34 100%)
-}
+.zk-launch{position:fixed;inset:0;z-index:120;display:none;overflow:hidden;isolation:isolate;
+  background:radial-gradient(ellipse at 50% 0%,var(--zt-glow),transparent 34rem),var(--zt-bg);color:var(--zt-ink);
+  font-family:"Alexandria",Tahoma,Arial,sans-serif;transition:background-color .35s ease,color .35s ease}
 .zk-launch.show{display:block}
-.zk-launch::before{
-  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.24;
-  background-image:linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(150deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(30deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(150deg,rgba(228,201,128,.18) 12%,transparent 12.5%,transparent 87%,rgba(228,201,128,.18) 87.5%),linear-gradient(60deg,rgba(228,201,128,.08) 25%,transparent 25.5%,transparent 75%,rgba(228,201,128,.08) 75%);
-  background-position:0 0,0 0,42px 72px,42px 72px,0 0;background-size:84px 144px;
-  -webkit-mask-image:linear-gradient(90deg,black,transparent 44%,transparent 56%,black);mask-image:linear-gradient(90deg,black,transparent 44%,transparent 56%,black)
+.zt-pattern{position:absolute;top:-60px;left:-60px;right:-320px;bottom:-220px;pointer-events:none;opacity:var(--zt-pat);
+  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:ztFlow 60s linear infinite}
+/* The tile repeats every (248.16, 164.95): sliding exactly that far loops without a jump. */
+@keyframes ztFlow{to{transform:translate(-248.16px,-164.95px)}}
+.zt-scroll{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.zt-page{max-width:1120px;margin:0 auto;box-sizing:border-box;padding:max(18px,env(safe-area-inset-top)) 18px calc(104px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px}
+.zt-rise{animation:ztRise .7s cubic-bezier(.2,.8,.2,1) both}
+.zt-greet.zt-rise{animation-delay:.06s}.zt-prayer.zt-rise{animation-delay:.12s}.zt-reading.zt-rise{animation-delay:.18s}
+@keyframes ztRise{from{opacity:0;transform:translateY(14px)}}
+.zk-today button,.zk-tabs button{font-family:inherit}
+.zk-today :focus-visible,.zk-tabs :focus-visible{outline:2px solid #C59A4A;outline-offset:3px}
+
+.zt-head{display:flex;align-items:center;justify-content:space-between;min-height:48px;position:relative;z-index:3}
+.zt-brand{display:flex;align-items:center;gap:10px}
+.zt-brand h1{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:25px;line-height:1;color:var(--zt-ink)}
+.zt-mark{position:relative;display:block;width:40px;height:40px;overflow:hidden}
+.zt-mark img{display:block;width:40px;height:40px}
+:root[data-zk-theme="dark"] .zt-mark img{content:url("icons/zad-mark-reverse.svg")}
+.zt-mark::after{content:"";position:absolute;inset:0;transform:translateX(120%);
+  background:linear-gradient(105deg,transparent 30%,rgba(255,244,205,.95) 50%,transparent 70%);
+  -webkit-mask:url("icons/zad-mark.svg") center/contain no-repeat;mask:url("icons/zad-mark.svg") center/contain no-repeat;
+  animation:ztShine 1.4s ease-in-out .7s 1 both}
+@keyframes ztShine{to{transform:translateX(-120%)}}
+.zt-tools{display:flex;gap:8px}
+.zt-icon-btn{width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid var(--zt-line);border-radius:14px;
+  background:var(--zt-surface);color:var(--zt-gold);cursor:pointer;transition:background .2s ease,border-color .2s ease}
+.zt-icon-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.zt-icon-btn[aria-expanded="true"]{background:var(--zt-gold-soft);border-color:var(--zt-gold)}
+.zt-sun{display:none}:root[data-zk-theme="dark"] .zt-sun{display:block}:root[data-zk-theme="dark"] .zt-moon{display:none}
+.zt-menu-wrap{position:relative}
+.zt-menu{position:absolute;top:calc(100% + 10px);left:0;width:250px;padding:8px;border:1px solid var(--zt-line);border-radius:20px;
+  background:var(--zt-surface);box-shadow:0 22px 50px -18px var(--zt-shadow);transform-origin:top left;animation:ztMenu .22s cubic-bezier(.2,.85,.3,1) both}
+.zt-menu[hidden]{display:none}
+@keyframes ztMenu{from{opacity:0;transform:translateY(-6px) scale(.96)}}
+.zt-menu a,.zt-menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;box-sizing:border-box;border:0;border-radius:14px;
+  background:transparent;color:var(--zt-ink);font-size:14px;text-decoration:none;text-align:start;cursor:pointer}
+.zt-menu a:hover,.zt-menu button:hover{background:var(--zt-gold-soft)}
+.zt-menu svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--zt-gold);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zt-menu .zt-menu-install{background:var(--zt-gold-soft);color:var(--zt-gold);font-weight:700}
+.zt-menu .zt-menu-install[hidden]{display:none}
+.zt-menu-sep{height:1px;margin:6px 12px;background:var(--zt-line)}
+.zt-menu-label{padding:4px 12px 2px;font-size:11px;color:var(--zt-muted)}
+
+.zt-greet h2{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:34px;line-height:1.35;color:var(--zt-ink)}
+.zt-greet p{margin:2px 0 0;font-size:13px;line-height:1.7;color:var(--zt-muted)}
+.zt-hijri{color:var(--zt-gold);font-weight:600}
+.zt-grid{display:grid;gap:14px}
+.zt-reading>*{height:100%;box-sizing:border-box}
+.zt-card{justify-content:space-between}
+
+/* Prayer card */
+.zt-prayer{position:relative;overflow:hidden;border-radius:26px;padding:16px 18px 14px;background:var(--zt-hero);color:#FFF9EA;
+  box-shadow:0 18px 40px -22px rgba(6,40,35,.65);isolation:isolate}
+.zt-prayer::before{content:"";position:absolute;top:-60px;left:-60px;width:760px;height:600px;z-index:-1;opacity:.056;pointer-events:none;
+  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:ztFlow 60s linear infinite}
+.zt-prayer-top{display:flex;justify-content:space-between;font-size:12px;color:rgba(255,249,234,.74)}
+.zt-clock{font-variant-numeric:tabular-nums}
+.zt-arc{position:relative;width:236px;height:124px;margin:4px auto 0}
+.zt-arc svg{display:block;width:100%;height:100%;overflow:visible}
+.zt-arc-track{fill:none;stroke:rgba(255,249,234,.14);stroke-width:6;stroke-linecap:round}
+.zt-arc-fill{fill:none;stroke:#E4C980;stroke-width:6;stroke-linecap:round;stroke-dasharray:301.6;transition:stroke-dashoffset 1s linear;animation:ztArc 1.8s cubic-bezier(.3,.8,.2,1) .2s both}
+@keyframes ztArc{from{stroke-dashoffset:301.6}}
+.zt-sun-dot{transition:transform 1s linear;animation:ztFade .6s ease 1.6s both}
+@keyframes ztFade{from{opacity:0}}
+.zt-arc-label{position:absolute;inset:34px 0 0;text-align:center}
+.zt-next-name{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:36px;line-height:1.2;color:#E4C980}
+.zt-countdown{font-size:15px;font-weight:500;font-variant-numeric:tabular-nums}
+.zt-prayers{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.zt-prayers li{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0;border-radius:12px;color:rgba(255,249,234,.78);font-size:11px}
+.zt-prayers li.is-next{background:rgba(228,201,128,.16);color:#E4C980;font-weight:700}
+.zt-prayers .t{font-variant-numeric:tabular-nums;opacity:.85}
+.zt-prayer-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 4px 8px;text-align:center}
+.zt-prayer-empty h3{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:24px;color:#E4C980}
+.zt-btn-gold{min-height:48px;padding:0 26px;border:0;border-radius:15px;background:#E4C980;color:#173E35;font-size:14px;font-weight:700;cursor:pointer}
+
+/* Reading / khatmah card */
+.zt-card{display:flex;flex-direction:column;gap:14px;padding:18px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
+.zt-card-row{display:flex;align-items:center;gap:14px}
+.zt-card-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.zt-eyebrow{font-size:12px;font-weight:600;color:var(--zt-gold)}
+.zt-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:25px;line-height:1.35;overflow-wrap:anywhere}
+.zt-sub{font-size:12px;color:var(--zt-muted)}
+.zt-ring{position:relative;flex:none;width:72px;height:72px}
+.zt-ring svg{display:block;width:72px;height:72px;transform:rotate(-90deg) scaleY(-1)}
+.zt-ring circle{fill:none;stroke-width:7}
+.zt-ring .bg{stroke:var(--zt-track)}
+.zt-ring .fg{stroke:var(--zt-gold);stroke-linecap:round;stroke-dasharray:188.5;transition:stroke-dashoffset 1.1s cubic-bezier(.3,.8,.2,1);animation:ztRing 1.6s cubic-bezier(.3,.8,.2,1) .35s both}
+@keyframes ztRing{from{stroke-dashoffset:188.5}}
+.zt-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.zt-ring-label b{font-size:18px;line-height:1.1}
+.zt-ring-label small{font-size:9px;color:var(--zt-muted)}
+.zt-actions{display:flex;gap:8px;flex-wrap:wrap}
+.zt-btn{flex:1;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:15px;
+  background:var(--zt-active);color:var(--zt-on-active);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:transform .15s ease}
+.zt-btn:active,.zt-continue:active{transform:scale(.98)}
+.zt-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zt-btn.quiet{flex:0 0 auto;background:transparent;color:var(--zt-gold);border:1px solid var(--zt-line)}
+.zt-done{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--zt-gold-soft);font-size:14px;font-weight:700}
+.zt-continue{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);
+  color:var(--zt-ink);text-decoration:none;transition:transform .15s ease}
+.zt-continue .zt-badge{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:var(--zt-gold-soft);color:var(--zt-gold)}
+.zt-continue .zt-badge svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zt-skeleton{min-height:150px;border-radius:24px;background:var(--zt-surface);border:1px solid var(--zt-line);opacity:.6}
+
+/* Bottom navigation */
+.zk-tabs{position:fixed;z-index:130;inset:auto 0 0 0;box-sizing:border-box;height:calc(72px + env(safe-area-inset-bottom));
+  padding:0 10px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  background:var(--zt-tabbar);border-top:1px solid var(--zt-line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  font-family:"Alexandria",Tahoma,Arial,sans-serif;--zk-tab:0}
+.zk-tabs-dot{position:absolute;top:-1px;right:calc(10px + var(--zk-tab) * (100% - 20px) / 4);width:calc((100% - 20px) / 4);display:flex;justify-content:center;
+  pointer-events:none;transition:right .45s cubic-bezier(.3,.9,.3,1)}
+.zk-tabs-dot::before{content:"";width:34px;height:3px;border-radius:0 0 3px 3px;background:var(--zt-active)}
+.zk-tab{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:0 2px;border:0;
+  background:transparent;color:var(--zt-inactive);text-decoration:none;cursor:pointer;transition:color .3s ease;-webkit-tap-highlight-color:transparent}
+.zk-tab svg{width:23px;height:23px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zk-tab span{font-size:11px;line-height:1.3;text-align:center;font-weight:500}
+.zk-tab[aria-current="page"]{color:var(--zt-active)}
+.zk-tab[aria-current="page"] span{font-weight:700}
+/* Khatmah screens keep their dark design; so does the bar over them. */
+body:not(.zk-launch-open) .zk-tabs{--zt-tabbar:rgba(5,29,27,.94);--zt-line:rgba(228,201,128,.18);--zt-active:#E4C980;--zt-inactive:#A9A390}
+body:not(.zk-launch-open){padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+@media (max-width:350px){.zk-tab span{font-size:10px}}
+
+@media (min-width:860px){
+  .zt-page{padding:32px 32px 120px;gap:24px}
+  .zt-greet h2{font-size:46px}
+  .zt-greet p{font-size:15px}
+  .zt-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:stretch}
+  .zt-prayer{padding:22px 26px}
+  .zt-arc{width:300px;height:158px;margin:12px auto 4px}
+  .zt-arc-label{inset:48px 0 0}
+  .zt-next-name{font-size:44px}
+  /* A floating bar on wide screens: the same four sections, never stretched across the window. */
+  .zk-tabs{inset:auto auto 18px 50%;transform:translateX(-50%);width:auto;height:58px;padding:6px;gap:4px;
+    grid-template-columns:none;grid-auto-flow:column;border:1px solid var(--zt-line);border-radius:20px;box-shadow:0 18px 40px -20px var(--zt-shadow)}
+  .zk-tabs-dot{display:none}
+  .zk-tab{flex-direction:row;gap:8px;padding:0 16px;border-radius:14px}
+  .zk-tab span{font-size:14px}
+  .zk-tab[aria-current="page"]{background:var(--zt-gold-soft)}
+  body:not(.zk-launch-open){padding-bottom:96px}
 }
-.zk-launch::after{content:none!important;display:none!important}
-.zk-launch-card{
-  position:absolute;z-index:1;isolation:isolate;left:var(--zk-home-cx);top:var(--zk-home-cy);width:500px;height:780px;margin:0;padding:0;border:0;background:none;box-shadow:none;
-  transform:translate(-50%,-50%) scale(var(--zk-home-scale));transform-origin:50% 50%;overflow:visible;text-align:center;will-change:transform;
-  opacity:0;visibility:hidden
+@media (prefers-reduced-motion:reduce){
+  .zk-today *,.zk-today *::before,.zk-today *::after,.zk-tabs,.zk-tabs *{animation:none!important;transition:none!important}
 }
-.zk-launch.zk-home-ready .zk-launch-card{opacity:1;visibility:visible}
-.zk-launch-mihrab{position:absolute;inset:0;z-index:0;width:500px;height:780px;display:block;overflow:visible;filter:drop-shadow(0 28px 30px rgba(0,0,0,.42)) drop-shadow(0 4px 9px rgba(197,154,74,.09))}
-.zk-launch-identity{position:absolute;z-index:1;left:80px;right:80px;top:104px;display:grid;justify-items:center;gap:1px;margin:0;padding:0}
-.zk-launch-mark{display:block;width:104px;height:104px;margin:0;object-fit:contain;filter:drop-shadow(0 9px 12px rgba(15,92,80,.12))}
-.zk-launch-brand{display:inline-block;margin:0;font-family:var(--ruqaa);font-size:67px;font-weight:700;line-height:.96;letter-spacing:0;color:#0D463D;text-shadow:0 1px 0 #fff}
-.zk-launch-brand::after{content:"";display:block;width:100%;height:1px;margin-top:7px;border-radius:999px;background:rgba(197,154,74,.62);box-shadow:0 .5px 0 rgba(255,255,255,.7)}
-.zk-launch-motto{position:absolute;z-index:1;left:135px;top:295px;width:230px;height:82px;margin:0;padding:0;transform:none;font-family:var(--ruqaa);font-weight:600;color:#A67527;text-shadow:0 1px 0 rgba(255,255,255,.82)}
-.zk-launch-motto::before,.zk-launch-motto::after{content:none!important;display:none!important}
-.zk-launch-motto span{position:absolute;display:block;white-space:nowrap;line-height:1;font-size:28px}
-.zk-launch-motto .zk-motto-rise{left:5px;top:0}.zk-launch-motto .zk-motto-and{left:50%;top:50%;transform:translate(-50%,-50%);font-size:22px;color:#B88A38}.zk-launch-motto .zk-motto-read{right:5px;bottom:0}
-.zk-launch-options{position:absolute;z-index:1;left:87px;top:412px;width:326px;display:grid;gap:13px;margin:0;padding:0}
-.zk-launch-options::before{content:none!important;display:none!important}
-.zk-launch-option{
-  appearance:none;position:relative;width:326px;height:76px;min-height:76px;margin:0;display:grid;grid-template-columns:46px 196px;align-items:center;justify-content:center;column-gap:10px;
-  direction:ltr;padding:8px 32px 8px 14px;border:1px solid rgba(167,119,38,.44);border-radius:15px;background:linear-gradient(180deg,rgba(255,253,247,.985),rgba(247,239,224,.975));color:#173D35;cursor:pointer;text-decoration:none;
-  box-shadow:0 10px 22px -18px rgba(76,48,14,.58),inset 0 1px 0 rgba(255,255,255,.96),inset 0 -1px 0 rgba(197,154,74,.05);transition:transform .12s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease
-}
-.zk-launch-option:nth-child(1),.zk-launch-option:nth-child(2),.zk-launch-option:nth-child(3){background:linear-gradient(180deg,rgba(255,253,247,.985),rgba(247,239,224,.975));border-color:rgba(167,119,38,.44)}
-.zk-launch-option:hover{border-color:rgba(167,119,38,.7);box-shadow:0 15px 28px -20px rgba(76,48,14,.7),inset 0 1px 0 #fff}.zk-launch-option:active{transform:scale(.985);background:linear-gradient(180deg,#FAF5E9,#F1E5D0)}.zk-launch-option:focus-visible{outline:3px solid rgba(15,92,80,.18);outline-offset:3px}
-.zk-launch-option::after{content:"‹";position:absolute;inset-inline-end:13px;top:50%;transform:translateY(-53%);font-family:serif;font-size:25px;color:#AA7B2B;opacity:.72}
-.zk-launch-option strong{direction:rtl;width:196px;min-width:0;text-align:right;font-family:var(--ruqaa);font-size:26px;font-weight:700;line-height:1.35;color:#123F36;white-space:nowrap}
-.zk-launch-option-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:#0F5C50;background:transparent;box-shadow:none}
-.zk-launch-option:nth-child(1) .zk-launch-option-icon,.zk-launch-option:nth-child(2) .zk-launch-option-icon{color:#0F5C50;background:transparent;box-shadow:none}.zk-launch-option:nth-child(3) .zk-launch-option-icon{color:#9A6D25;background:transparent;box-shadow:none}
-.zk-launch-option-icon svg{display:block;width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.zk-launch-meta{position:absolute;z-index:4;left:87px;top:674px;width:326px;min-height:30px;display:flex;align-items:center;justify-content:center;gap:18px}
-.zk-launch-install{appearance:none;position:static;width:auto;min-height:28px;padding:3px 6px;border:0;background:transparent;color:#5F756D;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:650;line-height:1.4;text-decoration:none;transition:color .18s ease,opacity .18s ease}
-.zk-launch-install[hidden]{display:none!important}
-.zk-launch-install:hover{color:#0F5C50}.zk-launch-install:focus-visible{outline:2px solid rgba(15,92,80,.22);outline-offset:2px;border-radius:10px}.zk-launch-install:active{transform:translateY(1px)}
-.zk-launch-install svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
-.zk-launch-guide{position:relative;color:#5F756D;font-family:var(--sans);font-size:13px;font-weight:650;line-height:1.4}
-.zk-launch-guide summary{min-height:28px;padding:4px 6px;display:flex;align-items:center;gap:5px;cursor:pointer;list-style:none;border-radius:10px;transition:color .18s ease,background .18s ease}
-.zk-launch-guide summary::-webkit-details-marker{display:none}
-.zk-launch-guide summary::before{content:"⌄";font-size:15px;line-height:1;color:#A67527;transition:transform .18s ease}
-.zk-launch-guide[open] summary::before{transform:rotate(180deg)}
-.zk-launch-guide summary:hover,.zk-launch-guide[open] summary{color:#0F5C50;background:rgba(15,92,80,.05)}
-.zk-launch-guide summary:focus-visible{outline:2px solid rgba(15,92,80,.22);outline-offset:2px}
-.zk-launch-guide nav{position:absolute;z-index:8;left:50%;bottom:calc(100% + 9px);width:238px;padding:8px;display:grid;gap:4px;transform:translateX(-50%);border:1px solid rgba(167,119,38,.35);border-radius:14px;background:#FFFDF7;box-shadow:0 16px 32px -18px rgba(52,35,13,.72);text-align:right}
-.zk-launch-guide nav::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;transform:translateX(-50%) rotate(45deg);border-inline-end:1px solid rgba(167,119,38,.35);border-bottom:1px solid rgba(167,119,38,.35);background:#FFFDF7}
-.zk-launch-guide nav a{position:relative;z-index:1;min-height:35px;padding:7px 10px;display:flex;align-items:center;border-radius:9px;color:#173D35;text-decoration:none;font-size:12px;font-weight:650}
-.zk-launch-guide nav a:hover,.zk-launch-guide nav a:focus-visible{background:#F7EEDA;color:#0F5C50;outline:none}
-.zk-launch-rosette{display:none!important}

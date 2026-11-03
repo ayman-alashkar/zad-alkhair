@@ -1,5 +1,6 @@
 
 /* @include content.js */
+/* @include quran-map.js */
 
 /* ===================== الإعدادات ===================== */
 const SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
@@ -36,5 +37,7 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
 /* @include actions.js */
 
 /* @include ui-bindings.js */
+
+/* @include today.js */
 
 /* @include bootstrap.js */

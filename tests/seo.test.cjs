@@ -95,15 +95,16 @@ test("reciter honorifics are consistent in every surah description and the reade
 test("homepage gives Google real links without changing app actions",()=>{
   const home=read("index.html");
   assert.match(home,/<link rel="icon" href="\/icons\/icon-192\.png" sizes="192x192" type="image\/png">/);
-  assert.match(home,/<a class="zk-launch-option" id="zk-launch-quran" href="quran\/">/);
-  assert.match(home,/<a class="zk-launch-option" id="zk-launch-zad" href="khatmahs\/">/);
-  assert.match(home,/<a class="zk-launch-install" id="zk-launch-install" href="install\/" hidden>/);
+  // The bottom tabs and the options menu are real links for crawlers; the app intercepts the taps.
+  assert.match(home,/<a class="zk-tab" id="zk-launch-quran" href="quran\/">/);
+  assert.match(home,/<a class="zk-tab" id="zk-launch-zad" href="khatmahs\/">/);
+  assert.match(home,/<a class="zk-launch-install zt-menu-install" id="zk-launch-install" href="install\/" role="menuitem" hidden>/);
   assert.match(home,/event=>\{event\.preventDefault\(\);zkHideLaunch\(\);boot\(\)\}/);
   assert.match(home,/القرآن العظيم، ختمات جماعية ومواقيت الصلاة/);
-  assert.match(home,/<summary>دليل زاد الخير<\/summary>/);
-  assert.match(home,/<a href="quran\/">الفهرس والقراء<\/a>/);
-  assert.match(home,/<a href="khatmahs\/">كيف تعمل الختمات؟<\/a>/);
-  assert.match(home,/<a href="about\/">عن التطبيق<\/a>/);
+  assert.match(home,/<div class="zt-menu-label">دليل زاد الخير<\/div>/);
+  assert.match(home,/<a href="quran\/" role="menuitem">.*?<span>الفهرس والقراء<\/span><\/a>/);
+  assert.match(home,/<a href="khatmahs\/" role="menuitem">.*?<span>كيف تعمل الختمات؟<\/span><\/a>/);
+  assert.match(home,/<a href="about\/" role="menuitem">.*?<span>عن التطبيق<\/span><\/a>/);
 });
 
 test("tafsir cross-references use verse then surah order",()=>{

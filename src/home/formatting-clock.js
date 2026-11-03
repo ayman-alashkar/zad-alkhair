@@ -22,7 +22,7 @@ const todayISO=()=>isoParts(new Date());
 const plusDays=n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+n);return isoParts(d);};
 const fmtG=iso=>{const d=new Date(iso+"T12:00:00");return `${ar(d.getDate())} ${MONTHS[d.getMonth()]}`;};
 const fmtTime=(h,m)=>{
-  const per = h<12 ? "صباحًا" : h<18 ? "عصرًا" : "مساءً";
+  const per = h<12 ? "صباحًا" : h<15 ? "ظهرًا" : h<18 ? "عصرًا" : "مساءً";
   const h12 = h%12===0 ? 12 : h%12;
   return `${ar(h12)}:${ar(String(m).padStart(2,"0"))} ${per}`;
 };

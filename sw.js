@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v152";
+const SHELL_STAGE_CACHE="zad-shell-stage-v153";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -34,7 +34,7 @@ const OPTIONAL_SHELL=[
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
   "./fonts/amiri-arabic-400.woff2","./fonts/amiri-latin-400.woff2","./fonts/amiri-arabic-700.woff2","./fonts/amiri-latin-700.woff2",
   "./fonts/aref-ruqaa-arabic-400.woff2","./fonts/aref-ruqaa-arabic-700.woff2",
-  "./icons/icon-32.png","./icons/icon-180.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-512-maskable.png","./icons/zad-mark.svg","./icons/zad-mark-reverse.svg","./icons/migration-ready-v115.svg"
+  "./icons/icon-32.png","./icons/icon-180.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-512-maskable.png","./icons/zad-mark.svg","./icons/zad-mark-reverse.svg","./icons/zad-rosette.svg","./icons/migration-ready-v115.svg"
 ];
 
 const QURAN_CORE=[QCF_BASE+"index.json",QCF_BASE+"verses.json",QCF_BASE+"fonts-woff2/QCF4_QBSML.woff2",QUL_HEADER];

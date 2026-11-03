@@ -107,6 +107,7 @@ function zkShowLaunch(){
   document.body.classList.add("zk-launch-open");
   zkLaunch.classList.add("show");
   zkLaunch.setAttribute("aria-hidden","false");
+  ztOnLaunchChange();
 }
 function zkHideLaunch(){
   if(!zkLaunch)return;
@@ -114,6 +115,7 @@ function zkHideLaunch(){
   zkLaunch.setAttribute("aria-hidden","true");
   document.documentElement.classList.remove("zk-launch-open");
   document.body.classList.remove("zk-launch-open");
+  ztOnLaunchChange();
 }
 const zkRootGuardToken=`${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let zkExitPressedAt=0,zkExitRearmTimer=null;
