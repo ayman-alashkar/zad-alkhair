@@ -1556,3 +1556,8 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 :root[data-zk-theme="dark"] .zt-prayers li.is-next{background:rgba(197,154,74,.16);color:#8E6A28}
 :root[data-zk-theme="dark"] .zt-prayer .zt-btn-gold{background:#0D3C35;color:#FFF9EA}
 :root[data-zk-theme="dark"] .zp-pin{background:rgba(197,154,74,.14);color:#96702D}
+/* Each label reserves the width of its bold (current) form, so tabs never shift when the current one changes. */
+@media (min-width:371px){
+.zk-tab span[data-label]{display:inline-grid;text-rendering:optimizeLegibility;font-kerning:normal;font-synthesis:none;font-variant-ligatures:normal;font-optical-sizing:auto}
+.zk-tab span[data-label]::after{content:attr(data-label);font-weight:650;height:0;visibility:hidden;pointer-events:none;white-space:nowrap}
+}

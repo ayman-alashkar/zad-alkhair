@@ -263,3 +263,10 @@ test("the Quran index opens before the mushaf fonts, and reading waits for them"
   assert.match(tools,/async function go\(p\)\{[\s\S]{0,200}if\(!readerBooted\)\{readerGoPending=true;await readerBootReady\}/);
   assert.match(read("src/reader/library.js"),/if\(!readerBooted\)loading\.classList\.remove\("hide"\)/);
 });
+test("the reader's tab bar has the home bar's exact box",()=>{
+  const reader=read("src/reader/styles.css"),home=read("src/home/styles.css");
+  assert.match(home,/\.zk-tabs\{[^}]*height:calc\(72px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(reader,/\.reader-app-tabs\{[^}]*height:calc\(72px \+ env\(safe-area-inset-bottom\)\)/);
+  assert.match(reader,/\.reader-app-tabs\{align-self:center;[^}]*margin:10px 0 18px;/);   /* home pill: bottom 18px */
+  for(const css of [home,reader])assert.match(css,/span\[data-label\]::after\{content:attr\(data-label\);font-weight:650/);
+});
