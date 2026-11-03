@@ -255,3 +255,11 @@ test("the Quran index carries Zad's four section tabs; reading pages do not",()=
   assert.doesNotMatch(read("src/reader/index.html"),/reader-app-tabs/);
   assert.doesNotMatch(library,/data-hub="zad"/);   /* the tabs lead home now */
 });
+test("the Quran index opens before the mushaf fonts, and reading waits for them",()=>{
+  const boot=read("src/reader/bootstrap.js"),tools=read("src/reader/reading-tools.js");
+  const early=boot.indexOf("openQuranIndex(tab,{home:true})"),fonts=boot.indexOf('document.fonts.load(\'48px "QCF4_QBSML"\')');
+  assert.ok(early>0&&fonts>early,"the index opens before the font wait");
+  assert.match(boot,/if\(wantsHome&&!earlyIndexOpened\)/);
+  assert.match(tools,/async function go\(p\)\{[\s\S]{0,200}if\(!readerBooted\)\{readerGoPending=true;await readerBootReady\}/);
+  assert.match(read("src/reader/library.js"),/if\(!readerBooted\)loading\.classList\.remove\("hide"\)/);
+});

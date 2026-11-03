@@ -122,8 +122,10 @@ function updatePage(animate=true,savePosition=true){
   if(milestone)showNotice(milestone);
 }
 async function go(p){
+  /* لا ننتقل قبل اكتمال الإقلاع وخطوطه؛ وتبقى شاشة التحميل حتى نبلغ الصفحة المطلوبة. */
+  if(!readerBooted){readerGoPending=true;await readerBootReady}
   const target=Math.max(1,Math.min(TOTAL_PAGES,Number(p)||1));
-  if(navigationBusy||target===currentPage)return;
+  if(navigationBusy||target===currentPage){if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}return}
   navigationBusy=true;
   try{
     await ensurePage(target);
@@ -137,7 +139,7 @@ async function go(p){
     });
     prefetchAround(target).then(()=>trimPageDom(target));
   }catch(e){console.error("QCF page load failed",target,e);showToast("تعذّر تحميل الصفحة "+ar(target))}
-  finally{navigationBusy=false}
+  finally{navigationBusy=false;if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}}
 }
 track.addEventListener("pointerdown",e=>{
   downX=e.clientX;downY=e.clientY;swipeActive=true;

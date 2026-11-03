@@ -366,7 +366,11 @@ function openQuranIndex(initialTab="s",options={}){
   const surahHost=panel.querySelector("#quranSurahList"),juzHost=panel.querySelector("#quranJuzList"),bookmarkHost=panel.querySelector("#quranBookmarkList");
   const viewport=panel.querySelector("#quranIndexViewport"),slider=panel.querySelector("#quranIndexTrack");
   let alive=true,activeTab="",ix=0,iy=0;const close=()=>{alive=false;panel.remove()};
-  const leaveHubForReader=()=>{enterReaderSurface({consumeTarget:true,fromHome:homeMode});close()};
+  const leaveHubForReader=()=>{
+    /* إن غادر القارئ الفهرس قبل اكتمال الإقلاع، تعود شاشة التحميل حتى تُرسم الصفحة. */
+    if(!readerBooted)loading.classList.remove("hide");
+    enterReaderSurface({consumeTarget:true,fromHome:homeMode});close();
+  };
   /* تبويب القرآن هو الصفحة الحالية: يعيد إلى السور بدل إعادة التحميل. */
   panel.querySelector('[data-app-tab="quran"]')?.addEventListener("click",e=>{e.preventDefault();setTab("s")});
   panel.querySelector('[data-hub-action="resume"]').onclick=leaveHubForReader;
