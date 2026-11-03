@@ -121,9 +121,9 @@ function ztReadingCard(summary){
     const ring=`<div class="zt-ring" role="img" aria-label="أُتمّ ${ztArabic(summary.groupDone)} من ${ztArabic(30)} جزءًا في الختمة"><svg viewBox="0 0 84 84" aria-hidden="true"><circle class="bg" cx="42" cy="42" r="30"/><circle class="fg" cx="42" cy="42" r="30" style="stroke-dashoffset:${(188.5*(1-summary.groupDone/30)).toFixed(1)}"/></svg>
       <div class="zt-ring-label"><b>${ztArabic(summary.groupDone)}</b><small>من ${ztArabic(30)}</small></div></div>`;
     /* الاسم كما كتبه المنظّم، كما يعرضه التطبيق في كل مكان آخر. */
-    const where=summary.title?esc(summary.title):"ختمتك";
+    const where=summary.title?`«${esc(summary.title)}»`:"ختمتك";
     if(pending.length){
-      const j=pending[0].n,more=summary.mine.length>1?` · ${ztArabic(summary.mine.filter(x=>x.done).length+1)} من ${ztArabic(summary.mine.length)}`:"";
+      const j=pending[0].n,more=summary.mine.length>1?`<span class="zt-sub zt-order">${ztJuzOrder(summary.mine.filter(x=>x.done).length+1,summary.mine.length)}</span>`:"";
       /* أبعد صفحة بلغها القارئ داخل هذا الجزء، يحفظها القارئ نفسه (recordJuzProgress). */
       const [first,last]=JUZ_PAGES[j-1],total=last-first+1;
       const reached=Number((ztReadJson(ZT_JUZ_PROGRESS)||{})[summary.code]?.[j]);
@@ -138,7 +138,7 @@ function ztReadingCard(summary){
         <div class="zt-card-row"><div class="zt-card-text">
           <span class="zt-eyebrow">جزؤك في ${where}</span>
           <span class="zt-title">الجزء ${ztArabic(j)}</span>
-          <span class="zt-sub">${esc(JUZ[j-1]||"")}${more}</span>
+          <span class="zt-sub">${esc(JUZ[j-1]||"")}</span>${more}
         </div>${ring}</div>
         ${progress}
         <div class="zt-actions">
@@ -187,6 +187,12 @@ async function ztCompleteJuz(khatmahCode,n){
   await act("done",n-1);
 }
 let ztReadingSeq=0;
+/* «جزؤك الثاني من ٣ أجزاء»: ترتيب الجزء الحالي بين أجزاء القارئ في الختمة. */
+const ZT_ORDINALS=["الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر"];
+function ztJuzOrder(k,n){
+  const count=n===2?"جزأين":n<=10?`${ztArabic(n)} أجزاء`:`${ztArabic(n)} جزءًا`;
+  return k<=10?`جزؤك ${ZT_ORDINALS[k-1]} من ${count}`:`جزؤك رقم ${ztArabic(k)} من ${count}`;
+}
 async function ztReadingRender(){
   const seq=++ztReadingSeq;
   const khatmahCode=activeKhatmahGet();
