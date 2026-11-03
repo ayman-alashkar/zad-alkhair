@@ -125,5 +125,6 @@ test("calendar occasions: nights sit on the evening before, ranges list once",()
   assert.match(names(9,26).join(),/ليلة القدر/);
   assert.deepEqual(names(12,9),["يوم عرفة","العشر الأوائل من ذي الحجة"]);
   assert.deepEqual(names(12,12),["أيام التشريق"]);
-  assert.deepEqual(names(3,12),[]);
+  assert.deepEqual(names(3,12),["المولد النبوي"]);
+  assert.deepEqual(names(3,13),[]);
 });
