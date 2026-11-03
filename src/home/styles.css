@@ -1308,7 +1308,9 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
   box-shadow:0 18px 40px -22px rgba(6,40,35,.65);isolation:isolate}
 .zt-prayer::before{content:"";position:absolute;top:-60px;left:-60px;width:760px;height:600px;z-index:-1;opacity:.056;pointer-events:none;
   background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:ztFlow 60s linear infinite}
-.zt-prayer-top{display:flex;justify-content:space-between;font-size:12px;color:rgba(255,249,234,.74)}
+.zt-prayer-top{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:rgba(255,249,234,.74)}
+.zt-prayer-top>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zt-prayer-top .zt-clock{flex:none}
 .zt-clock{font-variant-numeric:tabular-nums}
 .zt-arc{position:relative;width:236px;height:124px;margin:4px auto 0}
 .zt-arc svg{display:block;width:100%;height:100%;overflow:visible}
@@ -1342,9 +1344,10 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zt-ring .bg{stroke:var(--zt-track)}
 .zt-ring .fg{stroke:var(--zt-gold);stroke-linecap:round;stroke-dasharray:188.5;transition:stroke-dashoffset 1.1s cubic-bezier(.3,.8,.2,1);animation:ztRing 1.6s cubic-bezier(.3,.8,.2,1) .35s both}
 @keyframes ztRing{from{stroke-dashoffset:188.5}}
-.zt-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.zt-ring-cap{position:absolute;top:100%;inset-inline:0;margin-top:3px;text-align:center;font-size:10.5px;font-weight:600;color:var(--zt-muted)}
+.zt-ring-label{position:absolute;inset:0;bottom:auto;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .zt-ring-label b{font-size:18px;line-height:1.1}
-.zt-ring-label small{font-size:9px;color:var(--zt-muted)}
+.zt-ring-label small{font-size:9px;line-height:1.2;color:var(--zt-muted)}
 .zt-actions{display:flex;gap:8px;flex-wrap:wrap}
 .zt-btn{flex:1;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px;border:0;border-radius:15px;
   background:var(--zt-active);color:var(--zt-on-active);font-size:14px;font-weight:600;text-decoration:none;cursor:pointer;transition:transform .15s ease}
@@ -1361,7 +1364,6 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zt-bar{display:block;height:6px;border-radius:6px;background:var(--zt-track);overflow:hidden}
 .zt-bar i{display:block;height:100%;border-radius:6px;background:var(--zt-gold);transform-origin:right center;animation:ztBar 1.4s cubic-bezier(.3,.8,.2,1) .5s both}
 @keyframes ztBar{from{transform:scaleX(0)}}
-.zt-link{align-self:center;min-height:40px;padding:0 12px;border:0;background:transparent;color:var(--zt-gold);font-size:13px;font-weight:600;cursor:pointer}
 .zt-done{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:var(--zt-gold-soft);font-size:14px;font-weight:700}
 .zt-continue{display:flex;align-items:center;gap:14px;padding:18px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);
   color:var(--zt-ink);text-decoration:none;transition:transform .15s ease}

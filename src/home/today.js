@@ -67,7 +67,7 @@ function ztPrayerRender(){
     const isNext=k===next.key;
     return `<li class="${isNext?"is-next":""}"><span>${PT_NAMES[k]}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz)}</bdi></span></li>`;
   }).join("");
-  host.innerHTML=`<div class="zt-prayer-top"><span>الصلاة القادمة · ${esc(cfg.city)}</span><span class="zt-clock" id="zt-clock"></span></div>
+  host.innerHTML=`<div class="zt-prayer-top"><span>الصلاة القادمة في ${esc(cfg.city)}</span><span class="zt-clock" id="zt-clock"></span></div>
     <div class="zt-arc">
       <svg viewBox="-8 -2 236 124" aria-hidden="true">
         <path class="zt-arc-track" d="M 206 110 A 96 96 0 0 0 14 110"/>
@@ -119,7 +119,7 @@ function ztReadingCard(summary){
   if(summary){
     const pending=summary.mine.filter(j=>!j.done);
     const ring=`<div class="zt-ring" role="img" aria-label="أُتمّ ${ztArabic(summary.groupDone)} من ${ztArabic(30)} جزءًا في الختمة"><svg viewBox="0 0 84 84" aria-hidden="true"><circle class="bg" cx="42" cy="42" r="30"/><circle class="fg" cx="42" cy="42" r="30" style="stroke-dashoffset:${(188.5*(1-summary.groupDone/30)).toFixed(1)}"/></svg>
-      <div class="zt-ring-label"><b>${ztArabic(summary.groupDone)}</b><small>من ${ztArabic(30)}</small></div></div>`;
+      <div class="zt-ring-label"><b>${ztArabic(summary.groupDone)}</b><small>من ${ztArabic(30)}</small></div><span class="zt-ring-cap">أُتمّ</span></div>`;
     /* الاسم كما كتبه المنظّم، كما يعرضه التطبيق في كل مكان آخر. */
     const where=summary.title?`«${esc(summary.title)}»`:"ختمتك";
     if(pending.length){
@@ -144,8 +144,7 @@ function ztReadingCard(summary){
         <div class="zt-actions">
           <a class="zt-btn${atEnd?" quiet":""}" href="${readHref}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span>${readLabel}</span></a>
           <button class="zt-btn${atEnd?" gold":" quiet"}" type="button" data-zt-complete="${j}">أتممت الجزء</button>
-        </div>
-        <button class="zt-link" type="button" data-zt-open-khatmah>افتح الختمة</button></section>`;
+        </div></section>`;
     }else if(summary.mine.length){
       host.innerHTML=`<section class="zt-card" aria-label="ختمتك"><div class="zt-card-row"><div class="zt-card-text">
           <span class="zt-eyebrow">${where}</span><span class="zt-title">أتممت أجزاءك، تقبّل الله منك</span></div>${ring}</div>
