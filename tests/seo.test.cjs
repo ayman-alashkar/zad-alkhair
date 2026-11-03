@@ -228,5 +228,6 @@ test("«زاد الخير» leads to the Zad home screen from the khatmahs bar a
   assert.match(library,/<div class="quran-index-head"><a class="quran-index-brand" href="\.\/\?zad=1"[^>]*>زاد الخير<\/a><div class="quran-index-title">القرآن العظيم<\/div>/);
   assert.doesNotMatch(library,/العودة إلى الختمات الجماعية/);
   assert.match(read("src/reader/styles.css"),/grid-template-columns:minmax\(max-content,1fr\) auto minmax\(max-content,1fr\)/);
+  assert.match(read("src/reader/styles.css"),/html body .quran-index .quran-index-head-action\{width:38px;height:38px;background:transparent;border-color:transparent/);
   assert.match(read("install/index.html"),/<h1>تثبيت تطبيق زاد الخير<\/h1>/);
 });
