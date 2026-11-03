@@ -340,13 +340,11 @@ function openQuranHubMenu(closeHub){
     <button type="button" data-hub="jump"><span class="quran-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h10M5 12h7M5 18h10"/><path d="m16 10 3 2-3 2"/></svg></span><span class="quran-option-copy"><strong>انتقل إلى</strong><small>سورة وآية</small></span>${arrow}</button>
     <button type="button" data-hub="theme"><span class="quran-option-icon gold">${themeIcon}</span><span class="quran-option-copy"><strong>${dark?"الوضع النهاري":"الوضع الليلي"}</strong><small>تغيير مظهر القارئ</small></span>${arrow}</button>
     <button type="button" data-hub="guide"><span class="quran-option-icon gold"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="4"/><path d="m10 8 6 4-6 4Z"/></svg></span><span class="quran-option-copy"><strong>دليل مشغّل التلاوة</strong><small>شاهد الشرح بالفيديو · يتطلب الإنترنت</small></span>${arrow}</button>
-    <button type="button" data-hub="zad"><span class="quran-option-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.5 9.7V20h13V9.7M9.5 20v-5.5h5V20"/></svg></span><span class="quran-option-copy"><strong>زاد الخير</strong><small>${readerEntryParams().code?"العودة إلى ختمتك":"الصفحة الرئيسية"}</small></span>${arrow}</button>
   </div>`);
   b.querySelector(".sheet")?.classList.add("quran-options-sheet");
   b.querySelector('[data-hub="jump"]').onclick=()=>{b.remove();openReaderJump(closeHub)};
   b.querySelector('[data-hub="theme"]').onclick=()=>{setTheme(dark?"light":"dark");b.remove()};
   b.querySelector('[data-hub="guide"]').onclick=()=>{location.href="/quran/player-guide/"};
-  b.querySelector('[data-hub="zad"]').onclick=()=>{location.href=zadReturnUrl()};
 }
 /* أقسام زاد الخير الأربعة، كما في الصفحة الرئيسية. تظهر في الفهرس وحده، لا فوق صفحات المصحف. */
 const READER_APP_TABS=`<nav class="reader-app-tabs" aria-label="الأقسام">

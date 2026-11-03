@@ -253,4 +253,5 @@ test("the Quran index carries Zad's four section tabs; reading pages do not",()=
   for(const href of ['href="./"','href="./?section=khatmahs"','href="./?section=prayer"'])assert.ok(library.includes(href),href);
   assert.match(library,/aria-current="page" data-app-tab="quran"/);
   assert.doesNotMatch(read("src/reader/index.html"),/reader-app-tabs/);
+  assert.doesNotMatch(library,/data-hub="zad"/);   /* the tabs lead home now */
 });
