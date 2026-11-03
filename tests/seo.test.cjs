@@ -230,4 +230,8 @@ test("«زاد الخير» leads to the Zad home screen from the khatmahs bar a
   assert.match(read("src/reader/styles.css"),/grid-template-columns:minmax\(max-content,1fr\) auto minmax\(max-content,1fr\)/);
   assert.match(read("src/reader/styles.css"),/html body .quran-index .quran-index-head-action\{width:38px;height:38px;background:transparent;border-color:transparent/);
   assert.match(read("install/index.html"),/<h1>تثبيت تطبيق زاد الخير<\/h1>/);
+  // Surah rows and Juz separators must take every column measurement from the same variables.
+  const css=read("src/reader/styles.css");
+  assert.match(css,/html body \.quran-index \.quran-index-row-with-actions,\nhtml body \.quran-index \.quran-index-juz-sep\{[^}]*grid-template-columns:var\(--ix-num\) minmax\(0,1fr\) calc\(3 \* var\(--ix-btn\) \+ 2 \* var\(--ix-btn-gap\)\)\}/);
+  assert.match(css,/html body \.quran-index \.quran-index-row-main,\nhtml body \.quran-index \.quran-index-juz-main\{grid-template-columns:minmax\(0,1fr\) var\(--ix-page\)/);
 });

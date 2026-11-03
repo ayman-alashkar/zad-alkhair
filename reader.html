@@ -2417,6 +2417,23 @@ html body .quran-index .quran-index-head-action{width:38px;height:38px;backgroun
 @media(hover:hover){.quran-index .quran-index-brand:hover{opacity:.8}}
 @media(max-width:680px){.quran-index .quran-index-brand{font-size:18px}.quran-index .quran-index-title{font-size:23px}}
 @media(max-width:340px){.quran-index .quran-index-head{column-gap:6px}.quran-index .quran-index-brand{font-size:17px}.quran-index .quran-index-title{font-size:20px}html body .quran-index .quran-index-head-action{width:34px;height:34px}}
+html body .quran-index .quran-index-head-action svg{width:18px;height:18px}
+
+/* Surah rows and Juz separators share one set of measurements, so their page
+   numbers sit in a single column by construction at every width. The values are
+   the ones Surah rows already used; separators reserve exactly the width of the
+   three row actions (play, share, download). */
+.quran-index{--ix-pad-left:12px;--ix-pad-right:14px;--ix-gap:9px;--ix-num:42px;--ix-page:50px;--ix-page-gap:8px;--ix-btn:40px;--ix-btn-gap:5px}
+@media(max-width:390px){.quran-index{--ix-pad-left:9px;--ix-pad-right:11px;--ix-num:36px;--ix-page:44px;--ix-btn-gap:4px}}
+@media(max-width:350px){.quran-index{--ix-pad-right:9px;--ix-gap:6px;--ix-num:32px;--ix-page-gap:5px}}
+html body .quran-index .quran-index-row-with-actions,
+html body .quran-index .quran-index-juz-sep{padding-left:var(--ix-pad-left);padding-right:var(--ix-pad-right);column-gap:var(--ix-gap);grid-template-columns:var(--ix-num) minmax(0,1fr) calc(3 * var(--ix-btn) + 2 * var(--ix-btn-gap))}
+html body .quran-index .quran-index-row-main,
+html body .quran-index .quran-index-juz-main{grid-template-columns:minmax(0,1fr) var(--ix-page);column-gap:var(--ix-page-gap)}
+html body .quran-index .quran-index-page,
+html body .quran-index .quran-index-juz-page{width:var(--ix-page);min-width:var(--ix-page)}
+html body .quran-index .quran-index-actions{gap:var(--ix-btn-gap)}
+html body .quran-index .quran-index-action{width:var(--ix-btn);height:var(--ix-btn)}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
