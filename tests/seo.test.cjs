@@ -177,14 +177,21 @@ test("group khatmahs have a dedicated descriptive page",()=>{
   assert.doesNotMatch(page,/<h2>القراءة من داخل الختمة<\/h2>/);
 });
 
+// The asset version is a content hash; sw.js must precache the same URLs the pages load.
+const assetVersion=require("node:crypto").createHash("sha256").update(["seo-pages.css","seo-pages.js","seo-install.js"].map(f=>read(f)).join("\0")).digest("hex").slice(0,10);
+test("guide asset URLs carry the content version, also in the service worker",()=>{
+  const sw=read("sw.js");
+  for(const f of ["seo-pages.css","seo-pages.js","seo-install.js"])assert.ok(sw.includes(`"./${f}?v=${assetVersion}"`),f);
+});
 test("every guide page uses the shared accessible appearance control and pre-paint theme script",()=>{
   const urls=[...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]));
   for(const url of urls){
     const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
     const html=read(relative);if(!html.includes("seo-pages.css"))continue;
     assert.equal((html.match(/id="guideTheme"/g)||[]).length,1,relative);
-    assert.equal((html.match(/src="\/seo-pages.js\?v=151"/g)||[]).length,1,relative);
-    assert.ok(html.indexOf('/seo-pages.js?v=151')<html.indexOf('/seo-pages.css?v=151'),relative);
+    assert.equal((html.match(new RegExp(`src="/seo-pages\\.js\\?v=${assetVersion}"`,"g"))||[]).length,1,relative);
+    assert.ok(html.indexOf(`/seo-pages.js?v=${assetVersion}`)<html.indexOf(`/seo-pages.css?v=${assetVersion}`),relative);
+    assert.ok(html.includes(`/seo-install.js?v=${assetVersion}`),relative);
     assert.match(html,/aria-label="تفعيل الوضع الليلي" aria-pressed="false"/);
   }
 });
@@ -194,14 +201,16 @@ test("guide pages offer installation once, from the header menu",()=>{
     const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
     const html=read(relative);if(!html.includes("seo-pages.css"))continue;
     assert.match(html,/<link rel="manifest" href="\/manifest\.json">/,relative);
-    assert.doesNotMatch(html,/footer-install|أقرب إليك/,relative);
+    assert.doesNotMatch(html,/class="footer-install"|أقرب إليك/,relative);
     const footer=html.slice(html.indexOf("<footer"));
-    assert.doesNotMatch(footer,/href="\/install\/"/,relative);
     if(relative==="install/index.html"){
+      assert.doesNotMatch(footer,/href="\/install\/"/);
       assert.doesNotMatch(html,/id="installMenu"/);
       assert.match(html,/id="installGuide"/);
-      assert.match(html,/id="installOpen" href="\/"/);
+      assert.match(html,/<button class="btn secondary install-share" id="installShare" type="button">/);
+      assert.doesNotMatch(html,/installOpen/);
     }else{
+      assert.equal((footer.match(/<a class="footer-install-link" href="\/install\/" data-install-link>/g)||[]).length,1,relative);
       assert.equal((html.match(/id="installMenu"/g)||[]).length,1,relative);
       assert.match(html,/<div class="install-menu" id="installMenu" hidden>/,relative);
       const main=html.slice(html.indexOf("<main"),html.indexOf("</main>"));
@@ -212,6 +221,9 @@ test("guide pages offer installation once, from the header menu",()=>{
   const script=read("seo-install.js");
   assert.match(script,/id===myDevice&&promptEvent/);
   assert.match(script,/p_event:'install_accepted'/);
+  assert.match(script,/querySelectorAll\('\[data-install-link\]'\)/);
+  assert.match(script,/navigator\.clipboard\.writeText\(url\)/);
+  assert.doesNotMatch(script,/get\('next'\)/);
 });
 test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
   for(const [slug,id] of [["mishary-alafasy","MisharyAlafasy_Hafs"],["ali-al-hudhaifi","Hudhaify_128kbps"],["ali-jaber","AliJaber_Hafs"],["mahmoud-al-hamoud","MahmoudAlHamoud_Surah"]]){
@@ -221,4 +233,17 @@ test("new reciter pages and surah links use the exact player IDs and explain who
     for(let n=1;n<=114;n++)assert.ok(read(`surah/${n}/index.html`).includes(`qari=${id}&amp;play=1`));
   }
   assert.match(read("quran/reciters/mahmoud-al-hamoud/index.html"),/متابعة الآيات وتحديد الأجزاء غير متاحين/);
+});
+test("«زاد الخير» leads to the Zad home screen from the khatmahs bar and the Quran index",()=>{
+  assert.match(read("src/home/bootstrap.js"),/tbHome\.onclick=\(\)=>\{zkShowLaunch\(\);zkArmRootGuard\(\)\}/);
+  const library=read("src/reader/library.js");
+  assert.match(library,/<div class="quran-index-head"><a class="quran-index-brand" href="\.\/\?zad=1"[^>]*>زاد الخير<\/a><div class="quran-index-title">القرآن العظيم<\/div>/);
+  assert.doesNotMatch(library,/العودة إلى الختمات الجماعية/);
+  assert.match(read("src/reader/styles.css"),/grid-template-columns:minmax\(max-content,1fr\) auto minmax\(max-content,1fr\)/);
+  assert.match(read("src/reader/styles.css"),/html body .quran-index .quran-index-head-action\{width:38px;height:38px;background:transparent;border-color:transparent/);
+  assert.match(read("install/index.html"),/<h1>تثبيت تطبيق زاد الخير<\/h1>/);
+  // Surah rows and Juz separators must take every column measurement from the same variables.
+  const css=read("src/reader/styles.css");
+  assert.match(css,/html body \.quran-index \.quran-index-row-with-actions,\nhtml body \.quran-index \.quran-index-juz-sep\{[^}]*grid-template-columns:var\(--ix-num\) minmax\(0,1fr\) calc\(3 \* var\(--ix-btn\) \+ 2 \* var\(--ix-btn-gap\)\)\}/);
+  assert.match(css,/html body \.quran-index \.quran-index-row-main,\nhtml body \.quran-index \.quran-index-juz-main\{grid-template-columns:minmax\(0,1fr\) var\(--ix-page\)/);
 });

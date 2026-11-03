@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v151";
+const SHELL_STAGE_CACHE="zad-shell-stage-v152";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -29,7 +29,7 @@ const SHELL_ALIASES={
   "./reader.html?home=1&from=zad":"./reader.html"
 };
 const OPTIONAL_SHELL=[
-  "./seo-pages.css?v=151","./seo-pages.js?v=151","./seo-install.js?v=151",
+  "./seo-pages.css?v=7c6f1ace46","./seo-pages.js?v=7c6f1ace46","./seo-install.js?v=7c6f1ace46",
   "./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
   "./fonts/amiri-arabic-400.woff2","./fonts/amiri-latin-400.woff2","./fonts/amiri-arabic-700.woff2","./fonts/amiri-latin-700.woff2",

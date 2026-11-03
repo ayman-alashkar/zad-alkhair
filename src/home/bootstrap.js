@@ -22,7 +22,9 @@ async function boot(){
 }
 document.getElementById("btn-help").onclick=helpDialog;
 const tbHome=document.getElementById("tb-home");
-if(tbHome) tbHome.onclick=goHome;
+/* «زاد الخير» opens the launch screen; the active khatmah is kept, so choosing
+   «الختمات الجماعية» there returns to it. */
+if(tbHome) tbHome.onclick=()=>{zkShowLaunch();zkArmRootGuard()};
 const tbReader=document.getElementById("tb-reader");
 if(tbReader) tbReader.onclick=()=>{ location.href=readerLink(null,code); };
 const tbUser=document.getElementById("tb-user");

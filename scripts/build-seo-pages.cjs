@@ -10,7 +10,11 @@ const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 const {reciters,surahs,juz}=require("../src/discovery/catalog.json");
 const reciterDescription=reciters.map(r=>r.display).join("، و");
 const check=process.argv.includes("--check");
-const assetVersion="151";
+// Guide assets are versioned by content: editing any of them changes the URL, so
+// browsers and the service worker can never keep a stale copy next to new pages.
+const assetVersion=require("node:crypto").createHash("sha256")
+  .update(["seo-pages.css","seo-pages.js","seo-install.js"].map(f=>fs.readFileSync(path.join(root,f),"utf8")).join("\0"))
+  .digest("hex").slice(0,10);
 const changed=new Set();
 function write(relative,content){
   const file=path.join(root,relative);
@@ -62,12 +66,17 @@ const installMenu=`<div class="install-menu" id="installMenu" hidden><button cla
 const siteHead=`<header class="site-head">${brandLink}<div class="head-tools">${installMenu}${themeButton}</div></header>`;
 // /install/ shows the guide inline, so its header carries only the theme control.
 const installSiteHead=`<header class="site-head">${brandLink}<div class="head-tools">${themeButton}</div></header>`;
-const footer=`<footer class="discovery-footer"><nav class="footer-links" aria-label="روابط زاد الخير">${[
+const footerLinks=[
 ["/","الرئيسية",'<path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3Z"/>'],
 ["/quran/","القرآن العظيم",'<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>'],
 ["/khatmahs/","الختمات الجماعية",'<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/>'],
 ["/about/","عن زاد الخير",'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/>']
-].map(([href,label,path])=>`<a href="${href}">${navIcon(path)}<span>${label}</span></a>`).join("")}</nav><p class="footer-motto">كلامُ الباري يجمعُنا</p></footer>`;
+].map(([href,label,path])=>`<a href="${href}">${navIcon(path)}<span>${label}</span></a>`).join("");
+// seo-install.js hides the install link once the app is installed. /install/ itself omits it.
+const footerInstallLink=`<a class="footer-install-link" href="/install/" data-install-link>${installIcon}<span>تثبيت التطبيق</span></a>`;
+const footerHtml=withInstall=>`<footer class="discovery-footer"><nav class="footer-links" aria-label="روابط زاد الخير">${footerLinks}${withInstall?footerInstallLink:""}</nav><p class="footer-motto">كلامُ الباري يجمعُنا</p></footer>`;
+const footer=footerHtml(true);
+const installFooter=footerHtml(false);
 function crumbs(items){return `<nav class="breadcrumbs" aria-label="مسار الصفحة">${items.map((x,i)=>i===items.length-1?`<b>${esc(x[0])}</b>`:`<a href="${x[1]}">${esc(x[0])}</a><span>‹</span>`).join("")}</nav>`}
 
 function surahPage(s){
@@ -106,10 +115,10 @@ for(const j of juz)write(`juz/${j.n}/index.html`,juzPage(j));
 write("quran/index.html",quranPage(surahs,juz));
 for(const r of reciters)write(`quran/reciters/${r.slug}/index.html`,reciterPage(r,surahs));
 function installPage(){
-  const title="تثبيت زاد الخير على الهاتف والحاسب",canonical="/install/";
-  const description="ثبّت زاد الخير على آيفون أو أندرويد أو الحاسب، وافتحه من الشاشة الرئيسية كتطبيق مستقل.";
+  const title="تثبيت تطبيق زاد الخير",canonical="/install/";
+  const description="ثبّت تطبيق زاد الخير على آيفون أو أندرويد أو الحاسب من موقع zad-alkhair.net، دون متجر تطبيقات.";
   const graph={"@context":"https://schema.org","@graph":[{"@type":"WebPage",name:title,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}},{"@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"زاد الخير",item:`${site}/`},{"@type":"ListItem",position:2,name:"تثبيت التطبيق",item:`${site}${canonical}`}]}]};
-  return `${head({title,description,canonical,image:"/social/zad-alkhair-install-share.png",jsonLd:graph})}<body>${installSiteHead}${crumbs([["زاد الخير","/"],["تثبيت التطبيق"]])}<main><h1>تثبيت زاد الخير</h1><p class="lead">يعمل زاد الخير على الهاتف والحاسب كتطبيق مستقل يُفتح من الشاشة الرئيسية، دون متجر تطبيقات.</p><p class="note" id="installDone" hidden>زاد الخير مثبّت على هذا الجهاز. يمكنك فتحه من أيقونته، أو اتباع الخطوات لجهاز آخر.</p><section class="install-guide" id="installGuide" aria-label="خطوات التثبيت"></section><div class="actions"><a class="btn secondary" id="installOpen" href="/">فتح زاد الخير</a></div></main>${footer}<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{})</script></body></html>`;
+  return `${head({title,description,canonical,image:"/social/zad-alkhair-install-share.png",jsonLd:graph})}<body>${installSiteHead}${crumbs([["زاد الخير","/"],["تثبيت التطبيق"]])}<main><h1>تثبيت تطبيق زاد الخير</h1><p class="lead">يعمل زاد الخير على الهاتف والحاسب كتطبيق ويب مستقل، يمكن تحميله من موقع zad-alkhair.net دون الحاجة لمتجر تطبيقات. حجمه صغير، ولا يزيد إلا بما تختار تنزيله من التلاوات، وتصله التحديثات تلقائيًا دون أي خطوة منك.</p><p class="note" id="installDone" hidden>زاد الخير مثبّت على هذا الجهاز. يمكنك فتحه من أيقونته، أو اتباع الخطوات لجهاز آخر.</p><section class="install-guide" id="installGuide" aria-label="خطوات التثبيت"></section><div class="actions"><button class="btn secondary install-share" id="installShare" type="button">${navIcon('<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/>')}<span>مشاركة الصفحة</span></button><span class="share-status" id="installShareStatus" role="status" aria-live="polite"></span></div></main>${installFooter}<script>if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{})</script></body></html>`;
 }
 write("install/index.html",installPage());
 // Hand-written guide pages share the generated header, footer and asset version.
@@ -127,6 +136,10 @@ for(const relative of ["about/index.html","khatmahs/index.html"]){
   const html=shareShell(fs.readFileSync(path.join(root,"src/discovery",relative.replace("/index.html",".html")),"utf8"));
   write(relative,html);
 }
+const swSource=fs.readFileSync(path.join(root,"sw.js"),"utf8");
+const swAssets=/"\.\/seo-pages\.css\?v=[^"]+","\.\/seo-pages\.js\?v=[^"]+","\.\/seo-install\.js\?v=[^"]+"/;
+if(!swAssets.test(swSource))throw new Error("sw.js: guide asset list not found");
+write("sw.js",swSource.replace(swAssets,`"./seo-pages.css?v=${assetVersion}","./seo-pages.js?v=${assetVersion}","./seo-install.js?v=${assetVersion}"`));
 const urls=["/","/quran/","/quran/player-guide/","/khatmahs/","/about/","/install/",...reciters.map(r=>`/quran/reciters/${r.slug}/`),...surahs.map(s=>`/surah/${s.n}/`),...juz.map(j=>`/juz/${j.n}/`)];
 // Preserve dates and ordering for unchanged pages; rebuilding alone is not a modification.
 const previous=fs.existsSync(path.join(root,"sitemap.xml"))?fs.readFileSync(path.join(root,"sitemap.xml"),"utf8"):"";
