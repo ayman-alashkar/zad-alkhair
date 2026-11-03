@@ -247,3 +247,10 @@ test("the Quran index keeps its own title; the reader's back arrow leads to the 
   assert.match(css,/html body \.quran-index \.quran-index-row-with-actions,\nhtml body \.quran-index \.quran-index-juz-sep\{[^}]*grid-template-columns:var\(--ix-num\) minmax\(0,1fr\) calc\(3 \* var\(--ix-btn\) \+ 2 \* var\(--ix-btn-gap\)\)\}/);
   assert.match(css,/html body \.quran-index \.quran-index-row-main,\nhtml body \.quran-index \.quran-index-juz-main\{grid-template-columns:minmax\(0,1fr\) var\(--ix-page\)/);
 });
+test("the Quran index carries Zad's four section tabs; reading pages do not",()=>{
+  const library=read("src/reader/library.js");
+  assert.match(library,/id="quranSurahList"><\/div><\/div><\/div><\/div>\$\{READER_APP_TABS\}`/);
+  for(const href of ['href="./"','href="./?section=khatmahs"','href="./?section=prayer"'])assert.ok(library.includes(href),href);
+  assert.match(library,/aria-current="page" data-app-tab="quran"/);
+  assert.doesNotMatch(read("src/reader/index.html"),/reader-app-tabs/);
+});

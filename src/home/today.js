@@ -137,7 +137,7 @@ function ztReadingCard(summary){
       const readLabel=!started?"اقرأ جزءك":atEnd?"راجع جزءك":"تابع القراءة";
       host.innerHTML=`<section class="zt-card" aria-label="جزؤك في الختمة">
         <div class="zt-card-row"><div class="zt-card-text">
-          <span class="zt-eyebrow">جزؤك في ${where}</span>
+          <span class="zt-eyebrow">جزؤك في ${summary.title&&!/^\s*(ال)?ختم/.test(summary.title)?"ختمة ":""}${where}</span>
           <span class="zt-title">الجزء ${ztArabic(j)}</span>
           <span class="zt-sub">${esc(JUZ[j-1]||"")}</span>${more}
         </div>${ring}</div>
