@@ -109,6 +109,7 @@ ${id===myDevice&&embedded?'<p class="ip-note">إذا فتحت الرابط دا�
   function paint(){
     const installed=standalone()||installedFlag;
     if(menu){menu.hidden=installed;if(installed)closeMenu(false)}
+    document.querySelectorAll('[data-install-link]').forEach(link=>{link.hidden=installed});
     const done=document.getElementById('installDone');if(done)done.hidden=!installed;
   }
   function openMenu(){
@@ -137,12 +138,21 @@ ${id===myDevice&&embedded?'<p class="ip-note">إذا فتحت الرابط دا�
     /* /install/ starts on the visitor's own device. */
     const inline=document.getElementById('installGuide');
     if(inline){const view={body:inline,device:myDevice};views.push(view);render(view)}
-    /* Keep the safe in-app destination supplied by the legacy install bridge. */
-    const open=document.getElementById('installOpen');
-    if(open)try{
-      const next=new URLSearchParams(location.search).get('next');
-      if(next&&next.startsWith('/')&&!next.startsWith('//')){const target=new URL(next,location.origin);if(target.origin===location.origin)open.href=target.href}
-    }catch(_){}
+    /* /install/: share the canonical page so each recipient sees the steps for their own device. */
+    const share=document.getElementById('installShare');
+    if(share){
+      const status=document.getElementById('installShareStatus');
+      const url=document.querySelector('link[rel="canonical"]')?.href||location.origin+'/install/';
+      const say=text=>{if(!status)return;status.textContent=text;clearTimeout(say.timer);say.timer=setTimeout(()=>{status.textContent=''},3000)};
+      share.addEventListener('click',async()=>{
+        if(navigator.share){
+          try{await navigator.share({title:'تثبيت تطبيق زاد الخير',text:'ثبّت تطبيق زاد الخير على جهازك:',url});return}
+          catch(error){if(error&&error.name==='AbortError')return}
+        }
+        try{await navigator.clipboard.writeText(url);say('تم نسخ الرابط')}
+        catch(_){say(url)}
+      });
+    }
     paint();
   }
   try{window.matchMedia('(display-mode: standalone)').addEventListener('change',paint)}catch(_){}

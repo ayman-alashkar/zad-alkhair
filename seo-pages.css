@@ -42,6 +42,9 @@ html[data-theme=dark] .install-panel{background:#0A2B26;box-shadow:0 22px 50px -
 .ip-steps li{display:flex;align-items:center;gap:12px;font-size:12px;line-height:1.9;max-width:none}
 .ip-now{width:100%;gap:8px;margin-top:16px;border:1px solid rgba(187,146,63,.5);cursor:pointer;font-family:inherit}
 .ip-note{margin:14px 0 0;font-size:11px;color:var(--muted);line-height:1.9}
+.install-share{gap:9px;cursor:pointer;font-family:inherit}
+.install-share svg{width:20px;height:20px;color:var(--gold)}
+.share-status{align-self:center;font-size:12px;color:var(--muted)}
 .install-guide{margin:22px 0 4px;padding:20px;border:1px solid var(--line);border-radius:18px;background:var(--raised);max-width:560px}
 .install-guide .ip-title{font-size:15px}
 @media(hover:hover){.guide-install:hover,.ip-device:hover{background:var(--selected);border-color:var(--gold)}.ip-close:hover{color:var(--ink);background:var(--selected)}}
@@ -86,11 +89,15 @@ p{margin:8px 0 16px}
 .listen[data-surah-only]::after{content:'السورة كاملة ←'}
 footer{width:min(930px,calc(100% - 32px));margin:auto;padding:0 0 calc(26px + env(safe-area-inset-bottom));color:var(--muted);text-align:center;font-size:11px;line-height:1.9}
 .footer-links svg{width:21px;height:21px;flex:none}
-.footer-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+/* One row on wide screens; any link hidden by script simply drops out of the row. */
+.footer-links{display:flex;gap:10px}
+.footer-links a{flex:1 1 0;min-width:0}
+.footer-links a[hidden]{display:none}
 .footer-links a{display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--raised);text-decoration:none;color:var(--ink);font-size:11px}
 .footer-links svg{color:var(--gold)}
 .footer-motto{margin:18px auto 0;font:700 22px/1.8 'Aref Ruqaa',serif;color:var(--gold)}
-@media(max-width:640px){.footer-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Two columns until five labels fit in one row; the install link takes the odd last slot. */
+@media(max-width:820px){.footer-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.footer-links .footer-install-link{grid-column:1/-1}}
 :focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:8px}
 @media(hover:hover){.secondary:hover,.card.link:hover,.item:hover,.listen:hover,.guide-theme:hover{background:var(--selected);border-color:var(--gold)}.primary:hover{filter:brightness(1.04)}.footer-links a:hover{color:var(--gold)}}
 @media(max-width:640px){.site-head{padding:16px 0;gap:12px}.mark{width:36px;height:36px}.brand{font-size:30px}.motto{font-size:9px}.guide-home{gap:10px}.breadcrumbs{font-size:10px;gap:6px;margin-bottom:12px}main{padding:22px 18px;border-radius:20px}h1{font-size:29px}h2{margin-top:26px}.feature-grid,.reciter-grid{grid-template-columns:minmax(0,1fr)}.link-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.listen{gap:8px;flex-wrap:wrap}.listen::after{margin-inline-start:auto}.card{padding:16px}.lead{font-size:13px}.actions .btn{flex:1 1 auto}.item{font-size:12px}}

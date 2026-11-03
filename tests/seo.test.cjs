@@ -194,14 +194,16 @@ test("guide pages offer installation once, from the header menu",()=>{
     const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
     const html=read(relative);if(!html.includes("seo-pages.css"))continue;
     assert.match(html,/<link rel="manifest" href="\/manifest\.json">/,relative);
-    assert.doesNotMatch(html,/footer-install|أقرب إليك/,relative);
+    assert.doesNotMatch(html,/class="footer-install"|أقرب إليك/,relative);
     const footer=html.slice(html.indexOf("<footer"));
-    assert.doesNotMatch(footer,/href="\/install\/"/,relative);
     if(relative==="install/index.html"){
+      assert.doesNotMatch(footer,/href="\/install\/"/);
       assert.doesNotMatch(html,/id="installMenu"/);
       assert.match(html,/id="installGuide"/);
-      assert.match(html,/id="installOpen" href="\/"/);
+      assert.match(html,/<button class="btn secondary install-share" id="installShare" type="button">/);
+      assert.doesNotMatch(html,/installOpen/);
     }else{
+      assert.equal((footer.match(/<a class="footer-install-link" href="\/install\/" data-install-link>/g)||[]).length,1,relative);
       assert.equal((html.match(/id="installMenu"/g)||[]).length,1,relative);
       assert.match(html,/<div class="install-menu" id="installMenu" hidden>/,relative);
       const main=html.slice(html.indexOf("<main"),html.indexOf("</main>"));
@@ -212,6 +214,9 @@ test("guide pages offer installation once, from the header menu",()=>{
   const script=read("seo-install.js");
   assert.match(script,/id===myDevice&&promptEvent/);
   assert.match(script,/p_event:'install_accepted'/);
+  assert.match(script,/querySelectorAll\('\[data-install-link\]'\)/);
+  assert.match(script,/navigator\.clipboard\.writeText\(url\)/);
+  assert.doesNotMatch(script,/get\('next'\)/);
 });
 test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
   for(const [slug,id] of [["mishary-alafasy","MisharyAlafasy_Hafs"],["ali-al-hudhaifi","Hudhaify_128kbps"],["ali-jaber","AliJaber_Hafs"],["mahmoud-al-hamoud","MahmoudAlHamoud_Surah"]]){
