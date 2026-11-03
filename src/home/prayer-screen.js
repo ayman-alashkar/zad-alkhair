@@ -159,7 +159,7 @@ function zpCalendarHtml(todayNoon){
   const legend=[];
   for(const ts of days){
     const h=zpHijri(ts),events=zpEventsOn(h);
-    /* النقطة للأيام المحددة؛ الأيام الممتدة (كالعشر) تُذكر في القائمة وحدها كي لا يزدحم التقويم. */
+    /* النقطة للأيام المحددة وأول الممتدة (كالعشر)، كي لا يزدحم التقويم. */
     const ev=events.some(e=>!e[3]||e[1]===h.d||e[2]==="أيام التشريق");
     /* الأيام البيض ١٣–١٥، إلا الثالث عشر من ذي الحجة فهو من أيام التشريق. */
     const white=h.d>=13&&h.d<=15&&!(h.m===12&&h.d===13);
@@ -169,14 +169,15 @@ function zpCalendarHtml(todayNoon){
     const cls=[ts===selected&&"sel",ts===todayNoon&&"today"].filter(Boolean).join(" ");
     cells.push(`<button type="button" class="${cls}" data-zp-pick="${Math.round((ts-todayNoon)/ZP_DAY)}" aria-label="${label}" aria-pressed="${ts===selected}">
       <b>${ztArabic(h.d)}</b><small>${zpGreg(ts,{day:"numeric"})}</small>${ev?'<i class="ev" aria-hidden="true"></i>':white?'<i class="wh" aria-hidden="true"></i>':""}</button>`);
+    /* تحت التقويم: مناسبات اليوم المختار وحده. */
+    if(ts!==selected)continue;
     for(const e of events){
-      if(e[3]&&e[1]!==h.d)continue;   /* الممتدة تُذكر مرة واحدة، في أول أيامها */
       const span=e[3]===30?`من ${ztArabic(e[1])} ${ZP_MONTHS[h.m-1]} إلى آخره`:e[3]?`${ztArabic(e[1])}–${ztArabic(e[3])} ${ZP_MONTHS[h.m-1]}`:zpHijriLong(ts);
-      legend.push(`<li><i class="ev" aria-hidden="true"></i><span>${e[2]}</span><small>${e[4]?"مساء ":""}${span} · ${zpGreg(ts,{day:"numeric",month:"long"})}</small></li>`);
+      legend.push(`<li><i class="ev" aria-hidden="true"></i><span>${e[2]}</span><small>${e[4]?"مساء ":""}${span}</small></li>`);
     }
+    if(white)legend.push(`<li><i class="wh" aria-hidden="true"></i><span>من الأيام البيض</span><small>${ztArabic(h.m===12?14:13)}–${ztArabic(15)} ${ZP_MONTHS[h.m-1]}</small></li>`);
   }
   const month=ZP_MONTHS[m0.m-1];
-  legend.push(`<li><i class="wh" aria-hidden="true"></i><span>الأيام البيض</span><small>${m0.m===12?`${ztArabic(14)}–${ztArabic(15)} ${month}، والثالث عشر من أيام التشريق`:`${ztArabic(13)}–${ztArabic(15)} ${month}`}</small></li>`);
   const last=days[days.length-1],g1=zpGreg(first,{month:"long"}),g2=zpGreg(last,{month:"long"});
   const greg=`${g1===g2?g1:`${g1} – ${g2}`} ${zpGreg(last,{year:"numeric"})}`;
   const adj=zpAdj();
@@ -190,7 +191,7 @@ function zpCalendarHtml(todayNoon){
     </div>
     <div class="zp-week" aria-hidden="true">${ZP_WEEKDAYS.map(d=>`<span>${d}</span>`).join("")}</div>
     <div class="zp-days">${cells.join("")}</div>
-    <ul class="zp-legend">${legend.join("")}</ul>
+    ${legend.length?`<ul class="zp-legend">${legend.join("")}</ul>`:""}
     <div class="zp-adj-row"><span>وفق التقويم المعتمد في السعودية${adjNote}</span>
       <button type="button" class="zp-adj-toggle" data-zp-adj-toggle aria-expanded="${zpAdjOpen}">تعديل</button></div>
     ${zpAdjOpen?`<div class="zp-adj" role="group" aria-label="تعديل التاريخ الهجري">
