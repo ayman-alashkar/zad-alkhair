@@ -1442,6 +1442,26 @@ body:not(.zk-launch-open){padding-bottom:calc(84px + env(safe-area-inset-bottom)
 @media (prefers-reduced-motion:reduce){
   .zk-today *,.zk-today *::before,.zk-today *::after,.zk-tabs,.zk-tabs *{animation:none!important;transition:none!important}
 }
+
+/* ═══════════ شاشات الختمات مع الشريط السفلي ═══════════
+   الشريط العلوي يحمل اسم المستخدم وحده (و«ختماتي» في صفحة الختمات)، وخلفيته
+   تظهر معه فقط؛ «زاد الخير» و«القرآن العظيم» صارا في الشريط السفلي. */
+.topbar{justify-content:center;background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;pointer-events:none;transition:background .25s ease}
+body.show-top-user .topbar,body.show-home-mine .topbar{pointer-events:auto;
+  background:linear-gradient(180deg,rgba(5,29,27,.97) 0%,rgba(5,29,27,.86) 68%,rgba(5,29,27,0) 100%)!important;
+  backdrop-filter:blur(9px) saturate(118%)!important;-webkit-backdrop-filter:blur(9px) saturate(118%)!important}
+body:not(.zk-launch-open){padding-top:max(4.4rem,calc(env(safe-area-inset-top) + 3.6rem))}
+
+/* النقش الموحّد: الوردة نفسها التي في الصفحة الرئيسية، بدل الشبكة السداسية القديمة. */
+body::before{inset:-60px -320px -220px -60px;opacity:.05;
+  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat!important;
+  -webkit-mask-image:none!important;mask-image:none!important;animation:ztFlow 60s linear infinite}
+.prayer-modal-head::before{inset:-60px -320px -220px -60px;opacity:.07;
+  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat!important;animation:ztFlow 60s linear infinite}
+@media (prefers-reduced-motion:reduce){body::before,.prayer-modal-head::before{animation:none!important}}
+
+/* The «مواقيت الصلاة» tab replaces the old floating prayer button. */
+.prayer-fab{display:none!important}
 </style>
 
 
@@ -1521,8 +1541,6 @@ body:not(.zk-launch-open){padding-bottom:calc(84px + env(safe-area-inset-bottom)
 </nav>
 
 <div class="topbar">
-  <button class="tb-brand" id="tb-home" type="button" aria-label="الصفحة الرئيسية">زاد الخير</button>
-  <button class="tb-reader" id="tb-reader" type="button" aria-label="فتح القرآن العظيم">القرآن العظيم</button>
   <button class="tb-user" id="tb-user" type="button" aria-live="polite" aria-haspopup="menu" aria-expanded="false"></button>
 </div>
 <div class="tb-popover" id="tb-popover" role="menu" hidden></div>
@@ -2930,7 +2948,7 @@ function viewGate(){
     </div>
     ${asks?"":`<p class="hint" style="margin-top:1.1rem">
       أتريد ختمة أخرى؟
-      <button class="btn quiet sm" data-home>الصفحة الرئيسية</button></p>`}
+      <button class="btn quiet sm" data-home>صفحة الختمات</button></p>`}
   </div>`;
 }
 
@@ -3019,7 +3037,7 @@ function viewMain(){
   </div>
 
   <div class="toolbar">
-    <button class="btn quiet" data-home>الصفحة الرئيسية</button>
+    <button class="btn quiet" data-home>صفحة الختمات</button>
     <button class="btn" id="btn-share">نسخ رابط الدعوة</button>
     <span class="codechip">رمز الختمة <b>${esc(code)}</b></span>
     ${isOrganizer()?`<button class="btn quiet" id="btn-broadcast">رسالة للمجموعة</button>`:""}

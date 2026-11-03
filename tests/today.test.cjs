@@ -34,3 +34,13 @@ test("midday prayers read as ظهرًا, not عصرًا",()=>{
   assert.match(ctx.fmtTime(12,19),/ظهرًا$/);assert.match(ctx.fmtTime(15,18),/عصرًا$/);
   assert.match(ctx.fmtTime(5,31),/صباحًا$/);assert.match(ctx.fmtTime(19,1),/مساءً$/);
 });
+
+test("khatmah screens rely on the bottom tabs: no duplicate brand, Quran link or prayer button",()=>{
+  const home=read("index.html");
+  assert.doesNotMatch(home,/class="tb-brand"|class="tb-reader"/);
+  assert.match(read("src/home/styles.css"),/\.prayer-fab\{display:none!important\}/);
+  assert.match(read("src/home/views.js"),/data-home>صفحة الختمات<\/button>/);
+  assert.doesNotMatch(read("src/home/views.js"),/data-home>الصفحة الرئيسية</);
+  // One pattern everywhere: the rosette, never the old hexagonal lattice on top.
+  assert.match(read("src/home/styles.css"),/body::before\{inset:[^}]*zad-rosette\.svg/);
+});

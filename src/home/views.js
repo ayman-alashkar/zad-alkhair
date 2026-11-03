@@ -336,7 +336,7 @@ function viewGate(){
     </div>
     ${asks?"":`<p class="hint" style="margin-top:1.1rem">
       أتريد ختمة أخرى؟
-      <button class="btn quiet sm" data-home>الصفحة الرئيسية</button></p>`}
+      <button class="btn quiet sm" data-home>صفحة الختمات</button></p>`}
   </div>`;
 }
 
@@ -425,7 +425,7 @@ function viewMain(){
   </div>
 
   <div class="toolbar">
-    <button class="btn quiet" data-home>الصفحة الرئيسية</button>
+    <button class="btn quiet" data-home>صفحة الختمات</button>
     <button class="btn" id="btn-share">نسخ رابط الدعوة</button>
     <span class="codechip">رمز الختمة <b>${esc(code)}</b></span>
     ${isOrganizer()?`<button class="btn quiet" id="btn-broadcast">رسالة للمجموعة</button>`:""}
