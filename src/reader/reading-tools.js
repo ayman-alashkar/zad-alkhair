@@ -456,12 +456,13 @@ function cancelZadReturnHold(){clearTimeout(zadReturnHoldTimer);zadReturnHoldTim
 zadReturnBtn.addEventListener("pointerdown",e=>{
   if(e.pointerType==="mouse"&&e.button!==0)return;
   zadReturnHeld=false;cancelZadReturnHold();
-  zadReturnHoldTimer=setTimeout(()=>{zadReturnHeld=true;showToast("العودة إلى زاد الخير");try{navigator.vibrate?.(18)}catch(_){ }},560);
+  zadReturnHoldTimer=setTimeout(()=>{zadReturnHeld=true;showToast("الصفحة الرئيسية");try{navigator.vibrate?.(18)}catch(_){ }},560);
 });
 ["pointercancel","pointerleave"].forEach(type=>zadReturnBtn.addEventListener(type,cancelZadReturnHold));
 zadReturnBtn.addEventListener("pointerup",e=>{
   cancelZadReturnHold();
   if(zadReturnHeld){zadReturnHeld=false;e.preventDefault();return}
-  location.href=zadReturnUrl();
+  /* سهم العودة يقود دائمًا إلى الصفحة الرئيسية لزاد الخير، حتى لو فُتح القارئ من ختمة. */
+  location.href="./";
 });
 zadReturnBtn.addEventListener("contextmenu",e=>e.preventDefault());
