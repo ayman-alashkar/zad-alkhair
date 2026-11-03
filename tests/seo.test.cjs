@@ -177,14 +177,21 @@ test("group khatmahs have a dedicated descriptive page",()=>{
   assert.doesNotMatch(page,/<h2>القراءة من داخل الختمة<\/h2>/);
 });
 
+// The asset version is a content hash; sw.js must precache the same URLs the pages load.
+const assetVersion=require("node:crypto").createHash("sha256").update(["seo-pages.css","seo-pages.js","seo-install.js"].map(f=>read(f)).join("\0")).digest("hex").slice(0,10);
+test("guide asset URLs carry the content version, also in the service worker",()=>{
+  const sw=read("sw.js");
+  for(const f of ["seo-pages.css","seo-pages.js","seo-install.js"])assert.ok(sw.includes(`"./${f}?v=${assetVersion}"`),f);
+});
 test("every guide page uses the shared accessible appearance control and pre-paint theme script",()=>{
   const urls=[...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>new URL(match[1]));
   for(const url of urls){
     const relative=url.pathname==="/"?"index.html":path.join(url.pathname.slice(1),"index.html");
     const html=read(relative);if(!html.includes("seo-pages.css"))continue;
     assert.equal((html.match(/id="guideTheme"/g)||[]).length,1,relative);
-    assert.equal((html.match(/src="\/seo-pages.js\?v=151"/g)||[]).length,1,relative);
-    assert.ok(html.indexOf('/seo-pages.js?v=151')<html.indexOf('/seo-pages.css?v=151'),relative);
+    assert.equal((html.match(new RegExp(`src="/seo-pages\\.js\\?v=${assetVersion}"`,"g"))||[]).length,1,relative);
+    assert.ok(html.indexOf(`/seo-pages.js?v=${assetVersion}`)<html.indexOf(`/seo-pages.css?v=${assetVersion}`),relative);
+    assert.ok(html.includes(`/seo-install.js?v=${assetVersion}`),relative);
     assert.match(html,/aria-label="تفعيل الوضع الليلي" aria-pressed="false"/);
   }
 });

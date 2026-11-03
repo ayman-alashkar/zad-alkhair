@@ -10,7 +10,11 @@ const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 const {reciters,surahs,juz}=require("../src/discovery/catalog.json");
 const reciterDescription=reciters.map(r=>r.display).join("، و");
 const check=process.argv.includes("--check");
-const assetVersion="151";
+// Guide assets are versioned by content: editing any of them changes the URL, so
+// browsers and the service worker can never keep a stale copy next to new pages.
+const assetVersion=require("node:crypto").createHash("sha256")
+  .update(["seo-pages.css","seo-pages.js","seo-install.js"].map(f=>fs.readFileSync(path.join(root,f),"utf8")).join("\0"))
+  .digest("hex").slice(0,10);
 const changed=new Set();
 function write(relative,content){
   const file=path.join(root,relative);
@@ -132,6 +136,10 @@ for(const relative of ["about/index.html","khatmahs/index.html"]){
   const html=shareShell(fs.readFileSync(path.join(root,"src/discovery",relative.replace("/index.html",".html")),"utf8"));
   write(relative,html);
 }
+const swSource=fs.readFileSync(path.join(root,"sw.js"),"utf8");
+const swAssets=/"\.\/seo-pages\.css\?v=[^"]+","\.\/seo-pages\.js\?v=[^"]+","\.\/seo-install\.js\?v=[^"]+"/;
+if(!swAssets.test(swSource))throw new Error("sw.js: guide asset list not found");
+write("sw.js",swSource.replace(swAssets,`"./seo-pages.css?v=${assetVersion}","./seo-pages.js?v=${assetVersion}","./seo-install.js?v=${assetVersion}"`));
 const urls=["/","/quran/","/quran/player-guide/","/khatmahs/","/about/","/install/",...reciters.map(r=>`/quran/reciters/${r.slug}/`),...surahs.map(s=>`/surah/${s.n}/`),...juz.map(j=>`/juz/${j.n}/`)];
 // Preserve dates and ordering for unchanged pages; rebuilding alone is not a modification.
 const previous=fs.existsSync(path.join(root,"sitemap.xml"))?fs.readFileSync(path.join(root,"sitemap.xml"),"utf8"):"";
