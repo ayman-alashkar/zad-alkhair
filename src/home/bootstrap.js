@@ -212,7 +212,6 @@ if("serviceWorker" in navigator){
   window.addEventListener("online",zkPrepareServiceWorker);
   navigator.serviceWorker.addEventListener("controllerchange",()=>navigator.serviceWorker.ready.then(reg=>(reg.active||reg.waiting||reg.installing)?.postMessage({type:"CHECK_OFFLINE_LIBRARY"})).catch(()=>{}));
 }
-let ptTimer=setInterval(ptTick,30000);
 let outboxTimer=setInterval(flushOutbox,30000);
 zLoop();
 let syncBusy=false;

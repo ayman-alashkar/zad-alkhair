@@ -144,10 +144,6 @@ function ptCurrent(cfg){
     if(t[k].getTime()<=now) return k==="sunrise"?null:k;
   return "isha";   /* قبل الفجر: وقت العشاء ممتدّ من ليلة أمس */
 }
-const ptNextLabel=cfg=>{
-  const n=ptNext(cfg);
-  return `${PT_NAMES[n.key]} بعد ${arDur((n.at-Date.now())/6e4,true)}`;
-};
 
 function prayerDialog(){
   if(!ptReady()) return toast("تعذّر تحميل حاسبة المواقيت");
@@ -187,14 +183,6 @@ function prayerDialog(){
   document.getElementById("pt-close").onclick=closeLayer;
 }
 
-/* نبضة كل نصف دقيقة: تُحدَّث الأرقام والعقرب وحدها بلا إعادة رسم */
-function ptTick(){
-  const cfg=ptGet(); if(!cfg||!ptReady()) return;
-  try{
-    const el=document.querySelector(".next-prayer .pt-next");
-    if(el&&!el.classList.contains("pt-ask")) el.textContent=ptNextLabel(cfg);
-  }catch(e){}
-}
 
 /* يذكّر بالطريقة المعتمدة في البلد إن اختار القارئ غيرها. */
 function ptMethodHint(L,method){
