@@ -1,31 +1,102 @@
 /* ===================== الشمسة ===================== */
+/* للعرض فقط: الذهبي لما تمّت قراءته، والأخضر الداكن للمحجوز، والإطار وحده للمتاح.
+   النقطة الذهبية خارج الحلقة تدلّ على أجزائك. الألوان نفسها في شبكة الأجزاء. */
 function shamsa(){
-  const cx=160,cy=160,r1=76,r2=126,n=30,step=360/n,gap=1.5;
-  const pt=(r,d)=>{const a=d*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];};
-  let w="";
-  for(let i=0;i<n;i++){
+  const cx=100,cy=100,r1=66,r2=90,step=12,gap=1.6;
+  const pt=(r,d)=>{const a=d*Math.PI/180;return[(cx+r*Math.cos(a)).toFixed(2),(cy+r*Math.sin(a)).toFixed(2)];};
+  let w="",dots="";
+  state.juz.forEach((j,i)=>{
     const a1=-90+i*step+gap/2,a2=-90+(i+1)*step-gap/2;
     const[x1,y1]=pt(r2,a1),[x2,y2]=pt(r2,a2),[x3,y3]=pt(r1,a2),[x4,y4]=pt(r1,a1);
-    const s=state.juz[i].status;
-    const fill=s==="done"?"url(#g)":s==="taken"?"#B9DED2":"#DCEDF3";
-    const st=s==="done"?"#C99A45":s==="taken"?"#287A65":"#2E7C97";
-    w+=`<path class="wedge" data-i="${i}" style="animation-delay:${i*18}ms"
-      d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z"
-      fill="${fill}" stroke="${st}" stroke-width="1.1"><title>الجزء ${i+1}</title></path>`;
-  }
+    const cls=j.status==="done"?"done":j.status==="taken"?"taken":"free";
+    w+=`<path class="kw ${cls}" style="animation-delay:${i*18}ms" d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z"/>`;
+    if(j.ownerId===viewer.id){const[x,y]=pt(97,-90+(i+.5)*step);dots+=`<circle class="kdot" cx="${x}" cy="${y}" r="2.8"/>`;}
+  });
   const done=state.juz.filter(j=>j.status==="done").length;
-  return `<svg class="shamsa" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" role="img"
-      aria-label="تمّت قراءة ${done} من ثلاثين جزءًا">
-    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#F8E9C4"/><stop offset="1" stop-color="#E5C06B"/></linearGradient></defs>
-    <circle cx="160" cy="160" r="142" fill="none" stroke="#C99A45" stroke-opacity=".42"/>
-    <circle cx="160" cy="160" r="136" fill="none" stroke="#C99A45" stroke-opacity=".2"/>
-    ${w}
-    <circle cx="160" cy="160" r="68" fill="#FFFCF4" stroke="#C99A45" stroke-opacity=".5"/>
-    <circle cx="160" cy="160" r="62" fill="none" stroke="#C99A45" stroke-opacity=".27"/>
-    <text x="160" y="152" text-anchor="middle" font-family="Amiri,serif" font-size="50" fill="#C99A45">${ar(done)}</text>
-    <text x="160" y="184" text-anchor="middle" font-family="Amiri,serif" font-size="19" fill="#8A7657">من ٣٠ جزءًا</text>
+  return `<svg class="shamsa" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img"
+      aria-label="تمّت قراءة ${ar(done)} من ثلاثين جزءًا">
+    <defs><linearGradient id="kgold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9CF8C"/><stop offset="1" stop-color="#C59A4A"/></linearGradient></defs>
+    <circle cx="100" cy="100" r="62" fill="#FFFCF4" stroke="#C59A4A" stroke-opacity=".35"/>
+    ${w}${dots}
   </svg>`;
+}
+
+/* لوحة التقدّم: الشمسة ومفتاح ألوانها، وتحتها الوقت المتبقّي (يحدّثه zTick). */
+function khatmahProgress(){
+  const n=s=>state.juz.filter(s).length;
+  const done=n(j=>j.status==="done"),free=n(j=>j.status==="free"),mine=n(j=>j.ownerId===viewer.id);
+  return `<div class="kp">
+    <div class="kp-row">
+      <div class="kp-ring">${shamsa()}
+        <div class="kp-center" aria-hidden="true"><b>${ar(done)}</b><span>من ٣٠ جزءًا</span></div>
+      </div>
+      <div class="kp-legend">
+        <span class="kp-eyebrow">تقدّم الختمة</span>
+        <span class="kp-item"><i class="k-done"></i><span>تمّت قراءته</span><b>${ar(done)}</b></span>
+        <span class="kp-item"><i class="k-take"></i><span>قيد القراءة</span><b>${ar(30-done-free)}</b></span>
+        <span class="kp-item"><i class="k-free"></i><span>متاح</span><b>${ar(free)}</b></span>
+        ${mine?`<span class="kp-item"><i class="k-mine"></i><span>أجزاؤك</span><b>${ar(mine)}</b></span>`:""}
+      </div>
+    </div>
+    <button class="kp-left deadline-trigger" id="deadline-trigger" type="button" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>
+      <span class="kp-lab" id="cd-lab">الوقت المتبقّي لقراءة جزءك</span>
+      <b class="kp-time"><span id="cd-days"></span> <bdi dir="ltr" id="cd-hms">—</bdi></b>
+    </button>
+  </div>`;
+}
+
+/* ===================== أجزاؤك ===================== */
+const juzCountWord=n=>n===1?"جزء واحد":n===2?"جزءان":n<=10?`${ar(n)} أجزاء`:`${ar(n)} جزءًا`;
+function juzBadge(n,done,big=false){
+  return `<span class="jbadge ${done?"done":"taken"}${big?" big":""}" aria-hidden="true"><b>${ar(n)}</b></span>`;
+}
+/* أبعد صفحة بلغها القارئ داخل الجزء، كما يحفظها القارئ نفسه (recordJuzProgress). */
+function juzReading(n){
+  const [first,last]=JUZ_PAGES[n-1],total=last-first+1;
+  const reached=Number((ztReadJson(ZT_JUZ_PROGRESS)||{})[code]?.[n]);
+  const started=reached>=first&&reached<=last;
+  return {total,reached,started,read:started?reached-first:0,atEnd:started&&reached===last};
+}
+function myJuzCard(){
+  const mine=state.juz.map((j,i)=>({i,n:i+1,done:j.status==="done",own:j.ownerId===viewer.id})).filter(x=>x.own);
+  const head=(sub)=>`<div class="sec-head"><h2 class="sec">أجزاؤك</h2>${sub?`<span class="myjuz-sub">${sub}</span>`:""}</div>`;
+  if(!mine.length) return `<section class="frame myjuz">${head("")}
+      <div class="myjuz-empty"><span class="jbadge free big" aria-hidden="true"><b>+</b></span>
+        <div><strong>لم تحجز جزءًا بعد</strong><span>اختر جزءًا متاحًا من الأجزاء الثلاثين</span></div></div></section>`;
+  const doneCount=mine.filter(x=>x.done).length;
+  const sub=`${juzCountWord(mine.length)} · أتممت ${ar(doneCount)}`;
+  const pending=mine.filter(x=>!x.done);
+  if(!pending.length) return `<section class="frame myjuz all-done">${head(sub)}
+      <div class="myjuz-empty"><span class="jbadge done big" aria-hidden="true"><b>✓</b></span>
+        <div><strong>أتممت أجزاءك، تقبّل الله منك</strong><span>${mine.length===1?"الجزء":"الأجزاء"} ${mine.map(x=>ar(x.n)).join(" و")}</span></div></div></section>`;
+  const cur=pending[0],r=juzReading(cur.n);
+  const href=r.started?`reader.html?page=${r.reached}&amp;code=${encodeURIComponent(code)}`:readerLink(cur.n);
+  const readLabel=!r.started?"اقرأ جزءك":r.atEnd?"راجع جزءك":"تابع القراءة";
+  const order=mine.length>1?`<span class="myjuz-order">${ztJuzOrder(doneCount+1,mine.length)}</span>`:"";
+  const rows=mine.filter(x=>x!==cur).map(x=>{
+    const rr=juzReading(x.n);
+    const note=x.done?"":rr.started?` · قرأت ${ar(rr.read)} من ${ar(rr.total)} صفحة`:" · لم تبدأه بعد";
+    return `<div class="myjuz-row">
+      <button class="myjuz-open" type="button" data-sheet="${x.i}">${juzBadge(x.n,x.done)}
+        <span class="myjuz-text"><strong>الجزء ${ar(x.n)}</strong><span>${JUZ[x.i]}${note}</span></span></button>
+      ${x.done?`<span class="myjuz-pill">تمّت قراءته ✓</span>`:`<a class="myjuz-read" href="${readerLink(x.n)}">اقرأ</a>`}
+    </div>`;}).join("");
+  return `<section class="frame myjuz">${head(sub)}
+    <button class="myjuz-cur" type="button" data-sheet="${cur.i}">${juzBadge(cur.n,false,true)}
+      <span class="myjuz-text">${order}<strong class="myjuz-title">الجزء ${ar(cur.n)}</strong><span class="myjuz-range">${JUZ[cur.i]}</span></span>
+    </button>
+    <div class="myjuz-progress">
+      <div><span>${r.atEnd?"وصلت إلى آخر صفحة في جزئك":`قرأت ${ar(r.read)} من ${ar(r.total)} صفحة`}</span><span>${r.started?`الصفحة ${ar(r.reached)}`:""}</span></div>
+      <span class="myjuz-bar"><i style="width:${(r.atEnd?100:r.read/r.total*100).toFixed(1)}%"></i></span>
+    </div>
+    <div class="myjuz-actions">
+      <a class="btn${r.atEnd?" quiet":""}" href="${href}">${BOOK_ICON}<span>${readLabel}</span></a>
+      <button class="btn ${r.atEnd?"gold":"quiet"}" type="button" data-complete="${cur.i}">أتممت الجزء</button>
+    </div>
+    ${rows?`<div class="myjuz-rows">${rows}</div>`:""}
+  </section>`;
 }
 
 function cardShamsa(done,reserved){
@@ -340,9 +411,11 @@ function viewGate(){
   </div>`;
 }
 
+/* يبقيان كما اختارهما المستخدم حين يُعاد رسم الصفحة بعد كل تحديث. */
+let juzFilter="all", peopleOpen=false;
 function viewMain(){
   const done=state.juz.filter(j=>j.status==="done").length;
-  const taken=state.juz.filter(j=>j.status!=="free").length;
+  const free=state.juz.filter(j=>j.status==="free").length;
   const dl=daysLeft(state.endDate);
   const me=memberOf(viewer.id)||{};
 
@@ -396,15 +469,9 @@ function viewMain(){
       <div class="display">${esc(state.title)}</div>
       ${state.dedication?`<div class="dedication">على نية: ${esc(state.dedication)}</div>`:""}
     </div>
-    <div class="orbs">
-      <div class="shamsa-col">
-        ${shamsa()}
-        <div class="shamsa-meta"><em>محجوز</em><b>${ar(taken)} من ٣٠</b></div>
-      </div>
-      ${zOrb()}
-    </div>
+    ${khatmahProgress()}
   </div>
-  ${ptLine()}
+  ${myJuzCard()}
 
   ${me.linked?"":viewLinkCall()}
   ${done===30?viewKhatm():dl===0?viewOverdue():""}
@@ -412,16 +479,21 @@ function viewMain(){
   <div class="main-layout">
     <section class="juz-panel">
       <div class="sec-head"><h2 class="sec">الأجزاء الثلاثون</h2>
+        ${free?`<div class="jfilter" role="group" aria-label="عرض الأجزاء">
+          <button type="button" data-jf="all" aria-pressed="${juzFilter!=="free"}">الكل</button>
+          <button type="button" data-jf="free" aria-pressed="${juzFilter==="free"}">المتاحة ${ar(free)}</button>
+        </div>`:""}
         <div class="legend"><b class="lg-free">متاح</b><b class="lg-take">محجوز</b><b class="lg-done">تمّت قراءته</b></div>
       </div>
-      <div class="grid">${cells}</div>
+      <div class="grid${free&&juzFilter==="free"?" only-free":""}" id="juz-grid">${cells}</div>
     </section>
 
-    <aside class="people-panel">
-      <div class="sec-head"><h2 class="sec">المشاركون</h2>
-        <span style="color:var(--muted);font-size:.78rem">${ar((state.members||[]).length)}</span></div>
+    <details class="people-panel" id="people-panel"${peopleOpen?" open":""}>
+      <summary class="sec-head"><h2 class="sec">المشاركون</h2>
+        <span class="people-count">${ar((state.members||[]).length)}</span>
+        <svg class="people-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <div class="frame roster-list">${roster}</div>
-    </aside>
+    </details>
   </div>
 
   <div class="toolbar">

@@ -7,9 +7,8 @@ function bind(){
     const ok=await openBot();
     if(!ok) toast("تعذّر فتح تلغرام، تأكّد أنه مثبَّت");
   };
-  if($("zclock")) zTick();
+  if($("cd-hms")) zTick();
   if($("deadline-trigger")) $("deadline-trigger").onclick=deadlineDialog;
-  if($("btn-prayer")) $("btn-prayer").onclick=prayerDialog;
   if($("btn-leave")) $("btn-leave").onclick=leaveDialog;
   document.querySelectorAll("[data-mine]").forEach(b=>b.onclick=()=>{
     zkReplaceHash(b.dataset.mine); boot();
@@ -101,7 +100,20 @@ function bind(){
 
   if($("btn-logout")) $("btn-logout").onclick=logoutCurrent;
 
-  document.querySelectorAll(".cell,.wedge").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
+  document.querySelectorAll(".cell").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
+  document.querySelectorAll("[data-sheet]").forEach(el=>el.onclick=()=>openSheet(+el.dataset.sheet));
+  document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=async()=>{
+    const i=+b.dataset.complete;
+    if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(i+1)}؟ سيُبلَّغ أعضاء الختمة بذلك.`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
+    act("done",i);
+  });
+  /* الفلتر يبدّل صنفًا على الشبكة فقط، دون إعادة رسم الصفحة. */
+  document.querySelectorAll("[data-jf]").forEach(b=>b.onclick=()=>{
+    juzFilter=b.dataset.jf;
+    $("juz-grid")?.classList.toggle("only-free",juzFilter==="free");
+    document.querySelectorAll("[data-jf]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.jf===juzFilter)));
+  });
+  if($("people-panel")) $("people-panel").ontoggle=e=>{peopleOpen=e.target.open;};
   document.querySelectorAll("[data-member]").forEach(b=>b.onclick=()=>memberDialog(b.dataset.member));
 
 

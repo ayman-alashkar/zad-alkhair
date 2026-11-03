@@ -149,21 +149,6 @@ const ptNextLabel=cfg=>{
   return `${PT_NAMES[n.key]} بعد ${arDur((n.at-Date.now())/6e4,true)}`;
 };
 
-function ptLine(){
-  if(!ptReady()) return "";
-  return `<button class="prayer-fab" id="btn-prayer">
-    <span class="pt-icon">${PRAYER_ICON}</span>
-    <span class="pt-label">مواقيت الصلاة</span></button>`;
-}
-
-function ptNextLine(){
-  if(!ptReady()) return "";
-  const cfg=ptGet();
-  let tail=`<span class="pt-next pt-ask">حدّد مدينتك</span>`;
-  if(cfg){ try{ tail=`<span class="pt-next">${ptNextLabel(cfg)}</span>`; }catch(e){ tail=""; } }
-  return `<div class="next-prayer">${PRAYER_ICON}${tail}</div>`;
-}
-
 function prayerDialog(){
   if(!ptReady()) return toast("تعذّر تحميل حاسبة المواقيت");
   const cfg=ptGet();
