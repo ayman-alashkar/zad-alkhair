@@ -39,7 +39,8 @@ test("midday prayers read as ظهرًا, not عصرًا",()=>{
 test("khatmah screens rely on the bottom tabs: no duplicate brand, Quran link or prayer button",()=>{
   const home=read("index.html");
   assert.doesNotMatch(home,/class="tb-brand"|class="tb-reader"/);
-  assert.match(read("src/home/styles.css"),/\.prayer-fab\{display:none!important\}/);
+  // The old floating prayer button is gone from the source, not merely hidden.
+  assert.doesNotMatch(read("src/home/prayer.js")+read("src/home/views.js"),/prayer-fab|btn-prayer/);
   assert.match(read("src/home/views.js"),/data-home>صفحة الختمات<\/button>/);
   assert.doesNotMatch(read("src/home/views.js"),/data-home>الصفحة الرئيسية</);
   // One pattern everywhere: the rosette, never the old hexagonal lattice on top.
