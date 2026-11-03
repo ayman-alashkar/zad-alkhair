@@ -3,6 +3,23 @@
   try{
     validateStaticData();
     buildPageShells();
+    /* فتح الفهرس (تبويب «القرآن العظيم») لا يحتاج خطوط صفحات المصحف: أسماء السور
+       بخط الرقعة، والبيانات محفوظة على الجهاز. فيظهر فورًا، ويكمل الإقلاع خلفه. */
+    let earlyIndexOpened=false;
+    {
+      const early=readerEntryParams(),stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
+      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||stored?.surface!=="reader");
+      if(plainHome){
+        await loadQcfMeta();
+        validateMetadataConsistency();
+        const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
+        if(saved>=1&&saved<=TOTAL_PAGES)currentPage=saved;
+        const tab=stored?.surface==="quran-home"&&["s","j","m"].includes(stored?.tab)?stored.tab:"s";
+        loading.classList.add("hide");
+        openQuranIndex(tab,{home:true});
+        earlyIndexOpened=true;
+      }
+    }
     await Promise.all([
       document.fonts.load('48px "QCF4_QBSML"'),
       document.fonts.load('48px "QCF4_Hafs_01"')
@@ -46,7 +63,7 @@
     updatePage(false,false);
     saveLastPosition();
     if(!wantsHome)saveReaderSurface("reader");
-    loading.classList.add("hide");
+    if(!readerGoPending)loading.classList.add("hide");
     if(deepLinkedAyah){
       const anchor=document.querySelector(`.page[data-page="${currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
       if(anchor)selectVerse(deepLinkedAyah,anchor,true);
@@ -54,12 +71,15 @@
     if(entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
     prefetchAround(currentPage).then(()=>trimPageDom(currentPage));
     loadTafsirIndex().catch(err=>console.warn("tafsir index unavailable",err));
-    if(wantsHome){
+    readerBootDone();
+    if(wantsHome&&!earlyIndexOpened){
       const restoredTab=storedSurface?.surface==="quran-home"&&["s","j","m"].includes(storedSurface?.tab)?storedSurface.tab:"s";
       requestAnimationFrame(()=>openQuranIndex(restoredTab,{home:true}));
     }else setTimeout(()=>showToast("QCF4 · مصحف المدينة ١٤٤١هـ · ٦٠٤ صفحات"),350);
   }catch(e){
     console.error(e);
+    readerBootDone();
+    document.querySelector(".quran-index")?.remove();
     loading.classList.remove("hide");
     loading.innerHTML=`<div class="loading-error"><div>تعذّر تحميل بيانات المصحف. تحقق من الاتصال ثم أعد المحاولة.</div><button class="loading-retry" type="button">إعادة المحاولة</button></div>`;
     loading.querySelector(".loading-retry")?.addEventListener("click",()=>location.reload());

@@ -2424,13 +2424,16 @@ html body .quran-index .quran-index-action{width:var(--ix-btn);height:var(--ix-b
   direction:rtl;border-top:1px solid rgba(169,131,58,.26);background:rgba(255,251,242,.94);font-family:Alexandria,Tahoma,sans-serif;
   --app-tab:#6B6350;--app-tab-on:#0D3C35}
 html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);background:rgba(8,38,33,.94);--app-tab:#A9A390;--app-tab-on:#E4C980}
-.reader-app-tabs a{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px 2px;
+.reader-app-tabs a{position:relative;display:flex;transition:color .3s ease,background-color .3s ease;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px 2px;
   color:var(--app-tab);text-decoration:none;-webkit-tap-highlight-color:transparent}
 .reader-app-tabs svg{width:23px;height:23px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .reader-app-tabs span{font-size:11px;line-height:1.3;text-align:center;font-weight:500}
 .reader-app-tabs a[aria-current="page"]{color:var(--app-tab-on)}
 .reader-app-tabs a[aria-current="page"] span{font-weight:650}
-.reader-app-tabs a[aria-current="page"]::before{content:"";position:absolute;top:-1px;left:50%;width:34px;height:3px;margin-left:-17px;border-radius:0 0 3px 3px;background:var(--app-tab-on)}
+/* One marker that slides to the chosen tab, as on the home screen (RTL: counted from the right). */
+.reader-app-dot{position:absolute;top:-1px;right:calc(10px + var(--app-tab-i,1) * (100% - 20px) / 4);width:calc((100% - 20px) / 4);display:flex;justify-content:center;
+  pointer-events:none;transition:right .45s cubic-bezier(.3,.9,.3,1)}
+.reader-app-dot::before{content:"";width:34px;height:3px;border-radius:0 0 3px 3px;background:var(--app-tab-on)}
 .reader-app-tabs a:focus-visible{outline:2px solid #C59A4A;outline-offset:-4px;border-radius:12px}
 @media (min-width:371px){.reader-app-tabs span{white-space:nowrap}}
 @media (max-width:350px){.reader-app-tabs span{font-size:10px}}
@@ -2443,7 +2446,7 @@ html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);
   .reader-app-tabs span{font-size:14px}
   .reader-app-tabs a[aria-current="page"]{background:rgba(197,154,74,.14)}
   html[data-theme="dark"] .reader-app-tabs a[aria-current="page"]{background:rgba(228,201,128,.11)}
-  .reader-app-tabs a[aria-current="page"]::before{display:none}
+  .reader-app-dot{display:none}
 }
 
 /* Same as the home page: cross-fade between the two app pages; the tabs hold still. */
@@ -2587,6 +2590,10 @@ const QCF_FONT_BASE=QCF_BASE+"fonts-woff2/";
 const TOTAL_PAGES=604;
 const SURAH_HEADER_GLYPHS=[null,"ﱅ","ﱆ","ﱇ","ﱊ","ﱋ","ﱎ","ﱏ","ﱑ","ﱒ","ﱓ","ﱕ","ﱖ","ﱘ","ﱚ","ﱛ","ﱜ","ﱝ","ﱞ","ﱡ","ﱢ","ﱤ","ﭑ","ﭒ","ﭔ","ﭕ","ﭗ","ﭘ","ﭚ","ﭛ","ﭝ","ﭞ","ﭠ","ﭡ","ﭣ","ﭤ","ﭦ","ﭧ","ﭩ","ﭪ","ﭬ","ﭭ","ﭯ","ﭰ","ﭲ","ﭳ","ﭵ","ﭶ","ﭸ","ﭹ","ﭻ","ﭼ","ﭾ","ﭿ","ﮁ","ﮂ","ﮄ","ﮅ","ﮇ","ﮈ","ﮊ","ﮋ","ﮍ","ﮎ","ﮐ","ﮑ","ﮓ","ﮔ","ﮖ","ﮗ","ﮙ","ﮚ","ﮜ","ﮝ","ﮟ","ﮠ","ﮢ","ﮣ","ﮥ","ﮦ","ﮨ","ﮩ","ﮫ","ﮬ","ﮮ","ﮯ","ﮱ","﮲","﮴","﮵","﮷","﮸","﮺","﮻","﮽","﮾","﯀","﯁","ﯓ","ﯔ","ﯖ","ﯗ","ﯙ","ﯚ","ﯜ","ﯝ","ﯟ","ﯠ","ﯢ","ﯣ","ﯥ","ﯦ","ﯨ","ﯩ","ﯫ"];
 let surahHeaderReady=false;
+/* إقلاع القارئ: يكتمل حين تُحمَّل خطوط المصحف وتُرسم الصفحة الحالية.
+   الفهرس قد يظهر قبل ذلك؛ ومن يغادره إلى المصحف ينتظر هذا الوعد. */
+let readerBooted=false,readerGoPending=false,readerBootDone=()=>{};
+const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=true;resolve()}});
 const TAFSIR_DATASET=Object.freeze({
   schemaVersion:1,
   sourceId:"wahba_al_zuhayli_al_wajeez",
@@ -3515,8 +3522,10 @@ function updatePage(animate=true,savePosition=true){
   if(milestone)showNotice(milestone);
 }
 async function go(p){
+  /* لا ننتقل قبل اكتمال الإقلاع وخطوطه؛ وتبقى شاشة التحميل حتى نبلغ الصفحة المطلوبة. */
+  if(!readerBooted){readerGoPending=true;await readerBootReady}
   const target=Math.max(1,Math.min(TOTAL_PAGES,Number(p)||1));
-  if(navigationBusy||target===currentPage)return;
+  if(navigationBusy||target===currentPage){if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}return}
   navigationBusy=true;
   try{
     await ensurePage(target);
@@ -3530,7 +3539,7 @@ async function go(p){
     });
     prefetchAround(target).then(()=>trimPageDom(target));
   }catch(e){console.error("QCF page load failed",target,e);showToast("تعذّر تحميل الصفحة "+ar(target))}
-  finally{navigationBusy=false}
+  finally{navigationBusy=false;if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}}
 }
 track.addEventListener("pointerdown",e=>{
   downX=e.clientX;downY=e.clientY;swipeActive=true;
@@ -4209,11 +4218,11 @@ function openQuranHubMenu(closeHub){
   b.querySelector('[data-hub="guide"]').onclick=()=>{location.href="/quran/player-guide/"};
 }
 /* أقسام زاد الخير الأربعة، كما في الصفحة الرئيسية. تظهر في الفهرس وحده، لا فوق صفحات المصحف. */
-const READER_APP_TABS=`<nav class="reader-app-tabs" aria-label="الأقسام">
-  <a href="./"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-6h-6v6H3Z"/></svg><span>الرئيسية</span></a>
+const READER_APP_TABS=`<nav class="reader-app-tabs" aria-label="الأقسام" style="--app-tab-i:1"><span class="reader-app-dot" aria-hidden="true"></span>
+  <a href="./" data-app-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-6h-6v6H3Z"/></svg><span>الرئيسية</span></a>
   <a href="#" aria-current="page" data-app-tab="quran"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span>القرآن العظيم</span></a>
-  <a href="./?section=khatmahs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span>الختمات الجماعية</span></a>
-  <a href="./?section=prayer"><svg viewBox="0 0 25 24" aria-hidden="true"><path d="M9.15 9C5.68 5.5 11.01 3.75 12.5 2c1.49 1.75 6.82 3.5 3.35 7Z"/><path d="M18.5 12v-1c0-1.5-.5-2-2-2h-8c-1.5 0-2 .5-2 2v1"/><path d="M17.5 12h-10c-2.5 0-3 .5-3 3v4c0 2.5.5 3 3 3h10c2.5 0 3-.5 3-3v-4c0-2.5-.5-3-3-3Z"/><path d="M10 22v-3c0-3 2.5-4 2.5-4s2.5 1 2.5 4v3"/></svg><span>مواقيت الصلاة</span></a>
+  <a href="./?section=khatmahs" data-app-tab="khatmahs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span>الختمات الجماعية</span></a>
+  <a href="./?section=prayer" data-app-tab="prayer"><svg viewBox="0 0 25 24" aria-hidden="true"><path d="M9.15 9C5.68 5.5 11.01 3.75 12.5 2c1.49 1.75 6.82 3.5 3.35 7Z"/><path d="M18.5 12v-1c0-1.5-.5-2-2-2h-8c-1.5 0-2 .5-2 2v1"/><path d="M17.5 12h-10c-2.5 0-3 .5-3 3v4c0 2.5.5 3 3 3h10c2.5 0 3-.5 3-3v-4c0-2.5-.5-3-3-3Z"/><path d="M10 22v-3c0-3 2.5-4 2.5-4s2.5 1 2.5 4v3"/></svg><span>مواقيت الصلاة</span></a>
 </nav>`;
 function openQuranIndex(initialTab="s",options={}){
   document.querySelector(".quran-index")?.remove();
@@ -4228,9 +4237,24 @@ function openQuranIndex(initialTab="s",options={}){
   const surahHost=panel.querySelector("#quranSurahList"),juzHost=panel.querySelector("#quranJuzList"),bookmarkHost=panel.querySelector("#quranBookmarkList");
   const viewport=panel.querySelector("#quranIndexViewport"),slider=panel.querySelector("#quranIndexTrack");
   let alive=true,activeTab="",ix=0,iy=0;const close=()=>{alive=false;panel.remove()};
-  const leaveHubForReader=()=>{enterReaderSurface({consumeTarget:true,fromHome:homeMode});close()};
+  const leaveHubForReader=()=>{
+    /* إن غادر القارئ الفهرس قبل اكتمال الإقلاع، تعود شاشة التحميل حتى تُرسم الصفحة. */
+    if(!readerBooted)loading.classList.remove("hide");
+    enterReaderSurface({consumeTarget:true,fromHome:homeMode});close();
+  };
   /* تبويب القرآن هو الصفحة الحالية: يعيد إلى السور بدل إعادة التحميل. */
   panel.querySelector('[data-app-tab="quran"]')?.addEventListener("click",e=>{e.preventDefault();setTab("s")});
+  /* الأقسام الأخرى: يتحرك المؤشر أولًا، ثم تُفتح الصفحة؛ والشريط يبقى ثابتًا أثناء الانتقال. */
+  const appTabs=panel.querySelector(".reader-app-tabs");
+  appTabs?.querySelectorAll("a[data-app-tab]:not([data-app-tab=quran])").forEach(link=>link.addEventListener("click",e=>{
+    if(e.metaKey||e.ctrlKey||e.shiftKey||e.button)return;
+    e.preventDefault();
+    const links=[...appTabs.querySelectorAll("a[data-app-tab]")];
+    links.forEach(a=>a===link?a.setAttribute("aria-current","page"):a.removeAttribute("aria-current"));
+    appTabs.style.setProperty("--app-tab-i",String(links.indexOf(link)));
+    const still=window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(()=>{location.href=link.getAttribute("href")},still?0:280);
+  }));
   panel.querySelector('[data-hub-action="resume"]').onclick=leaveHubForReader;
   panel.querySelector('[data-hub-action="search"]').onclick=openQuranSearch;
   panel.querySelector('[data-hub-action="more"]').onclick=()=>openQuranHubMenu(leaveHubForReader);
@@ -5476,6 +5500,23 @@ if("serviceWorker" in navigator){
   try{
     validateStaticData();
     buildPageShells();
+    /* فتح الفهرس (تبويب «القرآن العظيم») لا يحتاج خطوط صفحات المصحف: أسماء السور
+       بخط الرقعة، والبيانات محفوظة على الجهاز. فيظهر فورًا، ويكمل الإقلاع خلفه. */
+    let earlyIndexOpened=false;
+    {
+      const early=readerEntryParams(),stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
+      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||stored?.surface!=="reader");
+      if(plainHome){
+        await loadQcfMeta();
+        validateMetadataConsistency();
+        const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
+        if(saved>=1&&saved<=TOTAL_PAGES)currentPage=saved;
+        const tab=stored?.surface==="quran-home"&&["s","j","m"].includes(stored?.tab)?stored.tab:"s";
+        loading.classList.add("hide");
+        openQuranIndex(tab,{home:true});
+        earlyIndexOpened=true;
+      }
+    }
     await Promise.all([
       document.fonts.load('48px "QCF4_QBSML"'),
       document.fonts.load('48px "QCF4_Hafs_01"')
@@ -5519,7 +5560,7 @@ if("serviceWorker" in navigator){
     updatePage(false,false);
     saveLastPosition();
     if(!wantsHome)saveReaderSurface("reader");
-    loading.classList.add("hide");
+    if(!readerGoPending)loading.classList.add("hide");
     if(deepLinkedAyah){
       const anchor=document.querySelector(`.page[data-page="${currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
       if(anchor)selectVerse(deepLinkedAyah,anchor,true);
@@ -5527,12 +5568,15 @@ if("serviceWorker" in navigator){
     if(entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
     prefetchAround(currentPage).then(()=>trimPageDom(currentPage));
     loadTafsirIndex().catch(err=>console.warn("tafsir index unavailable",err));
-    if(wantsHome){
+    readerBootDone();
+    if(wantsHome&&!earlyIndexOpened){
       const restoredTab=storedSurface?.surface==="quran-home"&&["s","j","m"].includes(storedSurface?.tab)?storedSurface.tab:"s";
       requestAnimationFrame(()=>openQuranIndex(restoredTab,{home:true}));
     }else setTimeout(()=>showToast("QCF4 · مصحف المدينة ١٤٤١هـ · ٦٠٤ صفحات"),350);
   }catch(e){
     console.error(e);
+    readerBootDone();
+    document.querySelector(".quran-index")?.remove();
     loading.classList.remove("hide");
     loading.innerHTML=`<div class="loading-error"><div>تعذّر تحميل بيانات المصحف. تحقق من الاتصال ثم أعد المحاولة.</div><button class="loading-retry" type="button">إعادة المحاولة</button></div>`;
     loading.querySelector(".loading-retry")?.addEventListener("click",()=>location.reload());

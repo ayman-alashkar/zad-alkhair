@@ -228,6 +228,19 @@ function ztPaintTabs(){
     else el.removeAttribute("aria-current");
   });
 }
+/* الانتقال إلى صفحة القارئ: يتحرك المؤشر إلى تبويب القرآن أولًا، ثم تُفتح الصفحة.
+   الشريط في الصفحتين باسم انتقال واحد، فيبقى ثابتًا وتتبدل الصفحة من تحته. */
+const ZT_TAB_IDS=["zk-tab-home","zk-launch-quran","zk-launch-zad","zk-launch-prayer"];
+function ztMarkTab(id){
+  const tabs=ztEl("zk-tabs");if(!tabs)return;
+  ZT_TAB_IDS.forEach((tab,i)=>{const el=ztEl(tab);if(!el)return;
+    if(tab===id){el.setAttribute("aria-current","page");tabs.style.setProperty("--zk-tab",String(i))}else el.removeAttribute("aria-current")});
+}
+function ztNavigateAfterTab(id,url){
+  ztMarkTab(id);
+  const still=window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  setTimeout(()=>{location.href=url},still?0:280);
+}
 /* تُستدعى من zkShowLaunch و zkHideLaunch */
 function ztOnLaunchChange(){
   ztPaintTabs();ztPaintChrome();ztMenu(false);
@@ -272,6 +285,7 @@ function ztMenu(open){
   document.addEventListener("keydown",event=>{if(event.key==="Escape")ztMenu(false)});
   ztEl("zt-help")?.addEventListener("click",()=>{ztMenu(false);document.body.classList.add("zk-launch-prayer");helpDialog()});
   ztEl("zk-tab-home")?.addEventListener("click",()=>{zkShowLaunch();ztSetView("today");zkArmRootGuard()});
+  requestAnimationFrame(()=>requestAnimationFrame(()=>ztEl("zk-tabs")?.classList.add("zk-tabs-ready")));
   /* بعد إغلاق أي نافذة (كاختيار المدينة) تُحدَّث البطاقات. */
   const layer=ztEl("layer");
   if(layer&&"MutationObserver" in window){
