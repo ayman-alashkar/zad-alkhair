@@ -117,21 +117,26 @@ function fitPage(p){
     if(!overflows)stage.scrollTop=0;
     host.style.justifyContent=overflows?"flex-start":"center";
 
+    // The line spacing is set in this same frame. Setting it one frame later let
+    // the browser paint the page once with no spacing (lines drawn together)
+    // and once spread out: a visible jump on every refit, e.g. when the share
+    // sheet or the keyboard changed the window size for a moment.
+    if(p>=3&&!overflows&&rows.length>1){
+      const rowHeight=rows.reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
+      const usable=stage.clientHeight*.955;
+      const spare=Math.max(0,usable-rowHeight);
+      const gap=Math.max(0,Math.min(18,spare/(rows.length-1)));
+      host.style.gap=gap.toFixed(2)+"px";
+    }
+
     requestAnimationFrame(()=>{
       if(!isCurrent())return;
       // Render the *visible ink* of the ready-made QUL glyph, then crop the
       // canvas to that ink. This avoids the large internal font metrics that
       // can make the decorative header look tiny. Its CSS width is
       // independent of the QCF4 line box and therefore never shrinks ayat.
+      // Drawing into the canvas does not change the layout set above.
       banners.forEach(({banner})=>renderSurahHeaderCanvas(banner,banner.dataset.glyph));
-
-      if(p>=3&&!overflows&&rows.length>1){
-        const rowHeight=rows.reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
-        const usable=stage.clientHeight*.955;
-        const spare=Math.max(0,usable-rowHeight);
-        const gap=Math.max(0,Math.min(18,spare/(rows.length-1)));
-        host.style.gap=gap.toFixed(2)+"px";
-      }
     });
   });
 }
