@@ -45,7 +45,9 @@ test("Quran, reciter and surah pages use the approved concise copy",()=>{
   const quran=read("quran/index.html");
   const quranDescription="اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: فضيلة الشيخ أيمن سويد، وفضيلة الشيخ عبد الرشيد الصوفي، وفضيلة الشيخ علي بن عبد الرحمن الحذيفي، وفضيلة الشيخ علي جابر، وفضيلة الشيخ ماهر المعيقلي، وفضيلة الشيخ محمود الحمود، وفضيلة الشيخ محمد صديق المنشاوي، وفضيلة الشيخ محمود خليل الحصري، وفضيلة الشيخ مشاري راشد العفاسي.";
   assert.match(quran,new RegExp(`<meta name="description" content="${quranDescription}">`));
-  assert.match(quran,new RegExp(`<meta property="og:description" content="${quranDescription}">`));
+  const quranShare="اقرأ القرآن العظيم واستمع إليه بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.";
+  assert.ok(quran.includes(`<meta property="og:description" content="${quranShare}">`));
+  assert.ok(quran.includes(`<meta name="twitter:description" content="${quranShare}">`));
   assert.match(quran,/مصحف المدينة/);
   assert.match(quran,/>افتح المصحف الشريف<\/a>/);
   assert.doesNotMatch(quran,/>ثبّت التطبيق<\/a>/);
@@ -82,8 +84,10 @@ test("reciter honorifics are consistent in every surah description and the reade
     assert.ok(description,`surah/${surah}/index.html description`);
     assert.match(description,/بصوت القراء الأفاضل:/,`surah/${surah}/index.html`);
     for(const name of honorifics)assert.ok(description.includes(name),`surah/${surah}/index.html -> ${name}`);
-    assert.match(html,new RegExp(`<meta property="og:description" content="${description.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}">`));
-    assert.match(html,new RegExp(`<meta name="twitter:description" content="${description.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}">`));
+    const name=(html.match(/<title>سورة (.+?) مكتوبة/)||[])[1];
+    const share=`اقرأ سورة ${name} واستمع إليها بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.`;
+    assert.ok(html.includes(`<meta property="og:description" content="${share}">`),`surah/${surah}/index.html og`);
+    assert.ok(html.includes(`<meta name="twitter:description" content="${share}">`),`surah/${surah}/index.html twitter`);
   }
 
   const reader=read("reader.html");
