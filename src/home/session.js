@@ -31,6 +31,8 @@ function activeKhatmahForget(value=""){
   const c=cleanKhatmahCode(value),session=activeSessionGet();
   try{if(!c||session===c)sessionStorage.removeItem(ACTIVE_SESSION);}catch(_){ }
   try{const last=cleanKhatmahCode(localStorage.getItem(LAST));if(!c||last===c)localStorage.removeItem(LAST);}catch(_){ }
+  /* حالة الختمة المحفوظة للعرض الفوري (state-sync.js) تُنسى معها. */
+  try{const saved=JSON.parse(localStorage.getItem("zad:khatmah-state-v1")||"null");if(!c||saved?.code===c)localStorage.removeItem("zad:khatmah-state-v1");}catch(_){ }
 }
 const linkFor=c=>location.origin+location.pathname+"#"+c;
 const vKey=()=>"zad:viewer:"+code;

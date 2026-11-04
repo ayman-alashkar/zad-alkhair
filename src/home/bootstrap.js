@@ -17,7 +17,15 @@ async function boot(){
   activeKhatmahSet(code,false);
   loadViewer();
   if(viewer) activeKhatmahSet(code,true);
-  screen="boot"; render();
+  /* A member who has opened this khatmah before sees it at once; refresh()
+     then corrects it (or moves to linking / not-found) as before. */
+  const saved=viewer?khatmahStateSaved(code):null;
+  if(saved){
+    state=saved;
+    const me=memberOf(viewer.id);
+    if(me&&(me.linked||me.exempt)){screen="main";render();}
+    else{state=null;screen="boot";render();}
+  }else{screen="boot";render();}
   await refresh();
 }
 document.getElementById("btn-help").onclick=helpDialog;

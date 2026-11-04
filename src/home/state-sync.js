@@ -12,7 +12,7 @@ async function refresh(silent=false){
   /* لا تسمح لاستجابة أقدم أن تمحو حالة جلب أحدث. */
   if(seq!==refreshSeq) return false;
   state=nextState;
-  if(!state){ mineForget(code); activeKhatmahForget(code); screen="notfound"; if(!silent) render(); return true; }
+  if(!state){ mineForget(code); activeKhatmahForget(code); khatmahStateForget(); screen="notfound"; if(!silent) render(); return true; }
   if(viewer && !memberOf(viewer.id)){ /* حُذف أو دُمج */ viewer=null; localStorage.removeItem(vKey()); }
   if(screen!=="linking"){
     const me=viewer?memberOf(viewer.id):null;
@@ -32,9 +32,24 @@ async function refresh(silent=false){
     }
   }
   if(viewer&&state) mineRemember();
+  if(viewer&&state&&screen==="main") khatmahStateSave();
   if(!silent) render();
   return true;
 }
+
+/* Last known state of the active khatmah, so its tab opens at once and the
+   server answer only corrects it. Every action still goes to the server. */
+const KHATMAH_STATE_KEY="zad:khatmah-state-v1";
+function khatmahStateSave(){
+  try{localStorage.setItem(KHATMAH_STATE_KEY,JSON.stringify({code,state}))}catch(_){}
+}
+function khatmahStateSaved(c){
+  try{
+    const saved=JSON.parse(localStorage.getItem(KHATMAH_STATE_KEY)||"null");
+    return saved&&saved.code===c&&saved.state&&Array.isArray(saved.state.juz)?saved.state:null;
+  }catch(_){return null}
+}
+function khatmahStateForget(){try{localStorage.removeItem(KHATMAH_STATE_KEY)}catch(_){}}
 
 async function doSignIn(id,name,ocode){
   let r;
