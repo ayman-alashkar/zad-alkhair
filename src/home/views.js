@@ -295,10 +295,10 @@ function viewHome(){
       <div class="rule" style="margin:1.3rem 0 1.1rem"><i>أو</i></div>
       <div class="field-row" style="margin-bottom:.7rem">
         <label for="f-join">انضم إلى ختمة برمزها</label>
-        <input id="f-join" class="field codebox" maxlength="4" autocomplete="off"
+        <input id="f-join" class="field codebox" maxlength="8" autocomplete="off"
                placeholder="ABCD" inputmode="text"></div>
       <button class="btn wide" id="btn-join">انضمام</button>
-      <p class="hint">الرمز أربعة محارف يعطيك إياها منظّم الختمة.</p>
+      <p class="hint">الرمز يعطيك إياه منظّم الختمة.</p>
     </div>
     <section class="public-khatmahs" aria-labelledby="active-khatmahs-title">
       <div class="public-khatmahs-head">
@@ -353,7 +353,7 @@ function viewSetup(){
           <p class="dtprev">كل يوم</p></div>
       </div>
       <div class="field-row"><label for="f-code2">رمز المنظّم</label>
-        <input id="f-code2" class="field" placeholder="رمز تحفظه لنفسك">
+        <input id="f-code2" class="field" placeholder="ستة محارف فأكثر، تحفظها لنفسك">
         <p class="hint">هذا الرمز لضمان وجود منظّم واحد للختمة، وتجنّب الأخطاء.</p></div>
       <button class="btn gold wide" id="btn-create">ابدأ الختمة</button>
       <button class="btn quiet wide" data-home style="margin-top:.5rem">رجوع</button>
