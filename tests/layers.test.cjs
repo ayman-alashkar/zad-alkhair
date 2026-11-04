@@ -8,10 +8,10 @@ const path=require("node:path");
 const css=fs.readFileSync(path.join(__dirname,"..","src/home/styles.css"),"utf8");
 
 function zOf(selector){
-  const re=new RegExp("(^|\\})"+selector.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\{[^}]*z-index:(\\d+)","g");
+  const re=new RegExp("(^|[}\\s])"+selector.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\{[^}]*z-index:(\\d+)","g");
   const all=[...css.matchAll(re)].map(m=>Number(m[2]));
   assert.ok(all.length,`no z-index for ${selector}`);
-  return all[all.length-1];
+  return all[0]; // القاعدة الأساسية، لا الاستثناءات اللاحقة مثل zk-launch-prayer
 }
 
 test("overlays sit above the bottom tab bar",()=>{
