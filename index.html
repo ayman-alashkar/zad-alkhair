@@ -2453,6 +2453,10 @@ function mineRemember(){
                 publicId:state.publicId||null,at:Date.now()});
   minePut(rest);
 }
+/* ختمة من بطاقات «الختمات الجارية» يكون هذا الجهاز عضوًا فيها، فتُفتح دون رمز. */
+function mineByPublicId(publicId){
+  return publicId?mineGet().find(x=>x.publicId===publicId&&x.code)||null:null;
+}
 function mineForget(c){ minePut(mineGet().filter(x=>x.code!==c)); }
 
 /* Remove legacy entries whose khatmahs were cancelled on another session.
@@ -2467,12 +2471,19 @@ function minePruneMissing(){
     const checks=await Promise.all(snapshot.map(async item=>{
       try{
         const remote=await rpc("get_state",{p_code:item.code});
-        return {code:item.code,missing:remote===null};
-      }catch(_){ return {code:item.code,missing:false}; }
+        return {code:item.code,missing:remote===null,publicId:(remote&&remote.publicId)||null};
+      }catch(_){ return {code:item.code,missing:false,publicId:null}; }
     }));
     const missing=new Set(checks.filter(x=>x.missing).map(x=>x.code));
-    if(!missing.size) return false;
-    minePut(mineGet().filter(item=>!missing.has(item.code)));
+    /* السجلات القديمة حُفظت قبل publicId؛ يُكمَل من get_state لتعرفها البطاقات. */
+    const ids=new Map(checks.filter(x=>x.publicId).map(x=>[x.code,x.publicId]));
+    let filled=false;
+    const next=mineGet().filter(item=>!missing.has(item.code)).map(item=>{
+      if(item.publicId||!ids.has(item.code)) return item;
+      filled=true; return {...item,publicId:ids.get(item.code)};
+    });
+    if(!missing.size&&!filled) return false;
+    minePut(next);
     if(screen==="home") render();
     return true;
   })().finally(()=>{minePrunePromise=null});
@@ -2764,6 +2775,7 @@ function khatmahCardsGroup(accessType,title,note){
     const done=Number(k.doneCount)||0,reserved=Number(k.reservedCount)||0;
     const people=Number(k.participantCount)||0,overdue=daysLeft(k.endDate)<0;
     const isPublic=accessType==="public";
+    const label=mineByPublicId(k.publicId)?"افتح الختمة":isPublic?"انضم الآن":"أدخل الرمز";
     return `<article class="khatmah-card">
       ${cardShamsa(done,reserved)}
       <div class="card-khatmah-body">
@@ -2780,7 +2792,7 @@ function khatmahCardsGroup(accessType,title,note){
         <p class="card-slots ${reserved>=30?"full":""}">${reserved>=30
           ? "جميع الأجزاء الثلاثين محجوزة"
           : `<b>${ar(30-reserved)}</b> ${30-reserved===1?"جزء متاح":"جزءًا متاحًا"} · محجوز ${ar(reserved)} من ٣٠`}</p>
-        <button class="btn gold card-join" data-khatmah-card="${esc(k.publicId)}">${isPublic?"انضم الآن":"أدخل الرمز"}</button>
+        <button class="btn gold card-join" data-khatmah-card="${esc(k.publicId)}">${label}</button>
       </div>
     </article>`;
   }).join("")}</div>`:
@@ -3305,6 +3317,8 @@ async function loadPublicKhatmahs(force=false){
 async function joinKhatmahCard(publicId){
   const item=publicKhatmahs.find(k=>k.publicId===publicId);
   if(!item) return;
+  const mine=mineByPublicId(publicId);
+  if(mine){zkReplaceHash(mine.code);boot();return;}
   if(item.accessType==="public"){
     toast("جارٍ فتح الختمة…");
     let publicCode;

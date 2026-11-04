@@ -139,6 +139,8 @@ async function loadPublicKhatmahs(force=false){
 async function joinKhatmahCard(publicId){
   const item=publicKhatmahs.find(k=>k.publicId===publicId);
   if(!item) return;
+  const mine=mineByPublicId(publicId);
+  if(mine){zkReplaceHash(mine.code);boot();return;}
   if(item.accessType==="public"){
     toast("جارٍ فتح الختمة…");
     let publicCode;
