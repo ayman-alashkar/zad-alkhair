@@ -25,7 +25,7 @@ function walk(dir) {
       const html = fs.readFileSync(file, "utf8");
       for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)) {
         if (/\bsrc\s*=/.test(match[1])) continue;
-        if (/application\/ld\+json/.test(match[1])) JSON.parse(match[2]);
+        if (/application\/ld\+json|speculationrules/.test(match[1])) JSON.parse(match[2]);
         else new vm.Script(match[2], { filename: relative });
         count++;
       }

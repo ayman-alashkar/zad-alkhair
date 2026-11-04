@@ -16,17 +16,44 @@ const STORAGE_KEYS=Object.freeze({
   legacyBookmarks:"zad:qcf4:bookmarks",
   theme:"zad:qcf4:theme"
 });
+/* The home screen may prepare (prerender) the reader in the background before
+   the user taps. A prepared page must leave no trace unless it is opened, so its
+   writes wait here and are applied on activation. Reads see the pending value.
+   If the home screen changed a key meanwhile (e.g. the theme), its value wins. */
+const prerenderWrites=new Map();
+if(document.prerendering){
+  document.addEventListener("prerenderingchange",()=>{
+    for(const [key,{value,before}] of prerenderWrites){
+      try{if(localStorage.getItem(key)===before)localStorage.setItem(key,value)}catch(_){}
+    }
+    prerenderWrites.clear();
+  },{once:true});
+}
+function storageWrite(key,value){
+  if(document.prerendering){
+    const queued=prerenderWrites.get(key);
+    let before=queued?queued.before:null;
+    if(!queued)try{before=localStorage.getItem(key)}catch(_){}
+    prerenderWrites.set(key,{value,before});
+    return true;
+  }
+  try{localStorage.setItem(key,value);return true}catch(_){return false}
+}
+function storageRead(key){
+  if(prerenderWrites.has(key))return prerenderWrites.get(key).value;
+  return localStorage.getItem(key);
+}
 function storageGet(key,fallback=null){
-  try{const v=localStorage.getItem(key);return v===null?fallback:v}catch(_){return fallback}
+  try{const v=storageRead(key);return v===null?fallback:v}catch(_){return fallback}
 }
 function storageSet(key,value){
-  try{localStorage.setItem(key,String(value));return true}catch(_){return false}
+  return storageWrite(key,String(value));
 }
 function storageJsonGet(key,fallback=null){
-  try{const raw=localStorage.getItem(key);return raw===null?fallback:JSON.parse(raw)}catch(_){return fallback}
+  try{const raw=storageRead(key);return raw===null?fallback:JSON.parse(raw)}catch(_){return fallback}
 }
 function storageJsonSet(key,value){
-  try{localStorage.setItem(key,JSON.stringify(value));return true}catch(_){return false}
+  try{return storageWrite(key,JSON.stringify(value))}catch(_){return false}
 }
 
 const track=document.getElementById("track"),loading=document.getElementById("loading");
