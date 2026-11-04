@@ -9,6 +9,8 @@ function setTheme(t){
 }
 document.getElementById("themeBtn").onclick=()=>setTheme((document.documentElement.dataset.theme||"light")==="light"?"dark":"light");
 setTheme(storageGet(STORAGE_KEYS.theme,"light")==="dark"?"dark":"light");
+/* A reader prepared in the background takes the theme chosen since then on home. */
+document.addEventListener("prerenderingchange",()=>setTheme(storageGet(STORAGE_KEYS.theme,"light")==="dark"?"dark":"light"),{once:true});
 
 document.getElementById("reader").addEventListener("contextmenu",e=>e.preventDefault());
 document.getElementById("reader").addEventListener("click",e=>{

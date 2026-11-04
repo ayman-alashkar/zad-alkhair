@@ -1575,6 +1575,12 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 
 
 
+<!-- يجهّز المتصفح (كروم) صفحة المصحف في الخلفية لزر القراءة في بطاقة «اليوم»،
+     فتظهر فور الضغط. لا يُجهَّز إلا رابط بصفحة أو جزء محدد. القارئ المجهَّز لا يكتب
+     شيئًا ولا يبدأ تنزيل المصحف حتى يُفتح فعلًا (src/reader/state.js، offline.js). -->
+<script type="speculationrules">
+{"prerender":[{"source":"document","where":{"selector_matches":"a.zt-continue[href*='page='], .zt-card a.zt-btn[href^='reader.html']"},"eagerness":"eager"}]}
+</script>
 </head>
 <body>
 

@@ -70,7 +70,10 @@ if("serviceWorker" in navigator){
     if(navigator.onLine)worker?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
     worker?.postMessage({type:navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY"});
   }).catch(()=>{});
-  prepareReaderServiceWorker();
+  /* Opening the Quran is the opt-in for the offline download; a reader the home
+     screen merely prepared in the background has not been opened yet. */
+  if(document.prerendering)document.addEventListener("prerenderingchange",prepareReaderServiceWorker,{once:true});
+  else prepareReaderServiceWorker();
   window.addEventListener("online",()=>postOfflineLibrary("ENSURE_OFFLINE_LIBRARY"));
   navigator.serviceWorker.addEventListener("controllerchange",()=>postOfflineLibrary(navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY"));
 }
