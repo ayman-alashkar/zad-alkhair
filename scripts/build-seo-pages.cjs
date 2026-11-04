@@ -66,11 +66,11 @@ const installMenu=`<div class="install-menu" id="installMenu" hidden><button cla
 const siteHead=`<header class="site-head">${brandLink}<div class="head-tools">${installMenu}${themeButton}</div></header>`;
 // /install/ shows the guide inline, so its header carries only the theme control.
 const installSiteHead=`<header class="site-head">${brandLink}<div class="head-tools">${themeButton}</div></header>`;
+// The same three guide links as the «دليل زاد الخير» menu on the home screen; the brand link above leads home.
 const footerLinks=[
-["/","الرئيسية",'<path d="m3 10 9-7 9 7v11h-7v-7h-4v7H3Z"/>'],
-["/quran/","القرآن العظيم",'<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>'],
-["/khatmahs/","الختمات الجماعية",'<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/>'],
-["/about/","عن زاد الخير",'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/>']
+["/quran/","الفهرس والقراء",'<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>'],
+["/khatmahs/","كيف تعمل الختمات",'<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/>'],
+["/about/","عن التطبيق",'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/>']
 ].map(([href,label,path])=>`<a href="${href}">${navIcon(path)}<span>${label}</span></a>`).join("");
 // seo-install.js hides the install link once the app is installed. /install/ itself omits it.
 const footerInstallLink=`<a class="footer-install-link" href="/install/" data-install-link>${installIcon}<span>تثبيت التطبيق</span></a>`;
