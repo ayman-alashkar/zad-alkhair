@@ -97,7 +97,8 @@ footer{width:min(930px,calc(100% - 32px));margin:auto;padding:0 0 calc(26px + en
 .footer-links svg{color:var(--gold)}
 .footer-motto{margin:18px auto 0;font:700 22px/1.8 'Aref Ruqaa',serif;color:var(--gold)}
 /* Two columns until five labels fit in one row; the install link takes the odd last slot. */
-@media(max-width:820px){.footer-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.footer-links .footer-install-link{grid-column:1/-1}}
+@media(max-width:820px){.footer-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.footer-links .footer-install-link{grid-column:1/-1}}
+@media(max-width:480px){.footer-links a:not(.footer-install-link){flex-direction:column;gap:5px;min-height:66px;padding:9px 6px;text-align:center;line-height:1.35}}
 :focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:8px}
 @media(hover:hover){.secondary:hover,.card.link:hover,.item:hover,.listen:hover,.guide-theme:hover{background:var(--selected);border-color:var(--gold)}.primary:hover{filter:brightness(1.04)}.footer-links a:hover{color:var(--gold)}}
 @media(max-width:640px){.site-head{padding:16px 0;gap:12px}.mark{width:36px;height:36px}.brand{font-size:30px}.motto{font-size:9px}.guide-home{gap:10px}.breadcrumbs{font-size:10px;gap:6px;margin-bottom:12px}main{padding:22px 18px;border-radius:20px}h1{font-size:29px}h2{margin-top:26px}.feature-grid,.reciter-grid{grid-template-columns:minmax(0,1fr)}.link-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.listen{gap:8px;flex-wrap:wrap}.listen::after{margin-inline-start:auto}.card{padding:16px}.lead{font-size:13px}.actions .btn{flex:1 1 auto}.item{font-size:12px}}

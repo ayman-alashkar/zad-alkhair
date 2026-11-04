@@ -29,7 +29,7 @@ const SHELL_ALIASES={
   "./reader.html?home=1&from=zad":"./reader.html"
 };
 const OPTIONAL_SHELL=[
-  "./seo-pages.css?v=7c6f1ace46","./seo-pages.js?v=7c6f1ace46","./seo-install.js?v=7c6f1ace46",
+  "./seo-pages.css?v=88e7bb5900","./seo-pages.js?v=88e7bb5900","./seo-install.js?v=88e7bb5900",
   "./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
   "./fonts/amiri-arabic-400.woff2","./fonts/amiri-latin-400.woff2","./fonts/amiri-arabic-700.woff2","./fonts/amiri-latin-700.woff2",
