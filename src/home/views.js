@@ -256,10 +256,20 @@ function queueTopUserSync(){
   topUserResizeFrame=requestAnimationFrame(syncTopUser);
 }
 
+/* The khatmah screen is drawn from the saved state first and again when the
+   server answers (and after every action). A redraw of identical content is
+   skipped; a redraw of the same screen with new content does not replay the
+   entry animations (the juz cells rising, the progress ring). */
+let lastRendered={screen:"",html:""};
 function render(){
   const v={boot:viewBoot,home:viewHome,create:viewSetup,share:viewShare,
            gate:viewGate,main:viewMain,notfound:viewNotFound,linking:viewLinking}[screen]||viewBoot;
-  document.getElementById("app").innerHTML=v();
+  const app=document.getElementById("app"),html=v();
+  const sameScreen=lastRendered.screen===screen;
+  if(sameScreen&&lastRendered.html===html&&app.firstChild){requestAnimationFrame(syncTopUser);return}
+  lastRendered={screen,html};
+  app.classList.toggle("no-intro",sameScreen);
+  app.innerHTML=html;
   bind();
   requestAnimationFrame(syncTopUser);
 }

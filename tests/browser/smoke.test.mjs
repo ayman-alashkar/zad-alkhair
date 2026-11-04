@@ -118,3 +118,19 @@ test("the reader opens on a phone without script errors", async () => {
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test("a member's khatmah tab opens from the saved state before the server answers", async () => {
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, (_, i) => ({ status: i < 7 ? "done" : "open", ownerId: i < 7 ? "org" : null })) };
+  const { page, errors, context } = await phonePage({
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "me", name: "أنا" }), "zad:khatmah-state-v1": JSON.stringify({ code: "ABCD", state }) }
+  });
+  /* الخادم لا يجيب أبدًا: ما يظهر إنما هو من الحالة المحفوظة. */
+  await context.route(/\/rpc\/get_state/, () => {});
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.click("#zk-launch-zad");
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 3000 });
+  assert.deepEqual(errors, []);
+  await context.close();
+});
