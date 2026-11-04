@@ -149,14 +149,14 @@ async function joinKhatmahCard(publicId){
   }
   modal(`<div class="display" style="font-size:1.35rem">${esc(item.title)}</div>
     <p class="hint" style="margin:.55rem 0 1rem">أدخل رمز هذه الختمة للانضمام إليها.</p>
-    <div class="field-row"><input id="card-code" class="field codebox" maxlength="8"
+    <div class="field-row"><input id="card-code" class="field codebox" maxlength="4"
       autocomplete="off" inputmode="text" placeholder="ABCD"></div>
     <div class="actions"><button class="btn gold" id="card-go">انضمام</button>
       <button class="btn quiet" id="card-no">إلغاء</button></div>`);
   const field=document.getElementById("card-code");
   const go=async()=>{
     const c=norm(field.value).toUpperCase();
-    if(c.length<4||c.length>8) return toast("تحقّق من رمز الختمة");
+    if(c.length!==4) return toast("الرمز أربعة محارف");
     let matches=false;
     try{matches=await rpc("match_khatmah_code",{p_public_id:publicId,p_code:c});}
     catch(e){return toast("تعذّر التحقق من الرمز");}

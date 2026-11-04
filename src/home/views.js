@@ -295,10 +295,10 @@ function viewHome(){
       <div class="rule" style="margin:1.3rem 0 1.1rem"><i>أو</i></div>
       <div class="field-row" style="margin-bottom:.7rem">
         <label for="f-join">انضم إلى ختمة برمزها</label>
-        <input id="f-join" class="field codebox" maxlength="8" autocomplete="off"
+        <input id="f-join" class="field codebox" maxlength="4" autocomplete="off"
                placeholder="ABCD" inputmode="text"></div>
       <button class="btn wide" id="btn-join">انضمام</button>
-      <p class="hint">الرمز يعطيك إياه منظّم الختمة.</p>
+      <p class="hint">الرمز أربعة محارف يعطيك إياها منظّم الختمة.</p>
     </div>
     <section class="public-khatmahs" aria-labelledby="active-khatmahs-title">
       <div class="public-khatmahs-head">

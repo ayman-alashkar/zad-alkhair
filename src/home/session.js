@@ -11,7 +11,7 @@ function zkReplaceHash(value=""){
 const LAST="zad:last";
 const ACTIVE_SESSION="zad:active-khatmah-session";
 function cleanKhatmahCode(value){
-  return String(value||"").trim().toUpperCase().slice(0,8);
+  return String(value||"").trim().toUpperCase().slice(0,4);
 }
 function activeSessionGet(){
   try{return cleanKhatmahCode(sessionStorage.getItem(ACTIVE_SESSION));}catch(_){return ""}

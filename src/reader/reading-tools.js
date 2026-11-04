@@ -261,7 +261,7 @@ function ayahFromHash(){
 function readerEntryParams(){
   const q=new URLSearchParams(location.search);
   const rawCode=String(q.get("code")||"").trim().toUpperCase();
-  const code=rawCode.slice(0,8);
+  const code=rawCode.slice(0,4);
   const juz=Number(q.get("juz")),page=Number(q.get("page"));
   const surah=Number(q.get("surah")),ayah=Number(q.get("ayah")),home=q.get("home")==="1",fromZad=q.get("from")==="zad";
   const qari=String(q.get("qari")||"").trim();

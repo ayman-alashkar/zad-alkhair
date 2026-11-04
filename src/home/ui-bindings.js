@@ -22,7 +22,7 @@ function bind(){
   if($("btn-join")){
     const go=()=>{
       const c=norm($("f-join").value).toUpperCase();
-      if(c.length<4||c.length>8) return toast("تحقّق من رمز الختمة");
+      if(c.length!==4) return toast("الرمز أربعة محارف");
       zkReplaceHash(c); boot();
     };
     $("btn-join").onclick=go;

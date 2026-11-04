@@ -2397,7 +2397,7 @@ let publicKhatmahs=[],publicKhatmahsLoaded=false,publicKhatmahsLoading=false,pub
 let code="", state=null, viewer=null, selected=null, gateName="",
     screen="boot";   /* boot | home | create | share | gate | main | notfound */
 
-const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,8);
+const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
 function zkReplaceHash(value=""){
   try{
     const url=new URL(location.href);url.hash=value?String(value):"";
@@ -2411,7 +2411,7 @@ function zkReplaceHash(value=""){
 const LAST="zad:last";
 const ACTIVE_SESSION="zad:active-khatmah-session";
 function cleanKhatmahCode(value){
-  return String(value||"").trim().toUpperCase().slice(0,8);
+  return String(value||"").trim().toUpperCase().slice(0,4);
 }
 function activeSessionGet(){
   try{return cleanKhatmahCode(sessionStorage.getItem(ACTIVE_SESSION));}catch(_){return ""}
@@ -2915,10 +2915,10 @@ function viewHome(){
       <div class="rule" style="margin:1.3rem 0 1.1rem"><i>أو</i></div>
       <div class="field-row" style="margin-bottom:.7rem">
         <label for="f-join">انضم إلى ختمة برمزها</label>
-        <input id="f-join" class="field codebox" maxlength="8" autocomplete="off"
+        <input id="f-join" class="field codebox" maxlength="4" autocomplete="off"
                placeholder="ABCD" inputmode="text"></div>
       <button class="btn wide" id="btn-join">انضمام</button>
-      <p class="hint">الرمز يعطيك إياه منظّم الختمة.</p>
+      <p class="hint">الرمز أربعة محارف يعطيك إياها منظّم الختمة.</p>
     </div>
     <section class="public-khatmahs" aria-labelledby="active-khatmahs-title">
       <div class="public-khatmahs-head">
@@ -3315,14 +3315,14 @@ async function joinKhatmahCard(publicId){
   }
   modal(`<div class="display" style="font-size:1.35rem">${esc(item.title)}</div>
     <p class="hint" style="margin:.55rem 0 1rem">أدخل رمز هذه الختمة للانضمام إليها.</p>
-    <div class="field-row"><input id="card-code" class="field codebox" maxlength="8"
+    <div class="field-row"><input id="card-code" class="field codebox" maxlength="4"
       autocomplete="off" inputmode="text" placeholder="ABCD"></div>
     <div class="actions"><button class="btn gold" id="card-go">انضمام</button>
       <button class="btn quiet" id="card-no">إلغاء</button></div>`);
   const field=document.getElementById("card-code");
   const go=async()=>{
     const c=norm(field.value).toUpperCase();
-    if(c.length<4||c.length>8) return toast("تحقّق من رمز الختمة");
+    if(c.length!==4) return toast("الرمز أربعة محارف");
     let matches=false;
     try{matches=await rpc("match_khatmah_code",{p_public_id:publicId,p_code:c});}
     catch(e){return toast("تعذّر التحقق من الرمز");}
@@ -4147,7 +4147,7 @@ function bind(){
   if($("btn-join")){
     const go=()=>{
       const c=norm($("f-join").value).toUpperCase();
-      if(c.length<4||c.length>8) return toast("تحقّق من رمز الختمة");
+      if(c.length!==4) return toast("الرمز أربعة محارف");
       zkReplaceHash(c); boot();
     };
     $("btn-join").onclick=go;
