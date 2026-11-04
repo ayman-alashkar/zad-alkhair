@@ -12,7 +12,7 @@
 --    release_juz/set_done إلا لمن هو المشرف فعلًا.
 --
 -- اختُبر النص نفسه على الإنتاج داخل معاملة أُلغيت: supabase/tests/20261104_harden_organizer_codes.sql
--- نسخة الاسترجاع: private.backup_20261104_functions وprivate.backup_20261104_organizer_codes.
+-- نسخة الاسترجاع حُذفت لاحقًا: 20261104021600_drop_20261104_rollback_copies.sql
 
 create table private.backup_20261104_functions as
   select p.oid::regprocedure::text as signature, pg_get_functiondef(p.oid) as definition
