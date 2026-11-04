@@ -132,3 +132,37 @@ test('a failed repair cannot cache an invalid or incomplete replacement',async()
     await e.run('repairCachedBaqarah()');assert.equal(await cache.match(url),undefined);
   }
 });
+
+test('saved shell opens without waiting for the network, then refreshes in the background',async()=>{
+  const e=setup();await e.run('ensureOfflineShell()');
+  // A network that never answers must not delay the saved page.
+  e.setFetch(()=>new Promise(()=>{}));
+  const started=Date.now();
+  const home=await e.run("shellFirstDocument(new Request('https://example.test/?zad=1'))");
+  const reader=await e.run("shellFirstDocument(new Request('https://example.test/reader.html?page=5'))");
+  assert.ok(Date.now()-started<500);
+  assert.match(await home.text(),/ok:https:\/\/example\.test\/$/);
+  assert.match(await reader.text(),/ok:https:\/\/example\.test\/reader$/);
+
+  // The background check stores a new deploy for the next opening.
+  e.setFetch(async r=>new Response('new:'+r.url));
+  await e.run("shellFirstDocument(new Request('https://example.test/reader'),{waitUntil:p=>globalThis.__wait=p})");
+  await e.run('globalThis.__wait');
+  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/reader'))")).text(),/^new:/);
+});
+
+test('a failed background check keeps the saved shell',async()=>{
+  const e=setup();await e.run('ensureOfflineShell()');
+  e.setFetch(async()=>new Response('server error',{status:503}));
+  await e.run("shellFirstDocument(new Request('https://example.test/'),{waitUntil:p=>globalThis.__wait=p})");
+  await e.run('globalThis.__wait');
+  e.setFetch(async()=>{throw Error('offline')});
+  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/'))")).text(),/ok:https:\/\/example\.test\/$/);
+});
+
+test('first visit and non-shell pages still use the network',async()=>{
+  const e=setup();
+  e.setFetch(async r=>new Response('net:'+r.url));
+  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/'))")).text(),/^net:/);
+  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/surah/2/'))")).text(),/^net:/);
+});

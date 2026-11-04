@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v167";
+const SHELL_STAGE_CACHE="zad-shell-stage-v168";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -335,6 +335,35 @@ async function networkFirstDocument(request){
   }
 }
 
+/* The app shell (index and reader) opens straight from the device; the server
+   copy is checked in the background and used from the next opening on.
+   Waiting for the network first made every move between the two pages pay a
+   round trip, up to the 2 s timeout on a weak connection. The first visit,
+   before anything is cached, still goes to the network. */
+function shellKeyFor(url){
+  if(url.origin!==self.location.origin)return null;
+  if(isReaderPath(url.pathname))return "./reader.html";
+  if(isIndexPath(url.pathname))return "./index.html";
+  return null;
+}
+async function revalidateShellDocument(key){
+  const response=await fetch(requestFor(SHELL_FETCH_URLS[key]));
+  // Only a complete page replaces the saved one: no errors, no redirects-in-flight.
+  if(!response.ok||response.type==="opaqueredirect")return false;
+  const shell=await caches.open(SHELL_CACHE);
+  await shell.put(requestFor(key),response.clone());
+  await seedShellAliases(shell);
+  return true;
+}
+async function shellFirstDocument(request,event){
+  const url=new URL(request.url),key=shellKeyFor(url);
+  const saved=key?await shellFallback(url):null;
+  if(!saved)return networkFirstDocument(request);
+  const update=revalidateShellDocument(key).catch(()=>false);
+  if(event?.waitUntil)event.waitUntil(update);
+  return saved;
+}
+
 function isAudioUrl(url,request){
   return request.destination==="audio"||/\.(?:mp3|m4a|ogg|aac)(?:$|\?)/i.test(url.pathname);
 }
@@ -392,7 +421,7 @@ self.addEventListener("fetch",event=>{
     return;
   }
   if(request.mode==="navigate"||request.destination==="document"){
-    event.respondWith(networkFirstDocument(request));
+    event.respondWith(shellFirstDocument(request,event));
     return;
   }
   if(url.href.startsWith(QCF_BASE)||url.href===QUL_HEADER){
