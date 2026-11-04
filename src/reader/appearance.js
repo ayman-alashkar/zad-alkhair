@@ -25,18 +25,30 @@ document.querySelectorAll(".chrome").forEach(x=>{
   x.addEventListener("pointerup",()=>showToolsFor(2800));
 });
 document.addEventListener("pointerdown",e=>{if(!e.target.closest(".ayah-menu")&&!e.target.closest(".verse-segment"))closeMenu()},{capture:true});
-window.addEventListener("resize",()=>{
+/* Refit the Mushaf only when the window has really changed size and settled.
+   The Android share sheet (and similar system panels) shrinks the window for a
+   moment and restores it; while it is up the page is in the background, so the
+   check waits until the page is back, by which time the size is usually the
+   same as before and nothing moves. */
+let fittedSize=`${innerWidth}x${innerHeight}`;
+function refitIfResized(delay){
   clearTimeout(resizeTimer);
-  resizeTimer=setTimeout(()=>document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page))),90);
-});
+  resizeTimer=setTimeout(()=>{
+    if(document.hidden||!document.hasFocus())return; // re-checked on focus/visibility
+    const size=`${innerWidth}x${innerHeight}`;
+    if(size===fittedSize)return;
+    fittedSize=size;
+    document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page)));
+  },delay);
+}
+window.addEventListener("resize",()=>refitIfResized(150));
+window.addEventListener("focus",()=>refitIfResized(60));
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refitIfResized(60)});
 if(document.fonts?.ready){
   document.fonts.ready.then(()=>requestAnimationFrame(()=>document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page))))).catch(()=>{});
 }
 document.fonts?.addEventListener?.("loadingdone",()=>{
   clearTimeout(resizeTimer);
-  resizeTimer=setTimeout(()=>document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page))),60);
+  resizeTimer=setTimeout(()=>{fittedSize=`${innerWidth}x${innerHeight}`;document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page)))},60);
 });
-window.visualViewport?.addEventListener("resize",()=>{
-  clearTimeout(resizeTimer);
-  resizeTimer=setTimeout(()=>document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page))),80);
-},{passive:true});
+window.visualViewport?.addEventListener("resize",()=>refitIfResized(150),{passive:true});
