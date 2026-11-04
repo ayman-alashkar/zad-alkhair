@@ -349,7 +349,7 @@ function transferDialog(){
         ${others.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}
       </select></div>
     <div class="field-row"><label for="tr-code">رمز المشرف الجديد</label>
-      <input id="tr-code" class="field" autocomplete="off" placeholder="أربعة محارف فأكثر">
+      <input id="tr-code" class="field" autocomplete="off" placeholder="ستة محارف فأكثر">
       <p class="hint">أبلغه به بنفسك، فلا سبيل لاستعادته إن ضاع.</p></div>
     <div class="actions">
       <button class="btn gold" id="tr-go">سلّم الإشراف</button>
@@ -359,7 +359,7 @@ function transferDialog(){
     const to=document.getElementById("tr-to").value;
     const nc=norm(document.getElementById("tr-code").value);
     const who=memberOf(to);
-    if(nc.length<4) return toast("الرمز أربعة محارف فأكثر");
+    if(nc.length<6) return toast("الرمز ستة محارف فأكثر");
     if(!await appConfirm(`سيصير ${who?who.name:""} مشرف الختمة، وتفقد أنت صلاحيات الإشراف.`,{title:"تسليم الإشراف",ok:"سلّم الإشراف",danger:true})) return;
     try{
       const r=await rpc("transfer_organizer",{p_code:code,p_org_code:orgCode(),
@@ -376,14 +376,14 @@ function orgCodeDialog(){
   modal(`<div class="display" style="font-size:1.4rem">تغيير رمز المشرف</div>
     <p class="hint" style="margin:.7rem 0 1rem">لمن تسرّب رمزه أو أراد تبديله. الرمز القديم يبطل فورًا.</p>
     <div class="field-row"><label for="oc-new">الرمز الجديد</label>
-      <input id="oc-new" class="field" autocomplete="off" placeholder="أربعة محارف فأكثر"></div>
+      <input id="oc-new" class="field" autocomplete="off" placeholder="ستة محارف فأكثر"></div>
     <div class="actions">
       <button class="btn gold" id="oc-go">غيّر الرمز</button>
       <button class="btn quiet spacer" id="oc-no">إلغاء</button></div>`);
   document.getElementById("oc-no").onclick=settings;
   document.getElementById("oc-go").onclick=async()=>{
     const nc=norm(document.getElementById("oc-new").value);
-    if(nc.length<4) return toast("الرمز أربعة محارف فأكثر");
+    if(nc.length<6) return toast("الرمز ستة محارف فأكثر");
     try{
       const r=await rpc("change_organizer_code",{p_code:code,p_org_code:orgCode(),
         p_device:deviceId(),p_new_code:nc});

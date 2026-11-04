@@ -353,7 +353,7 @@ function viewSetup(){
           <p class="dtprev">كل يوم</p></div>
       </div>
       <div class="field-row"><label for="f-code2">رمز المنظّم</label>
-        <input id="f-code2" class="field" placeholder="رمز تحفظه لنفسك">
+        <input id="f-code2" class="field" placeholder="ستة محارف فأكثر، تحفظها لنفسك">
         <p class="hint">هذا الرمز لضمان وجود منظّم واحد للختمة، وتجنّب الأخطاء.</p></div>
       <button class="btn gold wide" id="btn-create">ابدأ الختمة</button>
       <button class="btn quiet wide" data-home style="margin-top:.5rem">رجوع</button>

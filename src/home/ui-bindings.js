@@ -41,6 +41,7 @@ function bind(){
     if(!org) return toast("اكتب اسمك");
     if(!end) return toast("اختر تاريخ الانتهاء");
     if(!oc)  return toast("اختر رمزًا للمنظّم");
+    if(oc.length<6) return toast("رمز المنظّم ستة محارف فأكثر");
     try{
       const r=await rpc("create_khatmah",{
         p_title:norm($("f-title").value)||"زاد الخير", p_dedication:norm($("f-ded").value),
