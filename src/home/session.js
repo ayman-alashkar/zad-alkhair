@@ -53,6 +53,10 @@ function mineRemember(){
                 publicId:state.publicId||null,at:Date.now()});
   minePut(rest);
 }
+/* ختمة من بطاقات «الختمات الجارية» يكون هذا الجهاز عضوًا فيها، فتُفتح دون رمز. */
+function mineByPublicId(publicId){
+  return publicId?mineGet().find(x=>x.publicId===publicId&&x.code)||null:null;
+}
 function mineForget(c){ minePut(mineGet().filter(x=>x.code!==c)); }
 
 /* Remove legacy entries whose khatmahs were cancelled on another session.
@@ -67,12 +71,19 @@ function minePruneMissing(){
     const checks=await Promise.all(snapshot.map(async item=>{
       try{
         const remote=await rpc("get_state",{p_code:item.code});
-        return {code:item.code,missing:remote===null};
-      }catch(_){ return {code:item.code,missing:false}; }
+        return {code:item.code,missing:remote===null,publicId:(remote&&remote.publicId)||null};
+      }catch(_){ return {code:item.code,missing:false,publicId:null}; }
     }));
     const missing=new Set(checks.filter(x=>x.missing).map(x=>x.code));
-    if(!missing.size) return false;
-    minePut(mineGet().filter(item=>!missing.has(item.code)));
+    /* السجلات القديمة حُفظت قبل publicId؛ يُكمَل من get_state لتعرفها البطاقات. */
+    const ids=new Map(checks.filter(x=>x.publicId).map(x=>[x.code,x.publicId]));
+    let filled=false;
+    const next=mineGet().filter(item=>!missing.has(item.code)).map(item=>{
+      if(item.publicId||!ids.has(item.code)) return item;
+      filled=true; return {...item,publicId:ids.get(item.code)};
+    });
+    if(!missing.size&&!filled) return false;
+    minePut(next);
     if(screen==="home") render();
     return true;
   })().finally(()=>{minePrunePromise=null});

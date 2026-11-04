@@ -144,6 +144,7 @@ function khatmahCardsGroup(accessType,title,note){
     const done=Number(k.doneCount)||0,reserved=Number(k.reservedCount)||0;
     const people=Number(k.participantCount)||0,overdue=daysLeft(k.endDate)<0;
     const isPublic=accessType==="public";
+    const label=mineByPublicId(k.publicId)?"افتح الختمة":isPublic?"انضم الآن":"أدخل الرمز";
     return `<article class="khatmah-card">
       ${cardShamsa(done,reserved)}
       <div class="card-khatmah-body">
@@ -160,7 +161,7 @@ function khatmahCardsGroup(accessType,title,note){
         <p class="card-slots ${reserved>=30?"full":""}">${reserved>=30
           ? "جميع الأجزاء الثلاثين محجوزة"
           : `<b>${ar(30-reserved)}</b> ${30-reserved===1?"جزء متاح":"جزءًا متاحًا"} · محجوز ${ar(reserved)} من ٣٠`}</p>
-        <button class="btn gold card-join" data-khatmah-card="${esc(k.publicId)}">${isPublic?"انضم الآن":"أدخل الرمز"}</button>
+        <button class="btn gold card-join" data-khatmah-card="${esc(k.publicId)}">${label}</button>
       </div>
     </article>`;
   }).join("")}</div>`:
