@@ -42,11 +42,9 @@
 
 مرجع ما قبل التنظيم: `1e369f0f44899745381a5a711460fc7c8d9077c5`. تظل الصور القديمة وتعديلات ما قبل التنظيم قابلة للاسترجاع من سجل Git. لا تستخدم `reset --hard` أو `clean -fd` على نسخة عمل قديمة دون حفظ الفرق ومراجعة الملفات غير المتتبعة. إعادة إصدار الواجهة لا تستدعي إعادة تطبيق ترحيلات Supabase.
 
-## Hijri calendar corrections
+## تصحيح التقويم الهجري
 
-The home screen and the prayer-times screen show Hijri dates from the
-browser's Umm al-Qura calendar. When an official Saudi announcement starts a
-month on a different day, add that month to `data/hijri-adjustments.json`:
+تعرض الرئيسية وشاشة المواقيت التاريخ الهجري من تقويم أم القرى في المتصفح. إذا أعلنت السعودية رسميًّا بداية شهر في يوم مختلف، يُضاف ذلك الشهر إلى `data/hijri-adjustments.json`:
 
 ```json
 "months": {
@@ -54,8 +52,11 @@ month on a different day, add that month to `data/hijri-adjustments.json`:
 }
 ```
 
-The key is `year-month` (1 = Muharram … 12 = Dhu al-Hijjah) and the value is
-the Gregorian date of the month's first day. The app fetches this file from the
-network on every visit (the service worker does not cache it) and keeps the
-last copy for offline use, so no release or cache bump is needed. Readers can
-still shift the date by up to two days on their own device.
+- **المفتاح:** `السنة-الشهر` (١ محرم … ١٢ ذو الحجة).
+- **القيمة:** التاريخ الميلادي لأول يوم في الشهر.
+
+يجلب التطبيق هذا الملف من الشبكة في كل زيارة، ولا يخزّنه Service Worker، ويحتفظ بآخر نسخة للعمل دون اتصال. لذلك لا يحتاج التصحيح إصدارًا جديدًا ولا تحديثًا للكاش. ويستطيع القارئ أيضًا أن يزيح التاريخ يومين على الأكثر على جهازه.
+
+## قاعدة البيانات
+
+تفاصيل الوظائف والترحيلات في `supabase/README.md`. يُختبر أي ترحيل على الإنتاج قبل تطبيقه: يُشغَّل مع اختباراته داخل معاملة تنتهي بخطأ متعمَّد، فيُلغى كل شيء (مثال: `supabase/tests/20261104_harden_organizer_codes.sql`). بعد ذلك يُطبَّق النص نفسه ويُحفظ ملفه في `supabase/migrations`.

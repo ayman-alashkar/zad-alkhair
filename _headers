@@ -1,6 +1,15 @@
+# رؤوس أمان لكل الصفحات. التطبيق لا يُضمَّن في إطار، ولا يستعمل الكاميرا أو الميكروفون
+# أو الموقع أو الدفع؛ المشاركة والنسخ (web-share وclipboard-write) يبقيان مسموحين له.
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), web-share=(self), clipboard-write=(self)
+  Strict-Transport-Security: max-age=31536000
+
 /sw.js
   Cache-Control: no-cache, no-store, must-revalidate
 
 /Zad-Alkhair-Player-Guide.mp4
   Cache-Control: no-store
-  X-Content-Type-Options: nosniff
