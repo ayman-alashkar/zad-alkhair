@@ -373,9 +373,6 @@ body.player-on.player-expanded .audio-panel{display:block}
 .empty-state{padding:12px 10px;text-align:center;color:#8B7654;font-size:11px;border:1px dashed #E5D6BA;border-radius:13px}
 .menu-btn.wide{width:78px}
 /* ---------- Full-screen Quran-style index ---------- */
-.index-list{display:grid;gap:7px;margin-top:10px}
-.index-row{border:1px solid #E6D5B7;border-radius:15px;background:#FFFAF1;color:#29493F;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;text-align:right}
-.index-row b{font-family:"Aref Ruqaa",serif;font-size:21px}.index-row small{font-size:10px;color:#8B7654}.index-row.disabled{opacity:.45}
 
 .quran-index{
   --index-accent:var(--ui-accent);--index-accent-strong:var(--ui-accent);
@@ -391,25 +388,7 @@ html[data-theme="dark"] .quran-index{--index-separator:color-mix(in srgb,var(--u
   border-bottom:1px solid var(--ui-line);background:color-mix(in srgb,var(--paper) 96%,var(--ui-surface-2));
 }
 .quran-index-title{font-family:"Aref Ruqaa",serif;font-size:27px;line-height:1;color:var(--chrome-text)}
-.quran-index-close{width:38px;height:38px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-accent-soft);color:var(--chrome-text);display:grid;place-items:center;padding:0}
-.quran-index-close svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
 .quran-index-tabs{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--ui-line);background:color-mix(in srgb,var(--paper) 97%,var(--ui-surface-2))}
-.quran-index-share-hint{
-  flex:0 0 auto;min-height:25px;display:grid;place-items:center;padding:4px 12px 5px;
-  font-family:"Alexandria",system-ui,sans-serif;font-size:9.5px;font-weight:500;
-  color:var(--muted);background:color-mix(in srgb,var(--paper) 98%,var(--ui-surface-2));
-  border-bottom:1px solid color-mix(in srgb,var(--ui-line) 70%,transparent);
-}
-.quran-index-share-pop{
-  position:fixed;z-index:135;display:none;transform:translate(-50%,-100%);
-  border:1px solid color-mix(in srgb,var(--ui-gold) 42%,var(--ui-line));border-radius:999px;
-  padding:8px 15px;background:var(--brand);color:#FFF9EA;
-  box-shadow:0 10px 28px rgba(0,0,0,.22);font:600 11px "Alexandria",system-ui,sans-serif;
-  white-space:nowrap;touch-action:manipulation;
-}
-.quran-index-share-pop.show{display:block}
-.quran-index-share-pop:active{transform:translate(-50%,-100%) scale(.97)}
-html[data-theme="dark"] .quran-index-share-pop{background:var(--gold-hi);color:#17372F;border-color:rgba(255,249,234,.20)}
 
 .quran-index-tab{height:46px;border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:600;position:relative}
 .quran-index-tab.active{color:var(--index-accent-strong)}
@@ -450,8 +429,8 @@ html[data-theme="dark"] .hizb-ring{color:#14201D}
 .source,.bookmark-section+.bookmark-section{border-color:var(--ui-line)}
 .tafsir-more{color:var(--ui-accent)}
 .author-note{background:var(--ui-surface-2);color:var(--ui-muted)}
-.bookmark-main,.bookmark-delete,.field select,.index-row{background:var(--ui-surface);color:var(--ui-text);border-color:var(--ui-line)}
-.bookmark-main small,.field label,.index-row small{color:var(--ui-muted)}
+.bookmark-main,.bookmark-delete,.field select{background:var(--ui-surface);color:var(--ui-text);border-color:var(--ui-line)}
+.bookmark-main small,.field label{color:var(--ui-muted)}
 .bookmark-delete{color:#B9675E}
 .apply{background:linear-gradient(145deg,var(--green),#0B493F);color:#FFF9EA;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gold) 24%,transparent)}
 html[data-theme="dark"] .apply{background:linear-gradient(145deg,#164A41,#0A302A);color:#FFF9EA}
@@ -475,7 +454,7 @@ html[data-theme="dark"] .apply{background:linear-gradient(145deg,#164A41,#0A302A
 .notice.show{opacity:1;transform:translate(-50%,-50%)}
 @media(max-width:390px){
   .bottom{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 82px;padding-inline:5px}
-  .tool{font-size:10px;padding-inline:5px}.navs{gap:3px}
+  .tool{font-size:10px;padding-inline:5px}
 }
 
 /* ---------- Zād identity mapping · authoritative ---------- */
@@ -495,7 +474,7 @@ html[data-theme="dark"]{color-scheme:dark}
 .ayah-menu:after{border-top-color:var(--brand-strong)}
 .sheet{background:var(--ui-surface);color:var(--ui-text);border-color:rgba(197,154,74,.28)}
 .sheethead h3,.bookmark-title h4,.quran-index-title{color:var(--brand)}
-.close-sheet,.quran-index-close{background:var(--ui-surface-3);color:var(--brand-strong);border-color:var(--ui-line)}
+.close-sheet{background:var(--ui-surface-3);color:var(--brand-strong);border-color:var(--ui-line)}
 .apply{background:linear-gradient(135deg,#278573,#145F51);color:#fff;box-shadow:none}
 .quran-index{--index-accent:var(--brand);--index-accent-strong:var(--brand);--index-separator:var(--ui-surface-3);background:var(--paper);color:var(--ui-text)}
 .quran-index-head,.quran-index-tabs{background:var(--ui-surface);border-color:var(--ui-line)}
@@ -523,8 +502,6 @@ html[data-theme="dark"] .quran-index-juz-sep b{color:var(--ivory)}
 html[data-theme="dark"] .hizb-ring{background:conic-gradient(from 0deg,var(--gold-hi) 0 var(--portion),rgba(255,249,234,.16) var(--portion) 100%);color:var(--ivory)}
 html[data-theme="dark"] .hizb-ring.start{background:var(--gold-hi);color:#19332C}
 
-
-
 /* ---------- final component contracts ---------- */
 .surah-line{color:var(--surah-banner)}
 html[data-theme="dark"] .surah-line{color:var(--surah-banner)}
@@ -534,14 +511,14 @@ html[data-theme="dark"] .surah-line{color:var(--surah-banner)}
 .bookmark-delete{color:var(--ui-text)}
 .field label{color:var(--ui-muted)}
 .field select{background:var(--ui-surface);color:var(--ui-text);border-color:var(--ui-line)}
-.bookmark-main:active,.index-row:active{background:var(--ui-accent-soft)}
+.bookmark-main:active{background:var(--ui-accent-soft)}
 .quran-index-head,.quran-index-tabs{border-bottom-color:var(--ui-line)}
 .quran-index-row{color:var(--ui-text)}
 .quran-index-surah-num,.quran-index-meta,.quran-index-page{color:var(--ui-muted)}
 .quran-index-juz-sep{color:var(--ui-muted)}
 .hizb-ring:after{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--green) 36%,transparent)}
 html[data-theme="dark"] .apply{background:linear-gradient(145deg,#174E43,#0B312B);color:#FFF9EA}
-html[data-theme="dark"] .close-sheet,html[data-theme="dark"] .quran-index-close{color:var(--ui-text)}
+html[data-theme="dark"] .close-sheet{color:var(--ui-text)}
 
 /* ---------- index · smooth two-pane + collapsible Juz ---------- */
 .quran-index-viewport{flex:1 1 auto;min-height:0;overflow:hidden;position:relative;touch-action:pan-y;direction:ltr}
@@ -550,19 +527,11 @@ html[data-theme="dark"] .close-sheet,html[data-theme="dark"] .quran-index-close{
   transform:translate3d(-50%,0,0);
   transition:transform .26s cubic-bezier(.22,.72,.24,1);
 }
-.quran-index-track.show-juz{transform:translate3d(0,0,0)}
 .quran-index-pane{width:50%;height:100%;min-width:0;direction:rtl;overflow:hidden}
 .quran-index-pane>.quran-index-scroll{height:100%;margin:0}
 .quran-index-scroll{contain:layout paint;transform:translateZ(0)}
 .quran-index-juz-list{padding:7px 0 calc(18px + env(safe-area-inset-bottom))}
 .juz-accordion{border-bottom:1px solid var(--ui-line);background:transparent}
-.juz-accordion-head{
-  width:100%;min-height:58px;border:0;background:transparent;color:var(--ui-text);
-  padding:7px 18px;display:grid;grid-template-columns:minmax(0,1fr) auto 25px;
-  gap:10px;align-items:center;text-align:right
-}
-.juz-accordion-head:active{background:var(--brand-soft)}
-.juz-accordion-head.current{background:color-mix(in srgb,var(--brand-soft) 60%,transparent)}
 .juz-accordion-title{display:grid;gap:1px;min-width:0}
 .juz-accordion-title b{font-family:"Aref Ruqaa",serif;font-size:19px;font-weight:400;line-height:1.25;color:var(--brand-strong)}
 .juz-accordion-title small{font-size:9.5px;color:var(--ui-muted)}
@@ -579,17 +548,13 @@ html[data-theme="dark"] .close-sheet,html[data-theme="dark"] .quran-index-close{
 .juz-accordion .hizb-ring{width:40px;height:40px;font-size:12px}
 .juz-accordion .quran-index-quarter-row{grid-template-columns:44px minmax(0,1fr) 42px}
 .index-excerpt-placeholder{font-weight:400;color:var(--ui-muted)}
-html[data-theme="dark"] .juz-accordion-head:active{background:rgba(228,201,128,.07)}
-html[data-theme="dark"] .juz-accordion-head.current{background:rgba(228,201,128,.055)}
 html[data-theme="dark"] .juz-accordion-title b{color:var(--ivory)}
 @media(max-width:390px){
-  .juz-accordion-head{min-height:55px;padding-inline:14px;grid-template-columns:minmax(0,1fr) auto 23px;gap:7px}
   .juz-accordion-title b{font-size:18px}
   .juz-accordion .quran-index-quarter-row{min-height:76px;grid-template-columns:41px minmax(0,1fr) 38px}
   .juz-accordion .hizb-ring{width:38px;height:38px}
   .juz-accordion .quran-index-quarter-title{font-size:16px}
 }
-
 
 /* ---------- v33 · calm night index ----------
    Visual-only refinement. Keep the Zād identity, reduce saturated green blocks,
@@ -618,13 +583,6 @@ html[data-theme="dark"] .quran-index-tabs{
   border-bottom-color:rgba(228,201,128,.12);
 }
 html[data-theme="dark"] .quran-index-title{color:var(--idx-gold-hi)}
-html[data-theme="dark"] .quran-index-close{
-  background:rgba(255,249,234,.045);
-  color:rgba(255,249,234,.86);
-  border-color:rgba(228,201,128,.20);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.012);
-}
-html[data-theme="dark"] .quran-index-close:active{background:rgba(228,201,128,.085)}
 html[data-theme="dark"] .quran-index-tab{color:rgba(255,249,234,.54)}
 html[data-theme="dark"] .quran-index-tab.active{color:var(--idx-gold-hi)}
 html[data-theme="dark"] .quran-index-tab.active:after{
@@ -666,15 +624,6 @@ html[data-theme="dark"] .juz-accordion{
   border-bottom-color:rgba(255,249,234,.055);
   background:transparent;
 }
-html[data-theme="dark"] .juz-accordion-head{
-  background:transparent;
-  color:var(--idx-text)
-}
-html[data-theme="dark"] .juz-accordion-head:active{background:rgba(228,201,128,.045)}
-html[data-theme="dark"] .juz-accordion-head.current{
-  background:linear-gradient(90deg,rgba(197,154,74,.025),rgba(197,154,74,.075),rgba(197,154,74,.025));
-  box-shadow:inset -2px 0 0 rgba(228,201,128,.44)
-}
 html[data-theme="dark"] .juz-accordion-title b{color:rgba(255,249,234,.91)}
 html[data-theme="dark"] .juz-accordion-title small,
 html[data-theme="dark"] .juz-accordion-page,
@@ -703,8 +652,6 @@ html[data-theme="dark"] .hizb-ring.start{
   color:#17352F;
   box-shadow:0 0 0 1px rgba(228,201,128,.22)
 }
-
-
 
 /* ---------- v35 · refined daylight index ----------
    Same Zād al-Khayr identity as the approved night index:
@@ -737,13 +684,6 @@ html:not([data-theme="dark"]) .quran-index-tabs{
   border-bottom-color:rgba(197,154,74,.16);
 }
 html:not([data-theme="dark"]) .quran-index-title{color:var(--idxl-green)}
-html:not([data-theme="dark"]) .quran-index-close{
-  background:#F7F1E4;
-  color:var(--idxl-green);
-  border-color:rgba(197,154,74,.24);
-  box-shadow:0 6px 18px -15px rgba(58,43,20,.35),inset 0 0 0 1px rgba(255,255,255,.72);
-}
-html:not([data-theme="dark"]) .quran-index-close:active{background:#EFE5D3}
 html:not([data-theme="dark"]) .quran-index-tab{color:#807563}
 html:not([data-theme="dark"]) .quran-index-tab.active{color:var(--idxl-green)}
 html:not([data-theme="dark"]) .quran-index-tab.active:after{
@@ -797,18 +737,6 @@ html:not([data-theme="dark"]) .juz-accordion{
   border-bottom-color:rgba(114,76,43,.085);
   background:rgba(255,253,247,.22)
 }
-html:not([data-theme="dark"]) .juz-accordion-head{
-  background:transparent;
-  color:var(--idxl-text)
-}
-html:not([data-theme="dark"]) .juz-accordion-head:active{
-  background:rgba(197,154,74,.065)
-}
-html:not([data-theme="dark"]) .juz-accordion-head.current{
-  background:
-    linear-gradient(90deg,rgba(197,154,74,.025),rgba(197,154,74,.095),rgba(15,92,80,.035));
-  box-shadow:inset -2px 0 0 rgba(197,154,74,.58)
-}
 html:not([data-theme="dark"]) .juz-accordion-title b{
   color:#21483F
 }
@@ -849,8 +777,6 @@ html:not([data-theme="dark"]) .hizb-ring.start{
   color:#19372F;
   box-shadow:0 5px 14px -10px rgba(103,69,20,.55),inset 0 0 0 1px rgba(255,255,255,.28)
 }
-
-
 
 /* ---------- v36 · desktop experience ----------
    Desktop gets its own interaction geometry while the approved mobile layout stays intact. */
@@ -1014,8 +940,6 @@ html:not([data-theme="dark"]) .hizb-ring.start{
   .audio-controls{gap:7px;grid-template-columns:66px 54px 70px 54px 54px 72px}
 }
 
-
-
 /* ---------- v37 · native reciter menu contrast ----------
    Native option popups are painted by the browser/OS, so give the option
    surface explicit colors instead of inheriting the player's night palette. */
@@ -1029,8 +953,6 @@ html[data-theme="dark"] .audio-qari option{
   background:#0D3C35 !important;
   color:#FFF9EA !important;
 }
-
-
 
 /* ---------- v42 · true glass player ----------
    Strongly transparent in light mode; controls keep a light veil
@@ -1070,8 +992,6 @@ html[data-theme="dark"] .audio-control:not(.audio-main){
   }
 }
 
-
-
 /* ---------- v45 · play button follows surah-title identity ---------- */
 #panelPlay.audio-main{
   background:#C08A2B !important;
@@ -1085,7 +1005,6 @@ html[data-theme="dark"] #panelPlay.audio-main{
   border-color:var(--gold-hi) !important;
   box-shadow:0 15px 32px -18px rgba(228,201,128,.34);
 }
-
 
 /* ---------- v47 · Zād Alkhair identity polish ----------
    Repo-derived hierarchy:
@@ -1184,10 +1103,6 @@ html:not([data-theme="dark"]) .quran-index{
 html:not([data-theme="dark"]) .quran-index-title{
   color:#132823;
 }
-html:not([data-theme="dark"]) .quran-index-close{
-  color:#29493F;
-  background:#F0E9DB;
-}
 html:not([data-theme="dark"]) .quran-index-tab.active{
   color:#287A65;
 }
@@ -1205,7 +1120,6 @@ html:not([data-theme="dark"]) #panelPlay.audio-main{
   color:#FFF9EA !important;
   border-color:#C08A2B !important;
 }
-
 
 /* ---------- v49 · unified identity anchors ----------
    Four anchor elements always share one exact identity tone per mode:
@@ -1257,8 +1171,6 @@ html[data-theme="dark"] .tafsir-fadl{
 }
 html[data-theme="dark"] .tafsir-fadl summary{color:var(--gold-hi)}
 html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)}
-.tafsir-status{font-size:10px;color:var(--ui-muted);padding:8px 0}
-
 
 /* ---------- v78 · اكتمال الصفحة على أيّ شاشة ----------
    نموذج قراءة واحد لكل الأجهزة: الصفحة تُلاءم عرضًا وارتفاعًا معًا، فتبقى
@@ -1305,7 +1217,6 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
   .bismillah-original{display:none}
   .bismillah-desktop{display:inline}
 }
-
 
 /* ---------- v80 · Quran home ---------- */
 .quran-home-link{appearance:none;border:0;background:transparent;padding:5px 7px;font:700 17px "Aref Ruqaa",serif;cursor:pointer}
@@ -1389,7 +1300,6 @@ html[data-theme="dark"] .audio-offline-actions .delete{color:var(--gold-hi);back
   .quran-index-row-with-actions .quran-index-page{width:44px;min-width:44px}
 }
 
-
 /* Icons used in v84: Hugeicons Stroke Rounded (MIT), Quran 01 + Book Open Text. */
 /* ---------- v83 · unified page-number column + visible hub icons ---------- */
 .quran-index-head-action svg{display:block;width:20px;height:20px;overflow:visible}
@@ -1419,7 +1329,6 @@ html[data-theme="dark"] .audio-offline-actions .delete{color:var(--gold-hi);back
   .quran-index-juz-page{width:44px;min-width:44px}
   .quran-index-juz-actions-slot{width:110px;min-width:110px}
 }
-
 
 /* ---------- v89 · reader polish + Zad options identity ---------- */
 html{
@@ -1788,7 +1697,6 @@ html[data-theme="dark"] .quran-option-icon.gold{
   .quran-option-icon{width:41px;height:41px;border-radius:13px}
 }
 
-
 /* ---------- v90 · unified reference palette + selected Surah ---------- */
 /* In daylight the current Surah mirrors the night treatment: gold, not green. */
 html:not([data-theme="dark"]) .quran-index-row.current .quran-index-name,
@@ -1849,7 +1757,6 @@ html[data-theme="dark"] .bookmark-section.ref-ayahs{
 html[data-theme="dark"] .bookmark-main small,
 html[data-theme="dark"] .quran-bookmark-open small{color:rgba(255,249,234,.62) !important}
 
-
 /* v100 · light-mode menus follow the Zad Al-Khair identity, never neutral black. */
 html:not([data-theme="dark"]) .sheet,
 html:not([data-theme="dark"]) .sheethead,
@@ -1858,7 +1765,6 @@ html:not([data-theme="dark"]) .audio-offline-prompt,
 html:not([data-theme="dark"]) .audio-offline-message,
 html:not([data-theme="dark"]) .audio-offline-checkrow,
 html:not([data-theme="dark"]) .quran-hub-menu button,
-html:not([data-theme="dark"]) .index-row,
 html:not([data-theme="dark"]) .field select,
 html:not([data-theme="dark"]) .audio-qari{color:#0F5C50}
 html:not([data-theme="dark"]) .sheethead h3,
@@ -1868,7 +1774,6 @@ html:not([data-theme="dark"]) .audio-qari-choice small,
 html:not([data-theme="dark"]) .audio-offline-message small,
 html:not([data-theme="dark"]) .field label{color:#5F756E}
 html:not([data-theme="dark"]) select option{color:#0F5C50;background:#FFFCF4}
-
 
 /* ---------- v101 · unified Zad Al-Khair reader menus ----------
    Visual-only contract: all reader sheets, reciter/download dialogs and
@@ -1932,7 +1837,6 @@ html:not([data-theme="dark"]) .quran-index-head-action:active{
 .audio-offline-checkrow,
 .audio-offline-actions button,
 .quran-hub-menu button,
-.index-row,
 .tafsir-nav-btn,
 .field select,
 .quran-search-input{
@@ -1951,7 +1855,6 @@ html:not([data-theme="dark"]) .quran-index-head-action:active{
 .audio-offline-checkrow:active,
 .audio-offline-actions button:active,
 .quran-hub-menu button:active,
-.index-row:active,
 .tafsir-nav-btn:active{
   background:color-mix(in srgb,var(--brand) 8%,var(--ui-surface-2));
   border-color:color-mix(in srgb,var(--gold) 42%,var(--ui-line));
@@ -2044,7 +1947,6 @@ html[data-theme="dark"] .audio-qari-choice,
 html[data-theme="dark"] .audio-offline-checkrow,
 html[data-theme="dark"] .audio-offline-actions button,
 html[data-theme="dark"] .quran-hub-menu button,
-html[data-theme="dark"] .index-row,
 html[data-theme="dark"] .tafsir-nav-btn,
 html[data-theme="dark"] .field select,
 html[data-theme="dark"] .quran-search-input{
@@ -2056,7 +1958,6 @@ html[data-theme="dark"] .audio-qari-choice:active,
 html[data-theme="dark"] .audio-offline-checkrow:active,
 html[data-theme="dark"] .audio-offline-actions button:active,
 html[data-theme="dark"] .quran-hub-menu button:active,
-html[data-theme="dark"] .index-row:active,
 html[data-theme="dark"] .tafsir-nav-btn:active{background:rgba(228,201,128,.07);border-color:rgba(228,201,128,.30)}
 html[data-theme="dark"] .audio-qari-choice.downloaded,
 html[data-theme="dark"] .audio-offline-checkrow.select-all{background:rgba(228,201,128,.07);border-color:rgba(228,201,128,.30)}
@@ -2358,7 +2259,6 @@ html .toast{top:calc(70px + env(safe-area-inset-top))}
 @media(prefers-reduced-motion:reduce){.queue-switch,.queue-switch::after{transition:none}}
 
 .audio-verse-settings[hidden],.player-backdrop .field[hidden]{display:none!important}
-
 
 /* Surah rows and Juz separators share one set of measurements, so their page
    numbers sit in a single column by construction at every width. The values are
