@@ -217,7 +217,7 @@ async function ztCompleteJuz(khatmahCode,n){
   if(!state||!viewer||code!==khatmahCode)return;
   const j=state.juz[n-1];
   if(!j||j.ownerId!==viewer.id||j.status==="done")return;
-  if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(n)}؟ سيُبلَّغ أعضاء الختمة بذلك.`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
+  if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(n)}؟`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
   await act("done",n-1);
 }
 let ztReadingSeq=0;
