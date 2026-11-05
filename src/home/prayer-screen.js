@@ -115,7 +115,7 @@ function zpDayHtml(cfg){
   const rows=PT_ORDER.map(k=>{
     const at=times[k].getTime(),isNow=k===cur,isNext=!!next&&next.today&&next.key===k;
     const cls=[k==="sunrise"&&"sun",isNow&&"now",isToday&&at<=now&&!isNow&&"past"].filter(Boolean).join(" ");
-    return `<li class="${cls}"><span class="zp-name">${PT_NAMES[k]}${isNow?'<span class="zp-tag">وقتها الآن</span>':""}${isNext?`<span class="zp-left">بعد ${arDur((at-now)/6e4,true)}</span>`:""}</span><span class="zp-time"><bdi>${ptFmt(times[k],cfg.tz)}</bdi></span></li>`;
+    return `<li class="${cls}"><span class="zp-name">${ptName(k,times[k],cfg.tz)}${isNow?'<span class="zp-tag">وقتها الآن</span>':""}${isNext?`<span class="zp-left">بعد ${arDur((at-now)/6e4,true)}</span>`:""}</span><span class="zp-time"><bdi>${ptFmt(times[k],cfg.tz)}</bdi></span></li>`;
   }).join("");
   let hero="";
   zpHero=null;
@@ -125,14 +125,14 @@ function zpDayHtml(cfg){
     const prevAt=passed.length?times[passed[passed.length-1]].getTime():ptTimes(cfg,new Date(now-ZP_DAY)).isha.getTime();
     zpHero={prevAt,tz:cfg.tz,at:next.at.getTime()};
     hero=`<section class="zt-prayer zp-hero" aria-label="الصلاة القادمة">
-      <div class="zt-prayer-top"><span>${cur?`وقت ${PT_NAMES[cur]} الآن`:"مواقيت اليوم"}</span><span class="zt-clock" id="zp-clock"></span></div>
+      <div class="zt-prayer-top"><span>${cur?`وقت ${ptName(cur,times[cur],cfg.tz)} الآن`:"مواقيت اليوم"}</span><span class="zt-clock" id="zp-clock"></span></div>
       <div class="zt-arc">
         <svg viewBox="-8 -2 236 124" aria-hidden="true">
           <path class="zt-arc-track" d="M 206 110 A 96 96 0 0 0 14 110"/>
           <path class="zt-arc-fill" id="zp-arc-fill" d="M 206 110 A 96 96 0 0 0 14 110"/>
           <g class="zt-sun-dot" id="zp-sun"><circle r="9" fill="#E4C980" opacity=".25"/><circle r="5" fill="#FFF4CD"/></g>
         </svg>
-        <div class="zt-arc-label"><div class="zp-hero-cap">الصلاة القادمة</div><div class="zt-next-name">${PT_NAMES[next.key]}</div><div class="zt-countdown" id="zp-countdown"></div></div>
+        <div class="zt-arc-label"><div class="zp-hero-cap">الصلاة القادمة</div><div class="zt-next-name">${ptName(next.key,next.at,cfg.tz)}</div><div class="zt-countdown" id="zp-countdown"></div></div>
       </div></section>`;
   }
   return `<div class="zp-daynav">

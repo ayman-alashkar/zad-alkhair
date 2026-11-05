@@ -134,3 +134,33 @@ test("a member's khatmah tab opens from the saved state before the server answer
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test("on Friday the home greets with «جمعتكم مباركة» and counts the Kahf pages read since Thursday's maghrib", async () => {
+  const fri = new Date("2026-11-06T10:00:00").getTime();
+  const pages = n => JSON.stringify(Object.fromEntries(Array.from({ length: n }, (_, i) => [293 + i, fri - 3600e3])));
+  const { page, errors, context } = await phonePage({ storage: { "zad:kahf-pages-v1": pages(5) } });
+  await page.clock.install({ time: fri });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.clock.runFor(1500);
+  assert.equal(await page.textContent("#zt-greet-title"), "جمعتكم مباركة");
+  const kahf = (await page.innerText("#zt-kahf")).replace(/\s+/g, " ");
+  assert.match(kahf, /تابع من الصفحة ٢٩٨/);
+  assert.match(kahf, /قرأت ٥ من ١٢ صفحة/);
+  assert.equal(await page.getAttribute(".zf-kahf", "href"), "reader.html?page=298&from=zad");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("«وردك اليوم» counts every tap, keeps the count, and the Back button closes the counter", async () => {
+  const { page, errors, context } = await phonePage();
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.click('[data-zw-open="2"]');
+  for (let i = 0; i < 5; i++) await page.click("#zw-tap");
+  assert.equal(await page.textContent("#zw-count"), "٥");
+  assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("zad:wird-v1"))).counts, [0, 0, 5]);
+  await page.goBack();
+  await page.waitForFunction(() => document.getElementById("zw-screen").hidden, null, { timeout: 2000 });
+  assert.match(await page.innerText('[data-zw-open="2"]'), /٥/);
+  assert.deepEqual(errors, []);
+  await context.close();
+});

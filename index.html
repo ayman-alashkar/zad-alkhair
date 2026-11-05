@@ -1270,6 +1270,85 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zt-continue .zt-badge svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .zt-skeleton{min-height:150px;border-radius:24px;background:var(--zt-surface);border:1px solid var(--zt-line);opacity:.6}
 
+/* ── بطاقة سورة الكهف (الجمعة) ── */
+.zt-kahf[hidden]{display:none}
+.zf-kahf{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #C59A4A;border-radius:22px;
+  background:linear-gradient(135deg,rgba(197,154,74,.16),rgba(197,154,74,.05)),var(--zt-surface);color:var(--zt-ink);text-decoration:none;transition:transform .15s ease}
+.zf-kahf:active{transform:scale(.98)}
+.zf-kahf.progress{flex-direction:column;align-items:stretch;gap:12px}
+.zf-kahf.done{border-color:var(--zt-line);background:var(--zt-surface)}
+.zf-kahf-badge{flex:none;width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:#0D3C35;color:#E4C980}
+.zf-kahf-badge svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zf-kahf.done .zf-kahf-badge{border-radius:50%;background:#C59A4A;color:#FFF9EA}
+.zf-kahf.done .zf-kahf-badge svg{stroke-width:2.2}
+:root[data-zk-theme="dark"] .zf-kahf-badge{background:rgba(228,201,128,.14)}
+:root[data-zk-theme="dark"] .zf-kahf.done .zf-kahf-badge{background:#E4C980;color:#173E35}
+.zf-kahf-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:21px;line-height:1.35}
+.zf-kahf-go{flex:none;color:var(--zt-gold)}
+.zf-kahf-go svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── «وردك اليوم» في الرئيسية ── */
+.zw-card{display:flex;flex-direction:column;gap:12px;padding:16px 14px 14px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
+.zw-card-head{display:flex;align-items:baseline;justify-content:space-between;padding-inline:4px}
+.zw-card-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;line-height:1.3}
+.zw-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.zw-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 4px 8px;border:0;border-radius:18px;background:transparent;color:inherit;font-family:inherit;cursor:pointer;transition:transform .15s ease,background .2s ease}
+.zw-item:active{transform:scale(.97)}
+.zw-item.done{background:var(--zt-gold-soft)}
+.zw-mini{position:relative;width:72px;height:72px;display:block}
+.zw-mini>svg{display:block;width:72px;height:72px;transform:rotate(-90deg)}
+.zw-mini circle{fill:none;stroke-width:7}
+.zw-mini .bg{stroke:var(--zt-track)}
+.zw-mini .fg{stroke:var(--zt-gold);stroke-linecap:round;stroke-dasharray:213.6;transition:stroke-dashoffset .6s cubic-bezier(.3,.8,.2,1)}
+.zw-mini .full{fill:#C59A4A;stroke:#C59A4A}
+:root[data-zk-theme="dark"] .zw-mini .full{fill:#E4C980;stroke:#E4C980}
+.zw-mini-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.zw-mini-mid b{font-size:18px;line-height:1.1}
+.zw-mini-mid small{font-size:9px;color:var(--zt-muted)}
+.zw-check{width:28px;height:28px;fill:none;stroke:#FFF9EA;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+:root[data-zk-theme="dark"] .zw-check{stroke:#173E35}
+.zw-name{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:15px;line-height:1.4;text-align:center}
+@media (min-width:860px){.zt-wird{grid-column:1/-1;order:3}}
+
+/* ── شاشة العدّ: داكنة في الوضعين ── */
+.zw-screen{position:fixed;inset:0;z-index:136;display:flex;flex-direction:column;gap:14px;box-sizing:border-box;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(22px,env(safe-area-inset-bottom));
+  background:radial-gradient(circle at 50% 38%,rgba(228,201,128,.12),transparent 22rem),linear-gradient(160deg,#0D3C35,#061F1D);
+  color:#FFF9EA;font-family:"Alexandria",Tahoma,Arial,sans-serif;animation:ztFade .2s ease both}
+.zw-screen[hidden]{display:none}
+.zw-screen>*{width:100%;max-width:520px;margin-inline:auto}
+.zw-head{display:flex;align-items:center;justify-content:space-between;min-height:48px}
+.zw-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px 0 14px;border:1px solid rgba(228,201,128,.24);border-radius:14px;background:transparent;color:#FFF9EA;font:inherit;font-size:13px;cursor:pointer}
+.zw-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.zw-head-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;color:#E4C980}
+.zw-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;border-radius:18px;background:rgba(255,249,234,.06)}
+.zw-tab{min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;border:0;border-radius:14px;
+  background:transparent;color:rgba(255,249,234,.82);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer}
+.zw-tab small{font-size:10px;opacity:.8;font-weight:500}
+.zw-tab[aria-selected="true"]{background:#E4C980;color:#173E35}
+.zw-text{margin:8px 0 0;text-align:center;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:32px;line-height:1.5}
+.zw-tap{flex:1;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:0;border:0;border-radius:32px;
+  background:transparent;color:inherit;font:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.zw-tap:active .zw-ring{transform:scale(.985)}
+.zw-ring{position:relative;display:block;width:260px;height:260px;transition:transform .08s ease}
+.zw-ring>svg{display:block;width:260px;height:260px;transform:rotate(-90deg)}
+.zw-ring .disc{fill:rgba(255,249,234,.03);transition:fill .3s ease}
+.zw-ring .bg{fill:none;stroke:rgba(255,249,234,.10);stroke-width:12}
+.zw-ring .arc{fill:none;stroke:#E4C980;stroke-width:12;stroke-linecap:round;stroke-dasharray:691.15;transition:stroke-dashoffset .25s ease}
+.zw-tap.done .zw-ring .disc{fill:#E4C980}
+.zw-ring-mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.zw-live,.zw-full{display:flex;flex-direction:column;align-items:center;gap:2px}
+.zw-live b{font-size:72px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.zw-live small{font-size:14px;color:rgba(255,249,234,.66)}
+.zw-full{display:none;color:#173E35;font-size:15px;font-weight:700}
+.zw-full svg{width:64px;height:64px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.zw-tap.done .zw-live{display:none}
+.zw-tap.done .zw-full{display:flex}
+.zw-hint{font-size:13px;color:rgba(255,249,234,.70)}
+.zw-foot{display:flex;justify-content:center}
+.zw-reset{min-height:44px;padding:0 18px;border:1px solid rgba(228,201,128,.24);border-radius:14px;background:transparent;color:rgba(255,249,234,.82);font:inherit;font-size:13px;cursor:pointer}
+@media (max-height:700px){.zw-ring,.zw-ring>svg{width:210px;height:210px}.zw-live b{font-size:58px}.zw-text{font-size:27px}}
+
 /* Bottom navigation */
 .zk-tabs{position:fixed;z-index:130;inset:auto 0 0 0;box-sizing:border-box;height:calc(72px + env(safe-area-inset-bottom));
   padding:0 10px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
@@ -1629,17 +1708,40 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
       </header>
 
       <div class="zt-greet zt-rise">
-        <h2>السلام عليكم</h2>
+        <h2 id="zt-greet-title">السلام عليكم</h2>
         <p><span class="zt-hijri" id="zt-hijri"></span><span class="zt-dot" aria-hidden="true"> · </span><span id="zt-greg"></span></p>
       </div>
 
+      <div class="zt-kahf zt-rise" id="zt-kahf" hidden></div>
       <div class="zt-grid">
         <section class="zt-prayer zt-rise" id="zt-prayer" aria-label="الصلاة القادمة" aria-live="off"></section>
+        <div class="zt-wird zt-rise" id="zt-wird"></div>
         <div class="zt-reading zt-rise" id="zt-reading"></div>
       </div>
     </div>
     <div class="zt-page zp-page" id="zt-prayer-page" hidden></div>
   </div>
+</section>
+
+<!-- شاشة العدّ لـ«وردك اليوم» (friday-wird.js): داكنة في الوضعين، فوق الشريط السفلي. -->
+<section class="zw-screen" id="zw-screen" aria-label="وردك اليوم" hidden>
+  <header class="zw-head">
+    <button class="zw-back" id="zw-back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>رجوع</span></button>
+    <span class="zw-head-title">وردك اليوم</span>
+  </header>
+  <div class="zw-tabs" id="zw-tabs" role="tablist" aria-label="الأذكار"></div>
+  <h2 class="zw-text" id="zw-text"></h2>
+  <button class="zw-tap" id="zw-tap" type="button" data-rapid>
+    <span class="zw-ring">
+      <svg viewBox="0 0 260 260" aria-hidden="true"><circle class="disc" cx="130" cy="130" r="110"/><circle class="bg" cx="130" cy="130" r="110"/><circle class="arc" id="zw-arc" cx="130" cy="130" r="110"/></svg>
+      <span class="zw-ring-mid">
+        <span class="zw-live"><b id="zw-count">٠</b><small>من ١٠٠</small></span>
+        <span class="zw-full"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>اكتمل · ١٠٠</span></span>
+      </span>
+    </span>
+    <span class="zw-hint" id="zw-hint"></span>
+  </button>
+  <div class="zw-foot"><button class="zw-reset" id="zw-reset" type="button">إعادة العدّ</button></div>
 </section>
 
 <nav class="zk-tabs" id="zk-tabs" aria-label="الأقسام">
@@ -1931,6 +2033,13 @@ const PRAYER_ICON=`<svg class="zk-icon" viewBox="0 0 25 24" fill="none" stroke="
 
 const PT_NAMES={fajr:"الفجر",sunrise:"الشروق",dhuhr:"الظهر",asr:"العصر",maghrib:"المغرب",isha:"العشاء"};
 const PT_ORDER=["fajr","sunrise","dhuhr","asr","maghrib","isha"];
+/* ظهر يوم الجمعة يُسمّى «الجمعة»، بيوم المدينة المختارة. */
+function ptName(key,at,tz){
+  if(key==="dhuhr"&&at){
+    try{if(new Intl.DateTimeFormat("en-US",{weekday:"short",timeZone:tz||undefined}).format(at)==="Fri")return "الجمعة"}catch(_){}
+  }
+  return PT_NAMES[key];
+}
 const PT_METHODS={
   MuslimWorldLeague:"رابطة العالم الإسلامي",
   UmmAlQura:"أم القرى — مكة المكرمة",
@@ -4482,6 +4591,9 @@ function ztPaintDates(){
   /* التاريخ الهجري نفسه الذي تعرضه شاشة المواقيت (prayer-screen.js). */
   try{ztEl("zt-hijri").textContent=zpHijriLong(zpTodayNoon())+" هـ"}catch(_){}
   try{ztEl("zt-greg").textContent=new Intl.DateTimeFormat("ar-EG",{weekday:"long",day:"numeric",month:"long"}).format(now)}catch(_){}
+  /* من مغرب الخميس إلى مغرب الجمعة (friday-wird.js). */
+  const greet=ztEl("zt-greet-title");
+  if(greet)greet.textContent=zfFriday().active?"جمعتكم مباركة":"السلام عليكم";
 }
 
 /* ── بطاقة الصلاة ── */
@@ -4514,7 +4626,7 @@ function ztPrayerRender(){
   ztPrayerTimes={prevAt,tz:cfg.tz,next:{key:next.key,at:next.at.getTime()}};
   const items=ZT_PRAYERS.map(k=>{
     const isNext=k===next.key;
-    return `<li class="${isNext?"is-next":""}"><span>${PT_NAMES[k]}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz)}</bdi></span></li>`;
+    return `<li class="${isNext?"is-next":""}"><span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz)}</bdi></span></li>`;
   }).join("");
   host.innerHTML=`<div class="zt-prayer-top"><span>الصلاة القادمة في ${esc(cfg.city)}</span><span class="zt-clock" id="zt-clock"></span></div>
     <div class="zt-arc">
@@ -4524,7 +4636,7 @@ function ztPrayerRender(){
         <g class="zt-sun-dot" id="zt-sun-dot"><circle r="9" fill="#E4C980" opacity=".25"/><circle r="5" fill="#FFF4CD"/></g>
       </svg>
       <div class="zt-arc-label">
-        <div class="zt-next-name">${PT_NAMES[next.key]}</div>
+        <div class="zt-next-name">${ptName(next.key,next.at,cfg.tz)}</div>
         <div class="zt-countdown" id="zt-countdown"></div>
       </div>
     </div>
@@ -4537,7 +4649,7 @@ function ztPrayerTick(){
   if(!ztPrayerTimes)return;
   const now=Date.now(),{prevAt,next}=ztPrayerTimes;
   const left=next.at-now;
-  if(left<=0){ztPrayerRender();return}
+  if(left<=0){ztRefresh();return}   /* وقت صلاة جديد: والمغرب يبدأ الجمعة وينهيها */
   const s=Math.floor(left/1000),two=n=>String(n).padStart(2,"0");
   const countdown=ztEl("zt-countdown");
   if(countdown)countdown.innerHTML='بعد <bdi dir="ltr">'+ztArabic(Math.floor(s/3600)+":"+two(Math.floor(s/60)%60)+":"+two(s%60))+"</bdi>";
@@ -4728,7 +4840,7 @@ function ztOnLaunchChange(){
 function ztRefresh(){
   ztPaintDates();
   if(ztView==="prayer")zpRender();
-  else{ztPrayerRender();ztReadingRender()}
+  else{ztPrayerRender();zfKahfRender();zwCardRender();ztReadingRender()}
 }
 /* صفحتان داخل طبقة الرئيسية: «اليوم» و«مواقيت الصلاة». */
 let ztView="today";
@@ -4895,7 +5007,7 @@ function zpDayHtml(cfg){
   const rows=PT_ORDER.map(k=>{
     const at=times[k].getTime(),isNow=k===cur,isNext=!!next&&next.today&&next.key===k;
     const cls=[k==="sunrise"&&"sun",isNow&&"now",isToday&&at<=now&&!isNow&&"past"].filter(Boolean).join(" ");
-    return `<li class="${cls}"><span class="zp-name">${PT_NAMES[k]}${isNow?'<span class="zp-tag">وقتها الآن</span>':""}${isNext?`<span class="zp-left">بعد ${arDur((at-now)/6e4,true)}</span>`:""}</span><span class="zp-time"><bdi>${ptFmt(times[k],cfg.tz)}</bdi></span></li>`;
+    return `<li class="${cls}"><span class="zp-name">${ptName(k,times[k],cfg.tz)}${isNow?'<span class="zp-tag">وقتها الآن</span>':""}${isNext?`<span class="zp-left">بعد ${arDur((at-now)/6e4,true)}</span>`:""}</span><span class="zp-time"><bdi>${ptFmt(times[k],cfg.tz)}</bdi></span></li>`;
   }).join("");
   let hero="";
   zpHero=null;
@@ -4905,14 +5017,14 @@ function zpDayHtml(cfg){
     const prevAt=passed.length?times[passed[passed.length-1]].getTime():ptTimes(cfg,new Date(now-ZP_DAY)).isha.getTime();
     zpHero={prevAt,tz:cfg.tz,at:next.at.getTime()};
     hero=`<section class="zt-prayer zp-hero" aria-label="الصلاة القادمة">
-      <div class="zt-prayer-top"><span>${cur?`وقت ${PT_NAMES[cur]} الآن`:"مواقيت اليوم"}</span><span class="zt-clock" id="zp-clock"></span></div>
+      <div class="zt-prayer-top"><span>${cur?`وقت ${ptName(cur,times[cur],cfg.tz)} الآن`:"مواقيت اليوم"}</span><span class="zt-clock" id="zp-clock"></span></div>
       <div class="zt-arc">
         <svg viewBox="-8 -2 236 124" aria-hidden="true">
           <path class="zt-arc-track" d="M 206 110 A 96 96 0 0 0 14 110"/>
           <path class="zt-arc-fill" id="zp-arc-fill" d="M 206 110 A 96 96 0 0 0 14 110"/>
           <g class="zt-sun-dot" id="zp-sun"><circle r="9" fill="#E4C980" opacity=".25"/><circle r="5" fill="#FFF4CD"/></g>
         </svg>
-        <div class="zt-arc-label"><div class="zp-hero-cap">الصلاة القادمة</div><div class="zt-next-name">${PT_NAMES[next.key]}</div><div class="zt-countdown" id="zp-countdown"></div></div>
+        <div class="zt-arc-label"><div class="zp-hero-cap">الصلاة القادمة</div><div class="zt-next-name">${ptName(next.key,next.at,cfg.tz)}</div><div class="zt-countdown" id="zp-countdown"></div></div>
       </div></section>`;
   }
   return `<div class="zp-daynav">
@@ -5033,6 +5145,184 @@ function zpReset(){zpDayOff=0;zpMonthOff=0;zpAdjOpen=false;zpAnimate=true}
     if(el.dataset.zpAdj){zpSetAdj(Math.max(-2,Math.min(2,zpAdj()+Number(el.dataset.zpAdj))));ztPaintDates();return zpRender()}
   });
 })();
+/* ═══════════ الجمعة وسورة الكهف، و«وردك اليوم» ═══════════
+   كلاهما على الجهاز وحده: لا يُرسل شيء منهما إلى الخادم ولا يرتبط بالختمة. */
+
+/* ── يوم الجمعة: من مغرب الخميس إلى مغرب الجمعة ──
+   بمواقيت المدينة المختارة وتوقيتها. وإن لم تُختر مدينة فاليوم كله بساعة الجهاز. */
+const ZF_KAHF_PAGES=[293,304];               /* سورة الكهف في مصحف المدينة */
+const ZF_KAHF_KEY="zad:kahf-pages-v1";       /* يكتبه القارئ: {صفحة: وقت آخر زيارة} */
+function zfWeekday(at,tz){
+  try{return new Intl.DateTimeFormat("en-US",{weekday:"short",timeZone:tz||undefined}).format(new Date(at))}catch(_){return ""}
+}
+function zfFriday(now=Date.now()){
+  const cfg=typeof ptGet==="function"&&typeof ptReady==="function"&&ptReady()?ptGet():null;
+  if(cfg){
+    try{
+      const day=zfWeekday(now,cfg.tz),today=ptTimes(cfg,new Date(now)),DAY=864e5;
+      if(day==="Fri"&&now<today.maghrib.getTime())
+        return {active:true,start:ptTimes(cfg,new Date(now-DAY)).maghrib.getTime(),end:today.maghrib.getTime()};
+      if(day==="Thu"&&now>=today.maghrib.getTime())
+        return {active:true,start:today.maghrib.getTime(),end:ptTimes(cfg,new Date(now+DAY)).maghrib.getTime()};
+      return {active:false};
+    }catch(_){/* بلا مواقيت: اليوم كله أدناه */}
+  }
+  const d=new Date(now);
+  if(d.getDay()!==5)return {active:false};
+  const start=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+  return {active:true,start,end:start+864e5};
+}
+
+/* ── بطاقة الكهف ── */
+function zfKahfState(win){
+  let visits={};
+  try{visits=JSON.parse(localStorage.getItem(ZF_KAHF_KEY)||"{}")||{}}catch(_){}
+  const [first,last]=ZF_KAHF_PAGES,total=last-first+1;
+  let read=0,next=null;
+  for(let p=first;p<=last;p++){
+    const at=Number(visits[p]);
+    if(at>=win.start&&at<win.end)read++;
+    else if(next===null)next=p;
+  }
+  return {read,total,next:next??first};
+}
+function zfKahfRender(){
+  const host=ztEl("zt-kahf");
+  if(!host)return;
+  const win=zfFriday();
+  let html="";
+  if(win.active){
+    const {read,total,next}=zfKahfState(win);
+    const icon=`<span class="zf-kahf-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span>`;
+    const chevron=`<span class="zf-kahf-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></span>`;
+    if(read>=total){
+      html=`<div class="zf-kahf done" role="status">
+        <span class="zf-kahf-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <span class="zt-card-text"><span class="zt-eyebrow">سورة الكهف</span><span class="zf-kahf-title">قرأتها اليوم، تقبّل الله منك</span></span></div>`;
+    }else if(read===0){
+      html=`<a class="zf-kahf" href="reader.html?page=${ZF_KAHF_PAGES[0]}&amp;from=zad">${icon}
+        <span class="zt-card-text"><span class="zt-eyebrow">سنّة يوم الجمعة</span><span class="zf-kahf-title">هل قرأت سورة الكهف اليوم؟</span>
+        <span class="zt-sub">${ztArabic(total)} صفحة · من الصفحة ${ztArabic(ZF_KAHF_PAGES[0])}</span></span>${chevron}</a>`;
+    }else{
+      html=`<a class="zf-kahf progress" href="reader.html?page=${next}&amp;from=zad">
+        <span class="zt-card-row">${icon}
+          <span class="zt-card-text"><span class="zt-eyebrow">سورة الكهف</span><span class="zf-kahf-title">تابع من الصفحة ${ztArabic(next)}</span></span>${chevron}</span>
+        <span class="zt-progress"><span class="zt-progress-row"><span>قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span><span>بقي ${ztArabic(total-read)}</span></span>
+          <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></span></a>`;
+    }
+  }
+  if(host.dataset.zfHtml===html)return;
+  host.dataset.zfHtml=html;
+  host.innerHTML=html;
+  host.hidden=!html;
+}
+
+/* ── «وردك اليوم» ──
+   ثلاثة أذكار، مئة مرة لكلٍّ منها، ويتجدد العدّ بعد الفجر (أو منتصف الليل بلا مدينة). */
+const ZW_KEY="zad:wird-v1";
+const ZW_GOAL=100;
+const ZW_ITEMS=[
+  {text:"أستغفر الله",tab:"أستغفر الله"},
+  {text:"لا إله إلا الله",tab:"لا إله إلا الله"},
+  {text:"اللهم صلّ على سيدنا محمد",tab:"الصلاة على النبي ﷺ"}
+];
+const ZW_RING=213.6,ZW_BIG=691.15;   /* محيط الحلقة الصغيرة (r=34) والكبيرة (r=110) */
+let zwActive=0;
+function zwDayKey(now=Date.now()){
+  const cfg=typeof ptGet==="function"&&typeof ptReady==="function"&&ptReady()?ptGet():null;
+  if(cfg){
+    try{
+      const fajr=ptTimes(cfg,new Date(now)).fajr.getTime();
+      return dateISOInZone(new Date(now<fajr?now-864e5:now),cfg.tz);
+    }catch(_){}
+  }
+  const d=new Date(now);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function zwLoad(){
+  const day=zwDayKey();
+  try{
+    const saved=JSON.parse(localStorage.getItem(ZW_KEY)||"null");
+    if(saved&&saved.day===day&&Array.isArray(saved.counts)&&saved.counts.length===ZW_ITEMS.length)
+      return {day,counts:saved.counts.map(n=>Math.max(0,Math.min(ZW_GOAL,Number(n)||0)))};
+  }catch(_){}
+  return {day,counts:ZW_ITEMS.map(()=>0)};
+}
+function zwSave(wird){try{localStorage.setItem(ZW_KEY,JSON.stringify(wird))}catch(_){}}
+
+function zwCardRender(){
+  const host=ztEl("zt-wird");
+  if(!host)return;
+  const {counts}=zwLoad();
+  const html=`<section class="zw-card" aria-label="وردك اليوم">
+    <div class="zw-card-head"><span class="zw-card-title">وردك اليوم</span><span class="zt-sub">يتجدّد بعد الفجر</span></div>
+    <div class="zw-items">${ZW_ITEMS.map((it,i)=>{
+      const n=counts[i],done=n>=ZW_GOAL;
+      const ring=done
+        ?`<svg viewBox="0 0 84 84" aria-hidden="true"><circle class="full" cx="42" cy="42" r="34"/></svg><span class="zw-mini-mid"><svg class="zw-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`
+        :`<svg viewBox="0 0 84 84" aria-hidden="true"><circle class="bg" cx="42" cy="42" r="34"/><circle class="fg" cx="42" cy="42" r="34" style="stroke-dashoffset:${(ZW_RING*(1-n/ZW_GOAL)).toFixed(1)}"/></svg><span class="zw-mini-mid"><b>${ztArabic(n)}</b><small>من ${ztArabic(ZW_GOAL)}</small></span>`;
+      return `<button class="zw-item${done?" done":""}" type="button" data-zw-open="${i}" aria-label="${it.text}، ${done?"اكتمل":ztArabic(n)+" من "+ztArabic(ZW_GOAL)}">
+        <span class="zw-mini">${ring}</span><span class="zw-name">${it.text}</span></button>`;
+    }).join("")}</div></section>`;
+  if(host.dataset.zwHtml!==html){host.dataset.zwHtml=html;host.innerHTML=html}
+  host.querySelectorAll("[data-zw-open]").forEach(b=>b.onclick=()=>zwOpen(Number(b.dataset.zwOpen)));
+}
+
+/* ── شاشة العدّ ── */
+function zwOpen(i){
+  zwActive=Math.max(0,Math.min(ZW_ITEMS.length-1,Number(i)||0));
+  const screen=ztEl("zw-screen");
+  if(!screen)return;
+  screen.hidden=false;
+  document.body.classList.add("zw-open");
+  zwPaint();
+  if(typeof zkArmRootGuard==="function")zkArmRootGuard();
+  ztEl("zw-tap")?.focus({preventScroll:true});
+}
+function zwClose(){
+  const screen=ztEl("zw-screen");
+  if(!screen||screen.hidden)return false;
+  screen.hidden=true;
+  document.body.classList.remove("zw-open");
+  zwCardRender();
+  return true;
+}
+function zwIsOpen(){return !!ztEl("zw-screen")&&!ztEl("zw-screen").hidden}
+function zwPaint(){
+  const {counts}=zwLoad(),n=counts[zwActive],done=n>=ZW_GOAL;
+  const tabs=ztEl("zw-tabs");
+  if(tabs)tabs.innerHTML=ZW_ITEMS.map((it,i)=>`<button type="button" role="tab" class="zw-tab" aria-selected="${i===zwActive}" data-zw-tab="${i}">
+      <span>${it.tab}</span><small>${counts[i]>=ZW_GOAL?"اكتمل":ztArabic(counts[i])+" / "+ztArabic(ZW_GOAL)}</small></button>`).join("");
+  tabs?.querySelectorAll("[data-zw-tab]").forEach(b=>b.onclick=()=>{zwActive=Number(b.dataset.zwTab);zwPaint()});
+  ztEl("zw-text").textContent=ZW_ITEMS[zwActive].text;
+  const tap=ztEl("zw-tap");
+  tap.classList.toggle("done",done);
+  tap.setAttribute("aria-label",done?"اكتمل الذكر مئة مرة":`اضغط للعدّ، ${ztArabic(n)} من ${ztArabic(ZW_GOAL)}`);
+  ztEl("zw-arc").style.strokeDashoffset=(ZW_BIG*(1-n/ZW_GOAL)).toFixed(1);
+  ztEl("zw-count").textContent=ztArabic(n);
+  ztEl("zw-hint").textContent=done?"تقبّل الله منك":"اضغط في أي مكان من الدائرة";
+}
+function zwTap(){
+  const wird=zwLoad(),n=wird.counts[zwActive];
+  if(n>=ZW_GOAL)return;
+  wird.counts[zwActive]=n+1;
+  zwSave(wird);
+  /* اهتزاز خفيف مع كل نقرة، وأوضح عند المئة (أندرويد؛ آيفون لا يتيحه للمواقع). */
+  try{navigator.vibrate?.(n+1>=ZW_GOAL?[40,60,40]:8)}catch(_){}
+  zwPaint();
+}
+function zwReset(){
+  const wird=zwLoad();
+  wird.counts[zwActive]=0;
+  zwSave(wird);
+  zwPaint();
+}
+(function zwInit(){
+  ztEl("zw-tap")?.addEventListener("click",zwTap);
+  ztEl("zw-reset")?.addEventListener("click",zwReset);
+  ztEl("zw-back")?.addEventListener("click",()=>{if(zwClose()&&typeof zkArmRootGuard==="function")zkArmRootGuard()});
+  document.addEventListener("keydown",event=>{if(event.key==="Escape"&&zwIsOpen())zwClose()});
+})();
 
 /* ===================== الإقلاع ===================== */
 async function boot(){
@@ -5083,6 +5373,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape") closeTopMenu();});
 document.addEventListener("click",e=>{
   const target=e.target.closest("button,a,[role='button']");
   if(!target||target.disabled) return;
+  /* زر العدّ في «وردك اليوم» يُضغط متتابعًا عمدًا. */
+  if(target.hasAttribute("data-rapid")) return;
   const now=Date.now(),lockedUntil=Number(target.dataset.tapLock||0);
   if(now<lockedUntil){ e.preventDefault(); e.stopImmediatePropagation(); return; }
   target.dataset.tapLock=String(now+700);
@@ -5180,6 +5472,7 @@ function zkConfirmNativeExit(){
   zkExitRearmTimer=setTimeout(()=>{zkExitPressedAt=0;zkArmRootGuard()},2200);
 }
 function zkRootBack(){
+  if(typeof zwIsOpen==="function"&&zwIsOpen()){zwClose();zkArmRootGuard();return}
   if(document.getElementById("layer")?.innerHTML){closeLayer();zkArmRootGuard();return}
   const topMenu=document.getElementById("tb-popover");
   if(topMenu&&!topMenu.hidden){closeTopMenu();zkArmRootGuard();return}

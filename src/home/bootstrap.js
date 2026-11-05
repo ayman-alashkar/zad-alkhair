@@ -47,6 +47,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape") closeTopMenu();});
 document.addEventListener("click",e=>{
   const target=e.target.closest("button,a,[role='button']");
   if(!target||target.disabled) return;
+  /* زر العدّ في «وردك اليوم» يُضغط متتابعًا عمدًا. */
+  if(target.hasAttribute("data-rapid")) return;
   const now=Date.now(),lockedUntil=Number(target.dataset.tapLock||0);
   if(now<lockedUntil){ e.preventDefault(); e.stopImmediatePropagation(); return; }
   target.dataset.tapLock=String(now+700);
@@ -144,6 +146,7 @@ function zkConfirmNativeExit(){
   zkExitRearmTimer=setTimeout(()=>{zkExitPressedAt=0;zkArmRootGuard()},2200);
 }
 function zkRootBack(){
+  if(typeof zwIsOpen==="function"&&zwIsOpen()){zwClose();zkArmRootGuard();return}
   if(document.getElementById("layer")?.innerHTML){closeLayer();zkArmRootGuard();return}
   const topMenu=document.getElementById("tb-popover");
   if(topMenu&&!topMenu.hidden){closeTopMenu();zkArmRootGuard();return}

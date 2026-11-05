@@ -95,17 +95,40 @@
       </header>
 
       <div class="zt-greet zt-rise">
-        <h2>السلام عليكم</h2>
+        <h2 id="zt-greet-title">السلام عليكم</h2>
         <p><span class="zt-hijri" id="zt-hijri"></span><span class="zt-dot" aria-hidden="true"> · </span><span id="zt-greg"></span></p>
       </div>
 
+      <div class="zt-kahf zt-rise" id="zt-kahf" hidden></div>
       <div class="zt-grid">
         <section class="zt-prayer zt-rise" id="zt-prayer" aria-label="الصلاة القادمة" aria-live="off"></section>
+        <div class="zt-wird zt-rise" id="zt-wird"></div>
         <div class="zt-reading zt-rise" id="zt-reading"></div>
       </div>
     </div>
     <div class="zt-page zp-page" id="zt-prayer-page" hidden></div>
   </div>
+</section>
+
+<!-- شاشة العدّ لـ«وردك اليوم» (friday-wird.js): داكنة في الوضعين، فوق الشريط السفلي. -->
+<section class="zw-screen" id="zw-screen" aria-label="وردك اليوم" hidden>
+  <header class="zw-head">
+    <button class="zw-back" id="zw-back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>رجوع</span></button>
+    <span class="zw-head-title">وردك اليوم</span>
+  </header>
+  <div class="zw-tabs" id="zw-tabs" role="tablist" aria-label="الأذكار"></div>
+  <h2 class="zw-text" id="zw-text"></h2>
+  <button class="zw-tap" id="zw-tap" type="button" data-rapid>
+    <span class="zw-ring">
+      <svg viewBox="0 0 260 260" aria-hidden="true"><circle class="disc" cx="130" cy="130" r="110"/><circle class="bg" cx="130" cy="130" r="110"/><circle class="arc" id="zw-arc" cx="130" cy="130" r="110"/></svg>
+      <span class="zw-ring-mid">
+        <span class="zw-live"><b id="zw-count">٠</b><small>من ١٠٠</small></span>
+        <span class="zw-full"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>اكتمل · ١٠٠</span></span>
+      </span>
+    </span>
+    <span class="zw-hint" id="zw-hint"></span>
+  </button>
+  <div class="zw-foot"><button class="zw-reset" id="zw-reset" type="button">إعادة العدّ</button></div>
 </section>
 
 <nav class="zk-tabs" id="zk-tabs" aria-label="الأقسام">
