@@ -15,6 +15,7 @@ async function boot(){
   }
 
   activeKhatmahSet(code,false);
+  zlEnsure();
   loadViewer();
   if(viewer) activeKhatmahSet(code,true);
   /* A member who has opened this khatmah before sees it at once; refresh()
@@ -119,6 +120,7 @@ function zkShowLaunch(){
   zkLaunch.setAttribute("aria-hidden","false");
   ztOnLaunchChange();
   zkSyncSection();
+  zlEnsure();
 }
 function zkHideLaunch(){
   if(!zkLaunch)return;
@@ -128,6 +130,7 @@ function zkHideLaunch(){
   document.body.classList.remove("zk-launch-open");
   ztOnLaunchChange();
   zkSyncSection();
+  zlEnsure();
 }
 const zkRootGuardToken=`${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let zkExitPressedAt=0,zkExitRearmTimer=null;
@@ -249,10 +252,17 @@ async function syncState(){
   if(screen!=="main") return;
   if(selected!==null || document.getElementById("layer").innerHTML) return;
   syncBusy=true;
+  lastSyncAt=Date.now();
   const before=JSON.stringify(state);
   try{
     const loaded=await refresh(true);
     if(loaded&&JSON.stringify(state)!==before) render();
   }finally{ syncBusy=false; }
 }
-let syncTimer=setInterval(syncState,15000);
+/* السؤال الدوري احتياط للتحديث الفوري (live-sync.js): كل ١٥ ثانية إن لم يكن الاتصال
+   الفوري قائمًا، وكل دقيقة إن كان. */
+let lastSyncAt=0;
+let syncTimer=setInterval(()=>{
+  if(zlHealthy()&&Date.now()-lastSyncAt<60000)return;
+  syncState();
+},15000);

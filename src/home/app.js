@@ -29,6 +29,7 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
 /* @include dialogs.js */
 
 /* @include state-sync.js */
+/* @include live-sync.js */
 
 /* @include telegram.js */
 

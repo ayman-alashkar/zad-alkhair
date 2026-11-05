@@ -32,8 +32,10 @@ test.after(async () => {
 });
 
 /* صفحة هاتف، مع ردود وهمية لنداءات القاعدة. */
-async function phonePage({ rpc = {}, storage = {} } = {}) {
+async function phonePage({ rpc = {}, storage = {}, realtime = () => {} } = {}) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
+  /* اتصال Realtime لا يخرج إلى الخادم الحقيقي أبدًا: يُجاب هنا (أو لا يُجاب). */
+  await context.routeWebSocket(/\/realtime\/v1\/websocket/, realtime);
   await context.addInitScript(items => {
     for (const [k, v] of Object.entries(items)) localStorage.setItem(k, v);
   }, storage);
@@ -210,6 +212,50 @@ test("with an active khatmah, a reload on home stays on home (the khatmah code i
   assert.equal(new URL(page.url()).hash, "");
   await page.reload({ waitUntil: "load" });
   assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), true, "home after reload");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("live sync: joins the khatmah's channel, and a «changed» signal refreshes home and the khatmah screen at once", async () => {
+  let done = 7;
+  const state = () => ({ publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, (_, i) => ({ status: i < done ? "done" : (i === 9 ? "taken" : "free"), ownerId: i < done ? "org" : (i === 9 ? "me" : null) })) });
+  const sockets = [], joins = [];
+  const { page, errors, context } = await phonePage({
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "me", name: "أنا" }) },
+    realtime: ws => {
+      sockets.push(ws);
+      ws.onMessage(raw => {
+        const m = JSON.parse(raw);
+        if (m.event === "phx_join") { joins.push(m); ws.send(JSON.stringify({ topic: m.topic, event: "phx_reply", ref: m.ref, payload: { status: "ok", response: {} } })); }
+      });
+    }
+  });
+  await context.route(/\/rpc\/get_state/, route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(state()) }));
+  const signal = () => sockets.at(-1).send(JSON.stringify({ topic: "realtime:khatmah:ABCD", event: "broadcast", payload: { type: "broadcast", event: "changed", payload: { id: "x" } } }));
+
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.waitForFunction(() => document.querySelector(".zt-ring-label b")?.textContent === "٧", null, { timeout: 5000 });
+  assert.equal(joins[0].topic, "realtime:khatmah:ABCD");
+  assert.equal(joins[0].payload.config.private, false);
+
+  done = 8; signal();
+  await page.waitForFunction(() => document.querySelector(".zt-ring-label b")?.textContent === "٨", null, { timeout: 3000 });
+
+  await page.click("#zk-launch-zad");
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 5000 });
+  assert.equal(await page.evaluate(() => document.querySelectorAll("#app .cell.done").length), 8);
+  done = 9; signal();
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell.done").length === 9, null, { timeout: 3000 });
+
+  /* الخادم يغلق الاتصال: يعود العميل ويشترك من جديد. */
+  const count = sockets.length;
+  await sockets.at(-1).close();
+  for (let i = 0; i < 40 && sockets.length === count; i++) await page.waitForTimeout(100);
+  assert.ok(sockets.length > count, "reconnected");
+  for (let i = 0; i < 20 && joins.length < 2; i++) await page.waitForTimeout(100);
+  assert.equal(joins.at(-1).topic, "realtime:khatmah:ABCD");
   assert.deepEqual(errors, []);
   await context.close();
 });
