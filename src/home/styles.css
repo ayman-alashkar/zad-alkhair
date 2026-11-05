@@ -1619,11 +1619,4 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 .people-panel[open] .people-chev{transform:rotate(180deg)}
 .people-panel>summary.sec-head{flex-wrap:nowrap}
 
-/* ═══════════ نافذة الجزء: نقش الرئيسية متحرّكًا ═══════════
-   تتحرّك صورة الخلفية لا الطبقة نفسها، فلا تتجاوز الطبقة حدود النافذة
-   ولا تضيف مساحة تمرير. النافذة قصيرة العمر، فالكلفة محدودة. */
-.sheet{isolation:isolate}
-.sheet::before{content:"";display:block;position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:.05;
-  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:sheetFlow 60s linear infinite}
-@keyframes sheetFlow{to{background-position:-248.16px -164.95px}}
-@media (prefers-reduced-motion:reduce){.sheet::before,.kp-ring .kw{animation:none}}
+@media (prefers-reduced-motion:reduce){.kp-ring .kw{animation:none}}
