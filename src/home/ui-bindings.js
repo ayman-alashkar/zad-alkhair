@@ -105,7 +105,7 @@ function bind(){
   document.querySelectorAll("[data-sheet]").forEach(el=>el.onclick=()=>openSheet(+el.dataset.sheet));
   document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=async()=>{
     const i=+b.dataset.complete;
-    if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(i+1)}؟ سيُبلَّغ أعضاء الختمة بذلك.`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
+    if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(i+1)}؟`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
     act("done",i);
   });
   /* الفلتر يبدّل صنفًا على الشبكة فقط، دون إعادة رسم الصفحة. */
