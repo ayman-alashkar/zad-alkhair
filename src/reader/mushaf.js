@@ -121,11 +121,15 @@ window.addEventListener("popstate",()=>{
   if(readerNativeBack){readerNativeBack=false;return}
   readerBackGuardReady=false;
   if(closeTopReaderSurface()){armReaderBackGuard();return}
-  const homePanel=document.querySelector('.quran-index[data-home-mode="1"]');
+  const homePanel=document.querySelector('.quran-index[data-home-mode="1"],.zad-listen');
   if(homePanel){
     if(readerHasAppParent){readerNativeBack=true;history.back();return}
     if(readerEntryParams().fromZad){location.href=zadReturnUrl();return}
     confirmReaderExitOrLeave();return;
+  }
+  if(readerReturnToListen){
+    openListenPage();
+    armReaderBackGuard();return;
   }
   if(readerReturnToQuranHome){
     openQuranIndex("s",{home:true});

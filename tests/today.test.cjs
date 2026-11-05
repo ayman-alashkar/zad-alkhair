@@ -17,7 +17,7 @@ test("surah map matches the catalogue and names the right surah for a page",()=>
 test("home screen keeps the shared theme, real crawlable tabs and offline pattern",()=>{
   const home=read("index.html"),today=read("src/home/today.js"),sw=read("sw.js");
   assert.match(today,/const ZT_THEME_KEY="zad:qcf4:theme";/);
-  assert.equal((home.match(/class="zk-tab"/g)||[]).length,4);
+  assert.equal((home.match(/class="zk-tab"/g)||[]).length,5);
   assert.match(home,/<nav class="zk-tabs" id="zk-tabs" aria-label="الأقسام">/);
   assert.match(sw,/"\.\/icons\/zad-rosette\.svg"/);
   assert.ok(fs.existsSync(path.join(root,"icons/zad-rosette.svg")));

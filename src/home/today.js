@@ -255,7 +255,7 @@ function ztPaintTabs(){
   if(!tabs)return;
   const onHome=document.body.classList.contains("zk-launch-open");
   const current=!onHome?"zk-launch-zad":ztView==="prayer"?"zk-launch-prayer":"zk-tab-home";
-  ["zk-tab-home","zk-launch-quran","zk-launch-zad","zk-launch-prayer"].forEach((id,i)=>{
+  ZT_TAB_IDS.forEach((id,i)=>{
     const el=ztEl(id);if(!el)return;
     if(id===current){el.setAttribute("aria-current","page");tabs.style.setProperty("--zk-tab",String(i))}
     else el.removeAttribute("aria-current");
@@ -263,7 +263,7 @@ function ztPaintTabs(){
 }
 /* الانتقال إلى صفحة القارئ: يتحرك المؤشر إلى تبويب القرآن أولًا، ثم تُفتح الصفحة.
    الشريط في الصفحتين باسم انتقال واحد، فيبقى ثابتًا وتتبدل الصفحة من تحته. */
-const ZT_TAB_IDS=["zk-tab-home","zk-launch-quran","zk-launch-zad","zk-launch-prayer"];
+const ZT_TAB_IDS=["zk-tab-home","zk-launch-quran","zk-launch-listen","zk-launch-zad","zk-launch-prayer"];
 function ztMarkTab(id){
   const tabs=ztEl("zk-tabs");if(!tabs)return;
   ZT_TAB_IDS.forEach((tab,i)=>{const el=ztEl(tab);if(!el)return;

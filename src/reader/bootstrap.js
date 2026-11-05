@@ -8,8 +8,16 @@
     let earlyIndexOpened=false;
     {
       const early=readerEntryParams(),stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
-      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||stored?.surface!=="reader");
-      if(plainHome){
+      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||early.listen||stored?.surface!=="reader");
+      if(plainHome&&early.listen){
+        await loadQcfMeta();
+        validateMetadataConsistency();
+        const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
+        if(saved>=1&&saved<=TOTAL_PAGES)currentPage=saved;
+        loading.classList.add("hide");
+        openListenPage();
+        earlyIndexOpened=true;
+      }else if(plainHome){
         await loadQcfMeta();
         validateMetadataConsistency();
         const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
@@ -48,7 +56,7 @@
     }
     const noDeepTarget=!deepLinkedAyah&&!entry.page&&!entry.juz&&!entry.surah;
     const storedSurface=storageJsonGet(STORAGE_KEYS.lastSurface,null);
-    const wantsHome=entry.home||(noDeepTarget&&storedSurface?.surface!=="reader");
+    const wantsHome=entry.home||entry.listen||(noDeepTarget&&storedSurface?.surface!=="reader");
     if(!noDeepTarget&&!entry.home){readerReturnToQuranHome=false;storageSet(STORAGE_KEYS.readerParent,"")}
     else if(noDeepTarget&&storedSurface?.surface==="reader"&&storageGet(STORAGE_KEYS.readerParent,"")==="quran-home")readerReturnToQuranHome=true;
     if(deepLinkedAyah){
@@ -74,7 +82,7 @@
     readerBootDone();
     if(wantsHome&&!earlyIndexOpened){
       const restoredTab=storedSurface?.surface==="quran-home"&&["s","j","m"].includes(storedSurface?.tab)?storedSurface.tab:"s";
-      requestAnimationFrame(()=>openQuranIndex(restoredTab,{home:true}));
+      requestAnimationFrame(()=>entry.listen?openListenPage():openQuranIndex(restoredTab,{home:true}));
     }else setTimeout(()=>showToast("QCF4 · مصحف المدينة ١٤٤١هـ · ٦٠٤ صفحات"),350);
   }catch(e){
     console.error(e);
