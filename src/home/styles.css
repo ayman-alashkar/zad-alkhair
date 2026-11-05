@@ -1225,6 +1225,85 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zt-continue .zt-badge svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .zt-skeleton{min-height:150px;border-radius:24px;background:var(--zt-surface);border:1px solid var(--zt-line);opacity:.6}
 
+/* ── بطاقة سورة الكهف (الجمعة) ── */
+.zt-kahf[hidden]{display:none}
+.zf-kahf{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #C59A4A;border-radius:22px;
+  background:linear-gradient(135deg,rgba(197,154,74,.16),rgba(197,154,74,.05)),var(--zt-surface);color:var(--zt-ink);text-decoration:none;transition:transform .15s ease}
+.zf-kahf:active{transform:scale(.98)}
+.zf-kahf.progress{flex-direction:column;align-items:stretch;gap:12px}
+.zf-kahf.done{border-color:var(--zt-line);background:var(--zt-surface)}
+.zf-kahf-badge{flex:none;width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:#0D3C35;color:#E4C980}
+.zf-kahf-badge svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zf-kahf.done .zf-kahf-badge{border-radius:50%;background:#C59A4A;color:#FFF9EA}
+.zf-kahf.done .zf-kahf-badge svg{stroke-width:2.2}
+:root[data-zk-theme="dark"] .zf-kahf-badge{background:rgba(228,201,128,.14)}
+:root[data-zk-theme="dark"] .zf-kahf.done .zf-kahf-badge{background:#E4C980;color:#173E35}
+.zf-kahf-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:21px;line-height:1.35}
+.zf-kahf-go{flex:none;color:var(--zt-gold)}
+.zf-kahf-go svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── «وردك اليوم» في الرئيسية ── */
+.zw-card{display:flex;flex-direction:column;gap:12px;padding:16px 14px 14px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
+.zw-card-head{display:flex;align-items:baseline;justify-content:space-between;padding-inline:4px}
+.zw-card-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;line-height:1.3}
+.zw-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.zw-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 4px 8px;border:0;border-radius:18px;background:transparent;color:inherit;font-family:inherit;cursor:pointer;transition:transform .15s ease,background .2s ease}
+.zw-item:active{transform:scale(.97)}
+.zw-item.done{background:var(--zt-gold-soft)}
+.zw-mini{position:relative;width:72px;height:72px;display:block}
+.zw-mini>svg{display:block;width:72px;height:72px;transform:rotate(-90deg)}
+.zw-mini circle{fill:none;stroke-width:7}
+.zw-mini .bg{stroke:var(--zt-track)}
+.zw-mini .fg{stroke:var(--zt-gold);stroke-linecap:round;stroke-dasharray:213.6;transition:stroke-dashoffset .6s cubic-bezier(.3,.8,.2,1)}
+.zw-mini .full{fill:#C59A4A;stroke:#C59A4A}
+:root[data-zk-theme="dark"] .zw-mini .full{fill:#E4C980;stroke:#E4C980}
+.zw-mini-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.zw-mini-mid b{font-size:18px;line-height:1.1}
+.zw-mini-mid small{font-size:9px;color:var(--zt-muted)}
+.zw-check{width:28px;height:28px;fill:none;stroke:#FFF9EA;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+:root[data-zk-theme="dark"] .zw-check{stroke:#173E35}
+.zw-name{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:15px;line-height:1.4;text-align:center}
+@media (min-width:860px){.zt-wird{grid-column:1/-1;order:3}}
+
+/* ── شاشة العدّ: داكنة في الوضعين ── */
+.zw-screen{position:fixed;inset:0;z-index:136;display:flex;flex-direction:column;gap:14px;box-sizing:border-box;
+  padding:max(18px,env(safe-area-inset-top)) 18px max(22px,env(safe-area-inset-bottom));
+  background:radial-gradient(circle at 50% 38%,rgba(228,201,128,.12),transparent 22rem),linear-gradient(160deg,#0D3C35,#061F1D);
+  color:#FFF9EA;font-family:"Alexandria",Tahoma,Arial,sans-serif;animation:ztFade .2s ease both}
+.zw-screen[hidden]{display:none}
+.zw-screen>*{width:100%;max-width:520px;margin-inline:auto}
+.zw-head{display:flex;align-items:center;justify-content:space-between;min-height:48px}
+.zw-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px 0 14px;border:1px solid rgba(228,201,128,.24);border-radius:14px;background:transparent;color:#FFF9EA;font:inherit;font-size:13px;cursor:pointer}
+.zw-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.zw-head-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;color:#E4C980}
+.zw-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;border-radius:18px;background:rgba(255,249,234,.06)}
+.zw-tab{min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;border:0;border-radius:14px;
+  background:transparent;color:rgba(255,249,234,.82);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer}
+.zw-tab small{font-size:10px;opacity:.8;font-weight:500}
+.zw-tab[aria-selected="true"]{background:#E4C980;color:#173E35}
+.zw-text{margin:8px 0 0;text-align:center;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:32px;line-height:1.5}
+.zw-tap{flex:1;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:0;border:0;border-radius:32px;
+  background:transparent;color:inherit;font:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.zw-tap:active .zw-ring{transform:scale(.985)}
+.zw-ring{position:relative;display:block;width:260px;height:260px;transition:transform .08s ease}
+.zw-ring>svg{display:block;width:260px;height:260px;transform:rotate(-90deg)}
+.zw-ring .disc{fill:rgba(255,249,234,.03);transition:fill .3s ease}
+.zw-ring .bg{fill:none;stroke:rgba(255,249,234,.10);stroke-width:12}
+.zw-ring .arc{fill:none;stroke:#E4C980;stroke-width:12;stroke-linecap:round;stroke-dasharray:691.15;transition:stroke-dashoffset .25s ease}
+.zw-tap.done .zw-ring .disc{fill:#E4C980}
+.zw-ring-mid{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.zw-live,.zw-full{display:flex;flex-direction:column;align-items:center;gap:2px}
+.zw-live b{font-size:72px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.zw-live small{font-size:14px;color:rgba(255,249,234,.66)}
+.zw-full{display:none;color:#173E35;font-size:15px;font-weight:700}
+.zw-full svg{width:64px;height:64px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.zw-tap.done .zw-live{display:none}
+.zw-tap.done .zw-full{display:flex}
+.zw-hint{font-size:13px;color:rgba(255,249,234,.70)}
+.zw-foot{display:flex;justify-content:center}
+.zw-reset{min-height:44px;padding:0 18px;border:1px solid rgba(228,201,128,.24);border-radius:14px;background:transparent;color:rgba(255,249,234,.82);font:inherit;font-size:13px;cursor:pointer}
+@media (max-height:700px){.zw-ring,.zw-ring>svg{width:210px;height:210px}.zw-live b{font-size:58px}.zw-text{font-size:27px}}
+
 /* Bottom navigation */
 .zk-tabs{position:fixed;z-index:130;inset:auto 0 0 0;box-sizing:border-box;height:calc(72px + env(safe-area-inset-bottom));
   padding:0 10px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));

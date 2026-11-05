@@ -12,6 +12,13 @@ const PRAYER_ICON=`<svg class="zk-icon" viewBox="0 0 25 24" fill="none" stroke="
 
 const PT_NAMES={fajr:"الفجر",sunrise:"الشروق",dhuhr:"الظهر",asr:"العصر",maghrib:"المغرب",isha:"العشاء"};
 const PT_ORDER=["fajr","sunrise","dhuhr","asr","maghrib","isha"];
+/* ظهر يوم الجمعة يُسمّى «الجمعة»، بيوم المدينة المختارة. */
+function ptName(key,at,tz){
+  if(key==="dhuhr"&&at){
+    try{if(new Intl.DateTimeFormat("en-US",{weekday:"short",timeZone:tz||undefined}).format(at)==="Fri")return "الجمعة"}catch(_){}
+  }
+  return PT_NAMES[key];
+}
 const PT_METHODS={
   MuslimWorldLeague:"رابطة العالم الإسلامي",
   UmmAlQura:"أم القرى — مكة المكرمة",

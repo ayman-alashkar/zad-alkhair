@@ -34,6 +34,9 @@ function ztPaintDates(){
   /* التاريخ الهجري نفسه الذي تعرضه شاشة المواقيت (prayer-screen.js). */
   try{ztEl("zt-hijri").textContent=zpHijriLong(zpTodayNoon())+" هـ"}catch(_){}
   try{ztEl("zt-greg").textContent=new Intl.DateTimeFormat("ar-EG",{weekday:"long",day:"numeric",month:"long"}).format(now)}catch(_){}
+  /* من مغرب الخميس إلى مغرب الجمعة (friday-wird.js). */
+  const greet=ztEl("zt-greet-title");
+  if(greet)greet.textContent=zfFriday().active?"جمعتكم مباركة":"السلام عليكم";
 }
 
 /* ── بطاقة الصلاة ── */
@@ -66,7 +69,7 @@ function ztPrayerRender(){
   ztPrayerTimes={prevAt,tz:cfg.tz,next:{key:next.key,at:next.at.getTime()}};
   const items=ZT_PRAYERS.map(k=>{
     const isNext=k===next.key;
-    return `<li class="${isNext?"is-next":""}"><span>${PT_NAMES[k]}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz)}</bdi></span></li>`;
+    return `<li class="${isNext?"is-next":""}"><span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz)}</bdi></span></li>`;
   }).join("");
   host.innerHTML=`<div class="zt-prayer-top"><span>الصلاة القادمة في ${esc(cfg.city)}</span><span class="zt-clock" id="zt-clock"></span></div>
     <div class="zt-arc">
@@ -76,7 +79,7 @@ function ztPrayerRender(){
         <g class="zt-sun-dot" id="zt-sun-dot"><circle r="9" fill="#E4C980" opacity=".25"/><circle r="5" fill="#FFF4CD"/></g>
       </svg>
       <div class="zt-arc-label">
-        <div class="zt-next-name">${PT_NAMES[next.key]}</div>
+        <div class="zt-next-name">${ptName(next.key,next.at,cfg.tz)}</div>
         <div class="zt-countdown" id="zt-countdown"></div>
       </div>
     </div>
@@ -89,7 +92,7 @@ function ztPrayerTick(){
   if(!ztPrayerTimes)return;
   const now=Date.now(),{prevAt,next}=ztPrayerTimes;
   const left=next.at-now;
-  if(left<=0){ztPrayerRender();return}
+  if(left<=0){ztRefresh();return}   /* وقت صلاة جديد: والمغرب يبدأ الجمعة وينهيها */
   const s=Math.floor(left/1000),two=n=>String(n).padStart(2,"0");
   const countdown=ztEl("zt-countdown");
   if(countdown)countdown.innerHTML='بعد <bdi dir="ltr">'+ztArabic(Math.floor(s/3600)+":"+two(Math.floor(s/60)%60)+":"+two(s%60))+"</bdi>";
@@ -280,7 +283,7 @@ function ztOnLaunchChange(){
 function ztRefresh(){
   ztPaintDates();
   if(ztView==="prayer")zpRender();
-  else{ztPrayerRender();ztReadingRender()}
+  else{ztPrayerRender();zfKahfRender();zwCardRender();ztReadingRender()}
 }
 /* صفحتان داخل طبقة الرئيسية: «اليوم» و«مواقيت الصلاة». */
 let ztView="today";

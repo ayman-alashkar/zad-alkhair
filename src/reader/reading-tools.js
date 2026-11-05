@@ -62,6 +62,7 @@ function archivePreviousVisit(item){
 function saveLastPosition(){
   storageJsonSet(STORAGE_KEYS.lastPosition,{page:currentPage,savedAt:Date.now()});
   recordJuzProgress(currentPage);
+  recordKahfVisit(currentPage);
 }
 /* ── تقدّم المستخدم في أجزائه من الختمة ──
    الرئيسية تحفظ ملخص الختمة النشطة (رمزها وأجزاء المستخدم). هنا يُحفظ أبعد صفحة
@@ -69,6 +70,15 @@ function saveLastPosition(){
    رابط الختمة (?code=…&juz=…) يُحسب أيضًا، لمن فتح جزءه قبل أن يمر بالرئيسية. */
 const JUZ_PROGRESS_KEY="zad:juz-progress-v1";
 const juzProgressEntry=(()=>{try{const e=readerEntryParams();return e.code&&e.juz?{code:e.code,juz:e.juz}:null}catch(_){return null}})();
+/* صفحات سورة الكهف التي فُتحت، بوقت آخر فتح لكلٍّ منها. تعدّها بطاقة الجمعة في
+   الرئيسية (friday-wird.js) لما بين مغرب الخميس ومغرب الجمعة. */
+function recordKahfVisit(page){
+  const p=Number(page);
+  if(!(p>=293&&p<=304))return;
+  const visits=storageJsonGet("zad:kahf-pages-v1",{})||{};
+  visits[p]=Date.now();
+  storageJsonSet("zad:kahf-pages-v1",visits);
+}
 function recordJuzProgress(page){
   const p=Number(page);
   if(!Number.isInteger(p))return;
