@@ -5698,6 +5698,7 @@ function listenPaint(){
   else refreshAudioDownloadButton(dl,st.s).then(()=>listenLabelDownload(dl)).catch(()=>{});
   listenPanel.querySelector(".zl-mini-name").textContent=`سورة ${listenSurahName(st.s)}`;
   listenPanel.querySelector(".zl-mini-ayah").textContent=listenAyahLine(st);
+  listenPanel.querySelector(".zl-mini-wave").classList.toggle("on",playing);
   const miniPlay=listenPanel.querySelector(".zl-mini-play");
   miniPlay.innerHTML=playing?LISTEN_ICONS.pause:LISTEN_ICONS.play;miniPlay.setAttribute("aria-label",playing?"إيقاف مؤقت":"تشغيل");
   listenPanel.querySelectorAll(".zl-row[data-surah]").forEach(row=>{
@@ -5957,7 +5958,7 @@ function openListenPage(){
   setListenUrl(true);
   const picks=(listenFriday()?LISTEN_PICKS:LISTEN_PICKS.slice(1).concat(18)).map(s=>`<button type="button" class="zl-chip${listenFriday()&&s===18?" gold":""}" data-pick="${s}">${escapeHtml(listenSurahName(s))}${listenFriday()&&s===18?" · يوم الجمعة":""}</button>`).join("");
   const panel=document.createElement("section");panel.className="zad-listen";panel.setAttribute("aria-label","مشغّل التلاوة");
-  panel.innerHTML=`<div class="zl-pattern" aria-hidden="true"></div><div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave on" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button><span class="zl-mini-bar" aria-hidden="true"><i></i></span></div>
+  panel.innerHTML=`<div class="zl-pattern" aria-hidden="true"></div><div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave zl-mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button><span class="zl-mini-bar" aria-hidden="true"><i></i></span></div>
   <div class="zl-scroll">
     <header class="zl-head"><h1>مشغّل التلاوة</h1><button type="button" class="zl-theme" aria-label="${document.documentElement.dataset.theme==="dark"?"تفعيل الوضع النهاري":"تفعيل الوضع الليلي"}"><svg class="zl-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.8 8.8 0 1 0 11.6 11.6Z"/></svg><svg class="zl-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button></header>
     <section class="zl-card" aria-label="مشغّل التلاوة"><div class="zl-card-pattern" aria-hidden="true"></div>
@@ -6020,7 +6021,7 @@ function openListenPage(){
   /* البطاقة إذا مُرِّرت خارج الشاشة يظهر شريط رفيع ثابت في الأعلى. */
   const mini=panel.querySelector(".zl-mini");
   listenObserver=new IntersectionObserver(([entry])=>{
-    const show=!entry.isIntersecting&&listenActive();
+    const show=!entry.isIntersecting;
     mini.classList.toggle("show",show);mini.setAttribute("aria-hidden",String(!show));
     mini.querySelector(".zl-mini-play").tabIndex=show?0:-1;
   },{root:scroll,threshold:0,rootMargin:"-40px 0px 0px 0px"});
@@ -6061,6 +6062,15 @@ function bindListenTabs(panel){
     setTimeout(()=>{location.href=link.getAttribute("href")},still?0:280);
   }));
 }
+/* وكذلك في القارئ: الرجوع إليه من الرئيسية يعيد المؤشر إلى القسم الظاهر. */
+window.addEventListener("pageshow",event=>{
+  if(!event.persisted)return;
+  document.querySelectorAll(".reader-app-tabs").forEach(tabs=>{
+    const current=tabs.closest(".zad-listen")?"listen":"quran";
+    const links=[...tabs.querySelectorAll("a[data-app-tab]")];
+    links.forEach((a,i)=>{if(a.dataset.appTab===current){a.setAttribute("aria-current","page");tabs.style.setProperty("--app-tab-i",String(i))}else a.removeAttribute("aria-current")});
+  });
+});
 audio.addEventListener("timeupdate",()=>{if(listenIsOpen())listenTick()});
 audio.addEventListener("loadedmetadata",()=>{if(listenIsOpen())listenTick()});
 /* ---------- theme + tap states ---------- */

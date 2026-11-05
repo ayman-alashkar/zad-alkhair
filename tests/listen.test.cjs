@@ -26,7 +26,7 @@ test("the listen page lives in the reader, so playback is shared with the mushaf
 
 test("ayah counts use the Arabic plural, and the arc maps back to the same fraction",()=>{
   const src=read("src/reader/listen.js");
-  const ctx=vm.createContext({ar:n=>String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[+d]),READER_APP_TABS:"",audio:{addEventListener(){}},HUB_SHARE_ICON:""});
+  const ctx=vm.createContext({ar:n=>String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[+d]),READER_APP_TABS:"",window:{addEventListener(){}},audio:{addEventListener(){}},HUB_SHARE_ICON:""});
   vm.runInContext(src,ctx);
   assert.equal(ctx.listenAyahCount(7),"٧ آيات");
   assert.equal(ctx.listenAyahCount(286),"٢٨٦ آية");
