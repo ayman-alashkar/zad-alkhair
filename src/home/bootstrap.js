@@ -118,6 +118,7 @@ function zkShowLaunch(){
   zkLaunch.classList.add("show");
   zkLaunch.setAttribute("aria-hidden","false");
   ztOnLaunchChange();
+  zkSyncSection();
 }
 function zkHideLaunch(){
   if(!zkLaunch)return;
@@ -126,6 +127,7 @@ function zkHideLaunch(){
   document.documentElement.classList.remove("zk-launch-open");
   document.body.classList.remove("zk-launch-open");
   ztOnLaunchChange();
+  zkSyncSection();
 }
 const zkRootGuardToken=`${Date.now()}-${Math.random().toString(36).slice(2)}`;
 let zkExitPressedAt=0,zkExitRearmTimer=null;
@@ -181,10 +183,16 @@ window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
 const zkIncomingKhatmah=zkCaptureIncomingKhatmah();
 const zkSection=new URLSearchParams(location.search).get("section");
-/* «?section=» (من شريط القارئ أو صفحة الدليل) يُستعمل مرة واحدة ثم يُزال من العنوان،
-   وإلا أعاد التحديث فتح الختمات أو المواقيت مهما كانت الشاشة الظاهرة. */
-if(zkSection){
-  try{const url=new URL(location.href);url.searchParams.delete("section");history.replaceState(history.state,"",url.href)}catch(_){}
+/* العنوان يتبع الشاشة الظاهرة («?section=khatmahs» أو «prayer»، ولا شيء للرئيسية)،
+   فيعيد التحديث فتح الشاشة نفسها، لا ما فُتح به التطبيق أول مرة. */
+function zkSyncSection(){
+  const section=!zkLaunchVisible()?"khatmahs":ztView==="prayer"?"prayer":"";
+  try{
+    const url=new URL(location.href);
+    if((url.searchParams.get("section")||"")===section)return;
+    if(section)url.searchParams.set("section",section);else url.searchParams.delete("section");
+    history.replaceState(history.state,"",url.href);
+  }catch(_){}
 }
 if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}

@@ -177,12 +177,18 @@ test("after all three adhkar reach 100 the wird card shrinks to one line that st
   await context.close();
 });
 
-test("opening the khatmahs from the reader's tab bar does not make every later reload open them", async () => {
+test("a reload stays on the screen that is showing (home, khatmahs or prayer times)", async () => {
   const { page, errors, context } = await phonePage();
   await page.goto(BASE + "/?section=khatmahs", { waitUntil: "load" });
+  await page.reload({ waitUntil: "load" });
+  assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), false, "still khatmahs");
+  await page.click("#zk-tab-home");
   assert.equal(new URL(page.url()).searchParams.get("section"), null);
   await page.reload({ waitUntil: "load" });
-  assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), true);
+  assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), true, "home after reload");
+  await page.click("#zk-launch-prayer");
+  await page.reload({ waitUntil: "load" });
+  assert.equal(await page.evaluate(() => !document.getElementById("zt-prayer-page").hidden), true, "prayer after reload");
   assert.deepEqual(errors, []);
   await context.close();
 });

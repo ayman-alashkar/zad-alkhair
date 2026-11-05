@@ -296,6 +296,7 @@ function ztSetView(view){
   if(scroll)scroll.scrollTop=0;
   if(ztView==="prayer")zpReset();
   ztPaintTabs();ztMenu(false);
+  if(typeof zkSyncSection==="function")zkSyncSection();
   if(document.body.classList.contains("zk-launch-open"))ztRefresh();
 }
 
