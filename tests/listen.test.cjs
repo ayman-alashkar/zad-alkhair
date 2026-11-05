@@ -2,11 +2,11 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const root=path.resolve(__dirname,"..");
 const read=f=>fs.readFileSync(path.join(root,f),"utf8");
 
-test("both tab bars carry the same five sections, with «الاستماع» third",()=>{
+test("both tab bars carry the same five sections, with «التلاوة» third",()=>{
   const home=read("src/home/index.html"),lib=read("src/reader/library.js");
   const homeLabels=[...home.matchAll(/class="zk-tab"[\s\S]*?data-label="([^"]+)"/g)].map(m=>m[1]);
   const readerLabels=[...lib.matchAll(/data-app-tab="[a-z]+"><svg[\s\S]*?data-label="([^"]+)"/g)].map(m=>m[1]);
-  assert.deepEqual(homeLabels,["الرئيسية","القرآن","الاستماع","الختمات","المواقيت"]);
+  assert.deepEqual(homeLabels,["الرئيسية","القرآن","التلاوة","الختمات","المواقيت"]);
   assert.deepEqual(readerLabels,homeLabels);
   for(const css of [read("src/home/styles.css"),read("src/reader/styles.css")])assert.doesNotMatch(css,/tabs[^{]*\{[^}]*repeat\(4,/);
 });

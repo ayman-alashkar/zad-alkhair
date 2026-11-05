@@ -1,8 +1,9 @@
-/* ---------- تبويب «الاستماع»: واجهة ثانية لمشغّل التلاوة نفسه ----------
+/* ---------- تبويب «التلاوة»: واجهة ثانية لمشغّل التلاوة نفسه ----------
    الصفحة لا تملك مشغّلًا خاصًا بها: كل تشغيل وإيقاف وتنقّل يمرّ بمحرّك المصحف
    (playCurrent وstepPlayer وغيرهما). لذلك تستمر التلاوة بين الاستماع والمصحف
    والفهرس، لأنها كلها في هذه الصفحة. تُرسم الواجهة من حالة المحرّك عند كل تغيير. */
 const LISTEN_LAST_KEY="zad:listen:last-v1";
+const LISTEN_FAVS_KEY="zad:listen:favorites-v1";
 const LISTEN_PICKS=[18,67,36,56,55];
 const ARC_LEN=301.6;
 const LISTEN_ICONS={
@@ -16,6 +17,7 @@ const LISTEN_ICONS={
   chevron:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
   search:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>',
   check:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2s-7.5-4.4-9.1-9.3C1.8 7.4 4 4.3 7.3 4.3c2 0 3.5 1.1 4.7 2.8 1.2-1.7 2.7-2.8 4.7-2.8 3.3 0 5.5 3.1 4.4 6.6-1.6 4.9-9.1 9.3-9.1 9.3Z"/></svg>',
   headphones:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/></svg>'
 };
 let readerReturnToListen=false;
@@ -38,6 +40,14 @@ function listenRemember(){
 }
 /* «٧ آيات» و«٨٦ آية»: جمع القلة من ٣ إلى ١٠. */
 function listenAyahCount(n){n=Number(n)||0;return `${ar(n)} ${n>=3&&n<=10?"آيات":"آية"}`}
+function listenFavorites(){const v=storageJsonGet(LISTEN_FAVS_KEY,[]);return Array.isArray(v)?v.map(Number).filter(n=>n>=1&&n<=114):[]}
+function listenIsFavorite(s){return listenFavorites().includes(Number(s))}
+function listenToggleFavorite(s){
+  s=Number(s);const list=listenFavorites(),on=!list.includes(s);
+  storageJsonSet(LISTEN_FAVS_KEY,on?[...list,s]:list.filter(n=>n!==s));
+  showToast(on?`أُضيفت سورة ${listenSurahName(s)} إلى المفضلة`:`أُزيلت سورة ${listenSurahName(s)} من المفضلة`);
+  if(listenTab==="f")listenRedrawLists();else listenPaint();
+}
 function listenFriday(){return new Date().getDay()===5}
 
 /* تقدّم السورة كلها، لا تقدّم الآية: في تلاوة الآية آيةً آية يُحسب من رقم الآية وموضعها. */
@@ -65,6 +75,7 @@ function listenTick(){
   if(!listenIsOpen()||listenDrag)return;
   const p=listenActive()?listenProgress():{f:0,timed:false};
   listenPaintArc(p.f);
+  const bar=listenPanel.querySelector(".zl-mini-bar i");if(bar)bar.style.transform=`scaleX(${p.f.toFixed(4)})`;
   const time=listenPanel.querySelector(".zl-time");
   if(time){
     time.hidden=!p.timed;
@@ -105,6 +116,9 @@ function listenPaint(){
   rep.classList.toggle("on",repeatMode!=="off");rep.dataset.badge=repeatMode==="one"?"١":repeatMode==="all"?"∞":"";
   rep.setAttribute("aria-pressed",String(repeatMode!=="off"));
   rep.setAttribute("aria-label",repeatMode==="one"?"تكرار السورة":repeatMode==="all"?"تكرار المصحف":"التكرار متوقف");
+  const heart=card.querySelector(".zl-heart"),fav=listenIsFavorite(st.s);
+  heart.classList.toggle("on",fav);heart.setAttribute("aria-pressed",String(fav));
+  heart.setAttribute("aria-label",fav?`إزالة سورة ${listenSurahName(st.s)} من المفضلة`:`إضافة سورة ${listenSurahName(st.s)} إلى المفضلة`);
   const more=card.querySelector(".zl-more");
   more.classList.toggle("on",!!(sleepDeadline||sleepAfterSurah)||play.speed!==1);
   card.querySelector(".zl-qari-mono").textContent=listenMonogram(st.r);
@@ -154,16 +168,6 @@ async function listenPlaySurah(s,a=1){
   const from=isSurahOnly()?1:Math.max(1,Math.min(maxAyah(s),Number(a)||1));
   play={surah:s,from,to:from,current:from,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
   pendingSurahBasmala=from===1&&s!==1&&s!==9;basmalaFallbackTarget=null;
-  await playCurrent(false);
-}
-async function listenPlayJuz(j){
-  if(isSurahOnly()){showToast("تشغيل الجزء يحتاج قارئاً يدعم تحديد الآيات. يمكنك اختيار سورة كاملة بهذا الصوت.");return}
-  j=Math.max(1,Math.min(30,Number(j)||1));const start=LOCAL_HIZB_QUARTERS[(j-1)*8];
-  const next=j<30?LOCAL_HIZB_QUARTERS[j*8]:null,stop=next?previousAyahRef(Number(next[0]),Number(next[1])):{s:114,a:maxAyah(114)};
-  if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(Number(start[0]),{chooseWhenMultiple:true}))return;
-  setIndexPlaybackBoundary(stop);continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");
-  play={surah:Number(start[0]),from:Number(start[1]),to:Number(start[1]),current:Number(start[1]),repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
-  pendingSurahBasmala=false;basmalaFallbackTarget=null;
   await playCurrent(false);
 }
 async function listenMain(){
@@ -261,7 +265,6 @@ function listenOpenMore(){
     <div class="zl-more-block"><div class="zl-more-title">السرعة</div><div class="zl-speeds">${speedsRow}</div></div>
     <button type="button" class="zl-more-row" data-more="timer"><span class="zl-more-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M12 9v4l3 2M9 2h6M12 2v3"/></svg></span><span class="zl-more-copy"><b>مؤقت الإيقاف</b><small>${timer}</small></span>${LISTEN_ICONS.chevron}</button>
     <button type="button" class="zl-more-row" data-more="continue" role="switch" aria-checked="${continuousMode}"><span class="zl-more-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h11M4 12h8M4 17h6"/><path d="m15 13 5 3.5-5 3.5Z"/></svg></span><span class="zl-more-copy"><b>متابعة التلاوة</b><small>إذا انتهت السورة تبدأ التي بعدها</small></span><span class="zl-switch" aria-hidden="true"></span></button>
-    ${listenActive()?`<button type="button" class="zl-more-row danger" data-more="stop"><span class="zl-more-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span><span class="zl-more-copy"><b>إيقاف التلاوة</b><small>إغلاق المشغّل</small></span></button>`:""}
   </div>`);
   b.classList.add("player-backdrop","zl-sheet");
   b.querySelectorAll("[data-speed]").forEach(btn=>btn.onclick=()=>{
@@ -273,7 +276,23 @@ function listenOpenMore(){
     document.getElementById("continuousBtn").click();
     e.currentTarget.setAttribute("aria-checked",String(continuousMode));
   };
-  const stop=b.querySelector('[data-more="stop"]');if(stop)stop.onclick=()=>{b.remove();stopPlayer();listenPaint()};
+}
+/* تنزيل سورة بصوت قارئ غير المختار: يصير هو القارئ، لأن من نزّلها يريد سماعها بصوته.
+   لا تُقطع تلاوة سورة أخرى جارية؛ وإن كانت السورة نفسها تُتلى، يكمل بالصوت الجديد من الآية نفسها. */
+function listenOnDownloaded(pkg){
+  if(!listenIsOpen()||!pkg?.key)return;
+  const[id,sRaw]=String(pkg.key).split(":"),s=Number(sRaw),r=RECITERS.find(x=>x.id===id);
+  if(!r||r.id===reciter.id)return;
+  if(listenActive()&&Number(play.surah)!==s){showToast(`نُزّلت سورة ${listenSurahName(s)} بصوت ${listenReciterName(r)}`);return}
+  if(listenActive()){
+    const q=document.getElementById("panelQari");populateReciters();q.value=r.id;q.dispatchEvent(new Event("change"));
+  }else{
+    listenQuietReciter(r);
+    const last=listenLast();
+    storageJsonSet(LISTEN_LAST_KEY,last&&last.s===s?{...last,q:r.id,at:Date.now()}:{s,a:1,q:r.id,at:Date.now()});
+    updatePlayer();
+  }
+  listenPaint();
 }
 /* «اقرأ مع التلاوة»: إلى صفحة الآية الجارية في المصحف، والتلاوة مستمرة. */
 async function listenReadAlong(){
@@ -294,35 +313,24 @@ async function listenReadAlong(){
   }
   armReaderBackGuard();
 }
-function listenShare(){
-  const st=listenCardState(),name=listenSurahName(st.s);
-  shareHubPayload({title:`سورة ${name} | زاد الخير`,url:publicSurahUrl(st.s)});
+function listenShareSurah(s){
+  shareHubPayload({title:`سورة ${listenSurahName(s)} | زاد الخير`,url:publicSurahUrl(s)});
 }
+function listenShare(){listenShareSurah(listenCardState().s)}
 
 /* ---------- القوائم ---------- */
 function listenSurahRow(ch){
   const s=Number(ch.id),row=document.createElement("div");
   row.className="zl-row";row.dataset.surah=String(s);row.dataset.find=compactArabic(`${ch.name_arabic} ${s}`);
-  row.innerHTML=`<span class="zl-num">${ar(s)}</span><button type="button" class="zl-row-main" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}"><b>سورة ${escapeHtml(ch.name_arabic)}</b><small>${revelationArabic(ch.revelation_place)} · ${listenAyahCount(ch.verses_count)}</small></button><button type="button" class="zl-row-dl quran-index-action download"></button><button type="button" class="zl-row-play" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}">${LISTEN_ICONS.play}</button>`;
-  const go=()=>listenPlaySurah(s,1);
-  row.querySelector(".zl-row-main").onclick=go;row.querySelector(".zl-row-play").onclick=go;
+  row.innerHTML=`<span class="zl-num">${ar(s)}</span><button type="button" class="zl-row-main" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}"><b>سورة ${escapeHtml(ch.name_arabic)}</b><small>${revelationArabic(ch.revelation_place)} · ${listenAyahCount(ch.verses_count)}</small></button><button type="button" class="zl-row-dl quran-index-action download"></button><button type="button" class="zl-row-share" aria-label="مشاركة سورة ${escapeHtml(ch.name_arabic)}">${HUB_SHARE_ICON}</button>`;
+  row.querySelector(".zl-row-main").onclick=()=>listenPlaySurah(s,1);
+  row.querySelector(".zl-row-share").onclick=()=>listenShareSurah(s);
   bindSurahDownloadButton(row.querySelector(".zl-row-dl"),s);
   return row;
 }
 function listenDrawSurahs(host){
   const frag=document.createDocumentFragment();
   [...chapterMap.values()].sort((a,b)=>a.id-b.id).forEach(ch=>frag.appendChild(listenSurahRow(ch)));
-  host.replaceChildren(frag);
-}
-function listenDrawJuz(host){
-  const frag=document.createDocumentFragment();
-  for(let j=1;j<=30;j++){
-    const start=LOCAL_HIZB_QUARTERS[(j-1)*8],row=document.createElement("div");
-    row.className="zl-row zl-juz";
-    row.innerHTML=`<span class="zl-num">${ar(j)}</span><button type="button" class="zl-row-main"><b>الجزء ${ar(j)}</b><small>من سورة ${escapeHtml(listenSurahName(start[0]))}، الآية ${ar(start[1])}</small></button><button type="button" class="zl-row-play" aria-label="تشغيل الجزء ${ar(j)}">${LISTEN_ICONS.play}</button>`;
-    const go=()=>listenPlayJuz(j);row.querySelector(".zl-row-main").onclick=go;row.querySelector(".zl-row-play").onclick=go;
-    frag.appendChild(row);
-  }
   host.replaceChildren(frag);
 }
 function listenDrawDownloaded(host){
@@ -340,15 +348,22 @@ function listenDrawDownloaded(host){
     row.querySelector(".zl-row-main small").textContent=list.map(r=>r.name.replace(/^فضيلة\s+الشيخ\s+/,"")).join("، ");
     /* سورة منزّلة تُسمع بصوت من نُزّلت بصوته إن لم يكن القارئ الحالي منهم. */
     const go=()=>{if(!list.some(r=>r.id===reciter.id))listenQuietReciter(list[0]);listenPlaySurah(s,1);listenPaint()};
-    row.querySelector(".zl-row-main").onclick=go;row.querySelector(".zl-row-play").onclick=go;
+    row.querySelector(".zl-row-main").onclick=go;
     frag.appendChild(row);
   });
+  host.replaceChildren(frag);
+}
+function listenDrawFavorites(host){
+  const list=listenFavorites();
+  if(!list.length){host.innerHTML=`<div class="zl-empty"><b>لا توجد سور مفضلة بعد</b><span>اضغط القلب في المشغّل لتضيف السورة التي تُتلى إلى المفضلة.</span></div>`;return}
+  const frag=document.createDocumentFragment();
+  list.forEach(s=>{const ch=chapterMap.get(s);if(ch)frag.appendChild(listenSurahRow(ch))});
   host.replaceChildren(frag);
 }
 function listenRedrawLists(){
   if(!listenIsOpen())return;
   const host=listenPanel.querySelector(".zl-list");
-  if(listenTab==="j")listenDrawJuz(host);else if(listenTab==="d")listenDrawDownloaded(host);else listenDrawSurahs(host);
+  if(listenTab==="f")listenDrawFavorites(host);else if(listenTab==="d")listenDrawDownloaded(host);else listenDrawSurahs(host);
   listenFilter();listenPaint();
 }
 function listenFilter(){
@@ -357,9 +372,9 @@ function listenFilter(){
   listenPanel.querySelectorAll(".zl-list .zl-row[data-find]").forEach(row=>{row.hidden=!!q&&!row.dataset.find.includes(q)});
 }
 function listenSetTab(kind){
-  listenTab=["s","j","d"].includes(kind)?kind:"s";
+  listenTab=["s","f","d"].includes(kind)?kind:"s";
   listenPanel.querySelectorAll(".zl-seg button").forEach(b=>b.classList.toggle("on",b.dataset.tab===listenTab));
-  listenPanel.querySelector(".zl-search").hidden=listenTab==="j";
+  listenPanel.querySelector(".zl-search").hidden=listenTab!=="s";
   listenRedrawLists();
 }
 
@@ -371,11 +386,12 @@ function openListenPage(){
   document.querySelector(".quran-index")?.remove();
   setListenUrl(true);
   const picks=(listenFriday()?LISTEN_PICKS:LISTEN_PICKS.slice(1).concat(18)).map(s=>`<button type="button" class="zl-chip${listenFriday()&&s===18?" gold":""}" data-pick="${s}">${escapeHtml(listenSurahName(s))}${listenFriday()&&s===18?" · يوم الجمعة":""}</button>`).join("");
-  const panel=document.createElement("section");panel.className="zad-listen";panel.setAttribute("aria-label","الاستماع");
-  panel.innerHTML=`<div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave on" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button></div>
+  const panel=document.createElement("section");panel.className="zad-listen";panel.setAttribute("aria-label","مشغّل التلاوة");
+  panel.innerHTML=`<div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave on" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button><span class="zl-mini-bar" aria-hidden="true"><i></i></span></div>
   <div class="zl-scroll">
-    <header class="zl-head"><h1>الاستماع</h1><p>القرآن العظيم بأصوات القرّاء</p></header>
+    <header class="zl-head"><h1>مشغّل التلاوة</h1></header>
     <section class="zl-card" aria-label="مشغّل التلاوة">
+      <button type="button" class="zl-heart" aria-pressed="false">${LISTEN_ICONS.heart}</button>
       <div class="zl-eyebrow"></div>
       <div class="zl-arc">
         <svg viewBox="-8 -2 236 124" aria-label="موضع التلاوة، اسحب للتنقل" role="img">
@@ -402,7 +418,7 @@ function openListenPage(){
     </section>
     <section class="zl-picks" aria-label="مختارات"><h2>مختارات</h2><div class="zl-chips">${picks}</div></section>
     <section class="zl-browse">
-      <div class="zl-seg" role="tablist"><button type="button" data-tab="s" class="on">السور</button><button type="button" data-tab="j">الأجزاء</button><button type="button" data-tab="d">المنزّلة</button></div>
+      <div class="zl-seg" role="tablist"><button type="button" data-tab="s" class="on">السور</button><button type="button" data-tab="f">المفضلة</button><button type="button" data-tab="d">المنزّلة</button></div>
       <label class="zl-search">${LISTEN_ICONS.search}<input type="search" placeholder="ابحث عن سورة" aria-label="ابحث عن سورة" enterkeyhint="search"></label>
       <div class="zl-list"></div>
     </section>
@@ -418,6 +434,7 @@ function openListenPage(){
   card.querySelector(".zl-qari").onclick=listenOpenReciters;
   card.querySelector(".zl-read").onclick=listenReadAlong;
   card.querySelector(".zl-share").onclick=listenShare;
+  card.querySelector(".zl-heart").onclick=()=>listenToggleFavorite(listenCardState().s);
   listenBindArc(card.querySelector(".zl-arc svg"));
   panel.querySelector(".zl-mini-open").onclick=()=>scroll.scrollTo({top:0,behavior:"smooth"});
   panel.querySelector(".zl-mini-play").onclick=listenMain;

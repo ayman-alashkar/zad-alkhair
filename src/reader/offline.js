@@ -61,7 +61,7 @@ if("serviceWorker" in navigator){
     }else if(data.type==="AUDIO_OFFLINE_DONE"){
       const tag=String(data.tag||""),job=audioDownloadJobs.get(tag);if(!job)return;
       audioDownloadJobs.delete(tag);
-      if(Number(data.failed)===0){putAudioOfflinePackage(job.pkg);setAudioDownloadButton(job.btn,"downloaded");showToast("أصبحت السورة متاحة للتشغيل دون اتصال")}
+      if(Number(data.failed)===0){putAudioOfflinePackage(job.pkg);setAudioDownloadButton(job.btn,"downloaded");listenOnDownloaded(job.pkg);showToast("أصبحت السورة متاحة للتشغيل دون اتصال")}
       else{refreshAudioDownloadButton(job.btn,job.s).catch(()=>setAudioDownloadButton(job.btn,"available"));showToast("تعذّر تنزيل السورة كاملة، حاول مرة أخرى")}
     }
   });
