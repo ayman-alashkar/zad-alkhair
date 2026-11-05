@@ -1227,11 +1227,13 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 
 /* ── بطاقة سورة الكهف (الجمعة) ── */
 .zt-kahf[hidden]{display:none}
-.zf-kahf{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #C59A4A;border-radius:22px;
-  background:linear-gradient(135deg,rgba(197,154,74,.16),rgba(197,154,74,.05)),var(--zt-surface);color:var(--zt-ink);text-decoration:none;transition:transform .15s ease}
-.zf-kahf:active{transform:scale(.98)}
-.zf-kahf.progress{flex-direction:column;align-items:stretch;gap:12px}
-.zf-kahf.done{border-color:var(--zt-line);background:var(--zt-surface)}
+.zf-kahf{display:flex;flex-direction:column;gap:14px;padding:16px;border:1px solid #C59A4A;border-radius:22px;
+  background:linear-gradient(135deg,rgba(197,154,74,.16),rgba(197,154,74,.05)),var(--zt-surface);color:var(--zt-ink)}
+.zf-kahf.done{flex-direction:row;align-items:center;padding:14px 16px;border-color:var(--zt-line);background:var(--zt-surface)}
+.zf-kahf-hadith{margin:0;font-family:"Amiri",serif;font-size:18px;line-height:1.9}
+.zf-kahf-row{display:flex;align-items:center;gap:12px}
+.zf-kahf-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.zf-kahf-count{font-size:12px;font-weight:600}
 .zf-kahf-badge{flex:none;width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:#0D3C35;color:#E4C980}
 .zf-kahf-badge svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .zf-kahf.done .zf-kahf-badge{border-radius:50%;background:#C59A4A;color:#FFF9EA}
@@ -1239,10 +1241,14 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 :root[data-zk-theme="dark"] .zf-kahf-badge{background:rgba(228,201,128,.14)}
 :root[data-zk-theme="dark"] .zf-kahf.done .zf-kahf-badge{background:#E4C980;color:#173E35}
 .zf-kahf-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:21px;line-height:1.35}
-.zf-kahf-go{flex:none;color:var(--zt-gold)}
-.zf-kahf-go svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── «وردك اليوم» في الرئيسية ── */
+.zw-done{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid var(--zt-line);border-radius:22px;
+  background:var(--zt-surface);color:var(--zt-ink);font:inherit;text-align:start;cursor:pointer}
+.zw-done-badge{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#C59A4A;color:#FFF9EA}
+:root[data-zk-theme="dark"] .zw-done-badge{background:#E4C980;color:#173E35}
+.zw-done-badge svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.zw-done-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:19px;line-height:1.35}
 .zw-card{display:flex;flex-direction:column;gap:12px;padding:16px 14px 14px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
 .zw-card-head{display:flex;align-items:baseline;justify-content:space-between;padding-inline:4px}
 .zw-card-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;line-height:1.3}

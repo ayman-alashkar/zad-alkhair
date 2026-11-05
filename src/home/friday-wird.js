@@ -46,22 +46,25 @@ function zfKahfRender(){
   let html="";
   if(win.active){
     const {read,total,next}=zfKahfState(win);
-    const icon=`<span class="zf-kahf-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span>`;
-    const chevron=`<span class="zf-kahf-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></span>`;
+    const book=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg>`;
     if(read>=total){
       html=`<div class="zf-kahf done" role="status">
         <span class="zf-kahf-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
         <span class="zt-card-text"><span class="zt-eyebrow">سورة الكهف</span><span class="zf-kahf-title">قرأتها اليوم، تقبّل الله منك</span></span></div>`;
     }else if(read===0){
-      html=`<a class="zf-kahf" href="reader.html?page=${ZF_KAHF_PAGES[0]}&amp;from=zad">${icon}
-        <span class="zt-card-text"><span class="zt-eyebrow">سنّة يوم الجمعة</span><span class="zf-kahf-title">هل قرأت سورة الكهف اليوم؟</span>
-        <span class="zt-sub">${ztArabic(total)} صفحة · من الصفحة ${ztArabic(ZF_KAHF_PAGES[0])}</span></span>${chevron}</a>`;
+      /* الحديث سببٌ للقراءة، والزر يقول بوضوح ماذا يحدث عند الضغط. */
+      html=`<section class="zf-kahf" aria-label="سورة الكهف">
+        <blockquote class="zf-kahf-hadith">«من قرأ سورة الكهف يوم الجمعة، أضاء له من النور ما بين الجمعتين»</blockquote>
+        <div class="zf-kahf-row"><a class="zt-btn" href="reader.html?page=${ZF_KAHF_PAGES[0]}&amp;from=zad">${book}<span>اقرأ سورة الكهف</span></a>
+          <span class="zt-sub">${ztArabic(total)} صفحة</span></div></section>`;
     }else{
-      html=`<a class="zf-kahf progress" href="reader.html?page=${next}&amp;from=zad">
-        <span class="zt-card-row">${icon}
-          <span class="zt-card-text"><span class="zt-eyebrow">سورة الكهف</span><span class="zf-kahf-title">تابع من الصفحة ${ztArabic(next)}</span></span>${chevron}</span>
-        <span class="zt-progress"><span class="zt-progress-row"><span>قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span><span>بقي ${ztArabic(total-read)}</span></span>
-          <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></span></a>`;
+      const left=total-read;
+      html=`<section class="zf-kahf" aria-label="سورة الكهف">
+        <div class="zt-progress">
+          <div class="zf-kahf-head"><span class="zf-kahf-title">سورة الكهف</span><span class="zt-sub">بقي ${ztArabic(left)} ${left===1?"صفحة":left===2?"صفحتان":left<=10?"صفحات":"صفحة"}</span></div>
+          <span class="zf-kahf-count">قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span>
+          <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></div>
+        <a class="zt-btn" href="reader.html?page=${next}&amp;from=zad">${book}<span>تابع من الصفحة ${ztArabic(next)}</span></a></section>`;
     }
   }
   if(host.dataset.zfHtml===html)return;
@@ -107,7 +110,13 @@ function zwCardRender(){
   const host=ztEl("zt-wird");
   if(!host)return;
   const {counts}=zwLoad();
-  const html=`<section class="zw-card" aria-label="وردك اليوم">
+  /* بعد إتمام الأذكار الثلاثة تنكمش البطاقة إلى سطر، ويبقى الضغط عليه يفتح شاشة العدّ. */
+  const html=counts.every(n=>n>=ZW_GOAL)
+    ?`<button class="zw-done" type="button" data-zw-open="0">
+        <span class="zw-done-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <span class="zt-card-text"><span class="zt-eyebrow">وردك اليوم</span><span class="zw-done-title">أتممته، تقبّل الله منك</span></span>
+        <span class="zt-sub">يتجدّد بعد الفجر</span></button>`
+    :`<section class="zw-card" aria-label="وردك اليوم">
     <div class="zw-card-head"><span class="zw-card-title">وردك اليوم</span><span class="zt-sub">يتجدّد بعد الفجر</span></div>
     <div class="zw-items">${ZW_ITEMS.map((it,i)=>{
       const n=counts[i],done=n>=ZW_GOAL;

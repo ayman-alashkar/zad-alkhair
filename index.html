@@ -1272,11 +1272,13 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 
 /* ── بطاقة سورة الكهف (الجمعة) ── */
 .zt-kahf[hidden]{display:none}
-.zf-kahf{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid #C59A4A;border-radius:22px;
-  background:linear-gradient(135deg,rgba(197,154,74,.16),rgba(197,154,74,.05)),var(--zt-surface);color:var(--zt-ink);text-decoration:none;transition:transform .15s ease}
-.zf-kahf:active{transform:scale(.98)}
-.zf-kahf.progress{flex-direction:column;align-items:stretch;gap:12px}
-.zf-kahf.done{border-color:var(--zt-line);background:var(--zt-surface)}
+.zf-kahf{display:flex;flex-direction:column;gap:14px;padding:16px;border:1px solid #C59A4A;border-radius:22px;
+  background:linear-gradient(135deg,rgba(197,154,74,.16),rgba(197,154,74,.05)),var(--zt-surface);color:var(--zt-ink)}
+.zf-kahf.done{flex-direction:row;align-items:center;padding:14px 16px;border-color:var(--zt-line);background:var(--zt-surface)}
+.zf-kahf-hadith{margin:0;font-family:"Amiri",serif;font-size:18px;line-height:1.9}
+.zf-kahf-row{display:flex;align-items:center;gap:12px}
+.zf-kahf-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.zf-kahf-count{font-size:12px;font-weight:600}
 .zf-kahf-badge{flex:none;width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:#0D3C35;color:#E4C980}
 .zf-kahf-badge svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .zf-kahf.done .zf-kahf-badge{border-radius:50%;background:#C59A4A;color:#FFF9EA}
@@ -1284,10 +1286,14 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 :root[data-zk-theme="dark"] .zf-kahf-badge{background:rgba(228,201,128,.14)}
 :root[data-zk-theme="dark"] .zf-kahf.done .zf-kahf-badge{background:#E4C980;color:#173E35}
 .zf-kahf-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:21px;line-height:1.35}
-.zf-kahf-go{flex:none;color:var(--zt-gold)}
-.zf-kahf-go svg{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── «وردك اليوم» في الرئيسية ── */
+.zw-done{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid var(--zt-line);border-radius:22px;
+  background:var(--zt-surface);color:var(--zt-ink);font:inherit;text-align:start;cursor:pointer}
+.zw-done-badge{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#C59A4A;color:#FFF9EA}
+:root[data-zk-theme="dark"] .zw-done-badge{background:#E4C980;color:#173E35}
+.zw-done-badge svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.zw-done-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:19px;line-height:1.35}
 .zw-card{display:flex;flex-direction:column;gap:12px;padding:16px 14px 14px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
 .zw-card-head{display:flex;align-items:baseline;justify-content:space-between;padding-inline:4px}
 .zw-card-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;line-height:1.3}
@@ -1725,8 +1731,8 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
       <div class="zt-kahf zt-rise" id="zt-kahf" hidden></div>
       <div class="zt-grid">
         <section class="zt-prayer zt-rise" id="zt-prayer" aria-label="الصلاة القادمة" aria-live="off"></section>
-        <div class="zt-wird zt-rise" id="zt-wird"></div>
         <div class="zt-reading zt-rise" id="zt-reading"></div>
+        <div class="zt-wird zt-rise" id="zt-wird"></div>
       </div>
     </div>
     <div class="zt-page zp-page" id="zt-prayer-page" hidden></div>
@@ -5203,22 +5209,25 @@ function zfKahfRender(){
   let html="";
   if(win.active){
     const {read,total,next}=zfKahfState(win);
-    const icon=`<span class="zf-kahf-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span>`;
-    const chevron=`<span class="zf-kahf-go" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></span>`;
+    const book=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg>`;
     if(read>=total){
       html=`<div class="zf-kahf done" role="status">
         <span class="zf-kahf-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
         <span class="zt-card-text"><span class="zt-eyebrow">سورة الكهف</span><span class="zf-kahf-title">قرأتها اليوم، تقبّل الله منك</span></span></div>`;
     }else if(read===0){
-      html=`<a class="zf-kahf" href="reader.html?page=${ZF_KAHF_PAGES[0]}&amp;from=zad">${icon}
-        <span class="zt-card-text"><span class="zt-eyebrow">سنّة يوم الجمعة</span><span class="zf-kahf-title">هل قرأت سورة الكهف اليوم؟</span>
-        <span class="zt-sub">${ztArabic(total)} صفحة · من الصفحة ${ztArabic(ZF_KAHF_PAGES[0])}</span></span>${chevron}</a>`;
+      /* الحديث سببٌ للقراءة، والزر يقول بوضوح ماذا يحدث عند الضغط. */
+      html=`<section class="zf-kahf" aria-label="سورة الكهف">
+        <blockquote class="zf-kahf-hadith">«من قرأ سورة الكهف يوم الجمعة، أضاء له من النور ما بين الجمعتين»</blockquote>
+        <div class="zf-kahf-row"><a class="zt-btn" href="reader.html?page=${ZF_KAHF_PAGES[0]}&amp;from=zad">${book}<span>اقرأ سورة الكهف</span></a>
+          <span class="zt-sub">${ztArabic(total)} صفحة</span></div></section>`;
     }else{
-      html=`<a class="zf-kahf progress" href="reader.html?page=${next}&amp;from=zad">
-        <span class="zt-card-row">${icon}
-          <span class="zt-card-text"><span class="zt-eyebrow">سورة الكهف</span><span class="zf-kahf-title">تابع من الصفحة ${ztArabic(next)}</span></span>${chevron}</span>
-        <span class="zt-progress"><span class="zt-progress-row"><span>قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span><span>بقي ${ztArabic(total-read)}</span></span>
-          <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></span></a>`;
+      const left=total-read;
+      html=`<section class="zf-kahf" aria-label="سورة الكهف">
+        <div class="zt-progress">
+          <div class="zf-kahf-head"><span class="zf-kahf-title">سورة الكهف</span><span class="zt-sub">بقي ${ztArabic(left)} ${left===1?"صفحة":left===2?"صفحتان":left<=10?"صفحات":"صفحة"}</span></div>
+          <span class="zf-kahf-count">قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span>
+          <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></div>
+        <a class="zt-btn" href="reader.html?page=${next}&amp;from=zad">${book}<span>تابع من الصفحة ${ztArabic(next)}</span></a></section>`;
     }
   }
   if(host.dataset.zfHtml===html)return;
@@ -5264,7 +5273,13 @@ function zwCardRender(){
   const host=ztEl("zt-wird");
   if(!host)return;
   const {counts}=zwLoad();
-  const html=`<section class="zw-card" aria-label="وردك اليوم">
+  /* بعد إتمام الأذكار الثلاثة تنكمش البطاقة إلى سطر، ويبقى الضغط عليه يفتح شاشة العدّ. */
+  const html=counts.every(n=>n>=ZW_GOAL)
+    ?`<button class="zw-done" type="button" data-zw-open="0">
+        <span class="zw-done-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <span class="zt-card-text"><span class="zt-eyebrow">وردك اليوم</span><span class="zw-done-title">أتممته، تقبّل الله منك</span></span>
+        <span class="zt-sub">يتجدّد بعد الفجر</span></button>`
+    :`<section class="zw-card" aria-label="وردك اليوم">
     <div class="zw-card-head"><span class="zw-card-title">وردك اليوم</span><span class="zt-sub">يتجدّد بعد الفجر</span></div>
     <div class="zw-items">${ZW_ITEMS.map((it,i)=>{
       const n=counts[i],done=n>=ZW_GOAL;

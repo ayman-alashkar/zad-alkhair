@@ -146,7 +146,7 @@ test("on Friday the home greets with «جمعتكم مباركة» and counts th
   const kahf = (await page.innerText("#zt-kahf")).replace(/\s+/g, " ");
   assert.match(kahf, /تابع من الصفحة ٢٩٨/);
   assert.match(kahf, /قرأت ٥ من ١٢ صفحة/);
-  assert.equal(await page.getAttribute(".zf-kahf", "href"), "reader.html?page=298&from=zad");
+  assert.equal(await page.getAttribute(".zf-kahf .zt-btn", "href"), "reader.html?page=298&from=zad");
   assert.deepEqual(errors, []);
   await context.close();
 });
@@ -161,6 +161,18 @@ test("«وردك اليوم» counts every tap, keeps the count, and the Back bu
   await page.goBack();
   await page.waitForFunction(() => document.getElementById("zw-screen").hidden, null, { timeout: 2000 });
   assert.match(await page.innerText('[data-zw-open="2"]'), /٥/);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("after all three adhkar reach 100 the wird card shrinks to one line that still opens the counter", async () => {
+  const day = new Date(); const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+  const { page, errors, context } = await phonePage({ storage: { "zad:wird-v1": JSON.stringify({ day: key, counts: [100, 100, 100] }) } });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.waitForSelector(".zw-done");
+  assert.equal(await page.$(".zw-card"), null);
+  await page.click(".zw-done");
+  await page.waitForFunction(() => !document.getElementById("zw-screen").hidden, null, { timeout: 2000 });
   assert.deepEqual(errors, []);
   await context.close();
 });
