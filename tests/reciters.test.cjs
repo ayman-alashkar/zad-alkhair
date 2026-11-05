@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=name=>fs.readFileSync(__dirname+"/../src/reader/"+name+".js","utf8");
 function fixture(){
-  const ctx=vm.createContext({pad3:n=>String(n).padStart(3,'0'),normalizeArabic:s=>s,storageJsonGet:()=>null,STORAGE_KEYS:{searchIndex:"search"},chapterMap:new Map(),document:{getElementById:()=>({})},window:{addEventListener(){}},fetch:()=>{throw Error('unexpected fetch')}});
+  const ctx=vm.createContext({pad3:n=>String(n).padStart(3,'0'),normalizeArabic:s=>s,storageJsonGet:()=>null,STORAGE_KEYS:{searchIndex:"search"},chapterMap:new Map(),listenIsOpen:()=>false,listenPaint:()=>{},document:{getElementById:()=>({})},window:{addEventListener(){}},fetch:()=>{throw Error('unexpected fetch')}});
   for(const name of ["reciters","audio-sources","library","player-ui"])vm.runInContext(source(name),ctx);
   return {ctx,run:s=>vm.runInContext(s,ctx)};
 }

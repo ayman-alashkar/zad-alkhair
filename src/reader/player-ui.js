@@ -118,6 +118,7 @@ function stopPlayer(){
   if("mediaSession" in navigator){try{navigator.mediaSession.playbackState="none";navigator.mediaSession.metadata=null}catch(_){ }}
   resetAudioProgress();
   clearSleepTimer();
+  listenPaint();
 }
 let mediaPositionStamp=0;
 function updateMediaSessionMetadata(){
@@ -185,16 +186,20 @@ function updatePlayer(){
   const c=document.getElementById("continuousBtn");if(c){c.classList.toggle("active",continuousMode);c.textContent=continuousMode?"مستمر":"متابعة";c.setAttribute("aria-label",isSurahOnly()?"متابعة التلاوة بين السور":"استمرار التلاوة بعد الآية المحددة")}
   updateMediaSessionMetadata();
   if(!progressSeeking)paintAudioProgress();
+  listenPaint();
 }
 function syncPlay(){
   const paused=audio.paused;
   document.getElementById("panelPlay").textContent=paused?"▶":"Ⅱ";
   document.body.classList.toggle("audio-playing",!paused);
   updateMediaSessionState();
+  listenPaint();
 }
 
 /* Keep the visible ayah selection locked to the ayah currently being recited. */
 async function syncPlaybackSelection(requestId){
+  /* في صفحة الاستماع لا تتحرك صفحات المصحف خلفها، ولا يتغيّر موضع القراءة المحفوظ. */
+  if(listenIsOpen())return false;
   const whole=isSurahOnly();
   if(whole&&requestId===playbackRequestId)clearVerseSelection();
   const k=`${play.surah}:${play.current}`;

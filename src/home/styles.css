@@ -1322,10 +1322,10 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 
 /* Bottom navigation */
 .zk-tabs{position:fixed;z-index:130;inset:auto 0 0 0;box-sizing:border-box;height:calc(72px + env(safe-area-inset-bottom));
-  padding:0 10px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  padding:0 10px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
   background:var(--zt-tabbar);border-top:1px solid var(--zt-line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   font-family:"Alexandria",Tahoma,Arial,sans-serif;--zk-tab:0}
-.zk-tabs-dot{position:absolute;top:-1px;right:calc(10px + var(--zk-tab) * (100% - 20px) / 4);width:calc((100% - 20px) / 4);display:flex;justify-content:center;
+.zk-tabs-dot{position:absolute;top:-1px;right:calc(10px + var(--zk-tab) * (100% - 20px) / 5);width:calc((100% - 20px) / 5);display:flex;justify-content:center;
   pointer-events:none;transition:right .45s cubic-bezier(.3,.9,.3,1)}
 .zk-tabs-dot::before{content:"";width:34px;height:3px;border-radius:0 0 3px 3px;background:var(--zt-active)}
 /* No slide on the first paint: a page that opens on another tab shows its marker in place. */

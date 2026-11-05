@@ -108,7 +108,7 @@ function saveReaderSurface(surface,extra={}){
 function cleanConsumedReaderTarget(){
   try{
     const url=new URL(location.href);
-    for(const key of ["home","juz","page","surah","ayah"])url.searchParams.delete(key);
+    for(const key of ["home","listen","juz","page","surah","ayah"])url.searchParams.delete(key);
     if(/^#ayah=/i.test(url.hash))url.hash="";
     history.replaceState(history.state,"",url.href);
   }catch(_){ }
@@ -116,6 +116,7 @@ function cleanConsumedReaderTarget(){
 function enterReaderSurface({consumeTarget=true,fromHome=false}={}){
   saveLastPosition();
   saveReaderSurface("reader");
+  readerReturnToListen=false;
   if(fromHome){readerReturnToQuranHome=true;storageSet(STORAGE_KEYS.readerParent,"quran-home")}
   if(consumeTarget)cleanConsumedReaderTarget();
 }
@@ -273,6 +274,7 @@ function readerEntryParams(){
   const code=rawCode.slice(0,4);
   const juz=Number(q.get("juz")),page=Number(q.get("page"));
   const surah=Number(q.get("surah")),ayah=Number(q.get("ayah")),home=q.get("home")==="1",fromZad=q.get("from")==="zad";
+  const listen=q.get("listen")==="1";
   const qari=String(q.get("qari")||"").trim();
   return {
     code,
@@ -282,7 +284,7 @@ function readerEntryParams(){
     ayah:Number.isInteger(ayah)&&ayah>=1?ayah:null,
     qari:RECITERS.some(r=>r.id===qari)?qari:null,
     autoplay:q.get("play")==="1",
-    home,fromZad
+    home,listen,fromZad
   };
 }
 function zadReturnUrl(){

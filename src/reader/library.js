@@ -346,12 +346,13 @@ function openQuranHubMenu(closeHub){
   b.querySelector('[data-hub="theme"]').onclick=()=>{setTheme(dark?"light":"dark");b.remove()};
   b.querySelector('[data-hub="guide"]').onclick=()=>{location.href="/quran/player-guide/"};
 }
-/* أقسام زاد الخير الأربعة، كما في الصفحة الرئيسية. تظهر في الفهرس وحده، لا فوق صفحات المصحف. */
+/* أقسام زاد الخير الخمسة، كما في الصفحة الرئيسية. تظهر في الفهرس وحده، لا فوق صفحات المصحف. */
 const READER_APP_TABS=`<nav class="reader-app-tabs" aria-label="الأقسام" style="--app-tab-i:1"><span class="reader-app-dot" aria-hidden="true"></span>
   <a href="./" data-app-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-6h-6v6H3Z"/></svg><span data-label="الرئيسية">الرئيسية</span></a>
-  <a href="#" aria-current="page" data-app-tab="quran"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span data-label="القرآن العظيم">القرآن العظيم</span></a>
-  <a href="./?section=khatmahs" data-app-tab="khatmahs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span data-label="الختمات الجماعية">الختمات الجماعية</span></a>
-  <a href="./?section=prayer" data-app-tab="prayer"><svg viewBox="0 0 25 24" aria-hidden="true"><path d="M9.15 9C5.68 5.5 11.01 3.75 12.5 2c1.49 1.75 6.82 3.5 3.35 7Z"/><path d="M18.5 12v-1c0-1.5-.5-2-2-2h-8c-1.5 0-2 .5-2 2v1"/><path d="M17.5 12h-10c-2.5 0-3 .5-3 3v4c0 2.5.5 3 3 3h10c2.5 0 3-.5 3-3v-4c0-2.5-.5-3-3-3Z"/><path d="M10 22v-3c0-3 2.5-4 2.5-4s2.5 1 2.5 4v3"/></svg><span data-label="مواقيت الصلاة">مواقيت الصلاة</span></a>
+  <a href="#" aria-current="page" data-app-tab="quran"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span data-label="القرآن">القرآن</span></a>
+  <a href="reader.html?listen=1&amp;from=zad" data-app-tab="listen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/></svg><span data-label="الاستماع">الاستماع</span></a>
+  <a href="./?section=khatmahs" data-app-tab="khatmahs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span data-label="الختمات">الختمات</span></a>
+  <a href="./?section=prayer" data-app-tab="prayer"><svg viewBox="0 0 25 24" aria-hidden="true"><path d="M9.15 9C5.68 5.5 11.01 3.75 12.5 2c1.49 1.75 6.82 3.5 3.35 7Z"/><path d="M18.5 12v-1c0-1.5-.5-2-2-2h-8c-1.5 0-2 .5-2 2v1"/><path d="M17.5 12h-10c-2.5 0-3 .5-3 3v4c0 2.5.5 3 3 3h10c2.5 0 3-.5 3-3v-4c0-2.5-.5-3-3-3Z"/><path d="M10 22v-3c0-3 2.5-4 2.5-4s2.5 1 2.5 4v3"/></svg><span data-label="المواقيت">المواقيت</span></a>
 </nav>`;
 function openQuranIndex(initialTab="s",options={}){
   document.querySelector(".quran-index")?.remove();
@@ -373,9 +374,11 @@ function openQuranIndex(initialTab="s",options={}){
   };
   /* تبويب القرآن هو الصفحة الحالية: يعيد إلى السور بدل إعادة التحميل. */
   panel.querySelector('[data-app-tab="quran"]')?.addEventListener("click",e=>{e.preventDefault();setTab("s")});
+  /* «الاستماع» في الصفحة نفسها: يُفتح دون إعادة تحميل، والتلاوة مستمرة. */
+  panel.querySelector('[data-app-tab="listen"]')?.addEventListener("click",e=>{e.preventDefault();close();openListenPage()});
   /* الأقسام الأخرى: يتحرك المؤشر أولًا، ثم تُفتح الصفحة؛ والشريط يبقى ثابتًا أثناء الانتقال. */
   const appTabs=panel.querySelector(".reader-app-tabs");
-  appTabs?.querySelectorAll("a[data-app-tab]:not([data-app-tab=quran])").forEach(link=>link.addEventListener("click",e=>{
+  appTabs?.querySelectorAll("a[data-app-tab]:not([data-app-tab=quran]):not([data-app-tab=listen])").forEach(link=>link.addEventListener("click",e=>{
     if(e.metaKey||e.ctrlKey||e.shiftKey||e.button)return;
     e.preventDefault();
     const links=[...appTabs.querySelectorAll("a[data-app-tab]")];
