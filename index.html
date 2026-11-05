@@ -5532,6 +5532,11 @@ window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
 const zkIncomingKhatmah=zkCaptureIncomingKhatmah();
 const zkSection=new URLSearchParams(location.search).get("section");
+/* «?section=» (من شريط القارئ أو صفحة الدليل) يُستعمل مرة واحدة ثم يُزال من العنوان،
+   وإلا أعاد التحديث فتح الختمات أو المواقيت مهما كانت الشاشة الظاهرة. */
+if(zkSection){
+  try{const url=new URL(location.href);url.searchParams.delete("section");history.replaceState(history.state,"",url.href)}catch(_){}
+}
 if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard()

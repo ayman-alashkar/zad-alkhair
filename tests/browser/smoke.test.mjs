@@ -176,3 +176,13 @@ test("after all three adhkar reach 100 the wird card shrinks to one line that st
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test("opening the khatmahs from the reader's tab bar does not make every later reload open them", async () => {
+  const { page, errors, context } = await phonePage();
+  await page.goto(BASE + "/?section=khatmahs", { waitUntil: "load" });
+  assert.equal(new URL(page.url()).searchParams.get("section"), null);
+  await page.reload({ waitUntil: "load" });
+  assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), true);
+  assert.deepEqual(errors, []);
+  await context.close();
+});

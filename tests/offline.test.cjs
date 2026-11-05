@@ -166,3 +166,16 @@ test('first visit and non-shell pages still use the network',async()=>{
   assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/'))")).text(),/^net:/);
   assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/surah/2/'))")).text(),/^net:/);
 });
+
+test('pressing Reload fetches the newest shell instead of the saved one',async()=>{
+  const e=setup();await e.run('ensureOfflineShell()');
+  e.setFetch(async r=>new Response('fresh:'+r.url));
+  const page=await e.run("shellFirstDocument(new Request('https://example.test/',{cache:'no-cache'}))");
+  assert.match(await page.text(),/^fresh:/);
+  // A normal opening still comes from the device.
+  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/'))")).text(),/^(ok|fresh):/);
+  e.setFetch(()=>new Promise(()=>{}));
+  const started=Date.now();
+  assert.ok(await e.run("shellFirstDocument(new Request('https://example.test/reader'))"));
+  assert.ok(Date.now()-started<500);
+});
