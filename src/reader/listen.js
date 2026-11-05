@@ -100,7 +100,7 @@ function listenPaint(){
   if(!listenIsOpen())return;
   const st=listenCardState(),card=listenPanel.querySelector(".zl-card");
   const playing=st.kind==="now"&&!audio.paused&&!!audio.dataset.playMode;
-  card.dataset.kind=st.kind;
+  card.dataset.kind=st.kind;card.classList.toggle("playing",playing);
   card.querySelector(".zl-eyebrow").innerHTML=st.kind==="now"
     ?(playing?`<span class="zl-wave on" aria-hidden="true"><i></i><i></i><i></i><i></i></span>يُتلى الآن`:playbackWanted?"جارٍ تحميل التلاوة…":"متوقفة مؤقتًا")
     :st.kind==="resume"?"تابع الاستماع":(listenFriday()?"سنّة يوم الجمعة":"ابدأ الاستماع");
@@ -387,10 +387,10 @@ function openListenPage(){
   setListenUrl(true);
   const picks=(listenFriday()?LISTEN_PICKS:LISTEN_PICKS.slice(1).concat(18)).map(s=>`<button type="button" class="zl-chip${listenFriday()&&s===18?" gold":""}" data-pick="${s}">${escapeHtml(listenSurahName(s))}${listenFriday()&&s===18?" · يوم الجمعة":""}</button>`).join("");
   const panel=document.createElement("section");panel.className="zad-listen";panel.setAttribute("aria-label","مشغّل التلاوة");
-  panel.innerHTML=`<div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave on" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button><span class="zl-mini-bar" aria-hidden="true"><i></i></span></div>
+  panel.innerHTML=`<div class="zl-pattern" aria-hidden="true"></div><div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave on" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button><span class="zl-mini-bar" aria-hidden="true"><i></i></span></div>
   <div class="zl-scroll">
-    <header class="zl-head"><h1>مشغّل التلاوة</h1></header>
-    <section class="zl-card" aria-label="مشغّل التلاوة">
+    <header class="zl-head"><h1>مشغّل التلاوة</h1><button type="button" class="zl-theme" aria-label="${document.documentElement.dataset.theme==="dark"?"تفعيل الوضع النهاري":"تفعيل الوضع الليلي"}"><svg class="zl-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.8 8.8 0 1 0 11.6 11.6Z"/></svg><svg class="zl-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button></header>
+    <section class="zl-card" aria-label="مشغّل التلاوة"><div class="zl-card-pattern" aria-hidden="true"></div>
       <button type="button" class="zl-heart" aria-pressed="false">${LISTEN_ICONS.heart}</button>
       <div class="zl-eyebrow"></div>
       <div class="zl-arc">
@@ -434,6 +434,12 @@ function openListenPage(){
   card.querySelector(".zl-qari").onclick=listenOpenReciters;
   card.querySelector(".zl-read").onclick=listenReadAlong;
   card.querySelector(".zl-share").onclick=listenShare;
+  /* زر الوضع كالذي في الرئيسية: الإعداد نفسه للتطبيق كله. */
+  panel.querySelector(".zl-theme").onclick=e=>{
+    const dark=(document.documentElement.dataset.theme||"light")!=="dark";
+    setTheme(dark?"dark":"light");
+    e.currentTarget.setAttribute("aria-label",dark?"تفعيل الوضع النهاري":"تفعيل الوضع الليلي");
+  };
   card.querySelector(".zl-heart").onclick=()=>listenToggleFavorite(listenCardState().s);
   listenBindArc(card.querySelector(".zl-arc svg"));
   panel.querySelector(".zl-mini-open").onclick=()=>scroll.scrollTo({top:0,behavior:"smooth"});

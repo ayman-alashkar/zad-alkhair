@@ -2325,22 +2325,32 @@ html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);
 /* ---------- تبويب «الاستماع» ---------- */
 .zad-listen{--zl-ink:#173E35;--zl-muted:#6B6350;--zl-surface:#FFFBF2;--zl-line:rgba(169,131,58,.26);--zl-gold:#8E6A28;--zl-gold-2:#C59A4A;--zl-gold-3:#E4C980;
   position:fixed;inset:0;z-index:126;display:flex;flex-direction:column;direction:rtl;background:var(--paper);color:var(--zl-ink);font-family:Alexandria,system-ui,sans-serif;isolation:isolate}
-.zad-listen::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.04;background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat}
 .zad-listen::after{content:"";position:absolute;inset:0 0 auto;height:260px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 50% -10%,rgba(228,201,128,.22),transparent 70%)}
 html[data-theme="dark"] .zad-listen{--zl-ink:#FFF5DC;--zl-muted:#C1BBA7;--zl-surface:#0A2B26;--zl-line:rgba(228,201,128,.18);--zl-gold:#E4C980;--zl-gold-2:#E4C980}
-html[data-theme="dark"] .zad-listen::before{opacity:.03}
 html[data-theme="dark"] .zad-listen::after{background:radial-gradient(ellipse at 50% -10%,rgba(228,201,128,.08),transparent 70%)}
 body.zl-open .audio-panel,body.zl-open .audio-fab{display:none!important}
 .zad-listen button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .zl-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:calc(14px + env(safe-area-inset-top)) 16px 28px}
 .zl-scroll>*{max-width:560px;margin-inline:auto}
-.zl-head{padding:4px 4px 14px}
+/* النقش في الخلفية كالرئيسية: ٤٪ نهارًا و٣٪ ليلًا، يجري ببطء. */
+.zl-pattern{position:absolute;top:-60px;left:-60px;right:-320px;bottom:-220px;z-index:-1;pointer-events:none;opacity:.04;
+  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:zlFlow 60s linear infinite}
+html[data-theme="dark"] .zl-pattern{opacity:.03}
+.zad-listen{overflow:hidden}
+@keyframes zlFlow{to{transform:translate(-248.16px,-164.95px)}}
+.zl-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 4px 14px}
+.zl-theme{flex:none;width:44px;height:44px;display:grid;place-items:center;padding:0;border:1px solid var(--zl-line);border-radius:14px;background:var(--zl-surface);color:var(--zl-gold-2);cursor:pointer}
+.zl-theme svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.zl-sun{display:none}html[data-theme="dark"] .zl-sun{display:block}html[data-theme="dark"] .zl-moon{display:none}
 .zl-head h1{margin:0;font:700 30px/1.7 "Aref Ruqaa",serif;color:var(--zl-ink)}
 
 /* البطاقة: بطاقة الصلاة نفسها، والقوس تقدّم السورة */
 .zl-card{position:relative;overflow:hidden;isolation:isolate;border-radius:26px;padding:16px 16px 0;color:#FFF9EA;
   background:radial-gradient(circle at 30% 30%,rgba(228,201,128,.14),transparent 18rem),linear-gradient(145deg,#0D3C35,#082D29);box-shadow:0 18px 40px -22px rgba(6,40,35,.65)}
-.zl-card::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.056;pointer-events:none;background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat}
+.zl-card-pattern{position:absolute;top:-60px;left:-60px;right:-320px;bottom:-220px;z-index:-1;opacity:.056;pointer-events:none;
+  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:zlFlow 60s linear infinite;animation-play-state:paused}
+/* النقش في البطاقة يجري مع التلاوة ويقف بوقوفها. */
+.zl-card.playing .zl-card-pattern{animation-play-state:running}
 .zl-eyebrow{display:flex;align-items:center;justify-content:center;gap:7px;min-height:18px;font-size:12px;color:rgba(255,249,234,.74)}
 .zl-wave{display:inline-flex;align-items:flex-end;gap:2px;height:12px}
 .zl-wave i{display:block;width:2.5px;height:4px;border-radius:2px;background:#E4C980}
@@ -2510,7 +2520,7 @@ html[data-theme="dark"] .zl-more-ico{color:#E4C980}
   .zl-arc-label{inset:46px 8px 0}
   .zl-name{font-size:40px}
 }
-@media (prefers-reduced-motion:reduce){.zl-wave.on i{animation:none;height:8px}.zl-arc-fill,.zl-arc-knob,.zl-mini{transition:none}}
+@media (prefers-reduced-motion:reduce){.zl-pattern,.zl-card-pattern{animation:none}.zl-wave.on i{animation:none;height:8px}.zl-arc-fill,.zl-arc-knob,.zl-mini{transition:none}}
 
 /* القلب: أعلى البطاقة، في الطرف المقابل لعنوانها */
 .zl-heart{position:absolute;top:10px;left:10px;z-index:2;width:44px;height:44px;border:0;border-radius:50%;display:grid;place-items:center;padding:0;background:transparent;color:rgba(255,249,234,.7);cursor:pointer}
