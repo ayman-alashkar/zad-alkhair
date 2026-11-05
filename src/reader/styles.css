@@ -395,6 +395,13 @@ html[data-theme="dark"] .quran-index{--index-separator:color-mix(in srgb,var(--u
 .quran-index-tab.active:after{content:"";position:absolute;left:18%;right:18%;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--ui-gold)}
 .quran-index-scroll{flex:1 1 auto;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(14px + env(safe-area-inset-bottom));scrollbar-width:none;touch-action:pan-y}
 .quran-index-scroll::-webkit-scrollbar{display:none}
+/* Touch screens: no scroll bars on panels and lists (as on home). The Mushaf
+   page keeps its bar in the rare emergency-scroll state (.page-stage.scrolls),
+   where it is the only sign that the page continues below. */
+@media (pointer:coarse){
+  :not(.page-stage){scrollbar-width:none}
+  :not(.page-stage)::-webkit-scrollbar{display:none}
+}
 .quran-index-row{width:100%;min-height:78px;border:0;background:transparent;color:var(--quran);padding:9px 22px 9px 21px;display:grid;grid-template-columns:44px minmax(0,1fr) 48px;gap:11px;align-items:center;text-align:right}
 .quran-index-row:active{background:var(--ui-accent-soft)}
 .quran-index-row.current{background:linear-gradient(90deg,transparent,var(--ui-accent-soft),transparent)}
