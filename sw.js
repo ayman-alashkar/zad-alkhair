@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v177";
+const SHELL_STAGE_CACHE="zad-shell-stage-v178";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -356,6 +356,10 @@ async function revalidateShellDocument(key){
   return true;
 }
 async function shellFirstDocument(request,event){
+  // The user pressed Reload (the browser marks it "no-cache", or "reload" for a
+  // hard reload): they asked for the latest page, so go to the network first,
+  // with the saved copy still the fallback after 2 s or offline.
+  if(request.cache==="no-cache"||request.cache==="reload")return networkFirstDocument(request);
   const url=new URL(request.url),key=shellKeyFor(url);
   const saved=key?await shellFallback(url):null;
   if(!saved)return networkFirstDocument(request);
