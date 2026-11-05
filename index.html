@@ -237,13 +237,10 @@ button,input,select{font-family:inherit;font-size:.88rem}
 /* Zad Alkhair — 2026 interface refresh
   This layer intentionally leaves the original application logic untouched. */
 :root{--brand:#0F5C50;--brand-strong:#0A473E;--brand-soft:#DDF1EA}
-*{scrollbar-width:thin;scrollbar-color:#B8CBC4 transparent}
-/* On touch screens the finger scrolls; a visible bar on the edge of every tab
-   and list only adds noise. Mouse and trackpad users keep the thin bar above. */
-@media (pointer:coarse){
-  *{scrollbar-width:none}
-  *::-webkit-scrollbar{display:none}
-}
+/* No visible scroll bars on tabs, lists and dialogs, on phone or computer:
+   the finger, wheel and trackpad scroll as before. */
+*{scrollbar-width:none}
+*::-webkit-scrollbar{display:none}
 body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .topbar{pointer-events:auto}
 .topbar::after{content:"مساحة ختماتك الجماعية";position:absolute;inset-inline-start:8.4rem;font-size:.66rem;color:var(--muted);letter-spacing:.01em}
