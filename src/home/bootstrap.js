@@ -186,11 +186,16 @@ const zkSection=new URLSearchParams(location.search).get("section");
 /* العنوان يتبع الشاشة الظاهرة («?section=khatmahs» أو «prayer»، ولا شيء للرئيسية)،
    فيعيد التحديث فتح الشاشة نفسها، لا ما فُتح به التطبيق أول مرة. */
 function zkSyncSection(){
-  const section=!zkLaunchVisible()?"khatmahs":ztView==="prayer"?"prayer":"";
+  const onKhatmahs=!zkLaunchVisible();
+  const section=onKhatmahs?"khatmahs":ztView==="prayer"?"prayer":"";
   try{
     const url=new URL(location.href);
-    if((url.searchParams.get("section")||"")===section)return;
+    /* رمز الختمة (#ABCD) يضعه boot() في العنوان؛ وهو يفتح الختمة عند التحميل.
+       فإذا ظهرت الرئيسية أو المواقيت يُزال، وإلا أعاد التحديث فتح الختمة. */
+    const hash=onKhatmahs?url.hash:"";
+    if((url.searchParams.get("section")||"")===section&&url.hash===hash)return;
     if(section)url.searchParams.set("section",section);else url.searchParams.delete("section");
+    url.hash=hash;
     history.replaceState(history.state,"",url.href);
   }catch(_){}
 }

@@ -192,3 +192,24 @@ test("a reload stays on the screen that is showing (home, khatmahs or prayer tim
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+test("with an active khatmah, a reload on home stays on home (the khatmah code is not left in the address)", async () => {
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "open", ownerId: null })) };
+  const { page, errors, context } = await phonePage({
+    rpc: { get_state: state, list_active_khatmahs: [] },
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "me", name: "أنا" }) }
+  });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.click("#zk-launch-zad");
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 5000 });
+  await page.reload({ waitUntil: "load" });
+  assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), false, "khatmah after reload");
+  await page.click("#zk-tab-home");
+  assert.equal(new URL(page.url()).hash, "");
+  await page.reload({ waitUntil: "load" });
+  assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), true, "home after reload");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
