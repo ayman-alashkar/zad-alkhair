@@ -4976,6 +4976,9 @@ function ztNavigateAfterTab(id,url){
   const still=window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   setTimeout(()=>{location.href=url},still?0:280);
 }
+/* الرجوع من القرآن أو التلاوة يعيد الصفحة من ذاكرة المتصفح كما تُركت، والمؤشر على التبويب
+   الذي غادرنا منه. فيُعاد رسمه على القسم الظاهر فعلًا. */
+window.addEventListener("pageshow",event=>{if(event.persisted)ztPaintTabs()});
 /* تُستدعى من zkShowLaunch و zkHideLaunch */
 function ztOnLaunchChange(){
   ztPaintTabs();ztPaintChrome();ztMenu(false);
