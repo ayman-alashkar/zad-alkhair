@@ -525,7 +525,8 @@ function closeListenPage({readAlong=false}={}){
 }
 function setListenUrl(returnUrl=null){
   const current=new URL(location.href);
-  const url=new URL(returnUrl||(directQuranPath()?.mode==="listen"?current.href:"/quran-listen/"),current.origin);
+  const target=listenTarget?`/quran-listen/${listenTarget.surah}/`:"/quran-listen/";
+  const url=new URL(returnUrl||(directQuranPath()?.mode==="listen"?current.href:target),current.origin);
   if(current.searchParams.get("from")==="zad")url.searchParams.set("from","zad");
   if(listenTarget)url.searchParams.set("qari",listenTarget.reciter.id);
   if(url.href!==current.href)history.replaceState(history.state,"",url.href);

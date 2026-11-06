@@ -57,7 +57,7 @@ function zfKahfRender(){
       /* الحديث سببٌ للقراءة، والزر يقول بوضوح ماذا يحدث عند الضغط. */
       html=`<section class="zf-kahf" aria-label="سورة الكهف">
         <blockquote class="zf-kahf-hadith">«من قرأ سورة الكهف يوم الجمعة، أضاء له من النور ما بين الجمعتين»</blockquote>
-        <div class="zf-kahf-row"><a class="zt-btn" href="reader.html?page=${ZF_KAHF_PAGES[0]}&amp;from=zad">${book}<span>اقرأ سورة الكهف</span></a>
+        <div class="zf-kahf-row"><a class="zt-btn" href="/quran-read/18/?from=zad">${book}<span>اقرأ سورة الكهف</span></a>
           <span class="zt-sub">${ztArabic(total)} صفحة</span></div></section>`;
     }else{
       const left=total-read;
@@ -66,7 +66,7 @@ function zfKahfRender(){
           <div class="zf-kahf-head"><span class="zf-kahf-title">سورة الكهف</span><span class="zt-sub">الصفحة ${ztArabic(next)}</span></div>
           <span class="zf-kahf-count">قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span>
           <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></div>
-        <a class="zt-btn" href="reader.html?page=${next}&amp;from=zad">${book}<span>تابع القراءة</span></a></section>`;
+        <a class="zt-btn" href="/quran-read/?page=${next}&amp;from=zad">${book}<span>تابع القراءة</span></a></section>`;
     }
   }
   if(host.dataset.zfHtml===html)return;

@@ -161,6 +161,10 @@ html:not([data-theme="dark"]) .word.end{color:var(--gold)}
   background:var(--paper);color:var(--muted);font-size:11px;
 }
 .loading.hide{display:none}
+.reader-surah-summary{width:min(100%,36rem);box-sizing:border-box;padding:24px;font:400 1rem/1.8 Alexandria,sans-serif;text-align:center}
+.reader-surah-summary h1{font:700 2.35rem/1.45 "Aref Ruqaa",serif;margin:0;color:var(--brand)}
+.reader-surah-summary h2{font-size:1rem;margin:1.4rem 0 .35rem}
+.reader-surah-summary a{color:inherit;text-underline-offset:.18em}
 .loading-error{display:grid;gap:12px;place-items:center;text-align:center;padding:24px;max-width:430px;line-height:1.8}
 .loading-retry{border:1px solid var(--border);background:var(--brand);color:#fff;border-radius:12px;padding:9px 16px;font:600 12px Alexandria,system-ui,sans-serif}
 .loading-retry:active{transform:scale(.97)}

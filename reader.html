@@ -17,7 +17,7 @@
 (()=>{try{const dark=localStorage.getItem("zad:qcf4:theme")==="dark";document.documentElement.dataset.theme=dark?"dark":"light";document.querySelector('meta[name="theme-color"]').content=dark?"#061F1D":"#F5F0E4"}catch(_){}})();
 </script>
 <script src="/migration.js?v=117"></script>
-<meta name="zk-direct-reader" content="114">
+<meta name="zk-direct-reader" content="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114">
 <!-- @reader-meta-start -->
 <title>القرآن العظيم | زاد الخير</title>
 <meta name="description" content="اقرأ واستمع إلى القرآن العظيم في قارئ زاد الخير.">
@@ -207,6 +207,10 @@ html:not([data-theme="dark"]) .word.end{color:var(--gold)}
   background:var(--paper);color:var(--muted);font-size:11px;
 }
 .loading.hide{display:none}
+.reader-surah-summary{width:min(100%,36rem);box-sizing:border-box;padding:24px;font:400 1rem/1.8 Alexandria,sans-serif;text-align:center}
+.reader-surah-summary h1{font:700 2.35rem/1.45 "Aref Ruqaa",serif;margin:0;color:var(--brand)}
+.reader-surah-summary h2{font-size:1rem;margin:1.4rem 0 .35rem}
+.reader-surah-summary a{color:inherit;text-underline-offset:.18em}
 .loading-error{display:grid;gap:12px;place-items:center;text-align:center;padding:24px;max-width:430px;line-height:1.8}
 .loading-retry{border:1px solid var(--border);background:var(--brand);color:#fff;border-radius:12px;padding:9px 16px;font:600 12px Alexandria,system-ui,sans-serif}
 .loading-retry:active{transform:scale(.97)}
@@ -4377,14 +4381,11 @@ async function shareHubPayload(payload){
   catch(e){if(e?.name!=="AbortError")showToast("تعذّرت المشاركة الآن")}
 }
 function setIndexPlaybackBoundary(stop){detachQueue();if(stop)repeatMode="off";continuousStopRef=stop||null}
-async function playSurahFromHub(s,closeHub){
-  s=Number(s)||1;
-  if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(s,{chooseWhenMultiple:true}))return;
-  setIndexPlaybackBoundary(null);
-  continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");
-  play={surah:s,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
-  pendingSurahBasmala=(s!==1&&s!==9);basmalaFallbackTarget=null;
-  closeHub();const p=Number(chapterMap.get(s)?.pages?.[0]||1);await go(p);await playCurrent(true);
+function playSurahFromHub(s,closeHub){
+  listenTarget={surah:Number(s),reciter};
+  closeHub();
+  openListenPage();
+  return listenPlaySurah(s,1);
 }
 function prepareSurahFromDeepLink(s){
   s=Number(s)||1;
@@ -4474,7 +4475,7 @@ function openQuranIndex(initialTab="s",options={}){
       if(e.type==="juz"){frag.appendChild(indexJuzSeparator(e.j,e.page,e.j===currentJuz()));continue}
       const ch=e.ch,start=e.page,end=Number(ch.pages?.[1]||start),isCurrent=currentPage>=start&&currentPage<=end,row=document.createElement("div");row.className="quran-index-row quran-index-row-with-actions"+(isCurrent?" current":"");
       row.innerHTML=`<span class="quran-index-surah-num">${ar(ch.id)}</span><button class="quran-index-row-main" type="button"><span class="quran-index-main"><span class="quran-index-name">سورة ${escapeHtml(ch.name_arabic)}</span><span class="quran-index-meta">${revelationArabic(ch.revelation_place)} - ${ar(ch.verses_count)} آية</span></span><span class="quran-index-page">${ar(start)}</span></button><span class="quran-index-actions"><button class="quran-index-action play" type="button" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}">${HUB_PLAY_ICON}</button><button class="quran-index-action share" type="button" aria-label="مشاركة سورة ${escapeHtml(ch.name_arabic)}">${HUB_SHARE_ICON}</button><button class="quran-index-action download" type="button" aria-label="تنزيل سورة ${escapeHtml(ch.name_arabic)} للاستماع دون اتصال">${HUB_DOWNLOAD_ICON}</button></span>`;
-      row.querySelector(".quran-index-row-main").onclick=async()=>{leaveHubForReader();await go(start)};row.querySelector(".play").onclick=()=>playSurahFromHub(ch.id,leaveHubForReader);row.querySelector(".share").onclick=()=>shareHubPayload({title:`سورة ${ch.name_arabic} | زاد الخير`,url:publicSurahUrl(ch.id)});bindSurahDownloadButton(row.querySelector(".download"),ch.id);frag.appendChild(row);
+      row.querySelector(".quran-index-row-main").onclick=async()=>{leaveHubForReader();await go(start)};row.querySelector(".play").onclick=()=>playSurahFromHub(ch.id,close);row.querySelector(".share").onclick=()=>shareHubPayload({title:`سورة ${ch.name_arabic} | زاد الخير`,url:publicSurahUrl(ch.id)});bindSurahDownloadButton(row.querySelector(".download"),ch.id);frag.appendChild(row);
     }
     surahHost.appendChild(frag);surahHost.dataset.ready="1";const current=surahHost.querySelector(".quran-index-row.current");if(current)centerIndexItem(surahHost,current);
   }
@@ -6114,7 +6115,8 @@ function closeListenPage({readAlong=false}={}){
 }
 function setListenUrl(returnUrl=null){
   const current=new URL(location.href);
-  const url=new URL(returnUrl||(directQuranPath()?.mode==="listen"?current.href:"/quran-listen/"),current.origin);
+  const target=listenTarget?`/quran-listen/${listenTarget.surah}/`:"/quran-listen/";
+  const url=new URL(returnUrl||(directQuranPath()?.mode==="listen"?current.href:target),current.origin);
   if(current.searchParams.get("from")==="zad")url.searchParams.set("from","zad");
   if(listenTarget)url.searchParams.set("qari",listenTarget.reciter.id);
   if(url.href!==current.href)history.replaceState(history.state,"",url.href);

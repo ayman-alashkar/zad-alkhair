@@ -167,12 +167,12 @@ function ztReadingCard(summary){
   const last=ztReadJson(ZT_LAST_POSITION),page=Number(last&&last.page);
   if(page>=1&&page<=604){
     const s=surahForPage(page);
-    html=`<a class="zt-continue" href="reader.html?page=${page}&amp;from=zad">
+    html=`<a class="zt-continue" href="/quran-read/?page=${page}&amp;from=zad">
       <span class="zt-card-text"><span class="zt-eyebrow">تابع القراءة</span><span class="zt-title">سورة ${esc(s.name)}</span>
       <span class="zt-sub">من حيث توقفت · الصفحة ${ztArabic(page)}</span></span>
       <span class="zt-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span></a>`;
   }else{
-    html=`<a class="zt-continue" href="reader.html?home=1&amp;from=zad">
+    html=`<a class="zt-continue" href="/quran-read/?from=zad">
       <span class="zt-card-text"><span class="zt-eyebrow">القرآن العظيم</span><span class="zt-title">ابدأ القراءة</span>
       <span class="zt-sub">المصحف الشريف مع التفسير الوجيز</span></span>
       <span class="zt-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span></a>`;

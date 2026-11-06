@@ -4871,12 +4871,12 @@ function ztReadingCard(summary){
   const last=ztReadJson(ZT_LAST_POSITION),page=Number(last&&last.page);
   if(page>=1&&page<=604){
     const s=surahForPage(page);
-    html=`<a class="zt-continue" href="reader.html?page=${page}&amp;from=zad">
+    html=`<a class="zt-continue" href="/quran-read/?page=${page}&amp;from=zad">
       <span class="zt-card-text"><span class="zt-eyebrow">تابع القراءة</span><span class="zt-title">سورة ${esc(s.name)}</span>
       <span class="zt-sub">من حيث توقفت · الصفحة ${ztArabic(page)}</span></span>
       <span class="zt-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span></a>`;
   }else{
-    html=`<a class="zt-continue" href="reader.html?home=1&amp;from=zad">
+    html=`<a class="zt-continue" href="/quran-read/?from=zad">
       <span class="zt-card-text"><span class="zt-eyebrow">القرآن العظيم</span><span class="zt-title">ابدأ القراءة</span>
       <span class="zt-sub">المصحف الشريف مع التفسير الوجيز</span></span>
       <span class="zt-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg></span></a>`;
@@ -5354,7 +5354,7 @@ function zfKahfRender(){
       /* الحديث سببٌ للقراءة، والزر يقول بوضوح ماذا يحدث عند الضغط. */
       html=`<section class="zf-kahf" aria-label="سورة الكهف">
         <blockquote class="zf-kahf-hadith">«من قرأ سورة الكهف يوم الجمعة، أضاء له من النور ما بين الجمعتين»</blockquote>
-        <div class="zf-kahf-row"><a class="zt-btn" href="reader.html?page=${ZF_KAHF_PAGES[0]}&amp;from=zad">${book}<span>اقرأ سورة الكهف</span></a>
+        <div class="zf-kahf-row"><a class="zt-btn" href="/quran-read/18/?from=zad">${book}<span>اقرأ سورة الكهف</span></a>
           <span class="zt-sub">${ztArabic(total)} صفحة</span></div></section>`;
     }else{
       const left=total-read;
@@ -5363,7 +5363,7 @@ function zfKahfRender(){
           <div class="zf-kahf-head"><span class="zf-kahf-title">سورة الكهف</span><span class="zt-sub">الصفحة ${ztArabic(next)}</span></div>
           <span class="zf-kahf-count">قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span>
           <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></div>
-        <a class="zt-btn" href="reader.html?page=${next}&amp;from=zad">${book}<span>تابع القراءة</span></a></section>`;
+        <a class="zt-btn" href="/quran-read/?page=${next}&amp;from=zad">${book}<span>تابع القراءة</span></a></section>`;
     }
   }
   if(host.dataset.zfHtml===html)return;

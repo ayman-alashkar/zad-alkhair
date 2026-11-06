@@ -184,7 +184,7 @@ test("on Friday the home greets with «جمعتكم مباركة» and counts th
   /* كتابع قراءة الجزء: من أبعد صفحة بلغها (٢٩٧)، لا من التي بعدها، وما قبلها مقروء. */
   assert.match(kahf, /الصفحة ٢٩٧/);
   assert.match(kahf, /قرأت ٤ من ١٢ صفحة/);
-  assert.equal(await page.getAttribute(".zf-kahf .zt-btn", "href"), "reader.html?page=297&from=zad");
+  assert.equal(await page.getAttribute(".zf-kahf .zt-btn", "href"), "/quran-read/?page=297&from=zad");
   assert.deepEqual(errors, []);
   await context.close();
 });

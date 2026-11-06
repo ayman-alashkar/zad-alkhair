@@ -4,14 +4,14 @@ const { surahs } = require("../src/discovery/catalog.json");
 const config = require("../src/discovery/quran-routes.json");
 const site = "https://zad-alkhair.net";
 const indexPath = "/quran-index/";
-const supported = new Set(config.surahs);
+const supported = new Set(surahs.map(s => s.n));
 const shareOrigin = config.previewOrigin || site;
-if (supported.size !== config.surahs.length || config.surahs.some(n => !surahs.some(s => s.n === n))) {
-  throw Error("Invalid direct Quran surah list");
+if (supported.size !== 114 || surahs.some((s, i) => s.n !== i + 1)) {
+  throw Error("Invalid Quran surah catalog");
 }
 
 const readerRoutes = ["read", "listen"].flatMap(mode =>
-  [null, ...surahs.filter(s => supported.has(s.n))].map(surah => ({
+  [null, ...surahs].map(surah => ({
     mode,
     surah,
     path: `/quran-${mode}/${surah ? surah.n + "/" : ""}`

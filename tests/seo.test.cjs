@@ -16,9 +16,10 @@ test("sitemap contains every canonical discovery page once",()=>{
   assert.equal(urls.length,150+reciters.length);
   assert.equal(new Set(urls).size,urls.length);
   assert.ok(urls.includes("https://zad-alkhair.net/"));
-  assert.ok(urls.includes("https://zad-alkhair.net/quran/"));
+  assert.ok(urls.includes("https://zad-alkhair.net/quran-index/"));
   assert.ok(urls.includes("https://zad-alkhair.net/khatmahs/"));
-  assert.ok(urls.includes("https://zad-alkhair.net/surah/67/"));
+  for(let n=1;n<=114;n++)assert.ok(urls.includes(`https://zad-alkhair.net/quran-read/${n}/`));
+  assert.ok(!urls.some(url=>/\/(?:quran-listen|surah)\//.test(new URL(url).pathname)));
   assert.ok(urls.includes("https://zad-alkhair.net/quran/reciters/ayman-suwaid/"));
   assert.match(read("robots.txt"),/Sitemap: https:\/\/zad-alkhair\.net\/sitemap\.xml/);
 });
@@ -160,6 +161,10 @@ test("direct Quran pages boot the same reader and carry their own sharing card",
     const filename=new URL(image).pathname;
     assert.ok(filename.endsWith(surah?`-${mode}-v2.jpg`:`-${mode==="read"?"reader":"listen"}-share-v2.jpg`));
     assert.ok(fs.existsSync(path.join(root,filename)));
+    if(mode==="read"&&surah){
+      assert.match(html,/<article class="reader-surah-summary">/);
+      assert.ok(html.includes(`href="/quran-listen/${surah.n}/"`));
+    }
   }
   const index=read("quran-index/index.html");
   assert.match(index,/href="\/quran-read\/114\/"/);

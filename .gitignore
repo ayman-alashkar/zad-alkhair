@@ -11,3 +11,6 @@ coverage/
 playwright-report/
 test-results/
 *.log
+
+# Temporary input used by the sharing-card renderer.
+/social/cards/.render.html
