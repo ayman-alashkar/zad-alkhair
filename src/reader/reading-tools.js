@@ -249,15 +249,23 @@ async function verseTextFull(k,pageHint=null){
   }
   return out.length?out.join(" "):verseTextCached(k);
 }
+function directQuranSurah(s){
+  return (document.querySelector('meta[name="zk-direct-reader"]')?.content||"").split(",").includes(String(s));
+}
+function directQuranPath(){
+  const m=/^\/quran-(read|listen)(?:\/([1-9]\d{0,2}))?\/?$/.exec(location.pathname);
+  if(!m||m[2]&&!directQuranSurah(m[2]))return null;
+  return {mode:m[1],surah:m[2]?Number(m[2]):null};
+}
 function publicSurahUrl(s,ayah=null){
-  const n=Number(s),u=new URL(`surah/${n}/`,new URL("./",location.href));
+  const n=Number(s),u=new URL(`/${directQuranSurah(n)?"quran-read":"surah"}/${n}/`,location.origin);
   const a=Number(ayah);
   if(Number.isInteger(a)&&a>=1)u.searchParams.set("ayah",String(a));
   return u.href;
 }
 function publicJuzUrl(j){
   const n=Number(j);
-  return new URL(`juz/${n}/`,new URL("./",location.href)).href;
+  return new URL(`/juz/${n}/`,location.origin).href;
 }
 function linkFor(k){
   const [s,a]=String(k||"").split(":").map(Number);
@@ -271,11 +279,12 @@ function ayahFromHash(){
 }
 function readerEntryParams(){
   const q=new URLSearchParams(location.search);
+  const direct=directQuranPath();
   const rawCode=String(q.get("code")||"").trim().toUpperCase();
   const code=rawCode.slice(0,4);
   const juz=Number(q.get("juz")),page=Number(q.get("page"));
-  const surah=Number(q.get("surah")),ayah=Number(q.get("ayah")),home=q.get("home")==="1",fromZad=q.get("from")==="zad";
-  const listen=q.get("listen")==="1";
+  const surah=direct?direct.surah:Number(q.get("surah")),ayah=Number(q.get("ayah")),home=!direct&&q.get("home")==="1",fromZad=q.get("from")==="zad";
+  const listen=direct?direct.mode==="listen":q.get("listen")==="1";
   const qari=String(q.get("qari")||"").trim();
   return {
     code,
@@ -285,12 +294,12 @@ function readerEntryParams(){
     ayah:Number.isInteger(ayah)&&ayah>=1?ayah:null,
     qari:RECITERS.some(r=>r.id===qari)?qari:null,
     autoplay:q.get("play")==="1",
-    home,listen,fromZad
+    home,listen,fromZad,direct:direct?.mode||""
   };
 }
 function zadReturnUrl(){
   const {code}=readerEntryParams();
-  return code?`./#${encodeURIComponent(code)}`:"./?zad=1";
+  return code?`/#${encodeURIComponent(code)}`:"/?zad=1";
 }
 async function copyText(t,msg="تم النسخ"){
   try{
@@ -487,6 +496,6 @@ zadReturnBtn.addEventListener("pointerup",e=>{
   cancelZadReturnHold();
   if(zadReturnHeld){zadReturnHeld=false;e.preventDefault();return}
   /* سهم العودة يقود دائمًا إلى الصفحة الرئيسية لزاد الخير، حتى لو فُتح القارئ من ختمة. */
-  location.href="./";
+  location.href="/";
 });
 zadReturnBtn.addEventListener("contextmenu",e=>e.preventDefault());

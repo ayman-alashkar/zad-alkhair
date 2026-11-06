@@ -1,14 +1,14 @@
 
 
 /* UI fonts are local in the approved Zad Al-Khair repository. */
-@font-face{font-family:"Alexandria";src:url("fonts/alexandria-arabic-400-800.woff2") format("woff2");font-weight:400 800;font-style:normal;font-display:swap;unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
-@font-face{font-family:"Alexandria";src:url("fonts/alexandria-latin-400-800.woff2") format("woff2");font-weight:400 800;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"Amiri";src:url("fonts/amiri-arabic-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
-@font-face{font-family:"Amiri";src:url("fonts/amiri-latin-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"Amiri";src:url("fonts/amiri-arabic-700.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
-@font-face{font-family:"Amiri";src:url("fonts/amiri-latin-700.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-@font-face{font-family:"Aref Ruqaa";src:url("fonts/aref-ruqaa-arabic-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
-@font-face{font-family:"Aref Ruqaa";src:url("fonts/aref-ruqaa-arabic-700.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:"Alexandria";src:url("/fonts/alexandria-arabic-400-800.woff2") format("woff2");font-weight:400 800;font-style:normal;font-display:swap;unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:"Alexandria";src:url("/fonts/alexandria-latin-400-800.woff2") format("woff2");font-weight:400 800;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Amiri";src:url("/fonts/amiri-arabic-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:"Amiri";src:url("/fonts/amiri-latin-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Amiri";src:url("/fonts/amiri-arabic-700.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+2010-2011,U+204F,U+2E41,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:"Amiri";src:url("/fonts/amiri-latin-700.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Aref Ruqaa";src:url("/fonts/aref-ruqaa-arabic-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Aref Ruqaa";src:url("/fonts/aref-ruqaa-arabic-700.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
 
 @font-face{
   font-family:"QCF4_Hafs_01";
@@ -2334,7 +2334,7 @@ body.zl-open .audio-panel,body.zl-open .audio-fab{display:none!important}
 .zl-scroll>*{max-width:560px;margin-inline:auto}
 /* النقش في الخلفية كالرئيسية: ٤٪ نهارًا و٣٪ ليلًا، يجري ببطء. */
 .zl-pattern{position:absolute;top:-60px;left:-60px;right:-320px;bottom:-220px;z-index:-1;pointer-events:none;opacity:.04;
-  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:zlFlow 60s linear infinite}
+  background:url("/icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:zlFlow 60s linear infinite}
 html[data-theme="dark"] .zl-pattern{opacity:.03}
 .zad-listen{overflow:hidden}
 @keyframes zlFlow{to{transform:translate(-248.16px,-164.95px)}}
@@ -2348,7 +2348,7 @@ html[data-theme="dark"] .zl-pattern{opacity:.03}
 .zl-card{position:relative;overflow:hidden;isolation:isolate;border-radius:26px;padding:16px 16px 0;color:#FFF9EA;
   background:radial-gradient(circle at 30% 30%,rgba(228,201,128,.14),transparent 18rem),linear-gradient(145deg,#0D3C35,#082D29);box-shadow:0 18px 40px -22px rgba(6,40,35,.65)}
 .zl-card-pattern{position:absolute;top:-60px;left:-60px;right:-320px;bottom:-220px;z-index:-1;opacity:.056;pointer-events:none;
-  background:url("icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:zlFlow 60s linear infinite;animation-play-state:paused}
+  background:url("/icons/zad-rosette.svg") 0 0/496.31px 329.9px repeat;animation:zlFlow 60s linear infinite;animation-play-state:paused}
 /* النقش في البطاقة يجري مع التلاوة ويقف بوقوفها. */
 .zl-card.playing .zl-card-pattern{animation-play-state:running}
 .zl-eyebrow{display:flex;align-items:center;justify-content:center;gap:7px;min-height:18px;font-size:12px;color:rgba(255,249,234,.74)}

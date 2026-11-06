@@ -3,18 +3,20 @@
   try{
     validateStaticData();
     buildPageShells();
+    const early=readerEntryParams();
     /* فتح الفهرس (تبويب «القرآن العظيم») لا يحتاج خطوط صفحات المصحف: أسماء السور
        بخط الرقعة، والبيانات محفوظة على الجهاز. فيظهر فورًا، ويكمل الإقلاع خلفه. */
     let earlyIndexOpened=false;
     {
-      const early=readerEntryParams(),stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
-      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||early.listen||stored?.surface!=="reader");
-      if(plainHome&&early.listen){
+      const stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
+      const plainHome=!early.direct&&!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||early.listen||stored?.surface!=="reader");
+      if(early.listen&&(early.direct||plainHome)){
         await loadQcfMeta();
         validateMetadataConsistency();
         const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
         if(saved>=1&&saved<=TOTAL_PAGES)currentPage=saved;
         loading.classList.add("hide");
+        if(early.surah)listenTarget={surah:early.surah,reciter:RECITERS.find(r=>r.id===early.qari)||reciter};
         openListenPage();
         earlyIndexOpened=true;
       }else if(plainHome){
@@ -41,26 +43,33 @@
     currentPage=1;let previousVisit=null;
     const m=storageJsonGet(STORAGE_KEYS.lastPosition,null),savedPage=Number(m?.page);
     if(savedPage>=1&&savedPage<=TOTAL_PAGES){currentPage=savedPage;previousVisit={...m,page:savedPage}}
-    archivePreviousVisit(previousVisit);
+    if(early.direct!=="listen")archivePreviousVisit(previousVisit);
 
     /* Integration deep links. Specific ayah wins, then page, then juz, then saved position. */
-    const entry=readerEntryParams();
-    if(entry.qari){
+    const entry=early;
+    if(entry.qari&&!entry.direct){
       reciter=RECITERS.find(r=>r.id===entry.qari)||defaultReciter();
       storageJsonSet(STORAGE_KEYS.qari,reciter);
     }
-    let deepLinkedAyah=ayahFromHash();
-    if(!deepLinkedAyah&&entry.surah&&entry.ayah){
+    let deepLinkedAyah=entry.direct?null:ayahFromHash();
+    if(entry.direct==="read"&&entry.surah){
+      const max=Number(chapterMap.get(entry.surah)?.verses_count||0);
+      deepLinkedAyah=`${entry.surah}:${entry.ayah&&entry.ayah<=max?entry.ayah:1}`;
+    }else if(!entry.direct&&!deepLinkedAyah&&entry.surah&&entry.ayah){
       const max=Number(chapterMap.get(entry.surah)?.verses_count||0);
       if(entry.ayah<=max)deepLinkedAyah=`${entry.surah}:${entry.ayah}`;
     }
     const noDeepTarget=!deepLinkedAyah&&!entry.page&&!entry.juz&&!entry.surah;
     const storedSurface=storageJsonGet(STORAGE_KEYS.lastSurface,null);
-    const wantsHome=entry.home||entry.listen||(noDeepTarget&&storedSurface?.surface!=="reader");
+    const wantsHome=entry.home||entry.listen||(!entry.direct&&noDeepTarget&&storedSurface?.surface!=="reader");
     if(!noDeepTarget&&!entry.home){readerReturnToQuranHome=false;storageSet(STORAGE_KEYS.readerParent,"")}
     else if(noDeepTarget&&storedSurface?.surface==="reader"&&storageGet(STORAGE_KEYS.readerParent,"")==="quran-home")readerReturnToQuranHome=true;
     if(deepLinkedAyah){
-      const p=await getVersePage(deepLinkedAyah);
+      let p=await getVersePage(deepLinkedAyah);
+      if(!p&&entry.direct==="read"){
+        if(deepLinkedAyah.endsWith(":1"))p=Number(chapterMap.get(entry.surah)?.pages?.[0]);
+        if(!p)throw Error("Reading target unavailable");
+      }
       if(p)currentPage=p;
     }else if(entry.page){
       currentPage=entry.page;
@@ -69,14 +78,14 @@
     }
     await ensurePage(currentPage);
     updatePage(false,false);
-    saveLastPosition();
+    if(entry.direct!=="listen")saveLastPosition();
     if(!wantsHome)saveReaderSurface("reader");
     if(!readerGoPending)loading.classList.add("hide");
     if(deepLinkedAyah){
       const anchor=document.querySelector(`.page[data-page="${currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
       if(anchor)selectVerse(deepLinkedAyah,anchor,true);
     }
-    if(entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
+    if(!entry.direct&&entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
     prefetchAround(currentPage).then(()=>trimPageDom(currentPage));
     loadTafsirIndex().catch(err=>console.warn("tafsir index unavailable",err));
     readerBootDone();

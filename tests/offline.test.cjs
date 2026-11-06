@@ -21,6 +21,23 @@ test('known shell falls back on server error or a stalled network',async()=>{
   assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/reader'))")).text(),/ok:https:\/\/example\.test\/reader$/);
 });
 
+test('direct Quran URLs serve their own HTML online and can open from an updated reader offline',async()=>{
+  const e=setup();
+  await e.run('ensureOfflineShell()');
+  const cache=await e.run('caches.open(SHELL_CACHE)');
+  const reader=new Request('https://example.test/reader.html');
+  const route="new Request('https://example.test/quran-listen/114/?qari=SaadAlGhamdi_Hafs')";
+  e.setFetch(async()=>new Response('route-specific HTML'));
+  assert.equal(await (await e.run(`shellFirstDocument(${route})`)).text(),'route-specific HTML');
+  assert.notEqual(await (await cache.match(reader)).text(),'route-specific HTML');
+  e.setFetch(async()=>{throw Error('offline')});
+  await assert.rejects(e.run(`shellFirstDocument(${route})`),/offline/);
+  const updated='<meta name="zk-direct-reader" content="114"><main>Cached reader</main>';
+  await cache.put(reader,new Response(updated));
+  assert.equal(await (await e.run(`shellFirstDocument(${route})`)).text(),updated);
+  await assert.rejects(e.run("shellFirstDocument(new Request('https://example.test/quran-listen/113/'))"),/offline/);
+});
+
 test('failed shell refresh retains last good pages',async()=>{
   const e=setup();await e.run('ensureOfflineShell()');
   e.setFetch(async r=>r.url.endsWith('/reader')?new Response('failure',{status:503}):new Response('new index'));

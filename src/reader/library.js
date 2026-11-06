@@ -124,19 +124,19 @@ function chooseOfflineReciterForSurah(s,rows){
     let settled=false;
     const finish=r=>{if(settled)return;settled=true;try{b.remove()}catch(_){ }resolve(r||null)};
     const choices=rows.map(({r})=>`<button type="button" class="audio-qari-choice" data-offline-play-qari="${escapeHtml(r.id)}"><span>${escapeHtml(r.name)}</span><small>متاح دون اتصال ✓</small></button>`).join("");
-    const b=sheet("اختر القارئ",`<div class="audio-offline-prompt">هذه السورة متاحة للتشغيل دون اتصال، بصوت أكثر من قارئ. اختر القارئ الذي تود الاستماع بصوته:</div><div class="audio-qari-choices">${choices}</div>`);
+    const b=sheet("اختر القارئ",`<div class="audio-offline-prompt">اختر من التلاوات المنزّلة لهذه السورة:</div><div class="audio-qari-choices">${choices}</div>`);
     b.querySelectorAll("[data-offline-play-qari]").forEach(btn=>btn.onclick=()=>{
       const r=rows.find(x=>x.r.id===btn.dataset.offlinePlayQari)?.r||null;finish(r);
     });
     b.addEventListener("click",e=>{if(e.target===b||e.target.closest(".close-sheet"))finish(null)});
   });
 }
-async function ensureOfflinePlaybackReciter(s,{chooseWhenMultiple=false}={}){
+async function ensureOfflinePlaybackReciter(s,{chooseWhenMultiple=false,confirmDifferent=false}={}){
   if(navigator.onLine)return true;
   const rows=await downloadedAudioPackagesForSurah(s,true);
   if(!rows.length){showToast(AUDIO_OFFLINE_UNAVAILABLE);return false}
   const current=rows.find(({r})=>r.id===reciter.id)||null;
-  if(rows.length>1&&chooseWhenMultiple){
+  if((rows.length>1&&chooseWhenMultiple)||(!current&&confirmDifferent)){
     const chosen=await chooseOfflineReciterForSurah(s,rows);if(!chosen)return false;
     activateOfflineReciter(chosen);return true;
   }
@@ -348,11 +348,11 @@ function openQuranHubMenu(closeHub){
 }
 /* أقسام زاد الخير الخمسة، كما في الصفحة الرئيسية. تظهر في الفهرس وحده، لا فوق صفحات المصحف. */
 const READER_APP_TABS=`<nav class="reader-app-tabs" aria-label="الأقسام" style="--app-tab-i:1"><span class="reader-app-dot" aria-hidden="true"></span>
-  <a href="./" data-app-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-6h-6v6H3Z"/></svg><span data-label="الرئيسية">الرئيسية</span></a>
-  <a href="#" aria-current="page" data-app-tab="quran"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span data-label="القرآن">القرآن</span></a>
-  <a href="reader.html?listen=1&amp;from=zad" data-app-tab="listen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/></svg><span data-label="التلاوة">التلاوة</span></a>
-  <a href="./?section=khatmahs" data-app-tab="khatmahs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span data-label="الختمات">الختمات</span></a>
-  <a href="./?section=prayer" data-app-tab="prayer"><svg viewBox="0 0 25 24" aria-hidden="true"><path d="M9.15 9C5.68 5.5 11.01 3.75 12.5 2c1.49 1.75 6.82 3.5 3.35 7Z"/><path d="M18.5 12v-1c0-1.5-.5-2-2-2h-8c-1.5 0-2 .5-2 2v1"/><path d="M17.5 12h-10c-2.5 0-3 .5-3 3v4c0 2.5.5 3 3 3h10c2.5 0 3-.5 3-3v-4c0-2.5-.5-3-3-3Z"/><path d="M10 22v-3c0-3 2.5-4 2.5-4s2.5 1 2.5 4v3"/></svg><span data-label="المواقيت">المواقيت</span></a>
+  <a href="/" data-app-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-6h-6v6H3Z"/></svg><span data-label="الرئيسية">الرئيسية</span></a>
+  <a href="/quran-index/" aria-current="page" data-app-tab="quran"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span data-label="القرآن">القرآن</span></a>
+  <a href="/quran-listen/?from=zad" data-app-tab="listen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/></svg><span data-label="التلاوة">التلاوة</span></a>
+  <a href="/?section=khatmahs" data-app-tab="khatmahs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span data-label="الختمات">الختمات</span></a>
+  <a href="/?section=prayer" data-app-tab="prayer"><svg viewBox="0 0 25 24" aria-hidden="true"><path d="M9.15 9C5.68 5.5 11.01 3.75 12.5 2c1.49 1.75 6.82 3.5 3.35 7Z"/><path d="M18.5 12v-1c0-1.5-.5-2-2-2h-8c-1.5 0-2 .5-2 2v1"/><path d="M17.5 12h-10c-2.5 0-3 .5-3 3v4c0 2.5.5 3 3 3h10c2.5 0 3-.5 3-3v-4c0-2.5-.5-3-3-3Z"/><path d="M10 22v-3c0-3 2.5-4 2.5-4s2.5 1 2.5 4v3"/></svg><span data-label="المواقيت">المواقيت</span></a>
 </nav>`;
 function openQuranIndex(initialTab="s",options={}){
   document.querySelector(".quran-index")?.remove();

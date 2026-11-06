@@ -4,27 +4,89 @@
 // separate for editing; emitted HTML retains the original inline execution order.
 const fs = require("node:fs");
 const path = require("node:path");
+const { createHash } = require("node:crypto");
+const { readerRoutes, supported, shareOrigin, preview, indexPath } = require("./quran-routes.cjs");
 const { readAppScript } = require("./app-source.cjs");
 const root = path.resolve(__dirname, "..");
 const check = process.argv.includes("--check");
 let stale = false;
 
-for (const [name, output] of [["home", "index.html"], ["reader", "reader.html"]]) {
-  const dir = path.join(root, "src", name);
-  let html = fs.readFileSync(path.join(dir, "index.html"), "utf8");
-  for (const file of ["styles.css", "app.js"]) {
-    const marker = `<!-- @inline ${file} -->`;
-    if (html.split(marker).length !== 2) throw Error(`Expected one ${marker} in ${name}`);
-    const source = file === "app.js" ? readAppScript(dir) : fs.readFileSync(path.join(dir, file), "utf8");
-    const closing = file.endsWith(".js") ? /<\/script[\s>]/i : /<\/style[\s>]/i;
-    if (closing.test(source)) throw Error(`Unsafe inline closing tag in ${name}/${file}`);
-    html = html.replace(marker, () => source);
-  }
+function write(output, content) {
   const target = path.join(root, output);
-  if (fs.existsSync(target) && fs.readFileSync(target, "utf8") === html) continue;
+  if (fs.existsSync(target) && fs.readFileSync(target, "utf8") === content) return;
   if (check) {
     console.error(`Stale generated file: ${output}; run npm run build`);
     stale = true;
-  } else fs.writeFileSync(target, html);
+    return;
+  }
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content);
 }
+
+function appSources(dir) {
+  const css = fs.readFileSync(path.join(dir, "styles.css"), "utf8");
+  const js = readAppScript(dir);
+  if (/<\/script[\s>]/i.test(js) || /<\/style[\s>]/i.test(css)) throw Error(`Unsafe inline closing tag in ${dir}`);
+  return { css, js };
+}
+
+function readerMeta({ mode, surah, path: route }) {
+  const listening = mode === "listen";
+  const kind = listening ? "استماع" : "قراءة";
+  const label = surah ? `سورة ${surah.name} — ${kind}` : listening ? "مشغّل التلاوة في زاد الخير" : "قارئ زاد الخير";
+  const title = surah ? `${label} | زاد الخير` : label;
+  const description = surah
+    ? listening ? `استمع إلى سورة ${surah.name} بصوت القارئ الذي تختاره في مشغّل زاد الخير.`
+      : `اقرأ سورة ${surah.name} في المصحف الشريف مع التفسير الوجيز في زاد الخير.`
+    : listening ? "استمع إلى القرآن العظيم في مشغّل زاد الخير." : "اقرأ القرآن العظيم في مصحف زاد الخير.";
+  const image = surah ? `/social/surah/surah-${String(surah.n).padStart(3, "0")}-${mode}-v2.jpg`
+    : `/social/zad-alkhair-${listening ? "listen" : "reader"}-share-v2.jpg`;
+  const escape = value => value.replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+  const meta = (name, content) => `<meta ${name.startsWith("og:") ? "property" : "name"}="${name}" content="${escape(content)}">`;
+  return [
+    `<title>${escape(title)}</title>`,
+    meta("description", description),
+    meta("robots", preview || listening ? "noindex,follow" : "index,follow"),
+    `<link rel="canonical" href="https://zad-alkhair.net${route}">`,
+    meta("og:type", "website"), meta("og:locale", "ar_AR"), meta("og:site_name", "زاد الخير"),
+    meta("og:url", shareOrigin + route), meta("og:title", title), meta("og:description", description),
+    meta("og:image", shareOrigin + image), meta("og:image:alt", label),
+    meta("og:image:width", "1200"), meta("og:image:height", "675"),
+    meta("twitter:card", "summary_large_image"), meta("twitter:title", title),
+    meta("twitter:description", description), meta("twitter:image", shareOrigin + image),
+  ].join("\n");
+}
+
+for (const [name, output] of [["home", "index.html"], ["reader", "reader.html"]]) {
+  const dir = path.join(root, "src", name);
+  let template = fs.readFileSync(path.join(dir, "index.html"), "utf8");
+  const { css, js } = appSources(dir);
+  const cssMarker = "<!-- @inline styles.css -->", jsMarker = "<!-- @inline app.js -->";
+  for (const marker of [cssMarker, jsMarker]) {
+    if (template.split(marker).length !== 2) throw Error(`Expected one ${marker} in ${name}`);
+  }
+  if (name === "reader") {
+    template = template.replace("<!-- @quran-route-config -->", `<meta name="zk-direct-reader" content="${[...supported].join(",")}">`);
+  }
+  write(output, template.replace(cssMarker, () => css).replace(jsMarker, () => js));
+  if (name !== "reader") continue;
+
+  const version = createHash("sha256").update(css).update("\0").update(js).digest("hex").slice(0, 12);
+  const assets = "/quran/runtime/reader";
+  write("quran/runtime/reader.css", css);
+  write("quran/runtime/reader.js", js);
+  const directTemplate = template
+    .replace(`<style>${cssMarker}</style>`, `<link rel="stylesheet" href="${assets}.css?v=${version}">`)
+    .replace(`<script>${jsMarker}</script>`, `<script src="${assets}.js?v=${version}"></script>`)
+    .replace("</body>", `<noscript><p>فعّل JavaScript لفتح المصحف ومشغّل التلاوة. <a href="${indexPath}">فهرس القرآن</a></p></noscript>\n</body>`);
+  for (const route of readerRoutes) {
+    const html = directTemplate.replace(/<!-- @reader-meta-start -->[\s\S]*?<!-- @reader-meta-end -->/, () => readerMeta(route));
+    write(`${route.path.slice(1)}index.html`, html);
+  }
+}
+
+const worker = fs.readFileSync(path.join(root, "sw.js"), "utf8");
+const directPaths = /^const DIRECT_QURAN_PATHS=.*;$/m;
+if (!directPaths.test(worker)) throw Error("Missing direct Quran paths in sw.js");
+write("sw.js", worker.replace(directPaths, `const DIRECT_QURAN_PATHS=new Set(${JSON.stringify(readerRoutes.map(route => route.path))});`));
 if (stale) process.exitCode = 1;

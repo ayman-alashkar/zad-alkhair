@@ -1710,7 +1710,7 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
               </button>
               <div class="zt-menu-sep" role="separator"></div>
               <div class="zt-menu-label">دليل زاد الخير</div>
-              <a href="quran/" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span>الفهرس والقراء</span></a>
+              <a href="/quran-index/" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg><span>الفهرس والقراء</span></a>
               <a href="khatmahs/" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/></svg><span>كيف تعمل الختمات؟</span></a>
               <a href="about/" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/></svg><span>عن التطبيق</span></a>
             </div>
@@ -1761,11 +1761,11 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-6h-6v6H3Z"/></svg>
     <span data-label="الرئيسية">الرئيسية</span>
   </button>
-  <a class="zk-tab" id="zk-launch-quran" href="quran/">
+  <a class="zk-tab" id="zk-launch-quran" href="/quran-index/">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg>
     <span data-label="القرآن">القرآن</span>
   </a>
-  <a class="zk-tab" id="zk-launch-listen" href="reader.html?listen=1&amp;from=zad">
+  <a class="zk-tab" id="zk-launch-listen" href="/quran-listen/?from=zad">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/></svg>
     <span data-label="التلاوة">التلاوة</span>
   </a>
@@ -5666,7 +5666,7 @@ document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{
 });
 document.getElementById("zk-launch-listen")?.addEventListener("click",event=>{
   event.preventDefault();
-  ztNavigateAfterTab("zk-launch-listen","reader.html?listen=1&from=zad");
+  ztNavigateAfterTab("zk-launch-listen","/quran-listen/?from=zad");
 });
 document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
 document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{

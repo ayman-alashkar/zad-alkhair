@@ -3,6 +3,7 @@ const path=require("node:path");
 
 const root=path.resolve(__dirname,"..");
 const site="https://zad-alkhair.net";
+const {indexPath,supported,shareOrigin,preview,readSurahPath,listenSurahPath}=require("./quran-routes.cjs");
 const esc=value=>String(value).replace(/[&<>\"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
 const json=value=>JSON.stringify(value).replace(/</g,"\\u003c");
 const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
@@ -27,8 +28,8 @@ function write(relative,content){
   fs.writeFileSync(file,content);
 }
 
-function head({title,description,shareDescription=description,canonical,image="/social/zad-alkhair-share-v2.jpg",type="website",jsonLd,extra=""}){
-  const url=`${site}${canonical}`,imageUrl=`${site}${image}`;
+function head({title,description,shareDescription=description,canonical,image="/social/zad-alkhair-share-v2.jpg",type="website",jsonLd,extra="",socialOrigin=site,noindex=false}){
+  const url=`${site}${canonical}`,imageUrl=`${socialOrigin}${image}`;
   return `<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -37,7 +38,7 @@ function head({title,description,shareDescription=description,canonical,image="/
 <meta name="theme-color" content="#F5F0E4">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
-<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<meta name="robots" content="${noindex?"noindex,follow":"index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1"}">
 <link rel="canonical" href="${url}">
 <link rel="icon" href="/icons/zad-mark.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.json">
@@ -47,7 +48,7 @@ function head({title,description,shareDescription=description,canonical,image="/
 <meta property="og:type" content="${type}">
 <meta property="og:locale" content="ar_AR">
 <meta property="og:site_name" content="زاد الخير">
-<meta property="og:url" content="${url}">
+<meta property="og:url" content="${socialOrigin}${canonical}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(shareDescription)}">
 <meta property="og:image" content="${imageUrl}">
@@ -86,9 +87,9 @@ function surahPage(s){
   const description=`سورة ${s.name} مكتوبة للقراءة والاستماع بصوت القراء الأفاضل: ${reciterDescription}، مع التفسير الوجيز.`;
   const canonical=`/surah/${s.n}/`,image=`/social/surah/surah-${String(s.n).padStart(3,"0")}-v2.jpg`;
   const graph={"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":`${site}${canonical}#webpage`,name:title,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}},{"@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"زاد الخير",item:`${site}/`},{"@type":"ListItem",position:2,name:"الفهرس والقراء",item:`${site}/quran/`},{"@type":"ListItem",position:3,name:`سورة ${s.name}`,item:`${site}${canonical}`}]}]};
-  const listeners=reciters.map(r=>`<a class="listen" ${r.surahOnly?'data-surah-only="true"':""} href="/reader.html?surah=${s.n}&amp;ayah=1&amp;qari=${encodeURIComponent(r.id)}&amp;play=1" aria-label="الاستماع إلى سورة ${esc(s.name)} بصوت ${esc(r.display)}">${esc(r.display)}</a>`).join("\n");
+  const listeners=reciters.map(r=>`<a class="listen" ${r.surahOnly?'data-surah-only="true"':""} href="${listenSurahPath(s.n,r.id)}" aria-label="الاستماع إلى سورة ${esc(s.name)} بصوت ${esc(r.display)}">${esc(r.display)}</a>`).join("\n");
   const shareDescription=`اقرأ سورة ${s.name} واستمع إليها بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.`;
-  return `${head({title,description,shareDescription,canonical,image,jsonLd:graph,extra:`<meta name="zk:verses" content="${s.verses}">\n`})}<body>${siteHead}${crumbs([["زاد الخير","/"],["الفهرس والقراء","/quran/"],[`سورة ${s.name}`]])}<main><div class="eyebrow">سورة رقم ${arNum(s.n)} · ${arNum(s.verses)} آية</div><h1>سورة ${esc(s.name)} مكتوبة — قراءة واستماع</h1><p class="lead">اقرأ سورة ${esc(s.name)} من المصحف الشريف، واستمع إليها بصوت نخبة من القراء، وارجع إلى التفسير الوجيز للدكتور وهبة الزحيلي أثناء القراءة.</p><div class="actions"><a class="btn primary" id="openReader" href="/reader.html?surah=${s.n}&amp;ayah=1">قراءة سورة ${esc(s.name)}</a><a class="btn secondary" href="/quran/">فهرس القرآن العظيم</a></div><h2>سورة ${esc(s.name)} بصوت القراء</h2><p>اختر القارئ الذي تود سماع سورة ${esc(s.name)} بصوته:</p><div class="listen-list">${listeners}</div><h2>القراءة والتفسير دون اتصال</h2><p>يمكن تجهيز المصحف والتفسير للاستخدام دون اتصال، كما يمكن تنزيل تلاوة السورة بصوت القارئ الذي تختاره للاستماع إليها لاحقًا.</p></main>${footer}<script>(()=>{const p=new URLSearchParams(location.search);if(!["code","ayah","qari","open"].some(k=>p.has(k)))return;const u=new URL("/reader.html",location.href);u.searchParams.set("surah","${s.n}");const a=Number(p.get("ayah"));u.searchParams.set("ayah",Number.isInteger(a)&&a>=1&&a<=${s.verses}?String(a):"1");for(const k of ["code","qari","play"])if(p.get(k))u.searchParams.set(k,p.get(k));location.replace(u.href)})()</script></body></html>`;
+  return `${head({title,description,shareDescription,canonical,image,jsonLd:graph,extra:`<meta name="zk:verses" content="${s.verses}">\n`})}<body>${siteHead}${crumbs([["زاد الخير","/"],["الفهرس والقراء","/quran/"],[`سورة ${s.name}`]])}<main><div class="eyebrow">سورة رقم ${arNum(s.n)} · ${arNum(s.verses)} آية</div><h1>سورة ${esc(s.name)} مكتوبة — قراءة واستماع</h1><p class="lead">اقرأ سورة ${esc(s.name)} من المصحف الشريف، واستمع إليها بصوت نخبة من القراء، وارجع إلى التفسير الوجيز للدكتور وهبة الزحيلي أثناء القراءة.</p><div class="actions"><a class="btn primary" id="openReader" href="${supported.has(s.n)?readSurahPath(s.n):`/reader.html?surah=${s.n}&amp;ayah=1`}">قراءة سورة ${esc(s.name)}</a><a class="btn secondary" href="/quran/">فهرس القرآن العظيم</a></div><h2>سورة ${esc(s.name)} بصوت القراء</h2><p>اختر القارئ الذي تود سماع سورة ${esc(s.name)} بصوته:</p><div class="listen-list">${listeners}</div><h2>القراءة والتفسير دون اتصال</h2><p>يمكن تجهيز المصحف والتفسير للاستخدام دون اتصال، كما يمكن تنزيل تلاوة السورة بصوت القارئ الذي تختاره للاستماع إليها لاحقًا.</p></main>${footer}<script>(()=>{const p=new URLSearchParams(location.search);if(!["code","ayah","qari","open"].some(k=>p.has(k)))return;const u=new URL("/reader.html",location.href);u.searchParams.set("surah","${s.n}");const a=Number(p.get("ayah"));u.searchParams.set("ayah",Number.isInteger(a)&&a>=1&&a<=${s.verses}?String(a):"1");for(const k of ["code","qari","play"])if(p.get(k))u.searchParams.set(k,p.get(k));location.replace(u.href)})()</script></body></html>`;
 }
 function juzPage(j){
   const title=`${j.title} من القرآن — قراءة واستماع | زاد الخير`,canonical=`/juz/${j.n}/`,image=`/social/juz/juz-${String(j.n).padStart(2,"0")}-v2.jpg`;
@@ -96,27 +97,28 @@ function juzPage(j){
   const graph={"@context":"https://schema.org","@graph":[{"@type":"WebPage",name:title,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}},{"@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"زاد الخير",item:`${site}/`},{"@type":"ListItem",position:2,name:"الفهرس والقراء",item:`${site}/quran/`},{"@type":"ListItem",position:3,name:j.title,item:`${site}${canonical}`}]}]};
   return `${head({title,description,canonical,image,jsonLd:graph})}<body>${siteHead}${crumbs([["زاد الخير","/"],["الفهرس والقراء","/quran/"],[j.title]])}<main><div class="eyebrow">الجزء رقم ${j.n} من 30</div><h1>${esc(j.title)} من القرآن العظيم</h1><p class="lead">${esc(j.desc)}</p><p>اقرأ الجزء في مصحف زاد الخير، واستعن بالتفسير الوجيز للدكتور وهبة الزحيلي، أو استمع إلى التلاوة بصوت القارئ الذي تختاره.</p><div class="actions"><a class="btn primary" id="openReader" href="/reader.html?juz=${j.n}">قراءة ${esc(j.title)}</a><a class="btn secondary" href="/quran/#ajzaa">فهرس الأجزاء</a></div><h2>القراءة والاستماع دون اتصال</h2><p>يتيح زاد الخير تجهيز القرآن والتفسير للاستخدام دون إنترنت، وتنزيل تلاوات السور المطلوبة بصورة منفصلة.</p></main>${footer}<script>(()=>{const p=new URLSearchParams(location.search);if(!["code","open"].some(k=>p.has(k)))return;const u=new URL("/reader.html",location.href);u.searchParams.set("juz","${j.n}");if(p.get("code"))u.searchParams.set("code",p.get("code"));location.replace(u.href)})()</script></body></html>`;
 }
-function quranPage(surahs,juz){
-  const title="القرآن العظيم | قراءة، تفسير واستماع | زاد الخير",canonical="/quran/";
+function quranPage(surahs,juz,{direct=false}={}){
+  const title="القرآن العظيم | قراءة، تفسير واستماع | زاد الخير",canonical=direct?indexPath:"/quran/";
   const description=`اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: ${reciterDescription}.`;
   const schema={"@context":"https://schema.org","@type":"CollectionPage",name:"القرآن العظيم في زاد الخير",url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}};
   const reciterCards=reciters.map(r=>`<a class="card link reciter-card" href="/quran/reciters/${r.slug}/"><strong>${esc(r.display)}</strong><small${r.surahOnly?' class="surah-only"':""}>${r.surahOnly?"الاستماع إلى السور كاملة":"القراءة ومتابعة الآيات"}</small></a>`).join("");
-  const surahLinks=surahs.map(s=>`<a class="item" href="/surah/${s.n}/"><span>سورة ${esc(s.name)}</span><small>آياتها: ${arNum(s.verses)}</small></a>`).join("");
+  const surahLinks=surahs.map(s=>`<a class="item" href="${direct?readSurahPath(s.n):`/surah/${s.n}/`}"><span>سورة ${esc(s.name)}</span><small>آياتها: ${arNum(s.verses)}</small></a>`).join("");
   const juzLinks=juz.map(j=>`<a class="item" href="/juz/${j.n}/">${esc(j.title)}</a>`).join("");
   const shareDescription="اقرأ القرآن العظيم واستمع إليه بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.";
-  return `${head({title,description,shareDescription,canonical,image:"/social/zad-alkhair-reader-share.jpg",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["الفهرس والقراء"]])}<main><h1>القرآن العظيم في زاد الخير</h1><p class="lead">اقرأ القرآن العظيم في مصحف المدينة، مع التفسير الوجيز للدكتور وهبة الزحيلي، وإمكانية الاستماع إلى تلاوات نخبة من القراء.</p><div class="actions"><a class="btn primary" href="/reader.html?home=1&amp;from=zad">افتح المصحف الشريف</a><a class="btn secondary" href="/quran/player-guide/">دليل مشغّل التلاوة</a></div><h2>الاستماع إلى القرآن بصوت القراء:</h2><div class="reciter-grid">${reciterCards}</div><h2 id="surahs">سور القرآن الكريم</h2><p>اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها.</p><nav class="link-grid surah-grid" aria-label="فهرس سور القرآن">${surahLinks}</nav><h2 id="ajzaa">أجزاء القرآن الكريم</h2><nav class="link-grid" aria-label="فهرس أجزاء القرآن">${juzLinks}</nav><h2>القراءة والاستماع دون اتصال</h2><p>يمكن تنزيل القرآن الكريم والتفسير كاملين للقراءة دون اتصال، كما يمكن تنزيل التلاوات التي تختارها سورةً سورةً للاستماع إليها لاحقًا.</p></main>${footer}</body></html>`;
+  return `${head({title,description,shareDescription,canonical,image:direct?"/social/zad-alkhair-reader-share-v2.jpg":"/social/zad-alkhair-reader-share.jpg",jsonLd:schema,socialOrigin:direct?shareOrigin:site,noindex:direct&&preview})}<body>${siteHead}${crumbs([["زاد الخير","/"],["الفهرس والقراء"]])}<main><h1>القرآن العظيم في زاد الخير</h1><p class="lead">اقرأ القرآن العظيم في مصحف المدينة، مع التفسير الوجيز للدكتور وهبة الزحيلي، وإمكانية الاستماع إلى تلاوات نخبة من القراء.</p><div class="actions"><a class="btn primary" href="${direct?"/quran-read/":"/reader.html?home=1&amp;from=zad"}">افتح المصحف الشريف</a>${direct?'<a class="btn secondary" href="/quran-listen/">مشغّل التلاوة</a>':""}<a class="btn secondary" href="/quran/player-guide/">دليل مشغّل التلاوة</a></div><h2>الاستماع إلى القرآن بصوت القراء:</h2><div class="reciter-grid">${reciterCards}</div><h2 id="surahs">سور القرآن الكريم</h2><p>اختر سورة لقراءتها، أو الاستماع إليها، أو معرفة تفسير آياتها.</p><nav class="link-grid surah-grid" aria-label="فهرس سور القرآن">${surahLinks}</nav><h2 id="ajzaa">أجزاء القرآن الكريم</h2><nav class="link-grid" aria-label="فهرس أجزاء القرآن">${juzLinks}</nav><h2>القراءة والاستماع دون اتصال</h2><p>يمكن تنزيل القرآن الكريم والتفسير كاملين للقراءة دون اتصال، كما يمكن تنزيل التلاوات التي تختارها سورةً سورةً للاستماع إليها لاحقًا.</p></main>${footer}</body></html>`;
 }
 function reciterPage(r,surahs){
   const title=`القرآن الكريم بصوت ${r.display} — استماع وقراءة | زاد الخير`,canonical=`/quran/reciters/${r.slug}/`;
   const description=r.surahOnly?`استمع إلى سور القرآن الكريم كاملة بصوت ${r.display} في زاد الخير. متابعة الآيات وتحديد الأجزاء غير متاحين بهذا الصوت.`:`اختر سورة من القرآن الكريم للاستماع إليها بصوت ${r.display} وقراءتها مع التفسير الوجيز في زاد الخير.`;
   const schema={"@context":"https://schema.org","@type":"CollectionPage",name:`القرآن الكريم بصوت ${r.display}`,url:`${site}${canonical}`,description,inLanguage:"ar",isPartOf:{"@id":`${site}/#website`}};
-  const links=surahs.map(s=>`<a class="item" href="/reader.html?surah=${s.n}&amp;ayah=1&amp;qari=${encodeURIComponent(r.id)}&amp;play=1" aria-label="سورة ${esc(s.name)} بصوت ${esc(r.display)}">سورة ${esc(s.name)}</a>`).join("");
+  const links=surahs.map(s=>`<a class="item" href="${listenSurahPath(s.n,r.id)}" aria-label="سورة ${esc(s.name)} بصوت ${esc(r.display)}">سورة ${esc(s.name)}</a>`).join("");
   return `${head({title,description,canonical,image:"/social/zad-alkhair-reader-share.jpg",jsonLd:schema})}<body>${siteHead}${crumbs([["زاد الخير","/"],["الفهرس والقراء","/quran/"],[r.display]])}<main><div class="eyebrow">تلاوات القرآن الكريم</div><h1>القرآن الكريم بصوت ${esc(r.display)}</h1><p class="note">اختر سورة من القائمة، لتسمعها بصوت ${esc(r.display)} وتقرأها في ذات الوقت.</p>${r.surahOnly?'<p class="note">هذا القارئ متاح للاستماع إلى السور كاملة، مع قائمة التشغيل والتكرار والمؤقت والتنزيل. متابعة الآيات وتحديد الأجزاء غير متاحين بهذا الصوت.</p>':""}<nav class="link-grid" aria-label="سور القرآن بصوت ${esc(r.display)}">${links}</nav><div class="actions"><a class="btn secondary" href="/quran/">العودة إلى فهرس القرآن</a></div></main>${footer}</body></html>`;
 }
 
 for(const s of surahs)write(`surah/${s.n}/index.html`,surahPage(s));
 for(const j of juz)write(`juz/${j.n}/index.html`,juzPage(j));
 write("quran/index.html",quranPage(surahs,juz));
+write(`${indexPath.slice(1)}index.html`,quranPage(surahs,juz,{direct:true}));
 for(const r of reciters)write(`quran/reciters/${r.slug}/index.html`,reciterPage(r,surahs));
 function installPage(){
   const title="تثبيت تطبيق زاد الخير",canonical="/install/";

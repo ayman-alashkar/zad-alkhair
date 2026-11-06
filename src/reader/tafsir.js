@@ -6,7 +6,7 @@ const TAFSIR_DATASET=Object.freeze({
   surahs:114,
   ayahs:6236,
   fadl:60,
-  localBase:"data/tafsir/al-wajeez/"
+  localBase:"/data/tafsir/al-wajeez/"
 });
 const tafsirSurahCache=new Map();
 let tafsirIndexCache=null,tafsirIndexPromise=null,tafsirFadlCache=null,tafsirFadlPromise=null;

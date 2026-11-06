@@ -17,6 +17,7 @@ const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
 const RUNTIME_CACHE="zad-runtime-v145";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
+const DIRECT_QURAN_PATHS=new Set(["/quran-read/","/quran-read/114/","/quran-listen/","/quran-listen/114/"]);
 
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
 const QUL_HEADER="https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf";
@@ -29,6 +30,7 @@ const SHELL_ALIASES={
   "./reader.html?home=1&from=zad":"./reader.html"
 };
 const OPTIONAL_SHELL=[
+  "./quran-index/",
   "./seo-pages.css?v=88e7bb5900","./seo-pages.js?v=88e7bb5900","./seo-install.js?v=88e7bb5900",
   "./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
@@ -281,7 +283,8 @@ async function cacheFirst(request,primaryCache){
 }
 
 function isReaderPath(pathname){return /\/reader(?:\.html)?\/?$/i.test(pathname)}
-function isIndexPath(pathname){return pathname==="/"||/\/index\.html$/i.test(pathname)}
+function isIndexPath(pathname){return pathname==="/"||pathname==="/index.html"}
+function isDirectQuranPath(pathname){return DIRECT_QURAN_PATHS.has(pathname.endsWith("/")?pathname:pathname+"/")}
 async function shellFallback(url){
   if(url.origin!==self.location.origin||(!isReaderPath(url.pathname)&&!isIndexPath(url.pathname)))return null;
   const key=isReaderPath(url.pathname)?"./reader.html":"./index.html";
@@ -296,6 +299,13 @@ async function shellFallback(url){
     }
   }
   return null;
+}
+async function directQuranFallback(url){
+  const reader=await shellFallback(new URL("/reader",url));
+  if(!reader)return null;
+  const supported=(await reader.clone().text()).match(/<meta name="zk-direct-reader" content="([\d,]*)">/);
+  const surah=url.pathname.match(/\/(\d+)\/?$/)?.[1];
+  return supported&&(!surah||supported[1].split(",").includes(surah))?reader:null;
 }
 async function cacheSuccessfulDocument(request,response){
   if(!cacheable(response))return;
@@ -314,19 +324,21 @@ async function cacheSuccessfulDocument(request,response){
 async function networkFirstDocument(request){
   const url=new URL(request.url);
   const isShell=url.origin===self.location.origin&&(isReaderPath(url.pathname)||isIndexPath(url.pathname));
-  const controller=isShell?new AbortController():null;
+  const direct=url.origin===self.location.origin&&isDirectQuranPath(url.pathname);
+  const fallback=()=>direct?directQuranFallback(url):shellFallback(url);
+  const controller=isShell||direct?new AbortController():null;
   const timer=controller?setTimeout(()=>controller.abort(),2000):null;
   try{
     const response=await fetch(request,controller?{signal:controller.signal}:undefined);
-    if(isShell&&response.status>=500){
-      const fallback=await shellFallback(url);
-      if(fallback)return fallback;
+    if((isShell||direct)&&response.status>=500){
+      const saved=await fallback();
+      if(saved)return saved;
     }
-    await cacheSuccessfulDocument(request,response);
+    if(!direct)await cacheSuccessfulDocument(request,response);
     return response;
   }catch(error){
-    const fallback=await shellFallback(url);
-    if(fallback)return fallback;
+    const saved=await fallback();
+    if(saved)return saved;
     const exact=await caches.match(request,{ignoreSearch:true});
     if(exact)return exact;
     throw error;
