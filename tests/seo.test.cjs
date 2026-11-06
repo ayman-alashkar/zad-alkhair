@@ -6,6 +6,7 @@ const test=require("node:test");
 const root=path.resolve(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 const {reciters}=require("../src/discovery/catalog.json");
+const listenShare=require("../src/discovery/listen-share.json");
 const reciterName=({display})=>display.replace(/^فضيلة الشيخ\s+/,"");
 const orderedReciters=[...reciters].sort((a,b)=>reciterName(a).localeCompare(reciterName(b),"ar"));
 
@@ -91,7 +92,9 @@ test("reciter honorifics are consistent in every surah description and the reade
     assert.match(description,/بصوت القراء الأفاضل:/,`surah/${surah}/index.html`);
     for(const name of honorifics)assert.ok(description.includes(name),`surah/${surah}/index.html -> ${name}`);
     const name=(html.match(/<title>سورة (.+?) مكتوبة/)||[])[1];
-    const share=`اقرأ سورة ${name} واستمع إليها بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.`;
+    const share=listenShare.surahs.includes(surah)
+      ?`اقرأ سورة ${name} في المصحف الشريف، مع التفسير الوجيز للدكتور الزحيلي.`
+      :`اقرأ سورة ${name} واستمع إليها بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.`;
     assert.ok(html.includes(`<meta property="og:description" content="${share}">`),`surah/${surah}/index.html og`);
     assert.ok(html.includes(`<meta name="twitter:description" content="${share}">`),`surah/${surah}/index.html twitter`);
   }
@@ -144,8 +147,8 @@ test("reader accepts a validated reciter deep link",()=>{
   assert.match(reader,/<meta property="og:url" content="https:\/\/zad-alkhair\.net\/reader">/);
   assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/social\/zad-alkhair-reader-share\.jpg">/);
   assert.match(reader,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
-  assert.match(reader,/if\(entry\.qari\)\{/);
-  assert.match(reader,/if\(entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
+  assert.match(reader,/if\(entry\.qari&&!entry\.listen\)\{/);
+  assert.match(reader,/if\(!entry\.listen&&entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
 });
 
 test("every local social preview image exists",()=>{
@@ -153,12 +156,16 @@ test("every local social preview image exists",()=>{
     "index.html","reader.html","install/index.html","quran/index.html","about/index.html","khatmahs/index.html",
     ...Array.from({length:114},(_,i)=>`surah/${i+1}/index.html`),
     ...Array.from({length:30},(_,i)=>`juz/${i+1}/index.html`),
-    ...reciters.map(({slug})=>`quran/reciters/${slug}/index.html`)
+    ...reciters.map(({slug})=>`quran/reciters/${slug}/index.html`),
+    "listen/index.html",...listenShare.surahs.map(n=>`listen/${n}/index.html`)
   ];
   for(const relative of htmlFiles){
     const html=read(relative);
-    for(const match of html.matchAll(/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/([^"]+)">/g)){
-      assert.ok(fs.existsSync(path.join(root,match[1])),`${relative} -> /${match[1]}`);
+    for(const match of html.matchAll(/<meta property="og:image" content="([^"]+)">/g)){
+      const image=new URL(match[1]);
+      if(["https://zad-alkhair.net",listenShare.previewOrigin].includes(image.origin)){
+        assert.ok(fs.existsSync(path.join(root,image.pathname)),`${relative} -> ${image.pathname}`);
+      }
     }
   }
 });
@@ -239,9 +246,12 @@ test("guide pages offer installation once, from the header menu",()=>{
 test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
   for(const {slug,id} of reciters){
     const page=read(`quran/reciters/${slug}/index.html`);
-    assert.equal((page.match(new RegExp(`qari=${id}&amp;play=1`,"g"))||[]).length,114);
+    assert.equal((page.match(new RegExp(`qari=${id}(?:&amp;play=1)?"`,"g"))||[]).length,114);
     assert.match(read("quran/index.html"),new RegExp(`/quran/reciters/${slug}/`));
-    for(let n=1;n<=114;n++)assert.ok(read(`surah/${n}/index.html`).includes(`qari=${id}&amp;play=1`));
+    for(let n=1;n<=114;n++){
+      const href=listenShare.surahs.includes(n)?`/listen/${n}/?qari=${id}`:`qari=${id}&amp;play=1`;
+      assert.ok(read(`surah/${n}/index.html`).includes(href));
+    }
   }
   assert.match(read("quran/reciters/mahmoud-al-hamoud/index.html"),/متابعة الآيات وتحديد الأجزاء غير متاحين/);
 });

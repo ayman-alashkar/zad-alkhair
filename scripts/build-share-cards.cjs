@@ -1,9 +1,10 @@
 // يصدّر صور المشاركة من مصادرها في social/cards إلى صور JPEG
 // (أقل من 300 كيلوبايت، حدّ معاينة واتساب). القياس 1200×675، وصورة بوت تلغرام 1024×1024.
-// الاستعمال: node scripts/build-share-cards.cjs [--only=surah|juz|app]   (يتطلّب playwright مع Chromium)
+// الاستعمال: node scripts/build-share-cards.cjs [--only=surah|juz|app|listen-share]   (يتطلّب playwright مع Chromium)
 const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
+const listenShare = require("../src/discovery/listen-share.json");
 
 const root = path.resolve(__dirname, "..");
 const fileUrl = relative => "file://" + path.join(root, relative);
@@ -41,6 +42,7 @@ const written = {
 const font = fileUrl("social/cards/fonts/aref-ruqaa-ink-arabic-700.woff2");
 const contentHead = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><style>
 @font-face{font-family:"Alexandria";src:url("${fileUrl("fonts/alexandria-latin-400-800.woff2")}") format("woff2");font-weight:400 800}
+@font-face{font-family:"Alexandria";src:url("${fileUrl("fonts/alexandria-arabic-400-800.woff2")}") format("woff2");font-weight:400 800;unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFC}
 @font-face{font-family:"Aref Ruqaa Ink";src:url("${font}") format("woff2");font-weight:700}
 body{margin:0}
 .ground{position:relative;width:1200px;height:675px;overflow:hidden;background:radial-gradient(circle at 50% -10%,rgba(213,177,106,.22),transparent 520px),#F5F0E4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px}
@@ -55,6 +57,16 @@ body{margin:0}
 .data .sep{width:3px;height:40px;background:#14655A}.data .num{margin-inline-start:-8px;color:#14655A}
 .juzline{gap:16px;line-height:1.45}.juzline .num{margin-inline-start:0}
 .rule{display:flex;align-items:center;gap:14px;margin:2px 0 26px}.rule i{width:92px;height:1.5px;background:#C29544}.rule b{width:9px;height:9px;background:#C29544;transform:rotate(45deg)}
+.mode{position:absolute;top:27px;display:flex;align-items:center;gap:13px;padding:11px 25px;border-radius:999px;border:1px solid #C6AB70;background:#F5F0E4;color:#174C42;font:650 34px/1.3 Alexandria,sans-serif}
+.share-lettering{display:flex;flex-direction:column;align-items:center;transform:translateY(20px)}
+.mode svg{width:31px;height:31px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.mode.listen{background:#123E36;color:#FAE4B2;border-color:#123E36}
+.card.player{overflow:hidden;background:radial-gradient(ellipse at 30% 12%,#22574B,transparent 65%),#0C352E;color:#FFFAE9}
+.card.player::before{content:"";position:absolute;inset:0;opacity:.07;background:url("${fileUrl("icons/zad-rosette.svg")}") 120px 40px/496.31px 329.9px repeat}
+.player img{position:relative;width:58px;height:58px}
+.player .brand{position:relative;margin-top:12px;font:650 30px/1.4 Alexandria,sans-serif;color:#F5D899}
+.player .title{position:relative;font:700 111px/1.65 "Aref Ruqaa Ink",serif;color:#FFF2D3}
+.player .subtitle{position:relative;margin-top:3px;font:500 26px/1.4 Alexandria,sans-serif;color:#F5D899}
 </style></head><body>`;
 
 const twoTone = (vowelled, bare) => `<span class="vowels">${vowelled}</span><span class="letters">${bare}</span>`;
@@ -81,9 +93,26 @@ function contentCards() {
   });
 }
 
+function listenShareCards() {
+  const book = '<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>';
+  const headphones = '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/>';
+  const frame = (inner, url, cardClass = "") => `${contentHead}<div class="ground"><div class="card ${cardClass}">${inner}</div><div class="address">zad-alkhair.net/${url}</div></div></body></html>`;
+  const player = `<img src="${fileUrl("icons/zad-mark-reverse.svg")}" alt=""><div class="brand">زاد الخير</div><div class="title">مشغّل التلاوة</div><div class="subtitle">استمع إلى القرآن العظيم</div>`;
+  const cards = [{ html: frame(player, "listen", "player"), output: "social/zad-alkhair-listen-share-v1.jpg" }];
+  for (const n of listenShare.surahs) {
+    const id = `surah-${String(n).padStart(3, "0")}`, w = written[id];
+    const inner = w ? writtenSurah(w) : `<img src="${fileUrl(`social/cards/lettering/${id}.png`)}" alt="" style="display:block">`;
+    for (const [mode, label, icon, url] of [["read", "قراءة", book, `surah/${n}`], ["listen", "استماع", headphones, `listen/${n}`]]) {
+      const badge = `<div class="mode ${mode}"><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>${label}</div>`;
+      cards.push({ html: frame(`<div class="share-lettering">${inner}</div>` + badge, url), output: `social/surah/${id}-${mode}-v1.jpg` });
+    }
+  }
+  return cards;
+}
+
 (async () => {
   const only = (process.argv.find(a => a.startsWith("--only=")) || "").slice(7);
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH, args: ["--no-sandbox"] } : {});
   const shoot = async (page, output) => {
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: path.join(root, output), type: "jpeg", quality: 90 });
@@ -99,8 +128,9 @@ function contentCards() {
   }
   const page = await browser.newPage({ viewport: { width: 1200, height: 675 }, deviceScaleFactor: 1 });
   const tmp = path.join(root, "social/cards/.render.html");
-  for (const card of contentCards()) {
-    if (only && only !== card.kind) continue;
+  const cards = only === "listen-share" ? listenShareCards() : contentCards().filter(card => !only || only === card.kind);
+  if (!only) cards.push(...listenShareCards());
+  for (const card of cards) {
     fs.writeFileSync(tmp, card.html);
     await page.goto("file://" + tmp);
     await shoot(page, card.output);

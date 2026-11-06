@@ -6,12 +6,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { readAppScript } = require("./app-source.cjs");
 const root = path.resolve(__dirname, "..");
+const listenShare = require("../src/discovery/listen-share.json");
 const check = process.argv.includes("--check");
 let stale = false;
 
 for (const [name, output] of [["home", "index.html"], ["reader", "reader.html"]]) {
   const dir = path.join(root, "src", name);
   let html = fs.readFileSync(path.join(dir, "index.html"), "utf8");
+  if (name === "reader") {
+    html = html.replace("<!-- @listen-share-surahs -->", listenShare.surahs.join(","));
+  }
   for (const file of ["styles.css", "app.js"]) {
     const marker = `<!-- @inline ${file} -->`;
     if (html.split(marker).length !== 2) throw Error(`Expected one ${marker} in ${name}`);

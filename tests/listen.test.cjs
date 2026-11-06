@@ -14,7 +14,7 @@ test("both tab bars carry the same five sections, with «التلاوة» third"
 test("the listen page lives in the reader, so playback is shared with the mushaf",()=>{
   const app=read("src/reader/app.js"),boot=read("src/reader/bootstrap.js"),ui=read("src/reader/player-ui.js");
   assert.match(app,/@include listen\.js/);
-  assert.match(boot,/early\.listen[\s\S]*openListenPage\(\)/);
+  assert.match(boot,/entry\.listen[\s\S]*openListenPage\(\)/);
   // Every engine change repaints the listen page.
   for(const fn of ["updatePlayer","syncPlay","stopPlayer"]){
     const body=ui.slice(ui.indexOf(`function ${fn}(`)).split(/\nfunction /)[0];
@@ -22,6 +22,21 @@ test("the listen page lives in the reader, so playback is shared with the mushaf
   }
   // Listening there must not move the mushaf or the saved reading position.
   assert.match(ui,/async function syncPlaybackSelection\(requestId\)\{\s*\/\*[^*]*\*\/\s*if\(listenIsOpen\(\)\)return false;/);
+});
+
+test("sharing a listening link preserves the prepared reciter and only uses available public routes",()=>{
+  const payloads=[];
+  const ctx=vm.createContext({
+    URL,READER_APP_TABS:"",window:{addEventListener(){}},audio:{addEventListener(){}},HUB_SHARE_ICON:"",
+    document:{body:{dataset:{listenShareSurahs:"114"},classList:{contains:()=>false}}},
+    location:{href:"https://example.test/reader?listen=1&surah=114"},
+    reciter:{id:"SaadAlGhamdi_Hafs"},chapterMap:new Map([[114,{name_arabic:"الناس"}],[113,{name_arabic:"الفلق"}]]),
+    publicSurahUrl:s=>`https://example.test/surah/${s}/`,shareHubPayload:p=>payloads.push(p)
+  });
+  vm.runInContext(read("src/reader/listen.js"),ctx);
+  vm.runInContext("listenLinkedSurah=114;listenShare();listenShareSurah(113)",ctx);
+  assert.equal(payloads[0].url,"https://example.test/listen/114/?qari=SaadAlGhamdi_Hafs");
+  assert.equal(payloads[1].url,"https://example.test/surah/113/");
 });
 
 test("ayah counts use the Arabic plural, and the arc maps back to the same fraction",()=>{

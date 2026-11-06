@@ -3,18 +3,21 @@
   try{
     validateStaticData();
     buildPageShells();
+    const entry=readerEntryParams();
     /* فتح الفهرس (تبويب «القرآن العظيم») لا يحتاج خطوط صفحات المصحف: أسماء السور
        بخط الرقعة، والبيانات محفوظة على الجهاز. فيظهر فورًا، ويكمل الإقلاع خلفه. */
     let earlyIndexOpened=false;
     {
-      const early=readerEntryParams(),stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
-      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||early.listen||stored?.surface!=="reader");
-      if(plainHome&&early.listen){
+      const stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
+      const plainHome=!ayahFromHash()&&!entry.page&&!entry.juz&&!entry.surah&&(entry.home||stored?.surface!=="reader");
+      if(entry.listen){
         await loadQcfMeta();
         validateMetadataConsistency();
         const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
         if(saved>=1&&saved<=TOTAL_PAGES)currentPage=saved;
         loading.classList.add("hide");
+        if(entry.surah)listenLinkedSurah=entry.surah;
+        if(entry.qari)reciter=RECITERS.find(r=>r.id===entry.qari);
         openListenPage();
         earlyIndexOpened=true;
       }else if(plainHome){
@@ -44,13 +47,12 @@
     archivePreviousVisit(previousVisit);
 
     /* Integration deep links. Specific ayah wins, then page, then juz, then saved position. */
-    const entry=readerEntryParams();
-    if(entry.qari){
+    if(entry.qari&&!entry.listen){
       reciter=RECITERS.find(r=>r.id===entry.qari)||defaultReciter();
       storageJsonSet(STORAGE_KEYS.qari,reciter);
     }
     let deepLinkedAyah=ayahFromHash();
-    if(!deepLinkedAyah&&entry.surah&&entry.ayah){
+    if(!entry.listen&&!deepLinkedAyah&&entry.surah&&entry.ayah){
       const max=Number(chapterMap.get(entry.surah)?.verses_count||0);
       if(entry.ayah<=max)deepLinkedAyah=`${entry.surah}:${entry.ayah}`;
     }
@@ -76,7 +78,7 @@
       const anchor=document.querySelector(`.page[data-page="${currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
       if(anchor)selectVerse(deepLinkedAyah,anchor,true);
     }
-    if(entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
+    if(!entry.listen&&entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
     prefetchAround(currentPage).then(()=>trimPageDom(currentPage));
     loadTafsirIndex().catch(err=>console.warn("tafsir index unavailable",err));
     readerBootDone();
