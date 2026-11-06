@@ -8,6 +8,7 @@ function fixture(){
 test('new reciters pass source validation and preserve the existing explicit default',()=>{
   const f=fixture();f.run('validateReciterConfig()');
   assert.equal(f.run('defaultReciter().id'),'Husary_128kbps');
+  assert.equal(f.run('RECITERS.slice(0,3).map(r=>r.id).join(",")'),'Ayman_Sowaid_64kbps,SaadAlGhamdi_Hafs,AbdulRashidSufi_Hafs');
   assert.equal(f.run('RECITERS.find(r=>r.id==="AliJaber_Hafs").provider'),'mp3quran-timed');
   assert.equal(f.run('isSurahOnly(RECITERS.find(r=>r.id==="MahmoudAlHamoud_Surah"))'),true);
 });
