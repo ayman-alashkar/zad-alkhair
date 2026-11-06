@@ -6,6 +6,8 @@ const test=require("node:test");
 const root=path.resolve(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 const {reciters}=require("../src/discovery/catalog.json");
+const reciterName=({display})=>display.replace(/^فضيلة الشيخ\s+/,"");
+const orderedReciters=[...reciters].sort((a,b)=>reciterName(a).localeCompare(reciterName(b),"ar"));
 
 test("sitemap contains every canonical discovery page once",()=>{
   const xml=read("sitemap.xml");
@@ -35,6 +37,8 @@ test("Quran discovery pages expose useful crawlable links",()=>{
   assert.equal((quran.match(/href="\/surah\/\d+\/"/g)||[]).length,114);
   assert.equal((quran.match(/href="\/juz\/\d+\/"/g)||[]).length,30);
   assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,reciters.length);
+  const slugs=[...quran.matchAll(/href="\/quran\/reciters\/([^/]+)\/"/g)].map(match=>match[1]);
+  assert.deepEqual(slugs,orderedReciters.map(({slug})=>slug));
   const mulk=read("surah/67/index.html");
   assert.match(mulk,/سورة الملك بصوت فضيلة الشيخ أيمن سويد/);
   assert.match(mulk,/qari=Ayman_Sowaid_64kbps/);
@@ -44,7 +48,7 @@ test("Quran discovery pages expose useful crawlable links",()=>{
 
 test("Quran, reciter and surah pages use the approved concise copy",()=>{
   const quran=read("quran/index.html");
-  const reciterNames=reciters.map(({display})=>display).join("، و");
+  const reciterNames=orderedReciters.map(({display})=>display).join("، و");
   const quranDescription=`اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: ${reciterNames}.`;
   assert.ok(quran.includes(`<meta name="description" content="${quranDescription}">`));
   const quranShare="اقرأ القرآن العظيم واستمع إليه بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.";

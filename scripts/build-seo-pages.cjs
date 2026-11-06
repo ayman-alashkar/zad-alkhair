@@ -8,6 +8,8 @@ const json=value=>JSON.stringify(value).replace(/</g,"\\u003c");
 const arNum=value=>String(value).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
 
 const {reciters,surahs,juz}=require("../src/discovery/catalog.json");
+const reciterName=({display})=>display.replace(/^فضيلة الشيخ\s+/,"");
+reciters.sort((a,b)=>reciterName(a).localeCompare(reciterName(b),"ar"));
 const reciterDescription=reciters.map(r=>r.display).join("، و");
 const check=process.argv.includes("--check");
 // Guide assets are versioned by content: editing any of them changes the URL, so

@@ -56,7 +56,7 @@ const RECITERS=[
     id:"SaadAlGhamdi_Hafs",name:"فضيلة الشيخ سعد الغامدي",
     provider:"mp3quran-timed",timedNames:["سعد الغامدي"],timedRequireAny:["حفص"]
   }
-];
+].sort((a,b)=>a.name.replace(/^فضيلة الشيخ\s+/,"").localeCompare(b.name.replace(/^فضيلة الشيخ\s+/,""),"ar"));
 const DEFAULT_RECITER_ID="Husary_128kbps";
 const SURAH_ONLY_HINT="هذا القارئ متاح للاستماع إلى السور كاملة، دون متابعة أو تحديد الآيات.";
 function isSurahOnly(r=reciter){return r.provider==="surah"}
