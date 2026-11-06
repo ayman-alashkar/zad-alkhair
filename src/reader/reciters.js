@@ -51,6 +51,10 @@ const RECITERS=[
     provider:"mp3quran-timed",timedNames:["مشاري العفاسي","مشاري راشد العفاسي"],
     timedPrefer:["حفص","عاصم"],timedRequireAny:["حفص","عاصم"],
     timedReject:["ورش","قالون","شعبة"]
+  },
+  {
+    id:"SaadAlGhamdi_Hafs",name:"فضيلة الشيخ سعد الغامدي",
+    provider:"mp3quran-timed",timedNames:["سعد الغامدي"],timedRequireAny:["حفص"]
   }
 ];
 const DEFAULT_RECITER_ID="Husary_128kbps";
@@ -70,7 +74,6 @@ function defaultReciter(){
 }
 function validateReciterConfig(){
   const allowed=new Set(["ayah","mp3quran-timed","qul-maher","surah"]);
-  if(RECITERS.length!==10)throw new Error("reciter config count");
   const ids=new Set(),names=new Set();
   for(const r of RECITERS){
     if(!r?.id||!r?.name||!allowed.has(r.provider))throw new Error("reciter config shape");

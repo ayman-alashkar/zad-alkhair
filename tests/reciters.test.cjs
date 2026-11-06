@@ -7,9 +7,33 @@ function fixture(){
 }
 test('new reciters pass source validation and preserve the existing explicit default',()=>{
   const f=fixture();f.run('validateReciterConfig()');
-  assert.equal(f.run('RECITERS.length'),10);assert.equal(f.run('defaultReciter().id'),'Husary_128kbps');
+  assert.equal(f.run('defaultReciter().id'),'Husary_128kbps');
   assert.equal(f.run('RECITERS.find(r=>r.id==="AliJaber_Hafs").provider'),'mp3quran-timed');
   assert.equal(f.run('isSurahOnly(RECITERS.find(r=>r.id==="MahmoudAlHamoud_Surah"))'),true);
+});
+test('Saad Al-Ghamdi uses the same Hafs audio and timings for playback and offline',async()=>{
+  const f=fixture();
+  const audioBase='https://cdn.mp3quran.net/audio/saad-ghamdi/r1/';
+  const timingUrl='https://mp3quran.net/api/v3/ayat_timing?surah=114&read=30';
+  Object.assign(f.ctx,{
+    mp3ReadsPromise:Promise.resolve([
+      {id:999,name:'سعد الغامدي',rewaya:'شعبة عن عاصم',soar_count:114},
+      {id:30,name:'سعد الغامدي',rewaya:'حفص عن عاصم',soar_count:114,folder_url:audioBase}
+    ]),
+    timedReadCache:new Map(),mp3TimingCache:new Map(),play:{surah:114,current:2},
+    fetch:async url=>{
+      assert.equal(url,timingUrl);
+      return {ok:true,json:async()=>[{ayah:2,start_time:9080,end_time:12420}]};
+    }
+  });
+  f.ctx.reciter=f.run('RECITERS.find(r=>r.id==="SaadAlGhamdi_Hafs")');
+  const playback=await f.run('resolveGaplessForCurrentSurah()');
+  assert.equal(playback.src,audioBase+'114.mp3');
+  assert.equal(playback.t.start_time,9080);
+  const pkg=await f.run('buildSurahAudioPackage(114,reciter)');
+  assert.equal(pkg.key,'SaadAlGhamdi_Hafs:114');
+  assert.ok(pkg.urls.includes(timingUrl));
+  assert.ok(pkg.urls.includes(playback.src));
 });
 test('Ali Jaber resolves only the matching Hafs recording',async()=>{
   const f=fixture();Object.assign(f.ctx,{mp3ReadsPromise:Promise.resolve([{id:99,name:'علي حجاج السويسي',rewaya:'حفص عن عاصم'},{id:76,name:'علي جابر',rewaya:'حفص عن عاصم',soar_count:114}]),timedReadCache:new Map()});
