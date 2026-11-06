@@ -2367,7 +2367,6 @@ html[data-theme="dark"] .zl-pattern{opacity:.03}
 .zl-arc-knob .dot{fill:#FFF4CD}
 .zl-arc svg.dragging .zl-arc-fill,.zl-arc svg.dragging .zl-arc-knob{transition:none}
 .zl-arc svg.dragging .halo{r:17}
-.zl-card[data-kind="start"] .zl-arc-knob,.zl-card[data-kind="resume"] .zl-arc-knob{opacity:0}
 .zl-arc-label{position:absolute;inset:38px 8px 0;text-align:center;pointer-events:none}
 .zl-name{font:700 34px/1.2 "Aref Ruqaa",serif;color:#E4C980;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .zl-ayah{margin-top:2px;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}

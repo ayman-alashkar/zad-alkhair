@@ -21,6 +21,9 @@ const LISTEN_ICONS={
   headphones:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/></svg>'
 };
 let readerReturnToListen=false;
+/* موضع البدء الذي يختاره المستخدم بسحب القوس قبل التشغيل: {s: السورة، f: الموضع من ٠ إلى ١}.
+   seekAfterLoad: لقارئ السورة الكاملة، يُطبَّق الموضع حين تُعرف مدة الملف. */
+let listenPending=null,listenSeekAfterLoad=null;
 let listenPanel=null,listenTab="s",listenObserver=null,listenDrag=null,listenLastSaved="";
 
 function listenIsOpen(){return !!listenPanel?.isConnected}
@@ -73,7 +76,7 @@ function listenPaintArc(f){
 }
 function listenTick(){
   if(!listenIsOpen()||listenDrag)return;
-  const p=listenActive()?listenProgress():{f:0,timed:false};
+  const p=listenActive()?listenProgress():{f:listenIdleFraction(),timed:false};
   listenPaintArc(p.f);
   const bar=listenPanel.querySelector(".zl-mini-bar i");if(bar)bar.style.transform=`scaleX(${p.f.toFixed(4)})`;
   const time=listenPanel.querySelector(".zl-time");
@@ -83,6 +86,18 @@ function listenTick(){
   }
 }
 
+/* موضع الكرة قبل التشغيل: ما اختاره بالسحب، أو آخر آية سُمعت، أو البداية. */
+function listenIdleFraction(){
+  const st=listenCardState();
+  if(listenPending&&listenPending.s===st.s)return listenPending.f;
+  if(st.kind==="resume"&&!isSurahOnly(st.r))return (st.a-1)/Math.max(1,maxAyah(st.s));
+  return 0;
+}
+function listenIdleLabel(st,f){
+  if(isSurahOnly(st.r))return f>0?`من ${ar(Math.round(f*100))}٪ من السورة`:"السورة كاملة";
+  const max=maxAyah(st.s);
+  return `الآية ${ar(Math.min(max,Math.floor(f*max)+1))} من ${ar(max)}`;
+}
 /* الحالة التي تعرضها البطاقة: التلاوة الجارية، أو آخر ما سُمع، أو الفاتحة. */
 function listenCardState(){
   if(listenActive())return {kind:"now",s:play.surah,a:play.current,r:reciter};
@@ -94,6 +109,7 @@ function listenAyahLine(st){
   if(isSurahOnly(st.r))return "السورة كاملة";
   const max=maxAyah(st.s);
   if(st.kind==="now"&&audio.dataset.playMode==="basmala")return "البسملة";
+  if(st.kind!=="now"&&listenPending&&listenPending.s===st.s)return listenIdleLabel(st,listenPending.f);
   return st.kind==="start"?listenAyahCount(max):`الآية ${ar(st.a)} من ${ar(max)}`;
 }
 function listenPaint(){
@@ -163,6 +179,7 @@ function listenQuietReciter(r){
 }
 async function listenPlaySurah(s,a=1){
   s=Math.max(1,Math.min(114,Number(s)||1));
+  listenPending=null;listenSeekAfterLoad=null;
   if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(s,{chooseWhenMultiple:true}))return;
   setIndexPlaybackBoundary(null);
   continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");
@@ -175,7 +192,18 @@ async function listenMain(){
   const st=listenCardState();
   if(st.kind==="now"){document.getElementById("panelPlay").click();return}
   if(st.kind==="resume")listenQuietReciter(st.r);
+  const pend=listenPending&&listenPending.s===st.s?listenPending.f:null;
+  if(pend!==null){
+    if(isSurahOnly()){await listenPlaySurah(st.s,1);if(pend>0)listenSeekAfterLoad=pend;listenApplyPendingSeek();return}
+    await listenPlaySurah(st.s,Math.min(maxAyah(st.s),Math.floor(pend*maxAyah(st.s))+1));return;
+  }
   await listenPlaySurah(st.s,st.kind==="resume"?st.a:1);
+}
+function listenApplyPendingSeek(){
+  const f=listenSeekAfterLoad,d=Number(audio.duration);
+  if(f===null||audio.dataset.playMode!=="surah"||!(Number.isFinite(d)&&d>0))return;
+  listenSeekAfterLoad=null;
+  try{audio.currentTime=f*d}catch(_){ }
 }
 async function listenStep(dir){
   if(listenActive()){await stepPlayer(dir);return}
@@ -212,7 +240,6 @@ async function listenSeekTo(f){
 function listenBindArc(svg){
   const label=()=>listenPanel?.querySelector(".zl-ayah");
   svg.addEventListener("pointerdown",e=>{
-    if(!listenActive())return;
     e.preventDefault();svg.setPointerCapture?.(e.pointerId);
     listenDrag={f:listenArcFraction(e,svg)};listenPaintArc(listenDrag.f);svg.classList.add("dragging");
   });
@@ -220,6 +247,7 @@ function listenBindArc(svg){
     if(!listenDrag)return;
     listenDrag.f=listenArcFraction(e,svg);listenPaintArc(listenDrag.f);
     const el=label();
+    if(el&&!listenActive()){el.textContent=listenIdleLabel(listenCardState(),listenDrag.f);return}
     if(el){
       if(isSurahOnly()||audio.dataset.playMode==="surah"){const d=Number(audio.duration);if(d>0)el.textContent=formatAudioTime(listenDrag.f*d)}
       else if(audio.dataset.playMode==="gapless"&&Number(audio.duration)>0){const row=timingRowAt(listenDrag.f*audio.duration);if(row)el.textContent=`الآية ${ar(row.ayah)} من ${ar(maxAyah(play.surah))}`}
@@ -229,6 +257,8 @@ function listenBindArc(svg){
   const end=async()=>{
     if(!listenDrag)return;
     const f=listenDrag.f;listenDrag=null;svg.classList.remove("dragging");
+    /* قبل التشغيل: يُحفظ الموضع، ويبدأ منه زر التشغيل. */
+    if(!listenActive()){listenPending={s:listenCardState().s,f};listenPaint();return}
     await listenSeekTo(f);listenPaint();
   };
   svg.addEventListener("pointerup",end);svg.addEventListener("pointercancel",()=>{listenDrag=null;svg.classList.remove("dragging");listenPaint()});
@@ -502,4 +532,5 @@ window.addEventListener("pageshow",event=>{
   });
 });
 audio.addEventListener("timeupdate",()=>{if(listenIsOpen())listenTick()});
-audio.addEventListener("loadedmetadata",()=>{if(listenIsOpen())listenTick()});
+audio.addEventListener("loadedmetadata",()=>{listenApplyPendingSeek();if(listenIsOpen())listenTick()});
+audio.addEventListener("durationchange",listenApplyPendingSeek);
