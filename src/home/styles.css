@@ -1316,7 +1316,9 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zw-tap.done .zw-live{display:none}
 .zw-tap.done .zw-full{display:flex}
 .zw-hint{font-size:13px;color:var(--zw-muted)}
-.zw-foot{display:flex;justify-content:center}
+.zw-foot{display:flex;justify-content:center;gap:10px}
+.zw-complete{border-color:var(--zw-done);color:var(--zw-done);font-weight:600}
+.zw-complete[hidden]{display:none}
 .zw-reset{min-height:44px;padding:0 18px;border:1px solid var(--zw-line);border-radius:14px;background:transparent;color:var(--zw-muted);font:inherit;font-size:13px;cursor:pointer}
 @media (max-height:700px){.zw-ring,.zw-ring>svg{width:210px;height:210px}.zw-live b{font-size:58px}.zw-text{font-size:27px}}
 

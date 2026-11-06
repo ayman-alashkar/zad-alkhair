@@ -31,13 +31,15 @@ function zfKahfState(win){
   let visits={};
   try{visits=JSON.parse(localStorage.getItem(ZF_KAHF_KEY)||"{}")||{}}catch(_){}
   const [first,last]=ZF_KAHF_PAGES,total=last-first+1;
-  let read=0,next=null;
+  /* كتابع قراءة الجزء: المتابعة من أبعد صفحة بلغها اليوم، لا من التي بعدها، لأنه قد يكون
+     توقّف في وسطها. وما قبلها يُعدّ مقروءًا. وتكتمل السورة حين تُزار صفحاتها كلها. */
+  let seen=0,reached=0;
   for(let p=first;p<=last;p++){
     const at=Number(visits[p]);
-    if(at>=win.start&&at<win.end)read++;
-    else if(next===null)next=p;
+    if(at>=win.start&&at<win.end){seen++;reached=p}
   }
-  return {read,total,next:next??first};
+  const done=seen>=total;
+  return {read:done?total:reached?reached-first:0,total,next:reached||first,started:reached>0,done};
 }
 function zfKahfRender(){
   const host=ztEl("zt-kahf");
@@ -45,13 +47,13 @@ function zfKahfRender(){
   const win=zfFriday();
   let html="";
   if(win.active){
-    const {read,total,next}=zfKahfState(win);
+    const {read,total,next,started,done}=zfKahfState(win);
     const book=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/></svg>`;
-    if(read>=total){
+    if(done){
       html=`<div class="zf-kahf done" role="status">
         <span class="zf-kahf-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
         <span class="zt-card-text"><span class="zt-eyebrow">سورة الكهف</span><span class="zf-kahf-title">قرأتها اليوم، تقبّل الله منك</span></span></div>`;
-    }else if(read===0){
+    }else if(!started){
       /* الحديث سببٌ للقراءة، والزر يقول بوضوح ماذا يحدث عند الضغط. */
       html=`<section class="zf-kahf" aria-label="سورة الكهف">
         <blockquote class="zf-kahf-hadith">«من قرأ سورة الكهف يوم الجمعة، أضاء له من النور ما بين الجمعتين»</blockquote>
@@ -61,10 +63,10 @@ function zfKahfRender(){
       const left=total-read;
       html=`<section class="zf-kahf" aria-label="سورة الكهف">
         <div class="zt-progress">
-          <div class="zf-kahf-head"><span class="zf-kahf-title">سورة الكهف</span><span class="zt-sub">بقي ${ztArabic(left)} ${left===1?"صفحة":left===2?"صفحتان":left<=10?"صفحات":"صفحة"}</span></div>
+          <div class="zf-kahf-head"><span class="zf-kahf-title">سورة الكهف</span><span class="zt-sub">الصفحة ${ztArabic(next)}</span></div>
           <span class="zf-kahf-count">قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة</span>
           <span class="zt-bar"><i style="width:${(read/total*100).toFixed(1)}%"></i></span></div>
-        <a class="zt-btn" href="reader.html?page=${next}&amp;from=zad">${book}<span>تابع من الصفحة ${ztArabic(next)}</span></a></section>`;
+        <a class="zt-btn" href="reader.html?page=${next}&amp;from=zad">${book}<span>تابع القراءة</span></a></section>`;
     }
   }
   if(host.dataset.zfHtml===html)return;
@@ -163,6 +165,7 @@ function zwPaint(){
   ztEl("zw-arc").style.strokeDashoffset=(ZW_BIG*(1-n/ZW_GOAL)).toFixed(1);
   ztEl("zw-count").textContent=ztArabic(n);
   ztEl("zw-hint").textContent=done?"تقبّل الله منك":"اضغط في أي مكان من الدائرة";
+  const complete=ztEl("zw-complete");if(complete)complete.hidden=done;
 }
 function zwTap(){
   const wird=zwLoad(),n=wird.counts[zwActive];
@@ -171,6 +174,15 @@ function zwTap(){
   zwSave(wird);
   /* اهتزاز خفيف مع كل نقرة، وأوضح عند المئة (أندرويد؛ آيفون لا يتيحه للمواقع). */
   try{navigator.vibrate?.(n+1>=ZW_GOAL?[40,60,40]:8)}catch(_){}
+  zwPaint();
+}
+/* قد يُقرأ الذكر خارج التطبيق: «أتممته» يكمله مرة واحدة بدل مئة نقرة، و«إعادة العدّ» تتراجع عنه. */
+function zwComplete(){
+  const wird=zwLoad();
+  if(wird.counts[zwActive]>=ZW_GOAL)return;
+  wird.counts[zwActive]=ZW_GOAL;
+  zwSave(wird);
+  try{navigator.vibrate?.([40,60,40])}catch(_){}
   zwPaint();
 }
 function zwReset(){
@@ -182,6 +194,7 @@ function zwReset(){
 (function zwInit(){
   ztEl("zw-tap")?.addEventListener("click",zwTap);
   ztEl("zw-reset")?.addEventListener("click",zwReset);
+  ztEl("zw-complete")?.addEventListener("click",zwComplete);
   ztEl("zw-back")?.addEventListener("click",()=>{if(zwClose()&&typeof zkArmRootGuard==="function")zkArmRootGuard()});
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&zwIsOpen())zwClose()});
 })();
