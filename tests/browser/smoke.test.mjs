@@ -146,9 +146,10 @@ test("on Friday the home greets with «جمعتكم مباركة» and counts th
   await page.clock.runFor(1500);
   assert.equal(await page.textContent("#zt-greet-title"), "جمعتكم مباركة");
   const kahf = (await page.innerText("#zt-kahf")).replace(/\s+/g, " ");
-  assert.match(kahf, /تابع من الصفحة ٢٩٨/);
-  assert.match(kahf, /قرأت ٥ من ١٢ صفحة/);
-  assert.equal(await page.getAttribute(".zf-kahf .zt-btn", "href"), "reader.html?page=298&from=zad");
+  /* كتابع قراءة الجزء: من أبعد صفحة بلغها (٢٩٧)، لا من التي بعدها، وما قبلها مقروء. */
+  assert.match(kahf, /الصفحة ٢٩٧/);
+  assert.match(kahf, /قرأت ٤ من ١٢ صفحة/);
+  assert.equal(await page.getAttribute(".zf-kahf .zt-btn", "href"), "reader.html?page=297&from=zad");
   assert.deepEqual(errors, []);
   await context.close();
 });
@@ -158,6 +159,14 @@ test("«وردك اليوم» counts every tap, keeps the count, and the Back bu
   await page.goto(BASE + "/", { waitUntil: "load" });
   await page.click('[data-zw-open="2"]');
   for (let i = 0; i < 5; i++) await page.click("#zw-tap");
+  /* ذكرٌ قُرئ خارج التطبيق: «أتممته» يكمله، و«إعادة العدّ» تتراجع عنه. */
+  await page.click('[data-zw-tab="0"]');
+  await page.click("#zw-complete");
+  assert.equal(await page.textContent("#zw-count"), "١٠٠");
+  assert.equal(await page.isVisible("#zw-complete"), false);
+  await page.click("#zw-reset");
+  assert.equal(await page.textContent("#zw-count"), "٠");
+  await page.click('[data-zw-tab="2"]');
   assert.equal(await page.textContent("#zw-count"), "٥");
   assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("zad:wird-v1"))).counts, [0, 0, 5]);
   await page.goBack();
