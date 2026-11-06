@@ -520,7 +520,7 @@ function closeListenPage({readAlong=false}={}){
     history.replaceState(history.state,"","/quran-read/");
   }else{
     listenTarget=null;
-    history.replaceState(history.state,"","/reader?home=1&from=zad");
+    history.replaceState(history.state,"","/quran-read/?from=zad");
   }
 }
 function setListenUrl(returnUrl=null){

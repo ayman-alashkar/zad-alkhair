@@ -977,6 +977,8 @@ function cleanConsumedReaderTarget(){
   try{
     const url=new URL(location.href);
     for(const key of ["home","listen","juz","page","surah","ayah"])url.searchParams.delete(key);
+    const direct=directQuranPath();
+    if(direct?.mode==="read"&&!direct.surah)url.searchParams.set("page",String(currentPage));
     if(/^#ayah=/i.test(url.hash))url.hash="";
     history.replaceState(history.state,"",url.href);
   }catch(_){ }
@@ -1150,14 +1152,16 @@ function readerEntryParams(){
   const direct=directQuranPath();
   const rawCode=String(q.get("code")||"").trim().toUpperCase();
   const code=rawCode.slice(0,4);
-  const juz=Number(q.get("juz")),page=Number(q.get("page"));
-  const surah=direct?direct.surah:Number(q.get("surah")),ayah=Number(q.get("ayah")),home=!direct&&q.get("home")==="1",fromZad=q.get("from")==="zad";
+  const rawJuz=Number(q.get("juz")),rawPage=Number(q.get("page"));
+  const juz=Number.isInteger(rawJuz)&&rawJuz>=1&&rawJuz<=30?rawJuz:null;
+  const page=Number.isInteger(rawPage)&&rawPage>=1&&rawPage<=TOTAL_PAGES?rawPage:null;
+  const surah=direct?direct.surah:Number(q.get("surah")),ayah=Number(q.get("ayah")),fromZad=q.get("from")==="zad";
+  const home=direct?direct.mode==="read"&&!surah&&!page&&!juz:q.get("home")==="1";
   const listen=direct?direct.mode==="listen":q.get("listen")==="1";
   const qari=String(q.get("qari")||"").trim();
   return {
     code,
-    juz:Number.isInteger(juz)&&juz>=1&&juz<=30?juz:null,
-    page:Number.isInteger(page)&&page>=1&&page<=TOTAL_PAGES?page:null,
+    juz,page,
     surah:Number.isInteger(surah)&&surah>=1&&surah<=114?surah:null,
     ayah:Number.isInteger(ayah)&&ayah>=1?ayah:null,
     qari:RECITERS.some(r=>r.id===qari)?qari:null,
@@ -3406,7 +3410,7 @@ function closeListenPage({readAlong=false}={}){
     history.replaceState(history.state,"","/quran-read/");
   }else{
     listenTarget=null;
-    history.replaceState(history.state,"","/reader?home=1&from=zad");
+    history.replaceState(history.state,"","/quran-read/?from=zad");
   }
 }
 function setListenUrl(returnUrl=null){
@@ -3588,12 +3592,13 @@ if("serviceWorker" in navigator){
     validateStaticData();
     buildPageShells();
     const early=readerEntryParams();
+    const passiveDirectEntry=early.direct&&(early.listen||early.home);
     /* فتح الفهرس (تبويب «القرآن العظيم») لا يحتاج خطوط صفحات المصحف: أسماء السور
        بخط الرقعة، والبيانات محفوظة على الجهاز. فيظهر فورًا، ويكمل الإقلاع خلفه. */
     let earlyIndexOpened=false;
     {
       const stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
-      const plainHome=!early.direct&&!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||early.listen||stored?.surface!=="reader");
+      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||!early.direct&&(early.listen||stored?.surface!=="reader"));
       if(early.listen&&(early.direct||plainHome)){
         await loadQcfMeta();
         validateMetadataConsistency();
@@ -3627,7 +3632,7 @@ if("serviceWorker" in navigator){
     currentPage=1;let previousVisit=null;
     const m=storageJsonGet(STORAGE_KEYS.lastPosition,null),savedPage=Number(m?.page);
     if(savedPage>=1&&savedPage<=TOTAL_PAGES){currentPage=savedPage;previousVisit={...m,page:savedPage}}
-    if(early.direct!=="listen")archivePreviousVisit(previousVisit);
+    if(!passiveDirectEntry)archivePreviousVisit(previousVisit);
 
     /* Integration deep links. Specific ayah wins, then page, then juz, then saved position. */
     const entry=early;
@@ -3662,7 +3667,7 @@ if("serviceWorker" in navigator){
     }
     await ensurePage(currentPage);
     updatePage(false,false);
-    if(entry.direct!=="listen")saveLastPosition();
+    if(!passiveDirectEntry)saveLastPosition();
     if(!wantsHome)saveReaderSurface("reader");
     if(!readerGoPending)loading.classList.add("hide");
     if(deepLinkedAyah){

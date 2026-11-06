@@ -109,6 +109,8 @@ function cleanConsumedReaderTarget(){
   try{
     const url=new URL(location.href);
     for(const key of ["home","listen","juz","page","surah","ayah"])url.searchParams.delete(key);
+    const direct=directQuranPath();
+    if(direct?.mode==="read"&&!direct.surah)url.searchParams.set("page",String(currentPage));
     if(/^#ayah=/i.test(url.hash))url.hash="";
     history.replaceState(history.state,"",url.href);
   }catch(_){ }
@@ -282,14 +284,16 @@ function readerEntryParams(){
   const direct=directQuranPath();
   const rawCode=String(q.get("code")||"").trim().toUpperCase();
   const code=rawCode.slice(0,4);
-  const juz=Number(q.get("juz")),page=Number(q.get("page"));
-  const surah=direct?direct.surah:Number(q.get("surah")),ayah=Number(q.get("ayah")),home=!direct&&q.get("home")==="1",fromZad=q.get("from")==="zad";
+  const rawJuz=Number(q.get("juz")),rawPage=Number(q.get("page"));
+  const juz=Number.isInteger(rawJuz)&&rawJuz>=1&&rawJuz<=30?rawJuz:null;
+  const page=Number.isInteger(rawPage)&&rawPage>=1&&rawPage<=TOTAL_PAGES?rawPage:null;
+  const surah=direct?direct.surah:Number(q.get("surah")),ayah=Number(q.get("ayah")),fromZad=q.get("from")==="zad";
+  const home=direct?direct.mode==="read"&&!surah&&!page&&!juz:q.get("home")==="1";
   const listen=direct?direct.mode==="listen":q.get("listen")==="1";
   const qari=String(q.get("qari")||"").trim();
   return {
     code,
-    juz:Number.isInteger(juz)&&juz>=1&&juz<=30?juz:null,
-    page:Number.isInteger(page)&&page>=1&&page<=TOTAL_PAGES?page:null,
+    juz,page,
     surah:Number.isInteger(surah)&&surah>=1&&surah<=114?surah:null,
     ayah:Number.isInteger(ayah)&&ayah>=1?ayah:null,
     qari:RECITERS.some(r=>r.id===qari)?qari:null,

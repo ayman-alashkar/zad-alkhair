@@ -4,12 +4,13 @@
     validateStaticData();
     buildPageShells();
     const early=readerEntryParams();
+    const passiveDirectEntry=early.direct&&(early.listen||early.home);
     /* فتح الفهرس (تبويب «القرآن العظيم») لا يحتاج خطوط صفحات المصحف: أسماء السور
        بخط الرقعة، والبيانات محفوظة على الجهاز. فيظهر فورًا، ويكمل الإقلاع خلفه. */
     let earlyIndexOpened=false;
     {
       const stored=storageJsonGet(STORAGE_KEYS.lastSurface,null);
-      const plainHome=!early.direct&&!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||early.listen||stored?.surface!=="reader");
+      const plainHome=!ayahFromHash()&&!early.page&&!early.juz&&!early.surah&&(early.home||!early.direct&&(early.listen||stored?.surface!=="reader"));
       if(early.listen&&(early.direct||plainHome)){
         await loadQcfMeta();
         validateMetadataConsistency();
@@ -43,7 +44,7 @@
     currentPage=1;let previousVisit=null;
     const m=storageJsonGet(STORAGE_KEYS.lastPosition,null),savedPage=Number(m?.page);
     if(savedPage>=1&&savedPage<=TOTAL_PAGES){currentPage=savedPage;previousVisit={...m,page:savedPage}}
-    if(early.direct!=="listen")archivePreviousVisit(previousVisit);
+    if(!passiveDirectEntry)archivePreviousVisit(previousVisit);
 
     /* Integration deep links. Specific ayah wins, then page, then juz, then saved position. */
     const entry=early;
@@ -78,7 +79,7 @@
     }
     await ensurePage(currentPage);
     updatePage(false,false);
-    if(entry.direct!=="listen")saveLastPosition();
+    if(!passiveDirectEntry)saveLastPosition();
     if(!wantsHome)saveReaderSurface("reader");
     if(!readerGoPending)loading.classList.add("hide");
     if(deepLinkedAyah){
