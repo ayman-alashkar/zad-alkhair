@@ -5,12 +5,13 @@ const test=require("node:test");
 
 const root=path.resolve(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
+const {reciters}=require("../src/discovery/catalog.json");
 
 test("sitemap contains every canonical discovery page once",()=>{
   const xml=read("sitemap.xml");
   const urls=[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match=>match[1]);
-  assert.equal(urls.length,159);
-  assert.equal(new Set(urls).size,159);
+  assert.equal(urls.length,150+reciters.length);
+  assert.equal(new Set(urls).size,urls.length);
   assert.ok(urls.includes("https://zad-alkhair.net/"));
   assert.ok(urls.includes("https://zad-alkhair.net/quran/"));
   assert.ok(urls.includes("https://zad-alkhair.net/khatmahs/"));
@@ -33,7 +34,7 @@ test("Quran discovery pages expose useful crawlable links",()=>{
   const quran=read("quran/index.html");
   assert.equal((quran.match(/href="\/surah\/\d+\/"/g)||[]).length,114);
   assert.equal((quran.match(/href="\/juz\/\d+\/"/g)||[]).length,30);
-  assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,9);
+  assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,reciters.length);
   const mulk=read("surah/67/index.html");
   assert.match(mulk,/سورة الملك بصوت فضيلة الشيخ أيمن سويد/);
   assert.match(mulk,/qari=Ayman_Sowaid_64kbps/);
@@ -43,8 +44,9 @@ test("Quran discovery pages expose useful crawlable links",()=>{
 
 test("Quran, reciter and surah pages use the approved concise copy",()=>{
   const quran=read("quran/index.html");
-  const quranDescription="اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: فضيلة الشيخ أيمن سويد، وفضيلة الشيخ عبد الرشيد الصوفي، وفضيلة الشيخ علي بن عبد الرحمن الحذيفي، وفضيلة الشيخ علي جابر، وفضيلة الشيخ ماهر المعيقلي، وفضيلة الشيخ محمود الحمود، وفضيلة الشيخ محمد صديق المنشاوي، وفضيلة الشيخ محمود خليل الحصري، وفضيلة الشيخ مشاري راشد العفاسي.";
-  assert.match(quran,new RegExp(`<meta name="description" content="${quranDescription}">`));
+  const reciterNames=reciters.map(({display})=>display).join("، و");
+  const quranDescription=`اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: ${reciterNames}.`;
+  assert.ok(quran.includes(`<meta name="description" content="${quranDescription}">`));
   const quranShare="اقرأ القرآن العظيم واستمع إليه بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.";
   assert.ok(quran.includes(`<meta property="og:description" content="${quranShare}">`));
   assert.ok(quran.includes(`<meta name="twitter:description" content="${quranShare}">`));
@@ -147,7 +149,7 @@ test("every local social preview image exists",()=>{
     "index.html","reader.html","install/index.html","quran/index.html","about/index.html","khatmahs/index.html",
     ...Array.from({length:114},(_,i)=>`surah/${i+1}/index.html`),
     ...Array.from({length:30},(_,i)=>`juz/${i+1}/index.html`),
-    ..."ayman-suwaid abdul-rashid-sufi ali-al-hudhaifi ali-jaber maher-al-muaiqly mahmoud-al-hamoud mohamed-siddiq-al-minshawi mahmoud-khalil-al-husary mishary-alafasy".split(" ").map(slug=>`quran/reciters/${slug}/index.html`)
+    ...reciters.map(({slug})=>`quran/reciters/${slug}/index.html`)
   ];
   for(const relative of htmlFiles){
     const html=read(relative);
@@ -231,7 +233,7 @@ test("guide pages offer installation once, from the header menu",()=>{
   assert.doesNotMatch(script,/get\('next'\)/);
 });
 test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
-  for(const [slug,id] of [["mishary-alafasy","MisharyAlafasy_Hafs"],["ali-al-hudhaifi","Hudhaify_128kbps"],["ali-jaber","AliJaber_Hafs"],["mahmoud-al-hamoud","MahmoudAlHamoud_Surah"]]){
+  for(const {slug,id} of reciters){
     const page=read(`quran/reciters/${slug}/index.html`);
     assert.equal((page.match(new RegExp(`qari=${id}&amp;play=1`,"g"))||[]).length,114);
     assert.match(read("quran/index.html"),new RegExp(`/quran/reciters/${slug}/`));
