@@ -370,6 +370,7 @@ function openQuranIndex(initialTab="s",options={}){
   const leaveHubForReader=()=>{
     /* إن غادر القارئ الفهرس قبل اكتمال الإقلاع، تعود شاشة التحميل حتى تُرسم الصفحة. */
     if(!readerBooted)loading.classList.remove("hide");
+    readerReturnToListen=false;
     enterReaderSurface({consumeTarget:true,fromHome:homeMode});close();
   };
   /* تبويب القرآن هو الصفحة الحالية: يعيد إلى السور بدل إعادة التحميل. */

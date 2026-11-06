@@ -240,7 +240,7 @@ function listenOpenReciters(){
   const rows=RECITERS.map(r=>{
     const whole=isSurahOnly(r),n=count(r.id),on=r.id===reciter.id;
     const meta=[whole?"السورة كاملة":"تتبع الآيات"];if(n)meta.push(n===1?"سورة منزّلة":`${ar(n)} سور منزّلة`);
-    return `<button type="button" class="zl-qrow${on?" on":""}" data-qari="${escapeHtml(r.id)}" aria-pressed="${on}"><span class="zl-qmono">${escapeHtml(listenMonogram(r))}</span><span class="zl-qcopy"><b>${escapeHtml(listenReciterName(r))}</b><small><i class="zl-dot${whole?" whole":""}"></i>${meta.join(" · ")}</small></span>${on?`<span class="zl-qcheck">${LISTEN_ICONS.check}</span>`:""}</button>`;
+    return `<button type="button" class="zl-qrow${on?" on":""}" data-qari="${escapeHtml(r.id)}" aria-pressed="${on}"><span class="zl-qmono">${escapeHtml(listenMonogram(r))}</span><span class="zl-qcopy"><b>${escapeHtml(listenReciterName(r))}</b><small><i class="zl-dot${whole?" whole":""}"></i>${meta.join("، ")}</small></span>${on?`<span class="zl-qcheck">${LISTEN_ICONS.check}</span>`:""}</button>`;
   }).join("");
   const b=sheet("اختر القارئ",`<div class="zl-legend"><span><i class="zl-dot"></i>تتبع الآيات في المصحف</span><span><i class="zl-dot whole"></i>السورة كاملة</span></div><div class="zl-qlist">${rows}</div>`);
   b.classList.add("player-backdrop","zl-sheet");
@@ -323,7 +323,7 @@ function listenShare(){listenShareSurah(listenCardState().s)}
 function listenSurahRow(ch){
   const s=Number(ch.id),row=document.createElement("div");
   row.className="zl-row";row.dataset.surah=String(s);row.dataset.find=compactArabic(`${ch.name_arabic} ${s}`);
-  row.innerHTML=`<span class="zl-num">${ar(s)}</span><button type="button" class="zl-row-main" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}"><b>سورة ${escapeHtml(ch.name_arabic)}</b><small>${revelationArabic(ch.revelation_place)} · ${listenAyahCount(ch.verses_count)}</small></button><button type="button" class="zl-row-dl quran-index-action download"></button><button type="button" class="zl-row-share" aria-label="مشاركة سورة ${escapeHtml(ch.name_arabic)}">${HUB_SHARE_ICON}</button>`;
+  row.innerHTML=`<span class="zl-num">${ar(s)}</span><button type="button" class="zl-row-main" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}"><b>سورة ${escapeHtml(ch.name_arabic)}</b><small>${revelationArabic(ch.revelation_place)}، ${listenAyahCount(ch.verses_count)}</small></button><button type="button" class="zl-row-dl quran-index-action download"></button><button type="button" class="zl-row-share" aria-label="مشاركة سورة ${escapeHtml(ch.name_arabic)}">${HUB_SHARE_ICON}</button>`;
   row.querySelector(".zl-row-main").onclick=()=>listenPlaySurah(s,1);
   row.querySelector(".zl-row-share").onclick=()=>listenShareSurah(s);
   bindSurahDownloadButton(row.querySelector(".zl-row-dl"),s);

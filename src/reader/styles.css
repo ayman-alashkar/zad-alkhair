@@ -2482,6 +2482,7 @@ html[data-theme="dark"] .zl-row.now .zl-num{background:#E4C980;color:#082D29;bor
 .zl-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#0F5C50;margin-inline-end:5px;vertical-align:middle}
 .zl-dot.whole{background:#C59A4A}
 html[data-theme="dark"] .zl-dot{background:#49A18C}
+html[data-theme="dark"] .zl-dot.whole{background:#E4C980}
 .zl-legend .zl-dot{margin:0}
 .zl-qlist{display:flex;flex-direction:column;gap:2px;max-height:min(62vh,560px);overflow-y:auto;margin:0 -4px;padding:0 4px}
 .zl-qrow{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:8px 10px;border:1px solid transparent;border-radius:16px;background:transparent;color:var(--ui-text);text-align:right;cursor:pointer}

@@ -116,8 +116,9 @@ function cleanConsumedReaderTarget(){
 function enterReaderSurface({consumeTarget=true,fromHome=false}={}){
   saveLastPosition();
   saveReaderSurface("reader");
-  readerReturnToListen=false;
-  if(fromHome){readerReturnToQuranHome=true;storageSet(STORAGE_KEYS.readerParent,"quran-home")}
+  /* go() يمرّ هنا مع كل صفحة، والتلاوة تقلب الصفحات وحدها؛ فلا يُنسى أن المصحف فُتح من
+     مشغّل التلاوة إلا إذا فُتح من الفهرس. */
+  if(fromHome){readerReturnToListen=false;readerReturnToQuranHome=true;storageSet(STORAGE_KEYS.readerParent,"quran-home")}
   if(consumeTarget)cleanConsumedReaderTarget();
 }
 function updatePage(animate=true,savePosition=true){
