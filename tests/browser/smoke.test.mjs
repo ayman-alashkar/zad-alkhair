@@ -216,7 +216,7 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
   }
 });
 
-test("reader shortcuts save and restore page marks, jump directly, and open search", async t => {
+test("one reading mark moves between pages and the index keeps five recent visits", async t => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
   for (const [label, profile, theme] of [
@@ -230,7 +230,9 @@ test("reader shortcuts save and restore page marks, jump directly, and open sear
       if (sessionStorage.getItem("bookmark-test-seeded")) return;
       localStorage.setItem("zad:qcf4:meta-v1", JSON.stringify({ chapters }));
       localStorage.setItem("zad:qcf4:theme", theme);
-      localStorage.setItem("zad:qcf4:page-bookmarks", JSON.stringify([{ page: 7, savedAt: 1 }]));
+      localStorage.setItem("zad:qcf4:page-bookmarks", JSON.stringify([{ page: 7, savedAt: 1 }, { page: 8, savedAt: 2 }]));
+      localStorage.setItem("zad:qcf4:last-position", JSON.stringify({ page: 15, savedAt: 1 }));
+      localStorage.setItem("zad:qcf4:recent-visits", JSON.stringify([14, 13, 12, 11, 10, 5].map(page => ({ page, savedAt: 1 }))));
       localStorage.setItem("zad:qcf4:search-v1", JSON.stringify([{ key: "2:60", s: 2, a: 60, page: 10, text: "آية للقراءة" }]));
       localStorage.setItem("zad:qcf4:ayah-bookmarks", oldAyahs);
       localStorage.setItem("zad:qcf4:bookmarks", oldAyahs);
@@ -260,6 +262,8 @@ test("reader shortcuts save and restore page marks, jump directly, and open sear
     try {
       await page.goto(BASE + "/quran-read/?page=9");
       await currentVerse(9).waitFor();
+      assert.deepEqual(await storedPages(), [8], "the newest previous mark is kept when upgrading an older list");
+      assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:recent-visits")).map(x => x.page)), [15, 14, 13, 12, 11]);
       await showReaderTools(9);
       await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
       await ribbon(9).waitFor();
@@ -268,7 +272,9 @@ test("reader shortcuts save and restore page marks, jump directly, and open sear
         const color = getComputedStyle(btn).color, [r, g, b] = color.match(/\d+/g).map(Number);
         return r > g * 1.3 && r > b * 1.3 && getComputedStyle(btn.querySelector("svg")).fill === color;
       }), "the saved mark icon is filled red in either theme");
-      assert.deepEqual(await storedPages(), [9, 7], "existing marks kept in the same list");
+      assert.deepEqual(await storedPages(), [9], "saving a page replaces the previous mark");
+      assert.equal(await ribbon(8).count(), 0);
+      assert.equal(await page.locator(".page-bookmark").count(), 1);
       assert.equal(await page.locator("[data-save]").count(), 0, "no second save menu");
       const fits = await ribbon(9).evaluate(pin => {
         const r = pin.getBoundingClientRect(), stage = pin.parentElement.querySelector(".page-stage").getBoundingClientRect();
@@ -321,9 +327,28 @@ test("reader shortcuts save and restore page marks, jump directly, and open sear
       await showReaderTools(9);
       await page.getByRole("button", { name: "إزالة العلامة", exact: true }).click();
       assert.equal(await ribbon(9).count(), 0);
-      assert.deepEqual(await storedPages(), [7]);
+      assert.deepEqual(await storedPages(), []);
 
       await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      await page.goto(BASE + "/quran-read/?page=10");
+      await currentVerse(10).waitFor();
+      await showReaderTools(10);
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      assert.deepEqual(await storedPages(), [10]);
+      assert.equal(await ribbon(9).count(), 0, "moving the mark clears its previous ribbon");
+      await page.goto(BASE + "/quran-read/?page=9");
+      await currentVerse(9).waitFor();
+      await showReaderTools(9);
+      assert.equal(await page.locator("#bookmarkBtn").getAttribute("aria-pressed"), "false");
+      await page.locator("#jumpBookmarkBtn").click();
+      await page.waitForURL(BASE + "/quran-read/?page=10");
+      await ribbon(10).waitFor();
+      await page.goto(BASE + "/quran-read/?page=9");
+      await currentVerse(9).waitFor();
+      await showReaderTools(9);
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      assert.deepEqual(await storedPages(), [9]);
+      assert.equal(await ribbon(10).count(), 0);
       await page.locator("#quranHomeBtn").click();
       assert.deepEqual(await page.locator(".quran-index-tab").allTextContents(), ["السور", "الأجزاء", "الانتقال إلى"]);
       assert.equal(await page.locator("#quranSurahList .quran-index-row").count(), 114);
@@ -333,20 +358,20 @@ test("reader shortcuts save and restore page marks, jump directly, and open sear
       assert.equal(await page.locator("#quranJuzList .juz-accordion").count(), 30);
       await page.locator('.quran-index-tab[data-tab="m"]').click();
       await page.locator("#quranBookmarkList .ref-pages .quran-bookmark-row").first().waitFor();
-      assert.deepEqual(await page.locator("#quranBookmarkList h4").allTextContents(), ["آخر الزيارات", "العلامات"]);
+      assert.deepEqual(await page.locator("#quranBookmarkList h4").allTextContents(), ["آخر الزيارات", "الانتقال إلى العلامة"]);
+      assert.equal(await page.locator("#quranBookmarkList .ref-recent .quran-bookmark-row").count(), 5);
+      assert.equal(await page.locator("#quranBookmarkList .ref-pages .quran-bookmark-row").count(), 1);
       assert.equal(await page.locator(".ref-ayahs,[data-ayah-open]").count(), 0);
       await page.getByRole("button", { name: "إزالة علامة الصفحة ٩", exact: true }).click();
-      assert.deepEqual(await storedPages(), [7]);
+      assert.deepEqual(await storedPages(), []);
       assert.equal(await ribbon(9).count(), 0, "index deletion updates the rendered page");
       assert.equal(await page.locator("#bookmarkBtn").getAttribute("aria-pressed"), "false");
       await page.locator('[data-hub-action="resume"]').click();
       await showReaderTools(9);
       await page.locator("#jumpBookmarkBtn").click();
-      await page.waitForURL(BASE + "/quran-read/?page=7");
-      await page.getByRole("button", { name: "إزالة العلامة", exact: true }).click();
-      await page.locator("#jumpBookmarkBtn").click();
-      assert.equal(new URL(page.url()).searchParams.get("page"), "7");
-      assert.match(await page.locator("#toast").innerText(), /اضغط زر العلامة/);
+      assert.equal(new URL(page.url()).searchParams.get("page"), "9");
+      assert.deepEqual(await storedPages(), [], "older marks never return after the single mark is removed");
+      assert.match(await page.locator("#toast").innerText(), /أضف علامة/);
       assert.deepEqual(await page.evaluate(() => [
         localStorage.getItem("zad:qcf4:ayah-bookmarks"),
         localStorage.getItem("zad:qcf4:bookmarks"),

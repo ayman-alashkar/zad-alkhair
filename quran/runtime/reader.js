@@ -922,11 +922,12 @@ function loadList(key){
   const x=storageJsonGet(key,[]);return Array.isArray(x)?x:[];
 }
 function saveList(key,list){return storageJsonSet(key,list)}
+const RECENT_VISITS_LIMIT=5;
 function archivePreviousVisit(item){
   if(!item||!Number.isFinite(+item.page))return;
   const key=STORAGE_KEYS.recentVisits,list=loadList(key);
   list.unshift({page:+item.page,savedAt:+item.savedAt||Date.now()});
-  saveList(key,list.slice(0,3));
+  saveList(key,list.slice(0,RECENT_VISITS_LIMIT));
 }
 function saveLastPosition(){
   storageJsonSet(STORAGE_KEYS.lastPosition,{page:currentPage,savedAt:Date.now()});
@@ -1195,7 +1196,19 @@ async function doShare(kind){
   }catch(e){if(e?.name!=="AbortError")showToast("تعذّرت المشاركة الآن")}
   closeMenu();
 }
-function loadPageBookmarks(){return loadList(STORAGE_KEYS.pageBookmarks)}
+function loadPageBookmarks(){
+  const list=loadList(STORAGE_KEYS.pageBookmarks);
+  let mark=null;
+  for(const item of list){
+    const page=Number(item?.page);
+    if(!Number.isInteger(page)||page<1||page>TOTAL_PAGES)continue;
+    if(!mark||(Number(item.savedAt)||0)>(Number(mark.savedAt)||0))mark=item;
+  }
+  const result=mark?[mark]:[];
+  // Upgrade older lists to one stopping mark, keeping the newest saved page.
+  if(list.length!==result.length)saveList(STORAGE_KEYS.pageBookmarks,result);
+  return result;
+}
 function hasPageBookmark(page=currentPage){
   return loadPageBookmarks().some(x=>Number(x?.page)===Number(page));
 }
@@ -1210,8 +1223,7 @@ function syncPageBookmarkButton(){
 function setPageBookmark(page,marked){
   const p=Number(page);
   if(!Number.isInteger(p)||p<1||p>TOTAL_PAGES)return false;
-  const list=loadPageBookmarks().filter(x=>Number(x?.page)!==p);
-  if(marked)list.unshift({page:p,savedAt:Date.now()});
+  const list=marked?[{page:p,savedAt:Date.now()}]:loadPageBookmarks().filter(x=>Number(x.page)!==p);
   if(!saveList(STORAGE_KEYS.pageBookmarks,list)){showToast("تعذّر حفظ التغيير على هذا الجهاز");return false}
   refreshPageBookmarks();return true;
 }
@@ -1219,7 +1231,7 @@ function togglePageBookmark(){
   const marked=!hasPageBookmark();
   if(setPageBookmark(currentPage,marked))showToast(marked?`أُضيفت علامة للصفحة ${ar(currentPage)}`:"أُزيلت العلامة");
 }
-/* Page marks use the existing bookmark list, including pages saved earlier. */
+/* One stopping mark uses the existing storage key. */
 function renderPageBookmark(root){
   let pin=root.querySelector(".page-bookmark");
   if(!hasPageBookmark(root.dataset.page)){pin?.remove();return}
@@ -1236,8 +1248,8 @@ function refreshPageBookmarks(){
 }
 window.addEventListener("storage",e=>{if(e.key===STORAGE_KEYS.pageBookmarks||e.key===null)refreshPageBookmarks()});
 async function jumpToPageBookmark(){
-  const mark=loadPageBookmarks().find(x=>Number.isInteger(Number(x?.page))&&Number(x.page)>=1&&Number(x.page)<=TOTAL_PAGES);
-  if(!mark){showToast("لحفظ موضعك، اضغط زر العلامة أعلى الصفحة أولًا");return}
+  const mark=loadPageBookmarks()[0];
+  if(!mark){showToast("لحفظ موضعك، اضغط «أضف علامة» من أدوات القراءة");return}
   await go(mark.page);
   showToolsFor(5400);
 }
@@ -1747,8 +1759,8 @@ function openQuranIndex(initialTab="s",options={}){
   }
   async function drawBookmarks(){
     if(bookmarkHost.dataset.ready==="1")return;bookmarkHost.dataset.ready="1";bookmarkHost.innerHTML='<div class="quran-bookmark-empty">تحميل المواضع…</div>';
-    const recent=loadList(STORAGE_KEYS.recentVisits).slice(0,3),pagesList=loadPageBookmarks(),groups=[];
-    for(const [name,kind,items] of [["آخر الزيارات","recent",recent],["العلامات","page",pagesList]]){
+    const recent=loadList(STORAGE_KEYS.recentVisits).slice(0,RECENT_VISITS_LIMIT),pagesList=loadPageBookmarks(),groups=[];
+    for(const [name,kind,items] of [["آخر الزيارات","recent",recent],["الانتقال إلى العلامة","page",pagesList]]){
       const rows=[];
       for(const x of items){const info=await pageDisplayInfo(x.page);rows.push({kind,page:info.page,title:`سورة ${info.sname}`,meta:`الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}`})}
       groups.push({name,kind,rows});
@@ -1757,7 +1769,7 @@ function openQuranIndex(initialTab="s",options={}){
     bookmarkHost.replaceChildren();
     for(const {name,kind,rows} of groups){
       const sec=document.createElement("section");sec.className=`quran-bookmark-group ${kind==="recent"?"ref-recent":"ref-pages"}`;sec.innerHTML=`<h4>${name}</h4>`;
-      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لحفظ موضعك، اضغط زر العلامة أعلى صفحة القراءة."}</div>`);
+      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لحفظ موضعك، اضغط «أضف علامة» من أدوات القراءة."}</div>`);
       for(const item of rows){
         const row=document.createElement("div");row.className="quran-bookmark-row";
         row.innerHTML=`<button type="button" class="quran-bookmark-open"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.meta)}</small></button>${kind==="recent"?"":`<button type="button" class="quran-bookmark-del" aria-label="إزالة علامة الصفحة ${ar(item.page)}">×</button>`}`;

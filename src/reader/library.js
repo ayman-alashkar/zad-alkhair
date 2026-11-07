@@ -408,8 +408,8 @@ function openQuranIndex(initialTab="s",options={}){
   }
   async function drawBookmarks(){
     if(bookmarkHost.dataset.ready==="1")return;bookmarkHost.dataset.ready="1";bookmarkHost.innerHTML='<div class="quran-bookmark-empty">تحميل المواضع…</div>';
-    const recent=loadList(STORAGE_KEYS.recentVisits).slice(0,3),pagesList=loadPageBookmarks(),groups=[];
-    for(const [name,kind,items] of [["آخر الزيارات","recent",recent],["العلامات","page",pagesList]]){
+    const recent=loadList(STORAGE_KEYS.recentVisits).slice(0,RECENT_VISITS_LIMIT),pagesList=loadPageBookmarks(),groups=[];
+    for(const [name,kind,items] of [["آخر الزيارات","recent",recent],["الانتقال إلى العلامة","page",pagesList]]){
       const rows=[];
       for(const x of items){const info=await pageDisplayInfo(x.page);rows.push({kind,page:info.page,title:`سورة ${info.sname}`,meta:`الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}`})}
       groups.push({name,kind,rows});
@@ -418,7 +418,7 @@ function openQuranIndex(initialTab="s",options={}){
     bookmarkHost.replaceChildren();
     for(const {name,kind,rows} of groups){
       const sec=document.createElement("section");sec.className=`quran-bookmark-group ${kind==="recent"?"ref-recent":"ref-pages"}`;sec.innerHTML=`<h4>${name}</h4>`;
-      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لحفظ موضعك، اضغط زر العلامة أعلى صفحة القراءة."}</div>`);
+      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لحفظ موضعك، اضغط «أضف علامة» من أدوات القراءة."}</div>`);
       for(const item of rows){
         const row=document.createElement("div");row.className="quran-bookmark-row";
         row.innerHTML=`<button type="button" class="quran-bookmark-open"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.meta)}</small></button>${kind==="recent"?"":`<button type="button" class="quran-bookmark-del" aria-label="إزالة علامة الصفحة ${ar(item.page)}">×</button>`}`;
