@@ -152,10 +152,6 @@ test("direct Quran pages boot the same reader and carry their own sharing card",
     const filename=new URL(image).pathname;
     assert.ok(filename.endsWith(surah?`-${mode}-v2.jpg`:`-${mode==="read"?"reader":"listen"}-share-v2.jpg`));
     assert.ok(fs.existsSync(path.join(root,filename)));
-    if(mode==="read"&&surah){
-      assert.match(html,/<article class="reader-surah-summary">/);
-      assert.ok(html.includes(`href="/quran-listen/${surah.n}/"`));
-    }
   }
   const index=read("quran-index/index.html");
   assert.match(index,/href="\/quran-read\/114\/"/);

@@ -57,21 +57,6 @@ function readerMeta({ mode, surah, path: route }) {
   ].join("\n");
 }
 
-function readingSummary({mode, surah}) {
-  if (mode !== "read" || !surah) return "تحميل مصحف المدينة QCF4…";
-  const n = surah.n;
-  const tafsir = JSON.parse(fs.readFileSync(path.join(root, "data/tafsir/al-wajeez", String(n).padStart(3, "0") + ".json"), "utf8"));
-  const title = `سورة ${surah.name}`;
-  return `<article class="reader-surah-summary">
-  <h1>${escape(title)} مكتوبة</h1>
-  <p>السورة رقم ${n} في المصحف، وعدد آياتها ${surah.verses}.</p>
-  <h2>من تفسير الآية الأولى للدكتور وهبة الزحيلي</h2>
-  <p>${escape(tafsir.ayahs["1"].text)}</p>
-  <nav aria-label="روابط ${escape(title)}"><a href="/quran-listen/${n}/">استمع إلى ${escape(title)}</a> · <a href="${indexPath}">فهرس القرآن</a></nav>
-  <p role="status">جارٍ فتح المصحف…</p>
-</article>`;
-}
-
 for (const name of ["home", "reader"]) {
   const dir = path.join(root, "src", name);
   let template = fs.readFileSync(path.join(dir, "index.html"), "utf8");
@@ -97,8 +82,7 @@ for (const name of ["home", "reader"]) {
     .replace(`<script>${jsMarker}</script>`, `<script src="${assets}.js?v=${version}"></script>`);
   for (const route of readerRoutes) {
     const pageTemplate = route.mode === "read" && !route.surah ? readerShell : directTemplate;
-    const html = pageTemplate.replace("<!-- @reader-meta -->", () => readerMeta(route))
-      .replace("تحميل مصحف المدينة QCF4…", () => readingSummary(route));
+    const html = pageTemplate.replace("<!-- @reader-meta -->", () => readerMeta(route));
     write(`${route.path.slice(1)}index.html`, html);
   }
 }
