@@ -332,6 +332,7 @@ function renderPage(data){
   }
 
   if(selectedKey)root.querySelectorAll(`.verse-segment[data-key="${selectedKey}"]`).forEach(x=>x.classList.add("selected"));
+  renderPageBookmark(root);
   requestAnimationFrame(()=>fitPage(data.page));
 }
 

@@ -30,7 +30,7 @@
   --brand:#0F5C50; --brand-strong:#0A473E; --brand-soft:#DDF1EA;
   --green:#1B705F; --green-deep:#0A473E; --green-hi:#278573;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:#F4E8CA; --red:#B95157;
-  --paper:#F5F0E4; --quran:#132823; --muted:#746F63;
+  --paper:#F5F0E4; --quran:#0F1C17; --ayah-number:#80591F; --muted:#746F63;
   --chrome:#FFFCF4; --chrome-text:#18362F; --border:#DED3BD; --line:#DED3BD;
   --select:rgba(40,122,101,.12); --select-line:rgba(197,154,74,.30);
   --sheet:#FFFCF4; --shadow:rgba(0,0,0,.18);
@@ -44,7 +44,7 @@ html[data-theme="dark"]{
   /* الوضع الليلي مأخوذ من خلفية وهوية النسخة النهائية لزاد الخير */
   --green:#49A18C; --green-deep:#0A473E; --green-hi:#49A18C;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:rgba(228,201,128,.12); --red:#D77B80;
-  --paper:#061F1D; --quran:#FFF9EA; --muted:rgba(255,249,234,.70);
+  --paper:#061F1D; --quran:#FFF9EA; --ayah-number:#E4C980; --muted:rgba(255,249,234,.70);
   --chrome:#082D29; --chrome-text:#FFF9EA; --border:rgba(228,201,128,.24); --line:rgba(228,201,128,.24);
   --select:rgba(73,161,140,.18); --select-line:rgba(228,201,128,.28);
   --sheet:#0D3C35; --shadow:rgba(0,0,0,.48);
@@ -83,6 +83,12 @@ button{cursor:pointer}
 }
 .page-meta-link:active{transform:scale(.96);color:var(--gold)}
 .page-meta-link:focus-visible{outline:2px solid color-mix(in srgb,var(--gold) 55%,transparent);outline-offset:3px}
+/* The ribbon stays in the top margin so it never covers Quran text. */
+.page-bookmark{
+  position:absolute;z-index:4;left:80px;top:env(safe-area-inset-top,0px);
+  width:24px;height:34px;color:var(--red);pointer-events:none;
+}
+.page-bookmark svg{display:block;width:100%;height:100%;fill:currentColor}
 .page-stage{
   position:absolute;
   inset:calc(43px + env(safe-area-inset-top)) 0 calc(34px + env(safe-area-inset-bottom));
@@ -95,6 +101,13 @@ button{cursor:pointer}
   display:flex;flex-direction:column;align-items:stretch;justify-content:center;
   transform-origin:center center;
 }
+/* A touch tablet can use its reading area beyond the desktop's 780px column.
+   The page fitter still checks both dimensions, including after rotation. */
+@media (min-width:600px) and (min-height:600px) and (hover:none) and (pointer:coarse){
+  .mushaf{width:min(calc(100vw - 32px),1120px)}
+  .page-meta{font-size:19px}
+  .page-no{font-size:19px}
+}
 .line{
   width:100%;display:flex;justify-content:center;align-items:center;
   white-space:nowrap;overflow:visible;direction:rtl;line-height:1.33;
@@ -103,7 +116,7 @@ button{cursor:pointer}
   display:inline-flex;align-items:center;justify-content:center;
   user-select:none;-webkit-user-select:none;
   direction:rtl;white-space:nowrap;line-height:1.33;
-  font-family:"QCF4_Hafs_01";
+  font-family:"QCF4_Hafs_01";font-weight:400;font-synthesis:none;
 }
 .surah-line{
   font-family:"QCF4_QBSML";color:var(--green);
@@ -145,8 +158,7 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   line-height:1.33;position:relative;
 }
 .word.allah{color:var(--red)}
-.word.end{color:var(--quran)}
-html:not([data-theme="dark"]) .word.end{color:var(--gold)}
+.word.end{color:var(--ayah-number)}
 .page-no{
   position:absolute;left:22px;bottom:calc(12px + env(safe-area-inset-bottom));
   color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:17px
@@ -189,7 +201,7 @@ html:not([data-theme="dark"]) .word.end{color:var(--gold)}
   padding:4px 7px calc(4px + env(safe-area-inset-bottom));
   display:grid;
   grid-template-columns:46px minmax(0,1fr) minmax(0,1fr) 46px;
-  grid-template-areas:"next listen tafsir prev";
+  grid-template-areas:"next listen tafsir prev" "shortcuts shortcuts shortcuts shortcuts";
   gap:6px;align-items:center;direction:ltr;
   /* Solid near the bottom, gently translucent toward the Mushaf. */
   background:linear-gradient(
@@ -219,6 +231,9 @@ html:not([data-theme="dark"]) .word.end{color:var(--gold)}
 .bottom #tafsirBtn{grid-area:tafsir;direction:rtl}
 .bottom #listenBtn{grid-area:listen;direction:rtl}
 .bottom #nextBtn{grid-area:next}
+.bottom .reader-shortcuts{grid-area:shortcuts;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:inherit;direction:rtl}
+.bottom .tool{min-height:44px}
+.reader-shortcuts .tool{white-space:normal;line-height:1.45}
 .hidden-tools .chrome{opacity:0;pointer-events:none}
 .hidden-tools .topbar{transform:translateY(-14px)}
 .hidden-tools .bottom{transform:translateY(14px)}
@@ -822,7 +837,7 @@ html:not([data-theme="dark"]) .hizb-ring.start{
     left:50%;right:auto;bottom:18px;
     width:min(520px,calc(100vw - 300px));
     grid-template-columns:repeat(2,minmax(0,1fr));
-    grid-template-areas:"listen tafsir";
+    grid-template-areas:"listen tafsir" "shortcuts shortcuts";
     gap:8px;padding:8px;
     border:1px solid color-mix(in srgb,var(--gold) 19%,var(--ui-line));
     border-radius:20px;
@@ -943,6 +958,12 @@ html:not([data-theme="dark"]) .hizb-ring.start{
     column-gap:18px
   }
   .audio-controls{gap:7px;grid-template-columns:66px 54px 70px 54px 54px 72px}
+}
+
+/* Touch readers turn pages by swiping; the two tool rows use the full dock. */
+@media (hover:none) and (pointer:coarse){
+  .bottom{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"listen tafsir" "shortcuts shortcuts"}
+  .bottom>.navbtn,.desktop-page-nav{display:none}
 }
 
 /* ---------- v37 · native reciter menu contrast ----------
@@ -2237,6 +2258,8 @@ html .topbar .top-actions{grid-column:3;grid-row:1;gap:7px;min-width:max-content
 html .topbar .iconbtn{width:40px;height:40px;background:var(--reader-raised)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
 html .topbar .iconbtn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:3px}
 html .topbar .iconbtn:active{background:var(--reader-selected)!important}
+html .bottom #bookmarkBtn.marked{color:var(--red);border-color:var(--red)}
+html .bottom #bookmarkBtn.marked svg{fill:currentColor}
 .reader-context{
   grid-column:2;grid-row:1;justify-self:center;min-width:0;width:100%;max-width:190px;min-height:40px;
   display:grid;align-content:center;gap:1px;padding:4px 7px;border:1px solid var(--reader-line);border-radius:13px;
