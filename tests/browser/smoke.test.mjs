@@ -156,7 +156,7 @@ test("the reader opens on a phone without script errors", async () => {
   await context.close();
 });
 
-test("the bare Quran reading URL opens the reader index and resuming keeps the saved page on reload", async () => {
+test("the Quran index resumes the saved page and shares a direct juz link", async () => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
   const { page, errors, context } = await appPage({
@@ -175,6 +175,12 @@ test("the bare Quran reading URL opens the reader index and resuming keeps the s
     json: { page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]), lines: [], surahs: [{ id: 1 }] }
   }));
   try {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async ({ url }) => { window.sharedJuzUrl = url; }
+      });
+    });
     await page.goto(BASE + "/quran-read/");
     await page.locator('.quran-index[data-home-mode="1"]').waitFor();
     await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
@@ -194,6 +200,16 @@ test("the bare Quran reading URL opens the reader index and resuming keeps the s
     await page.goto(BASE + "/juz/8/?code=AB12");
     await page.waitForURL(BASE + "/quran-read/?juz=8&code=AB12");
     await page.locator('.page[data-page="142"][data-loaded="1"]').waitFor({ state: "attached" });
+
+    await page.goto(BASE + "/quran-read/");
+    const index = page.locator('.quran-index[data-home-mode="1"]');
+    await index.getByRole("button", { name: "الأجزاء", exact: true }).click();
+    await index.getByRole("button", { name: "مشاركة الجزء ١٥", exact: true }).click();
+    const shared = await page.evaluate(() => window.sharedJuzUrl);
+    assert.equal(shared, BASE + "/quran-read/?juz=15");
+    await page.goto(shared);
+    await page.locator('.page[data-page="282"][data-loaded="1"]').waitFor({ state: "attached" });
+    assert.equal(await index.count(), 0);
     assert.deepEqual(errors, []);
   } finally {
     await context.close();

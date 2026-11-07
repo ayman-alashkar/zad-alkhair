@@ -42,7 +42,7 @@ test("ayah counts use the Arabic plural, and the arc maps back to the same fract
   assert.equal(ctx.listenArcFraction({clientX:0,clientY:124},svg),1);
 });
 
-test("sharing a verse or a recitation always uses its public Quran route",()=>{
+test("sharing a verse, a juz or a recitation uses its direct Quran route",()=>{
   const eventTarget={addEventListener(){}};
   const shared=[];
   const ctx=vm.createContext({
@@ -58,6 +58,7 @@ test("sharing a verse or a recitation always uses its public Quran route",()=>{
   ctx.listenCardState=()=>({r:{id:"Husary_128kbps"}});
 
   assert.equal(ctx.linkFor("112:2"),"https://zad-alkhair.net/quran-read/112/?ayah=2");
+  assert.equal(ctx.publicJuzUrl(15),"https://zad-alkhair.net/quran-read/?juz=15");
   ctx.listenShareSurah(112);
   assert.equal(shared[0].url,"https://zad-alkhair.net/quran-listen/112/?qari=Husary_128kbps");
 });
