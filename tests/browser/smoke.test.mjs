@@ -1,8 +1,8 @@
-/* اختبارات متصفح حقيقي بحجم هاتف. تلتقط ما لا تراه اختبارات الشيفرة: عنصر مخفي تحت
+/* اختبارات متصفح حقيقي. تلتقط ما لا تراه اختبارات الشيفرة: عنصر مخفي تحت
    الشريط السفلي، أو خطأ JavaScript يوقف الصفحة. لا تتصل بالقاعدة الحقيقية: كل نداء إلى
    Supabase يُجاب ببيانات وهمية، وكل طلب خارجي آخر يُمنع.
 
-   التشغيل: npm run test:browser (يحتاج playwright وChromium؛ يثبّتهما خط GitHub وحده).
+   التشغيل: npm run test:browser (Chromium) أو ZAD_BROWSER=webkit npm run test:browser.
    على جهاز فيه Chrome: CHROME_PATH=/usr/bin/google-chrome npm run test:browser */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -10,11 +10,13 @@ import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PORT = 4391;
 const BASE = `http://127.0.0.1:${PORT}`;
+const ENGINE = process.env.ZAD_BROWSER || "chromium";
+const PHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
 
 let server, browser;
 
@@ -24,7 +26,10 @@ test.before(async () => {
     try { if ((await fetch(BASE + "/")).ok) break; } catch {}
     await new Promise(r => setTimeout(r, 100));
   }
-  browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH, args: ["--no-sandbox"] } : {});
+  const engine = { chromium, webkit }[ENGINE];
+  assert.ok(engine, `Unsupported browser engine: ${ENGINE}`);
+  const chromePath = ENGINE === "chromium" && process.env.CHROME_PATH;
+  browser = await engine.launch(chromePath ? { executablePath: chromePath, args: ["--no-sandbox"] } : {});
 });
 
 test.after(async () => {
@@ -32,9 +37,9 @@ test.after(async () => {
   server?.kill();
 });
 
-/* صفحة هاتف، مع ردود وهمية لنداءات القاعدة. */
-async function phonePage({ rpc = {}, storage = {}, realtime = () => {} } = {}) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: "block" });
+/* صفحة هاتف افتراضيًّا، مع ردود وهمية لنداءات القاعدة. */
+async function appPage({ profile = PHONE, rpc = {}, storage = {}, realtime = () => {} } = {}) {
+  const context = await browser.newContext({ ...profile, serviceWorkers: "block" });
   /* اتصال Realtime لا يخرج إلى الخادم الحقيقي أبدًا: يُجاب هنا (أو لا يُجاب). */
   await context.routeWebSocket(/\/realtime\/v1\/websocket/, realtime);
   await context.addInitScript(items => {
@@ -67,7 +72,7 @@ const isOnTop = (page, selector) => page.$eval(selector, el => {
 });
 
 test("home opens on a phone without script errors and shows the bottom tabs", async () => {
-  const { page, errors, context } = await phonePage();
+  const { page, errors, context } = await appPage();
   await page.goto(BASE + "/", { waitUntil: "load" });
   await page.waitForTimeout(800);
   assert.ok(await page.isVisible("#zk-tabs"), "bottom tabs visible");
@@ -75,8 +80,37 @@ test("home opens on a phone without script errors and shows the bottom tabs", as
   await context.close();
 });
 
+test("records cold home startup at phone and desktop sizes", async t => {
+  for (const [label, profile] of [["phone", PHONE], ["desktop", { viewport: { width: 1440, height: 900 } }]]) {
+    const samples = [];
+    for (let sample = 0; sample < 3; sample++) {
+      const { page, errors, context } = await appPage({ profile });
+      try {
+        await page.addInitScript(() => {
+          const observer = new MutationObserver(() => {
+            if (!document.querySelector("#zk-launch.zk-home-ready")) return;
+            performance.mark("zad-home-ready");
+            observer.disconnect();
+          });
+          observer.observe(document, { subtree: true, attributes: true, attributeFilter: ["class"] });
+        });
+        await page.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+        await page.locator("#zk-launch.zk-home-ready").waitFor();
+        const readyMs = await page.evaluate(() => performance.getEntriesByName("zad-home-ready")[0]?.startTime);
+        assert.ok(Number.isFinite(readyMs), "home readiness was measured");
+        assert.deepEqual(errors, []);
+        samples.push(Math.round(readyMs));
+      } finally {
+        await context.close();
+      }
+    }
+    samples.sort((a, b) => a - b);
+    t.diagnostic(`${ENGINE} ${label} home ready: median ${samples[1]} ms (${samples.join(", ")} ms)`);
+  }
+});
+
 test("a tall dialog's last button and a toast are not hidden by the bottom tabs", async () => {
-  const { page, errors, context } = await phonePage();
+  const { page, errors, context } = await appPage();
   await page.goto(BASE + "/", { waitUntil: "load" });
   await page.waitForTimeout(500);
   await page.evaluate(() => {
@@ -99,7 +133,7 @@ test("a khatmah card says «افتح الختمة» on a member's device and ope
     { publicId: "p-other", title: "ختمة أخرى", accessType: "private", participantCount: 3, reservedCount: 4, doneCount: 1, endDate: "2030-01-01" }
   ];
   /* سجل قديم بلا publicId: يُكمَل من get_state، ثم تتعرّف عليه البطاقة. */
-  const { page, errors, context } = await phonePage({
+  const { page, errors, context } = await appPage({
     rpc: { list_active_khatmahs: cards, get_state: { publicId: "p-mine", code: "ABCD", title: "ختمتي", members: [], juz: [] } },
     storage: { "zad:mine": JSON.stringify([{ code: "ABCD", name: "قارئ", title: "ختمتي", at: 1 }]) }
   });
@@ -115,7 +149,7 @@ test("a khatmah card says «افتح الختمة» on a member's device and ope
 });
 
 test("the reader opens on a phone without script errors", async () => {
-  const { page, errors, context } = await phonePage();
+  const { page, errors, context } = await appPage();
   await page.goto(BASE + "/reader.html?home=1", { waitUntil: "load" });
   await page.waitForTimeout(1500);
   assert.deepEqual(errors, []);
@@ -125,7 +159,7 @@ test("the reader opens on a phone without script errors", async () => {
 test("the bare Quran reading URL opens the reader index and resuming keeps the saved page on reload", async () => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
-  const { page, errors, context } = await phonePage({
+  const { page, errors, context } = await appPage({
     storage: {
       "zad:qcf4:meta-v1": JSON.stringify({ chapters }),
       "zad:qcf4:last-position": JSON.stringify({ page: 45, savedAt: 1 }),
@@ -160,7 +194,7 @@ test("a member's khatmah tab opens from the saved state before the server answer
   const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
     members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
     juz: Array.from({ length: 30 }, (_, i) => ({ status: i < 7 ? "done" : "open", ownerId: i < 7 ? "org" : null })) };
-  const { page, errors, context } = await phonePage({
+  const { page, errors, context } = await appPage({
     storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "me", name: "أنا" }), "zad:khatmah-state-v1": JSON.stringify({ code: "ABCD", state }) }
   });
   /* الخادم لا يجيب أبدًا: ما يظهر إنما هو من الحالة المحفوظة. */
@@ -175,7 +209,7 @@ test("a member's khatmah tab opens from the saved state before the server answer
 test("on Friday the home greets with «جمعتكم مباركة» and counts the Kahf pages read since Thursday's maghrib", async () => {
   const fri = new Date("2026-11-06T10:00:00").getTime();
   const pages = n => JSON.stringify(Object.fromEntries(Array.from({ length: n }, (_, i) => [293 + i, fri - 3600e3])));
-  const { page, errors, context } = await phonePage({ storage: { "zad:kahf-pages-v1": pages(5) } });
+  const { page, errors, context } = await appPage({ storage: { "zad:kahf-pages-v1": pages(5) } });
   await page.clock.install({ time: fri });
   await page.goto(BASE + "/", { waitUntil: "load" });
   await page.clock.runFor(1500);
@@ -190,7 +224,7 @@ test("on Friday the home greets with «جمعتكم مباركة» and counts th
 });
 
 test("«وردك اليوم» counts every tap, keeps the count, and the Back button closes the counter", async () => {
-  const { page, errors, context } = await phonePage();
+  const { page, errors, context } = await appPage();
   await page.goto(BASE + "/", { waitUntil: "load" });
   await page.click('[data-zw-open="2"]');
   for (let i = 0; i < 5; i++) await page.click("#zw-tap");
@@ -213,7 +247,7 @@ test("«وردك اليوم» counts every tap, keeps the count, and the Back bu
 
 test("after all three adhkar reach 100 the wird card shrinks to one line that still opens the counter", async () => {
   const day = new Date(); const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-  const { page, errors, context } = await phonePage({ storage: { "zad:wird-v1": JSON.stringify({ day: key, counts: [100, 100, 100] }) } });
+  const { page, errors, context } = await appPage({ storage: { "zad:wird-v1": JSON.stringify({ day: key, counts: [100, 100, 100] }) } });
   await page.goto(BASE + "/", { waitUntil: "load" });
   await page.waitForSelector(".zw-done");
   assert.equal(await page.$(".zw-card"), null);
@@ -224,7 +258,7 @@ test("after all three adhkar reach 100 the wird card shrinks to one line that st
 });
 
 test("a reload stays on the screen that is showing (home, khatmahs or prayer times)", async () => {
-  const { page, errors, context } = await phonePage();
+  const { page, errors, context } = await appPage();
   await page.goto(BASE + "/?section=khatmahs", { waitUntil: "load" });
   await page.reload({ waitUntil: "load" });
   assert.equal(await page.evaluate(() => document.body.classList.contains("zk-launch-open")), false, "still khatmahs");
@@ -243,7 +277,7 @@ test("with an active khatmah, a reload on home stays on home (the khatmah code i
   const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
     members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
     juz: Array.from({ length: 30 }, () => ({ status: "open", ownerId: null })) };
-  const { page, errors, context } = await phonePage({
+  const { page, errors, context } = await appPage({
     rpc: { get_state: state, list_active_khatmahs: [] },
     storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "me", name: "أنا" }) }
   });
@@ -266,7 +300,7 @@ test("live sync: joins the khatmah's channel, and a «changed» signal refreshes
     members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
     juz: Array.from({ length: 30 }, (_, i) => ({ status: i < done ? "done" : (i === 9 ? "taken" : "free"), ownerId: i < done ? "org" : (i === 9 ? "me" : null) })) });
   const sockets = [], joins = [];
-  const { page, errors, context } = await phonePage({
+  const { page, errors, context } = await appPage({
     storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "me", name: "أنا" }) },
     realtime: ws => {
       sockets.push(ws);

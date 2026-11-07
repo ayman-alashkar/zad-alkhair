@@ -1,16 +1,17 @@
 /* ===================== البيانات ===================== */
 let refreshSeq=0;
 async function refresh(silent=false){
-  if(!code) return false;
+  const requestedCode=code;
+  if(!requestedCode) return false;
   const seq=++refreshSeq;
   let nextState;
-  try{ nextState=await rpc("get_state",{p_code:code}); }
+  try{ nextState=await rpc("get_state",{p_code:requestedCode}); }
   catch(e){
-    if(seq===refreshSeq&&!silent) toast("تعذّر الاتصال بقاعدة البيانات");
+    if(seq===refreshSeq&&code===requestedCode&&!silent) toast("تعذّر الاتصال بقاعدة البيانات");
     return false;
   }
-  /* لا تسمح لاستجابة أقدم أن تمحو حالة جلب أحدث. */
-  if(seq!==refreshSeq) return false;
+  /* تُهمل الاستجابة إذا بدأ جلب أحدث أو غادر المستخدم الختمة. */
+  if(seq!==refreshSeq||code!==requestedCode) return false;
   state=nextState;
   if(!state){ mineForget(code); activeKhatmahForget(code); khatmahStateForget(); screen="notfound"; if(!silent) render(); return true; }
   if(viewer && !memberOf(viewer.id)){ /* حُذف أو دُمج */ viewer=null; localStorage.removeItem(vKey()); }
