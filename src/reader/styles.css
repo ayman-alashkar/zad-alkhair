@@ -30,7 +30,7 @@
   --brand:#0F5C50; --brand-strong:#0A473E; --brand-soft:#DDF1EA;
   --green:#1B705F; --green-deep:#0A473E; --green-hi:#278573;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:#F4E8CA; --red:#B95157;
-  --paper:#F5F0E4; --quran:#132823; --muted:#746F63;
+  --paper:#F5F0E4; --quran:#0F1C17; --ayah-number:#80591F; --muted:#746F63;
   --chrome:#FFFCF4; --chrome-text:#18362F; --border:#DED3BD; --line:#DED3BD;
   --select:rgba(40,122,101,.12); --select-line:rgba(197,154,74,.30);
   --sheet:#FFFCF4; --shadow:rgba(0,0,0,.18);
@@ -44,7 +44,7 @@ html[data-theme="dark"]{
   /* الوضع الليلي مأخوذ من خلفية وهوية النسخة النهائية لزاد الخير */
   --green:#49A18C; --green-deep:#0A473E; --green-hi:#49A18C;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:rgba(228,201,128,.12); --red:#D77B80;
-  --paper:#061F1D; --quran:#FFF9EA; --muted:rgba(255,249,234,.70);
+  --paper:#061F1D; --quran:#FFF9EA; --ayah-number:#E4C980; --muted:rgba(255,249,234,.70);
   --chrome:#082D29; --chrome-text:#FFF9EA; --border:rgba(228,201,128,.24); --line:rgba(228,201,128,.24);
   --select:rgba(73,161,140,.18); --select-line:rgba(228,201,128,.28);
   --sheet:#0D3C35; --shadow:rgba(0,0,0,.48);
@@ -101,6 +101,13 @@ button{cursor:pointer}
   display:flex;flex-direction:column;align-items:stretch;justify-content:center;
   transform-origin:center center;
 }
+/* A touch tablet can use its reading area beyond the desktop's 780px column.
+   The page fitter still checks both dimensions, including after rotation. */
+@media (min-width:600px) and (min-height:600px) and (hover:none) and (pointer:coarse){
+  .mushaf{width:min(calc(100vw - 32px),1120px)}
+  .page-meta{font-size:19px}
+  .page-no{font-size:19px}
+}
 .line{
   width:100%;display:flex;justify-content:center;align-items:center;
   white-space:nowrap;overflow:visible;direction:rtl;line-height:1.33;
@@ -109,7 +116,7 @@ button{cursor:pointer}
   display:inline-flex;align-items:center;justify-content:center;
   user-select:none;-webkit-user-select:none;
   direction:rtl;white-space:nowrap;line-height:1.33;
-  font-family:"QCF4_Hafs_01";
+  font-family:"QCF4_Hafs_01";font-weight:400;font-synthesis:none;
 }
 .surah-line{
   font-family:"QCF4_QBSML";color:var(--green);
@@ -151,8 +158,7 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   line-height:1.33;position:relative;
 }
 .word.allah{color:var(--red)}
-.word.end{color:var(--quran)}
-html:not([data-theme="dark"]) .word.end{color:var(--gold)}
+.word.end{color:var(--ayah-number)}
 .page-no{
   position:absolute;left:22px;bottom:calc(12px + env(safe-area-inset-bottom));
   color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:17px

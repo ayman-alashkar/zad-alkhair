@@ -51,7 +51,9 @@ function fitPage(p){
     host.style.gap="0px";
     surahs.forEach(x=>x.style.minHeight="");
 
-    const targetW=Math.min(stage.clientWidth*.985,775);
+    // Measure the responsive Mushaf column rather than imposing a second,
+    // fixed desktop width on tablets. Keep space for ink at either edge.
+    const targetW=Math.min(stage.clientWidth*.985,host.clientWidth*.995);
     const targetH=stage.clientHeight*.955;
     const maxW=Math.max(...normal.map(x=>x.getBoundingClientRect().width),1);
 

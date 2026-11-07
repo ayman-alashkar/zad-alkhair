@@ -156,6 +156,83 @@ test("the reader opens on a phone without script errors", async () => {
   await context.close();
 });
 
+test("Quran text and verse numbers stay readable when a tablet rotates", async t => {
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
+  for (const [width, height] of [[768, 1024], [834, 1194], [1024, 1366]]) {
+    for (const theme of ["light", "dark"]) await t.test(`${width}×${height} ${theme}`, async () => {
+      const { page, errors, context } = await appPage({
+        profile: { viewport: { width, height }, isMobile: true, hasTouch: true },
+        storage: { "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme }
+      });
+      // A local Arabic font and neutral sample text exercise layout without
+      // depending on the CDN, live data, or replacement Quran glyphs.
+      await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+        path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+        headers: { "Access-Control-Allow-Origin": "*" }
+      }));
+      await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+        headers: { "Access-Control-Allow-Origin": "*" },
+        json: {
+          page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
+          font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+          lines: Array.from({ length: 15 }, (_, i) => ({ words: [
+            ...Array.from({ length: 6 + i % 3 }, () => ({ type: "word", text: "نص تجريبي", char: "نَصٌّ تَجْرِيبِيٌّ", verse_key: `2:${60 + i}` })),
+            { type: "end", text: `V${60 + i}`, char: "١٢٣", verse_key: `2:${60 + i}` }
+          ] }))
+        }
+      }));
+      const measure = () => page.locator('.page[data-page="9"]').evaluate(root => {
+        const stage = root.querySelector(".page-stage"), bounds = stage.getBoundingClientRect();
+        const lines = [...root.querySelectorAll(".line-inner")];
+        const contrast = (foreground, background) => {
+          const luminance = color => {
+            const [r, g, b] = color.match(/[\d.]+/g).slice(0, 3).map(x => {
+              const c = Number(x) / 255; return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+            });
+            return .2126 * r + .7152 * g + .0722 * b;
+          };
+          const a = luminance(foreground), b = luminance(background);
+          return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+        };
+        const background = getComputedStyle(root).backgroundColor;
+        return {
+          fontSize: parseFloat(getComputedStyle(lines[0]).fontSize),
+          columnWidth: root.querySelector(".mushaf").getBoundingClientRect().width,
+          fits: !stage.classList.contains("scrolls") && lines.every(line => {
+            const r = line.getBoundingClientRect();
+            return r.left >= bounds.left - 1 && r.right <= bounds.right + 1 && r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
+          }),
+          textContrast: contrast(getComputedStyle(root.querySelector(".word:not(.end)")).color, background),
+          numberContrast: contrast(getComputedStyle(root.querySelector(".word.end")).color, background)
+        };
+      });
+      try {
+        await page.goto(BASE + "/quran-read/?page=9");
+        await page.locator('.page[data-page="9"] .word.end').first().waitFor();
+        await page.waitForTimeout(300);
+        const portrait = await measure();
+        assert.ok(portrait.fits, "all fifteen lines fit the portrait reading area");
+        assert.ok(portrait.textContrast >= 7, "Quran text has strong contrast");
+        assert.ok(portrait.numberContrast >= 4.5, "verse numbers remain legible in either theme");
+        assert.ok(portrait.columnWidth > width * .9, "portrait tablets use the available width");
+        await page.setViewportSize({ width: height, height: width });
+        await page.waitForTimeout(300);
+        const landscape = await measure();
+        assert.ok(landscape.fits, "rotation never clips a line or hides the bottom of the page");
+        await page.setViewportSize({ width, height });
+        await page.waitForTimeout(300);
+        const restored = await measure();
+        assert.ok(restored.fits, "returning to portrait preserves the complete page");
+        assert.ok(Math.abs(restored.fontSize - portrait.fontSize) < .1, "rotation does not accumulate text shrinkage");
+        assert.deepEqual(errors, []);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
 test("the Quran index resumes the saved page and shares a direct juz link", async () => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
