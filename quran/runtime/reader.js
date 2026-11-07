@@ -3675,7 +3675,7 @@ if("serviceWorker" in navigator){
     if(wantsHome&&!earlyIndexOpened){
       const restoredTab=storedSurface?.surface==="quran-home"&&["s","j","m"].includes(storedSurface?.tab)?storedSurface.tab:"s";
       requestAnimationFrame(()=>entry.listen?openListenPage():openQuranIndex(restoredTab,{home:true}));
-    }else setTimeout(()=>showToast("QCF4 · مصحف المدينة ١٤٤١هـ · ٦٠٤ صفحات"),350);
+    }
   }catch(e){
     console.error(e);
     readerBootDone();
