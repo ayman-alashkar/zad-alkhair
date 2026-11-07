@@ -6,6 +6,7 @@
    على جهاز فيه Chrome: CHROME_PATH=/usr/bin/google-chrome npm run test:browser */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -121,6 +122,40 @@ test("the reader opens on a phone without script errors", async () => {
   await context.close();
 });
 
+test("the bare Quran reading URL opens the reader index and resuming keeps the saved page on reload", async () => {
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
+  const { page, errors, context } = await phonePage({
+    storage: {
+      "zad:qcf4:meta-v1": JSON.stringify({ chapters }),
+      "zad:qcf4:last-position": JSON.stringify({ page: 45, savedAt: 1 }),
+      "zad:qcf4:last-surface-v1": JSON.stringify({ surface: "reader", page: 45 })
+    }
+  });
+  await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+    path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+    headers: { "Access-Control-Allow-Origin": "*" }
+  }));
+  await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+    headers: { "Access-Control-Allow-Origin": "*" },
+    json: { page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]), lines: [], surahs: [{ id: 1 }] }
+  }));
+  try {
+    await page.goto(BASE + "/quran-read/");
+    await page.locator('.quran-index[data-home-mode="1"]').waitFor();
+    await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:last-position")).savedAt), 1);
+    await page.locator('[data-hub-action="resume"]').click();
+    assert.equal(new URL(page.url()).searchParams.get("page"), "45");
+    await page.reload();
+    await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
+    assert.equal(await page.locator('.quran-index[data-home-mode="1"]').count(), 0);
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+  }
+});
+
 test("a member's khatmah tab opens from the saved state before the server answers", async () => {
   const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
     members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
@@ -149,7 +184,7 @@ test("on Friday the home greets with «جمعتكم مباركة» and counts th
   /* كتابع قراءة الجزء: من أبعد صفحة بلغها (٢٩٧)، لا من التي بعدها، وما قبلها مقروء. */
   assert.match(kahf, /الصفحة ٢٩٧/);
   assert.match(kahf, /قرأت ٤ من ١٢ صفحة/);
-  assert.equal(await page.getAttribute(".zf-kahf .zt-btn", "href"), "reader.html?page=297&from=zad");
+  assert.equal(await page.getAttribute(".zf-kahf .zt-btn", "href"), "/quran-read/?page=297&from=zad");
   assert.deepEqual(errors, []);
   await context.close();
 });

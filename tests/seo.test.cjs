@@ -6,6 +6,7 @@ const test=require("node:test");
 const root=path.resolve(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 const {reciters}=require("../src/discovery/catalog.json");
+const {readerRoutes,supported,shareOrigin}=require("../scripts/quran-routes.cjs");
 const reciterName=({display})=>display.replace(/^فضيلة الشيخ\s+/,"");
 const orderedReciters=[...reciters].sort((a,b)=>reciterName(a).localeCompare(reciterName(b),"ar"));
 
@@ -15,9 +16,10 @@ test("sitemap contains every canonical discovery page once",()=>{
   assert.equal(urls.length,150+reciters.length);
   assert.equal(new Set(urls).size,urls.length);
   assert.ok(urls.includes("https://zad-alkhair.net/"));
-  assert.ok(urls.includes("https://zad-alkhair.net/quran/"));
+  assert.ok(urls.includes("https://zad-alkhair.net/quran-index/"));
   assert.ok(urls.includes("https://zad-alkhair.net/khatmahs/"));
-  assert.ok(urls.includes("https://zad-alkhair.net/surah/67/"));
+  for(let n=1;n<=114;n++)assert.ok(urls.includes(`https://zad-alkhair.net/quran-read/${n}/`));
+  assert.ok(!urls.some(url=>/\/(?:quran-listen|surah)\//.test(new URL(url).pathname)));
   assert.ok(urls.includes("https://zad-alkhair.net/quran/reciters/ayman-suwaid/"));
   assert.match(read("robots.txt"),/Sitemap: https:\/\/zad-alkhair\.net\/sitemap\.xml/);
 });
@@ -106,13 +108,13 @@ test("homepage gives Google real links without changing app actions",()=>{
   const home=read("index.html");
   assert.match(home,/<link rel="icon" href="\/icons\/icon-192\.png" sizes="192x192" type="image\/png">/);
   // The bottom tabs and the options menu are real links for crawlers; the app intercepts the taps.
-  assert.match(home,/<a class="zk-tab" id="zk-launch-quran" href="quran\/">/);
+  assert.match(home,/<a class="zk-tab" id="zk-launch-quran" href="\/quran-index\/">/);
   assert.match(home,/<a class="zk-tab" id="zk-launch-zad" href="khatmahs\/">/);
   assert.match(home,/<a class="zk-launch-install zt-menu-install" id="zk-launch-install" href="install\/" role="menuitem" hidden>/);
   assert.match(home,/event=>\{event\.preventDefault\(\);zkHideLaunch\(\);boot\(\)\}/);
   assert.match(home,/القرآن العظيم، ختمات جماعية ومواقيت الصلاة/);
   assert.match(home,/<div class="zt-menu-label">دليل زاد الخير<\/div>/);
-  assert.match(home,/<a href="quran\/" role="menuitem">.*?<span>الفهرس والقراء<\/span><\/a>/);
+  assert.match(home,/<a href="\/quran-index\/" role="menuitem">.*?<span>الفهرس والقراء<\/span><\/a>/);
   assert.match(home,/<a href="khatmahs\/" role="menuitem">.*?<span>كيف تعمل الختمات؟<\/span><\/a>/);
   assert.match(home,/<a href="about\/" role="menuitem">.*?<span>عن التطبيق<\/span><\/a>/);
 });
@@ -144,8 +146,29 @@ test("reader accepts a validated reciter deep link",()=>{
   assert.match(reader,/<meta property="og:url" content="https:\/\/zad-alkhair\.net\/reader">/);
   assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/social\/zad-alkhair-reader-share\.jpg">/);
   assert.match(reader,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
-  assert.match(reader,/if\(entry\.qari\)\{/);
-  assert.match(reader,/if\(entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
+  assert.match(reader,/if\(entry\.qari&&!entry\.direct\)\{/);
+  assert.match(reader,/if\(!entry\.direct&&entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
+});
+
+test("direct Quran pages boot the same reader and carry their own sharing card",()=>{
+  for(const {path:route,mode,surah} of readerRoutes){
+    const html=read(route.slice(1)+"index.html");
+    assert.ok(html.includes(`<link rel="canonical" href="https://zad-alkhair.net${route}">`));
+    assert.match(html,/<script src="\/quran\/runtime\/reader\.js\?v=[a-f0-9]+"><\/script>/);
+    assert.doesNotMatch(html,/location\.replace|http-equiv="refresh"/);
+    const image=html.match(/<meta property="og:image" content="([^"]+)"/)[1];
+    assert.equal(new URL(image).origin,shareOrigin);
+    const filename=new URL(image).pathname;
+    assert.ok(filename.endsWith(surah?`-${mode}-v2.jpg`:`-${mode==="read"?"reader":"listen"}-share-v2.jpg`));
+    assert.ok(fs.existsSync(path.join(root,filename)));
+    if(mode==="read"&&surah){
+      assert.match(html,/<article class="reader-surah-summary">/);
+      assert.ok(html.includes(`href="/quran-listen/${surah.n}/"`));
+    }
+  }
+  const index=read("quran-index/index.html");
+  assert.match(index,/href="\/quran-read\/114\/"/);
+  assert.match(index,/href="\/quran-listen\/"/);
 });
 
 test("every local social preview image exists",()=>{
@@ -239,9 +262,13 @@ test("guide pages offer installation once, from the header menu",()=>{
 test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
   for(const {slug,id} of reciters){
     const page=read(`quran/reciters/${slug}/index.html`);
-    assert.equal((page.match(new RegExp(`qari=${id}&amp;play=1`,"g"))||[]).length,114);
+    assert.equal((page.match(new RegExp(`qari=${id}(?:&amp;play=1)?"`,"g"))||[]).length,114);
     assert.match(read("quran/index.html"),new RegExp(`/quran/reciters/${slug}/`));
-    for(let n=1;n<=114;n++)assert.ok(read(`surah/${n}/index.html`).includes(`qari=${id}&amp;play=1`));
+    for(let n=1;n<=114;n++){
+      const href=supported.has(n)?`/quran-listen/${n}/?qari=${id}`:`qari=${id}&amp;play=1`;
+      assert.ok(page.includes(href),`${slug}, surah ${n}`);
+      assert.ok(read(`surah/${n}/index.html`).includes(href),`${n}, ${slug}`);
+    }
   }
   assert.match(read("quran/reciters/mahmoud-al-hamoud/index.html"),/متابعة الآيات وتحديد الأجزاء غير متاحين/);
 });
@@ -250,7 +277,7 @@ test("the Quran index keeps its own title; the reader's back arrow leads to the 
   assert.match(library,/<div class="quran-index-head"><div class="quran-index-title">القرآن العظيم<\/div>/);
   assert.doesNotMatch(library,/quran-index-brand/);
   assert.doesNotMatch(library,/العودة إلى الختمات الجماعية/);
-  assert.match(read("src/reader/reading-tools.js"),/zadReturnHeld=false;e\.preventDefault\(\);return\}\s*\/\*[^*]*\*\/\s*location\.href="\.\/";/);
+  assert.match(read("src/reader/reading-tools.js"),/zadReturnHeld=false;e\.preventDefault\(\);return\}\s*\/\*[^*]*\*\/\s*location\.href="\/";/);
   assert.match(read("install/index.html"),/<h1>تثبيت تطبيق زاد الخير<\/h1>/);
   // Surah rows and Juz separators must take every column measurement from the same variables.
   const css=read("src/reader/styles.css");
@@ -260,7 +287,7 @@ test("the Quran index keeps its own title; the reader's back arrow leads to the 
 test("the Quran index carries Zad's four section tabs; reading pages do not",()=>{
   const library=read("src/reader/library.js");
   assert.match(library,/id="quranSurahList"><\/div><\/div><\/div><\/div>\$\{READER_APP_TABS\}`/);
-  for(const href of ['href="./"','href="./?section=khatmahs"','href="./?section=prayer"'])assert.ok(library.includes(href),href);
+  for(const href of ['href="/"','href="/?section=khatmahs"','href="/?section=prayer"'])assert.ok(library.includes(href),href);
   assert.match(library,/aria-current="page" data-app-tab="quran"/);
   assert.doesNotMatch(read("src/reader/index.html"),/reader-app-tabs/);
   assert.doesNotMatch(library,/data-hub="zad"/);   /* the tabs lead home now */

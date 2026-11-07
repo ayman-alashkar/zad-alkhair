@@ -164,11 +164,11 @@ function zkRootBack(){
 window.addEventListener("popstate",()=>zkRootBack());
 document.getElementById("zk-launch-quran")?.addEventListener("click",event=>{
   event.preventDefault();
-  ztNavigateAfterTab("zk-launch-quran","reader.html?home=1&from=zad");
+  ztNavigateAfterTab("zk-launch-quran","/quran-read/?from=zad");
 });
 document.getElementById("zk-launch-listen")?.addEventListener("click",event=>{
   event.preventDefault();
-  ztNavigateAfterTab("zk-launch-listen","reader.html?listen=1&from=zad");
+  ztNavigateAfterTab("zk-launch-listen","/quran-listen/?from=zad");
 });
 document.getElementById("zk-launch-zad")?.addEventListener("click",event=>{event.preventDefault();zkHideLaunch();boot()});
 document.getElementById("zk-launch-prayer")?.addEventListener("click",()=>{

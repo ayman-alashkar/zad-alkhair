@@ -130,8 +130,8 @@ function updateMediaSessionMetadata(){
       artist:reciter.name,
       album:"القرآن العظيم · زاد الخير",
       artwork:[
-        {src:new URL("icons/icon-192.png",location.href).href,sizes:"192x192",type:"image/png"},
-        {src:new URL("icons/icon-512.png",location.href).href,sizes:"512x512",type:"image/png"}
+        {src:new URL("/icons/icon-192.png",location.origin).href,sizes:"192x192",type:"image/png"},
+        {src:new URL("/icons/icon-512.png",location.origin).href,sizes:"512x512",type:"image/png"}
       ]
     });
   }catch(_){ }

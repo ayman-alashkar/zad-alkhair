@@ -85,9 +85,7 @@ let readerBackGuardReady=false,readerExitPressedAt=0,readerReturnToQuranHome=fal
 function sameZadReferrer(){
   if(!document.referrer)return false;
   try{
-    const ref=new URL(document.referrer),here=new URL(location.href);
-    const base=here.pathname.replace(/[^/]*$/,"" );
-    return ref.origin===here.origin&&ref.pathname.startsWith(base);
+    return new URL(document.referrer).origin===location.origin;
   }catch(_){return false}
 }
 const readerHasAppParent=sameZadReferrer();

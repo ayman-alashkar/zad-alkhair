@@ -65,7 +65,7 @@ if("serviceWorker" in navigator){
       else{refreshAudioDownloadButton(job.btn,job.s).catch(()=>setAudioDownloadButton(job.btn,"available"));showToast("تعذّر تنزيل السورة كاملة، حاول مرة أخرى")}
     }
   });
-  const prepareReaderServiceWorker=()=>navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>reg.update().catch(()=>reg)).then(()=>navigator.serviceWorker.ready).then(reg=>{
+  const prepareReaderServiceWorker=()=>navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>reg.update().catch(()=>reg)).then(()=>navigator.serviceWorker.ready).then(reg=>{
     const worker=reg.active||reg.waiting||reg.installing;
     if(navigator.onLine)worker?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
     worker?.postMessage({type:navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY"});
