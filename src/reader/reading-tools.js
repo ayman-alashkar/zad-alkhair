@@ -260,7 +260,7 @@ function directQuranPath(){
   return {mode:m[1],surah:m[2]?Number(m[2]):null};
 }
 function publicSurahUrl(s,ayah=null){
-  const n=Number(s),u=new URL(`/${directQuranSurah(n)?"quran-read":"surah"}/${n}/`,location.origin);
+  const n=Number(s),u=new URL(`/quran-read/${n}/`,location.origin);
   const a=Number(ayah);
   if(Number.isInteger(a)&&a>=1)u.searchParams.set("ayah",String(a));
   return u.href;

@@ -41,3 +41,23 @@ test("ayah counts use the Arabic plural, and the arc maps back to the same fract
   assert.equal(ctx.listenArcFraction({clientX:236,clientY:124},svg),0);
   assert.equal(ctx.listenArcFraction({clientX:0,clientY:124},svg),1);
 });
+
+test("sharing a verse or a recitation always uses its public Quran route",()=>{
+  const eventTarget={addEventListener(){}};
+  const shared=[];
+  const ctx=vm.createContext({
+    URL,URLSearchParams,location:{origin:"https://zad-alkhair.net",pathname:"/quran-read/",search:""},
+    document:{getElementById:()=>eventTarget,querySelector:()=>null},
+    track:eventTarget,window:eventTarget,audio:eventTarget,
+    READER_APP_TABS:"",HUB_SHARE_ICON:"",
+    chapterMap:new Map([[112,{name_arabic:"الإخلاص"}]]),
+    shareHubPayload:payload=>shared.push(payload)
+  });
+  vm.runInContext(read("src/reader/reading-tools.js"),ctx);
+  vm.runInContext(read("src/reader/listen.js"),ctx);
+  ctx.listenCardState=()=>({r:{id:"Husary_128kbps"}});
+
+  assert.equal(ctx.linkFor("112:2"),"https://zad-alkhair.net/quran-read/112/?ayah=2");
+  ctx.listenShareSurah(112);
+  assert.equal(shared[0].url,"https://zad-alkhair.net/quran-listen/112/?qari=Husary_128kbps");
+});
