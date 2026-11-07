@@ -1000,6 +1000,7 @@ function updatePage(animate=true,savePosition=true){
   document.getElementById("desktopPrevBtn").disabled=currentPage===1;
   document.getElementById("desktopNextBtn").disabled=currentPage===TOTAL_PAGES;
   closeMenu();
+  syncPageBookmarkButton();
   if(savePosition)saveLastPosition();
   const milestone=pageMilestoneLabel(currentPage);
   if(milestone)showNotice(milestone);
@@ -1052,8 +1053,7 @@ function openPrimaryMenu(anchor){
   menu.innerHTML=`
     <button type="button" class="menu-btn play" data-act="listen"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg><span class="menu-label">${isSurahOnly()?"استماع للسورة":"استماع"}</span></button>
     <button type="button" class="menu-btn" data-act="tafsir"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M5.333 3c2.46-.003 4.836.887 6.667 2.5V21a10.07 10.07 0 0 0-6.667-2.5c-1.562 0-2.343 0-2.688-.22a1.16 1.16 0 0 1-.424-.425C2 17.51 2 16.895 2 15.663v-9.26c0-1.428 0-2.141.549-2.72c.548-.579 1.11-.609 2.234-.668Q5.056 3 5.333 3m13.334 0A10.07 10.07 0 0 0 12 5.5V21a10.07 10.07 0 0 1 6.667-2.5c1.562 0 2.343 0 2.688-.22c.207-.133.291-.218.424-.425c.221-.345.221-.96.221-2.192v-9.26c0-1.428 0-2.141-.549-2.72s-1.11-.609-2.234-.668Q18.944 3 18.667 3"/><path d="M19 7.326a10.4 10.4 0 0 0-2 .13m2 3.55q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.681m4 2.819q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.68M5 7.326a10.4 10.4 0 0 1 2 .13m-2 3.55q.166-.005.333-.005A10.1 10.1 0 0 1 9 11.682m-4 2.819q.166-.005.333-.005a10.1 10.1 0 0 1 3.667.68"/></g></svg><span class="menu-label">التفسير</span></button>
-    <button type="button" class="menu-btn" data-act="share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg><span class="menu-label">مشاركة</span></button>
-    <button type="button" class="menu-btn bookmark${hasPageBookmark()?" marked":""}" data-act="bookmark"><svg viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5Z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg><span class="menu-label">${hasPageBookmark()?"إزالة العلامة":"أضف علامة"}</span></button>`;
+    <button type="button" class="menu-btn" data-act="share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg><span class="menu-label">مشاركة</span></button>`;
   bindPrimaryMenu();placeMenu(anchor);
 }
 function openShareMenu(){
@@ -1068,7 +1068,6 @@ function bindPrimaryMenu(){
     const a=b.dataset.act;
     if(a==="share"){openShareMenu();return}
     closeMenu();
-    if(a==="bookmark")togglePageBookmark();
     if(a==="listen")startSelected();
     if(a==="tafsir")openTafsir();
   });
@@ -1200,6 +1199,13 @@ function loadPageBookmarks(){return loadList(STORAGE_KEYS.pageBookmarks)}
 function hasPageBookmark(page=currentPage){
   return loadPageBookmarks().some(x=>Number(x?.page)===Number(page));
 }
+function syncPageBookmarkButton(){
+  const btn=document.getElementById("bookmarkBtn"),marked=hasPageBookmark();
+  btn.classList.toggle("marked",marked);
+  btn.setAttribute("aria-pressed",String(marked));
+  btn.setAttribute("aria-label",marked?"إزالة العلامة":"أضف علامة");
+  btn.title=marked?"إزالة العلامة":"أضف علامة";
+}
 function setPageBookmark(page,marked){
   const p=Number(page);
   if(!Number.isInteger(p)||p<1||p>TOTAL_PAGES)return false;
@@ -1225,33 +1231,14 @@ function renderPageBookmark(root){
 }
 function refreshPageBookmarks(){
   document.querySelectorAll('.page[data-loaded="1"]').forEach(renderPageBookmark);
+  syncPageBookmarkButton();
 }
 window.addEventListener("storage",e=>{if(e.key===STORAGE_KEYS.pageBookmarks||e.key===null)refreshPageBookmarks()});
-function openBookmarks(){
-  const b=sheet("الانتقال إلى",`<div class="bookmark-sections">
-    <section class="bookmark-section ref-recent"><div class="bookmark-title"><h4>آخر الزيارات</h4><small>آخر ٣ زيارات</small></div><div class="bookmark-list" id="recentList"></div></section>
-    <section class="bookmark-section ref-pages"><div class="bookmark-title"><h4>العلامات</h4></div><div class="bookmark-list" id="pageBookmarkList"></div></section>
-  </div>`);
-  const recentHost=b.querySelector("#recentList"),pageHost=b.querySelector("#pageBookmarkList");
-
-  async function drawRecent(){
-    const list=loadList(STORAGE_KEYS.recentVisits).slice(0,3);
-    if(!list.length){recentHost.innerHTML='<div class="empty-state">ستظهر هنا مواضع آخر زياراتك.</div>';return}
-    recentHost.innerHTML='<div class="empty-state">تحميل المواضع…</div>';
-    const rows=await Promise.all(list.map(async(x,i)=>{const info=await pageDisplayInfo(x.page);return `<div class="bookmark-row recent"><button type="button" class="bookmark-main" data-recent="${i}"><b>سورة ${escapeHtml(info.sname)}</b><small>الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}</small></button></div>`}));
-    recentHost.innerHTML=rows.join("");
-    recentHost.querySelectorAll("[data-recent]").forEach(btn=>btn.onclick=()=>{const x=loadList(STORAGE_KEYS.recentVisits)[+btn.dataset.recent];if(!x)return;b.remove();go(x.page)});
-  }
-  async function drawPages(){
-    const list=loadPageBookmarks();
-    if(!list.length){pageHost.innerHTML='<div class="empty-state">لإضافة علامة، اضغط مطولًا على آية ثم اختر «أضف علامة».</div>';return}
-    pageHost.innerHTML='<div class="empty-state">تحميل العلامات…</div>';
-    const rows=await Promise.all(list.map(async x=>{const info=await pageDisplayInfo(x.page);return `<div class="bookmark-row"><button type="button" class="bookmark-main" data-page-open="${info.page}"><b>سورة ${escapeHtml(info.sname)}</b><small>الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}</small></button><button type="button" class="bookmark-delete" data-page-del="${info.page}" aria-label="إزالة علامة الصفحة ${ar(info.page)}">×</button></div>`}));
-    pageHost.innerHTML=rows.join("");
-    pageHost.querySelectorAll("[data-page-open]").forEach(btn=>btn.onclick=()=>{b.remove();go(Number(btn.dataset.pageOpen))});
-    pageHost.querySelectorAll("[data-page-del]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();if(setPageBookmark(btn.dataset.pageDel,false)){drawPages();showToast("أُزيلت العلامة")}});
-  }
-  drawRecent().catch(console.error);drawPages().catch(console.error);
+async function jumpToPageBookmark(){
+  const mark=loadPageBookmarks().find(x=>Number.isInteger(Number(x?.page))&&Number(x.page)>=1&&Number(x.page)<=TOTAL_PAGES);
+  if(!mark){showToast("لحفظ موضعك، اضغط زر العلامة أعلى الصفحة أولًا");return}
+  await go(mark.page);
+  showToolsFor(5400);
 }
 
 /* ---------- sheets ---------- */
@@ -1329,7 +1316,9 @@ async function openTafsir(){
   await render(selectedKey);
 }
 document.getElementById("tafsirBtn").onclick=openTafsir;
-document.getElementById("bookmarkBtn").onclick=openBookmarks;
+document.getElementById("bookmarkBtn").onclick=togglePageBookmark;
+document.getElementById("readerSearchBtn").onclick=()=>openQuranSearch();
+document.getElementById("jumpBookmarkBtn").onclick=jumpToPageBookmark;
 const zadReturnBtn=document.getElementById("backBtn");
 let zadReturnHoldTimer=null,zadReturnHeld=false;
 function cancelZadReturnHold(){clearTimeout(zadReturnHoldTimer);zadReturnHoldTimer=null}
@@ -1767,7 +1756,7 @@ function openQuranIndex(initialTab="s",options={}){
     bookmarkHost.replaceChildren();
     for(const {name,kind,rows} of groups){
       const sec=document.createElement("section");sec.className=`quran-bookmark-group ${kind==="recent"?"ref-recent":"ref-pages"}`;sec.innerHTML=`<h4>${name}</h4>`;
-      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لإضافة علامة، اضغط مطولًا على آية ثم اختر «أضف علامة»."}</div>`);
+      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لحفظ موضعك، اضغط زر العلامة أعلى صفحة القراءة."}</div>`);
       for(const item of rows){
         const row=document.createElement("div");row.className="quran-bookmark-row";
         row.innerHTML=`<button type="button" class="quran-bookmark-open"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.meta)}</small></button>${kind==="recent"?"":`<button type="button" class="quran-bookmark-del" aria-label="إزالة علامة الصفحة ${ar(item.page)}">×</button>`}`;

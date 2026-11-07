@@ -48,7 +48,7 @@
   <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="top-actions">
     <button type="button" class="iconbtn" id="themeBtn" aria-label="الوضع"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg></button>
-    <button type="button" class="iconbtn" id="bookmarkBtn" aria-label="الانتقال إلى" title="الانتقال إلى"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg></button>
+    <button type="button" class="iconbtn" id="bookmarkBtn" aria-label="أضف علامة" title="أضف علامة" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg></button>
     <button type="button" class="iconbtn zad-return-btn" id="backBtn" aria-label="الصفحة الرئيسية" title="الصفحة الرئيسية"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M11 6h4.5a4.5 4.5 0 1 1 0 9H4"/><path d="M7 12s-3 2.21-3 3s3 3 3 3"/></g></svg></button>
   </div>
 </header>
@@ -58,6 +58,10 @@
   <button type="button" class="tool" id="tafsirBtn"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M5.333 3c2.46-.003 4.836.887 6.667 2.5V21a10.07 10.07 0 0 0-6.667-2.5c-1.562 0-2.343 0-2.688-.22a1.16 1.16 0 0 1-.424-.425C2 17.51 2 16.895 2 15.663v-9.26c0-1.428 0-2.141.549-2.72c.548-.579 1.11-.609 2.234-.668Q5.056 3 5.333 3m13.334 0A10.07 10.07 0 0 0 12 5.5V21a10.07 10.07 0 0 1 6.667-2.5c1.562 0 2.343 0 2.688-.22c.207-.133.291-.218.424-.425c.221-.345.221-.96.221-2.192v-9.26c0-1.428 0-2.141-.549-2.72s-1.11-.609-2.234-.668Q18.944 3 18.667 3"/><path d="M19 7.326a10.4 10.4 0 0 0-2 .13m2 3.55q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.681m4 2.819q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.68M5 7.326a10.4 10.4 0 0 1 2 .13m-2 3.55q.166-.005.333-.005A10.1 10.1 0 0 1 9 11.682m-4 2.819q.166-.005.333-.005a10.1 10.1 0 0 1 3.667.68"/></g></svg><span>التفسير</span></button>
   <button type="button" class="tool primary" id="listenBtn"><span>▶</span><span>استماع</span></button>
   <button type="button" class="navbtn bottom-next" id="nextBtn" aria-label="الصفحة التالية"><svg viewBox="0 0 24 24"><path d="M16 5l-7 7 7 7"/></svg></button>
+  <div class="reader-shortcuts">
+    <button type="button" class="tool" id="readerSearchBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><span>البحث</span></button>
+    <button type="button" class="tool" id="jumpBookmarkBtn" title="الانتقال إلى آخر علامة محفوظة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg><span>الانتقال إلى العلامة</span></button>
+  </div>
 </footer>
 
 <nav class="desktop-page-nav" aria-label="التنقل بين صفحات المصحف">

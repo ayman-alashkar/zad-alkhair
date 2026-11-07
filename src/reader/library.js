@@ -418,7 +418,7 @@ function openQuranIndex(initialTab="s",options={}){
     bookmarkHost.replaceChildren();
     for(const {name,kind,rows} of groups){
       const sec=document.createElement("section");sec.className=`quran-bookmark-group ${kind==="recent"?"ref-recent":"ref-pages"}`;sec.innerHTML=`<h4>${name}</h4>`;
-      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لإضافة علامة، اضغط مطولًا على آية ثم اختر «أضف علامة»."}</div>`);
+      if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لحفظ موضعك، اضغط زر العلامة أعلى صفحة القراءة."}</div>`);
       for(const item of rows){
         const row=document.createElement("div");row.className="quran-bookmark-row";
         row.innerHTML=`<button type="button" class="quran-bookmark-open"><b>${escapeHtml(item.title)}</b><small>${escapeHtml(item.meta)}</small></button>${kind==="recent"?"":`<button type="button" class="quran-bookmark-del" aria-label="إزالة علامة الصفحة ${ar(item.page)}">×</button>`}`;

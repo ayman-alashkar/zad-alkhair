@@ -195,7 +195,7 @@ html:not([data-theme="dark"]) .word.end{color:var(--gold)}
   padding:4px 7px calc(4px + env(safe-area-inset-bottom));
   display:grid;
   grid-template-columns:46px minmax(0,1fr) minmax(0,1fr) 46px;
-  grid-template-areas:"next listen tafsir prev";
+  grid-template-areas:"next listen tafsir prev" "shortcuts shortcuts shortcuts shortcuts";
   gap:6px;align-items:center;direction:ltr;
   /* Solid near the bottom, gently translucent toward the Mushaf. */
   background:linear-gradient(
@@ -225,6 +225,9 @@ html:not([data-theme="dark"]) .word.end{color:var(--gold)}
 .bottom #tafsirBtn{grid-area:tafsir;direction:rtl}
 .bottom #listenBtn{grid-area:listen;direction:rtl}
 .bottom #nextBtn{grid-area:next}
+.bottom .reader-shortcuts{grid-area:shortcuts;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:inherit;direction:rtl}
+.bottom .tool{min-height:44px}
+.reader-shortcuts .tool{white-space:normal;line-height:1.45}
 .hidden-tools .chrome{opacity:0;pointer-events:none}
 .hidden-tools .topbar{transform:translateY(-14px)}
 .hidden-tools .bottom{transform:translateY(14px)}
@@ -828,7 +831,7 @@ html:not([data-theme="dark"]) .hizb-ring.start{
     left:50%;right:auto;bottom:18px;
     width:min(520px,calc(100vw - 300px));
     grid-template-columns:repeat(2,minmax(0,1fr));
-    grid-template-areas:"listen tafsir";
+    grid-template-areas:"listen tafsir" "shortcuts shortcuts";
     gap:8px;padding:8px;
     border:1px solid color-mix(in srgb,var(--gold) 19%,var(--ui-line));
     border-radius:20px;
@@ -2201,8 +2204,6 @@ html .ayah-menu:after{border-top-color:var(--reader-surface)}
 html .ayah-menu .menu-btn{width:54px;height:54px;color:var(--reader-ink);gap:4px}
 html .ayah-menu .menu-btn.wide{width:88px}
 html .ayah-menu .menu-btn.play{color:var(--reader-gold)}
-html .ayah-menu .menu-btn.bookmark{width:68px}
-html .ayah-menu .menu-btn.bookmark.marked{color:var(--red)}
 html .ayah-menu .menu-label{font-size:10px;line-height:1.3;opacity:1}
 html .ayah-menu .menu-btn:active{background:var(--reader-selected)}
 html .ayah-menu .menu-btn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:-2px}
@@ -2245,6 +2246,8 @@ html .topbar .top-actions{grid-column:3;grid-row:1;gap:7px;min-width:max-content
 html .topbar .iconbtn{width:40px;height:40px;background:var(--reader-raised)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
 html .topbar .iconbtn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:3px}
 html .topbar .iconbtn:active{background:var(--reader-selected)!important}
+html .topbar #bookmarkBtn.marked{color:var(--red);border-color:var(--red)}
+html .topbar #bookmarkBtn.marked svg{fill:currentColor}
 .reader-context{
   grid-column:2;grid-row:1;justify-self:center;min-width:0;width:100%;max-width:190px;min-height:40px;
   display:grid;align-content:center;gap:1px;padding:4px 7px;border:1px solid var(--reader-line);border-radius:13px;
