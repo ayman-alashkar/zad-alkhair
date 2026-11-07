@@ -93,15 +93,14 @@ function positionReadingMark(root){
   }
 }
 function refreshReadingMarks(){
-  const mark=loadReadingMark(),jump=document.getElementById("bookmarkBtn");
-  if(jump){jump.disabled=!mark;jump.classList.toggle("has-reading-mark",!!mark);jump.title=mark?`الانتقال إلى العلامة — ${readingMarkLabel(mark)}`:"احفظ علامة من قائمة المصحف أولاً"}
+  const mark=loadReadingMark();
   document.querySelectorAll('.page[data-loaded="1"]').forEach(root=>{
     let pin=root.querySelector(".reading-marker");
     if(Number(root.dataset.page)!==mark?.page){pin?.remove();return}
     if(!pin){
-      pin=document.createElement("button");pin.type="button";pin.className="reading-marker";
+      pin=document.createElement("span");pin.className="reading-marker";pin.setAttribute("role","img");
       pin.innerHTML='<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 0h18v30l-9-6-9 6Z"/></svg>';
-      pin.onclick=e=>{e.stopPropagation();jumpToReadingMark()};root.appendChild(pin);
+      root.appendChild(pin);
     }
     pin.setAttribute("aria-label",`علامة التوقف — ${readingMarkLabel(mark)}`);
     pin.title=readingMarkLabel(mark);positionReadingMark(root);
@@ -257,7 +256,7 @@ function openPrimaryMenu(anchor){
     <button type="button" class="menu-btn play" data-act="listen"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg><span class="menu-label">${isSurahOnly()?"استماع للسورة":"استماع"}</span></button>
     <button type="button" class="menu-btn" data-act="tafsir"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M5.333 3c2.46-.003 4.836.887 6.667 2.5V21a10.07 10.07 0 0 0-6.667-2.5c-1.562 0-2.343 0-2.688-.22a1.16 1.16 0 0 1-.424-.425C2 17.51 2 16.895 2 15.663v-9.26c0-1.428 0-2.141.549-2.72c.548-.579 1.11-.609 2.234-.668Q5.056 3 5.333 3m13.334 0A10.07 10.07 0 0 0 12 5.5V21a10.07 10.07 0 0 1 6.667-2.5c1.562 0 2.343 0 2.688-.22c.207-.133.291-.218.424-.425c.221-.345.221-.96.221-2.192v-9.26c0-1.428 0-2.141-.549-2.72s-1.11-.609-2.234-.668Q18.944 3 18.667 3"/><path d="M19 7.326a10.4 10.4 0 0 0-2 .13m2 3.55q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.681m4 2.819q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.68M5 7.326a10.4 10.4 0 0 1 2 .13m-2 3.55q.166-.005.333-.005A10.1 10.1 0 0 1 9 11.682m-4 2.819q.166-.005.333-.005a10.1 10.1 0 0 1 3.667.68"/></g></svg><span class="menu-label">التفسير</span></button>
     <button type="button" class="menu-btn" data-act="share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg><span class="menu-label">مشاركة</span></button>
-    <button type="button" class="menu-btn" data-act="bookmark"><svg viewBox="0 0 24 24"><path d="M6 3h12v19l-6-4-6 4Z"/></svg><span class="menu-label">علامة</span></button>`;
+    <button type="button" class="menu-btn" data-act="bookmark"><svg viewBox="0 0 24 24"><path d="M6 3h12v19l-6-4-6 4Z"/></svg><span class="menu-label">حفظ</span></button>`;
   bindPrimaryMenu();placeMenu(anchor);
 }
 function openShareMenu(){
@@ -269,12 +268,11 @@ function openShareMenu(){
 }
 function openSaveMenu(){
   menu.innerHTML=`
-    <button type="button" class="menu-btn wide" data-save="reading"><svg viewBox="0 0 24 24"><path d="M6 3h12v19l-6-4-6 4Z"/></svg><span class="menu-label">حفظ علامة هنا</span></button>
     <button type="button" class="menu-btn wide" data-save="page"><svg viewBox="0 0 24 24"><path d="M6 3h12v19l-6-4-6 4Z"/><path d="M9 7h6"/></svg><span class="menu-label">صفحة محفوظة</span></button>
     <button type="button" class="menu-btn wide" data-save="ayah"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/><path d="M9 8h6M9 12h4"/></svg><span class="menu-label">آية محفوظة</span></button>`;
   menu.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{
     const kind=b.dataset.save;closeMenu();
-    if(kind==="reading")saveReadingMark();else if(kind==="page")savePageBookmark();else saveAyahBookmark();
+    if(kind==="page")savePageBookmark();else saveAyahBookmark();
   });
   if(selectedAnchor)placeMenu(selectedAnchor);
 }
@@ -579,7 +577,6 @@ async function openTafsir(){
   await render(selectedKey);
 }
 document.getElementById("tafsirBtn").onclick=openTafsir;
-document.getElementById("bookmarkBtn").onclick=()=>jumpToReadingMark();
 window.addEventListener("storage",e=>{if(e.key===STORAGE_KEYS.readingMark)refreshReadingMarks()});
 const zadReturnBtn=document.getElementById("backBtn");
 let zadReturnHoldTimer=null,zadReturnHeld=false;

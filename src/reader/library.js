@@ -327,43 +327,62 @@ async function playJuzFromHub(j,closeHub){
   play={surah:Number(start[0]),from:Number(start[1]),to:Number(start[1]),current:Number(start[1]),repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
   closeHub();await go(Number(start[2]));await playCurrent(true);
 }
-function openReaderPageJump(){
-  const b=sheet("الانتقال إلى صفحة",`<form class="settings" id="readerPageForm"><div class="field"><label for="readerPageNumber">رقم الصفحة · من ١ إلى ٦٠٤</label><input id="readerPageNumber" type="number" inputmode="numeric" min="1" max="604" step="1" required value="${currentPage}"></div><button type="submit" class="apply">انتقال</button></form>`);
-  b.querySelector("#readerPageForm").onsubmit=async e=>{
-    e.preventDefault();const input=b.querySelector("#readerPageNumber"),p=Number(input.value);
-    if(!input.reportValidity()||!Number.isInteger(p))return;
-    b.remove();await go(p);if(currentPage===p)enterReaderSurface({consumeTarget:true});
-  };
-}
 async function openReaderMenu(){
   if(!readerBooted)await readerBootReady;
   const mark=loadReadingMark(),point={page:currentPage,verse:selectedKey};
-  const svg=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
-  const bookmark=svg('<path d="M6 3h12v19l-6-4-6 4Z"/>');
-  const list=svg('<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>');
-  const rows=[
-    ["save","حفظ علامة هنا",point.verse?readingMarkLabel(point):`موضع التوقف · الصفحة ${ar(currentPage)}`,bookmark],
-    ["mark","الانتقال إلى العلامة",readingMarkLabel(mark),bookmark],
-    ["surahs","فهرس السور","اختيار سورة للقراءة",list],
-    ["juz","الأجزاء","الأجزاء والأحزاب والأرباع",svg('<circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/>')],
-    ["page","الانتقال إلى صفحة","اختيار رقم الصفحة",svg('<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>')],
-    ["search","البحث","البحث في آيات القرآن",svg('<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>')],
-    ["saved","علامات القراءة","الصفحات والآيات المحفوظة",svg('<path d="M5 3h12v17l-6-4-6 4ZM20 6v16"/>')]
-  ];
-  const arrow='<span class="quran-option-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg></span>';
-  const b=sheet("قائمة المصحف",`<div class="quran-hub-menu">${rows.map(([id,label,detail,icon])=>`<button type="button" data-reader-action="${id}" ${id==="mark"&&!mark?"disabled":""}><span class="quran-option-icon ${id==="save"||id==="mark"?"reading-mark-icon":""}">${icon}</span><span class="quran-option-copy"><strong>${label}</strong><small>${escapeHtml(detail)}</small></span>${arrow}</button>`).join("")}</div>`);
+  const bookmark='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v19l-6-4-6 4Z"/></svg>';
+  const b=sheet("المصحف",`<div class="reader-mark-controls">
+    <button type="button" data-reader-action="save">${bookmark}<span>حفظ علامة</span></button>
+    <button type="button" data-reader-action="mark" ${mark?"":"disabled"} title="${escapeHtml(readingMarkLabel(mark))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 7H9a5 5 0 0 0 0 10h5M9 3 5 7l4 4"/></svg><span>الانتقال للعلامة</span></button>
+  </div>
+  <div class="reader-nav-tabs" role="tablist" aria-label="الانتقال في المصحف">
+    <button type="button" role="tab" data-reader-tab="s" aria-selected="true">السور</button>
+    <button type="button" role="tab" data-reader-tab="j" aria-selected="false" tabindex="-1">الأجزاء</button>
+    <button type="button" role="tab" data-reader-tab="p" aria-selected="false" tabindex="-1">الصفحة</button>
+  </div>
+  <div class="reader-nav-search"><input type="search" aria-label="اسم السورة" placeholder="اسم السورة" autocomplete="off"></div>
+  <div class="reader-nav-pane reader-nav-list" data-reader-pane="list"></div>
+  <form class="reader-nav-pane reader-nav-page settings" data-reader-pane="page" hidden><div class="field"><label for="readerPageNumber">رقم الصفحة · من ١ إلى ٦٠٤</label><input id="readerPageNumber" type="number" inputmode="numeric" min="1" max="604" step="1" required value="${currentPage}"></div><button type="submit" class="apply">انتقال</button></form>`);
   b.querySelector(".sheet").classList.add("quran-options-sheet","reader-options-sheet");
-  b.querySelectorAll("[data-reader-action]").forEach(btn=>btn.onclick=()=>{
-    const action=btn.dataset.readerAction;
-    if(action==="save"){if(saveReadingMark(point))b.remove();return}
-    b.remove();
-    if(action==="mark")jumpToReadingMark();
-    else if(action==="surahs")openQuranIndex("s");
-    else if(action==="juz")openQuranIndex("j");
-    else if(action==="page")openReaderPageJump();
-    else if(action==="search")openQuranSearch();
-    else if(action==="saved")openBookmarks();
+  b.querySelector('[data-reader-action="save"]').onclick=()=>{if(saveReadingMark(point))b.remove()};
+  b.querySelector('[data-reader-action="mark"]').onclick=()=>{b.remove();jumpToReadingMark()};
+  const list=b.querySelector(".reader-nav-list"),search=b.querySelector('input[type="search"]'),form=b.querySelector("form");
+  let active="s";
+  const openPage=async page=>{b.remove();await go(page);if(currentPage===page)enterReaderSurface({consumeTarget:true})};
+  function drawList(){
+    list.replaceChildren();const frag=document.createDocumentFragment();
+    const term=normalizeArabic(search.value).replace(/[أإآ]/g,"ا").trim();
+    const items=active==="j"?JUZ_PAGES.map(([page],i)=>({id:i+1,name:`الجزء ${ar(i+1)}`,page,current:juzForPage(currentPage)===i+1}))
+      :[...chapterMap.values()].filter(ch=>normalizeArabic(ch.name_arabic).replace(/[أإآ]/g,"ا").includes(term)).map(ch=>({id:ch.id,name:`سورة ${ch.name_arabic}`,page:Number(ch.pages[0]),current:surahIdFromMetaPage(currentPage)===ch.id}));
+    for(const item of items){
+      const row=document.createElement("button");row.type="button";row.className="reader-nav-row";
+      row.setAttribute("aria-label",`${item.name}، الصفحة ${ar(item.page)}`);
+      if(item.current)row.setAttribute("aria-current","true");
+      row.innerHTML=`<span class="reader-nav-number">${ar(item.id)}</span><span class="reader-nav-name">${escapeHtml(item.name)}</span><small>${ar(item.page)}</small>`;
+      row.onclick=()=>openPage(item.page);frag.appendChild(row);
+    }
+    if(!items.length){const empty=document.createElement("div");empty.className="empty-state";empty.textContent="لا توجد سورة بهذا الاسم";frag.appendChild(empty)}
+    list.appendChild(frag);
+  }
+  function setTab(kind){
+    active=kind;
+    b.querySelectorAll("[data-reader-tab]").forEach(btn=>{const on=btn.dataset.readerTab===kind;btn.setAttribute("aria-selected",String(on));btn.tabIndex=on?0:-1});
+    form.hidden=kind!=="p";list.hidden=kind==="p";b.querySelector(".reader-nav-search").hidden=kind!=="s";
+    if(kind!=="p"){
+      drawList();list.scrollTop=0;
+      requestAnimationFrame(()=>{
+        const row=list.querySelector('[aria-current="true"]');if(!row||!list.isConnected)return;
+        list.scrollTop=Math.max(0,list.scrollTop+row.getBoundingClientRect().top-list.getBoundingClientRect().top-(list.clientHeight-row.clientHeight)/2);
+      });
+    }
+  }
+  b.querySelectorAll("[data-reader-tab]").forEach((btn,i)=>{
+    btn.onclick=()=>setTab(btn.dataset.readerTab);
+    btn.onkeydown=e=>{if(!["ArrowLeft","ArrowRight"].includes(e.key))return;e.preventDefault();const tabs=[...b.querySelectorAll("[data-reader-tab]")],next=tabs[(i+(e.key==="ArrowLeft"?1:2))%3];next.click();next.focus()};
   });
+  search.oninput=drawList;
+  form.onsubmit=e=>{e.preventDefault();const input=form.querySelector("input"),p=Number(input.value);if(input.reportValidity()&&Number.isInteger(p))openPage(p)};
+  setTab("s");
 }
 function openQuranHubMenu(closeHub){
   const dark=document.documentElement.dataset.theme==="dark";
@@ -396,10 +415,10 @@ function openQuranIndex(initialTab="s",options={}){
   const panel=document.createElement("section");panel.className="quran-index";panel.setAttribute("aria-label","القرآن العظيم");panel.dataset.homeMode=homeMode?"1":"0";
   const firstIcon=homeMode?'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m19.648 5.437-.659-1.043c-.364-.577-.546-.866-.785-.892-.238-.027-.505.247-1.038.795-1.722 1.77-3.444 1.508-5.166 4.691-1.722-3.183-3.444-2.921-5.166-4.691-.533-.548-.8-.822-1.038-.795-.239.026-.421.315-.785.892l-.658 1.043c-.255.402-.382.604-.347.816.034.212.217.357.584.647l6.182 4.898c.591.468.887.702 1.228.702s.637-.234 1.228-.702L19.41 6.9c.367-.29.55-.435.584-.647.035-.212-.092-.414-.346-.816M22 8.5l-16 12v-4.696M2 8.5l16 12v-4.696"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l7 7-7 7"/></svg>';
   const saved=storageJsonGet(STORAGE_KEYS.lastPosition,null),hasSaved=Number(saved?.page)>=1&&Number(saved?.page)<=TOTAL_PAGES;
-  const savedPage=hasSaved?Number(saved.page):currentPage,mark=loadReadingMark();
+  const savedPage=hasSaved?Number(saved.page):currentPage;
   const savedSurah=chapterMap.get(surahIdFromMetaPage(savedPage))?.name_arabic||"";
-  panel.innerHTML=`<div class="quran-index-head"><div class="quran-index-title">القرآن العظيم</div><div class="quran-index-head-actions"><button class="quran-index-head-action" type="button" data-hub-action="resume" aria-label="${homeMode?"متابعة القراءة":"العودة إلى المصحف"}">${firstIcon}</button><button class="quran-index-head-action" type="button" data-hub-action="search" aria-label="البحث"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></button><button class="quran-index-head-action" type="button" data-hub-action="more" aria-label="المزيد"><svg viewBox="0 0 24 24" aria-hidden="true" class="quran-more-icon"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button></div></div>
-    ${homeMode?`<div class="quran-reading-shortcuts"><button type="button" class="quran-reading-resume" data-reading-resume>${firstIcon}<span><strong>${hasSaved?"متابعة القراءة":"بدء القراءة"}</strong><small>سورة ${escapeHtml(savedSurah)} · الصفحة ${ar(savedPage)}</small></span><span class="reading-shortcut-arrow" aria-hidden="true">‹</span></button>${mark?`<button type="button" class="quran-reading-mark" data-reading-mark><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v19l-6-4-6 4Z"/></svg><span><strong>الانتقال إلى العلامة</strong><small>${escapeHtml(readingMarkLabel(mark))}</small></span><span class="reading-shortcut-arrow" aria-hidden="true">‹</span></button>`:""}</div>`:""}
+  panel.innerHTML=`<div class="quran-index-head"><div class="quran-index-title">القرآن العظيم</div><div class="quran-index-head-actions">${homeMode?"":`<button class="quran-index-head-action" type="button" data-hub-action="resume" aria-label="العودة إلى المصحف">${firstIcon}</button>`}<button class="quran-index-head-action" type="button" data-hub-action="search" aria-label="البحث"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></button><button class="quran-index-head-action" type="button" data-hub-action="more" aria-label="المزيد"><svg viewBox="0 0 24 24" aria-hidden="true" class="quran-more-icon"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button></div></div>
+    ${homeMode?`<div class="quran-reading-shortcuts"><button type="button" class="quran-reading-resume" data-reading-resume>${firstIcon}<span><strong>${hasSaved?"متابعة القراءة":"بدء القراءة"}</strong><small>سورة ${escapeHtml(savedSurah)} · الصفحة ${ar(savedPage)}</small></span><span class="reading-shortcut-arrow" aria-hidden="true">‹</span></button></div>`:""}
     <div class="quran-index-tabs" role="tablist"><button class="quran-index-tab active" type="button" data-tab="s">السور</button><button class="quran-index-tab" type="button" data-tab="j">الأجزاء</button><button class="quran-index-tab" type="button" data-tab="m">العلامات</button></div>
     <div class="quran-index-viewport" id="quranIndexViewport"><div class="quran-index-track" id="quranIndexTrack"><div class="quran-index-pane" data-pane="m"><div class="quran-index-scroll quran-index-bookmarks" id="quranBookmarkList"></div></div><div class="quran-index-pane" data-pane="j"><div class="quran-index-scroll quran-index-juz-list" id="quranJuzList"></div></div><div class="quran-index-pane" data-pane="s"><div class="quran-index-scroll" id="quranSurahList"></div></div></div></div>${READER_APP_TABS}`;
   document.body.appendChild(panel);
@@ -434,9 +453,8 @@ function openQuranIndex(initialTab="s",options={}){
     try{await ensurePage(target);currentPage=target;updatePage(false,false);leaveHubForReader()}
     catch(_){showToast("تعذّر فتح آخر صفحة. أعد المحاولة.")}
   };
-  panel.querySelector('[data-hub-action="resume"]').onclick=resumeReading;
+  panel.querySelector('[data-hub-action="resume"]')?.addEventListener("click",resumeReading);
   panel.querySelector("[data-reading-resume]")?.addEventListener("click",resumeReading);
-  panel.querySelector("[data-reading-mark]")?.addEventListener("click",()=>jumpToReadingMark(leaveHubForReader));
   panel.querySelector('[data-hub-action="search"]').onclick=openQuranSearch;
   panel.querySelector('[data-hub-action="more"]').onclick=()=>openQuranHubMenu(leaveHubForReader);
   const currentJuz=()=>juzForPage(currentPage);
@@ -477,7 +495,7 @@ function openQuranIndex(initialTab="s",options={}){
       sec.querySelector(".quran-bookmark-open").onclick=()=>jumpToReadingMark(leaveHubForReader);
       sec.querySelector(".quran-bookmark-del").onclick=()=>{
         if(!storageJsonSet(STORAGE_KEYS.readingMark,null)){showToast("تعذّر إزالة العلامة");return}
-        refreshReadingMarks();panel.querySelector("[data-reading-mark]")?.remove();bookmarkHost.dataset.ready="";drawBookmarks();
+        refreshReadingMarks();bookmarkHost.dataset.ready="";drawBookmarks();
       };
       bookmarkHost.appendChild(sec);
     }

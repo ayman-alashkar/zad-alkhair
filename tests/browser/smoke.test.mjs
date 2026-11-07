@@ -185,7 +185,7 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
     await page.locator('.quran-index[data-home-mode="1"]').waitFor();
     await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:last-position")).savedAt), 1);
-    await page.locator('[data-hub-action="resume"]').click();
+    await page.locator('[data-reading-resume]').click();
     assert.equal(new URL(page.url()).searchParams.get("page"), "45");
     await page.reload();
     await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
@@ -237,7 +237,7 @@ test("reading marks survive browsing and reload on phones and tablets in both th
         const verse = page.locator('.page[data-page="9"] [data-key="2:60"]');
         await verse.click();
         await page.locator("#quranHomeBtn").click();
-        await page.getByRole("dialog", { name: "قائمة المصحف", exact: true }).waitFor();
+        await page.getByRole("dialog", { name: "المصحف", exact: true }).waitFor();
         await page.locator('[data-reader-action="save"]').click();
         await page.locator('.page[data-page="9"] .reading-marker').waitFor();
         await page.locator("#nextBtn").click();
@@ -251,6 +251,18 @@ test("reading marks survive browsing and reload on phones and tablets in both th
         await page.reload();
         await page.locator('.page[data-page="9"] .reading-marker').waitFor();
         assert.equal(await page.locator(".quran-index").count(), 0);
+        assert.equal(await page.locator("#bookmarkBtn").count(), 0);
+        await page.locator('.page[data-page="9"] [data-key="2:60"]').click();
+        await page.locator("#quranHomeBtn").click();
+        await page.getByRole("tab", { name: "الأجزاء", exact: true }).click();
+        await page.getByRole("button", { name: "الجزء ٢، الصفحة ٢٢", exact: true }).click();
+        await page.waitForURL(/page=22/);
+        assert.equal(await page.locator(".quran-index").count(), 0, "jump stays in the reader");
+        await page.locator("#quranHomeBtn").click();
+        await page.getByRole("tab", { name: "الصفحة", exact: true }).click();
+        await page.locator("#readerPageNumber").fill("9");
+        await page.getByRole("button", { name: "انتقال", exact: true }).click();
+        await page.waitForURL(/page=9/);
         assert.deepEqual(errors, []);
       } finally { await context.close(); }
     }
