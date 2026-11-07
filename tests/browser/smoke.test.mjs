@@ -216,6 +216,47 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
   }
 });
 
+test("reading marks survive browsing and reload on phones and tablets in both themes", async () => {
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
+  for (const profile of [PHONE, { viewport: { width: 800, height: 1100 }, isMobile: true, hasTouch: true }]) {
+    for (const theme of ["light", "dark"]) {
+      const { page, errors, context } = await appPage({ profile, storage: {
+        "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme
+      } });
+      await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+        path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"), headers: { "Access-Control-Allow-Origin": "*" }
+      }));
+      await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+        headers: { "Access-Control-Allow-Origin": "*" },
+        json: { page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]), font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+          lines: Array.from({ length: 15 }, (_, i) => ({ words: [{ type: "word", text: "آية", char: "آية للقراءة", verse_key: `2:${60 + i}` }] })) }
+      }));
+      try {
+        await page.goto(BASE + "/quran-read/?page=9");
+        const verse = page.locator('.page[data-page="9"] [data-key="2:60"]');
+        await verse.click();
+        await page.locator("#quranHomeBtn").click();
+        await page.getByRole("dialog", { name: "قائمة المصحف", exact: true }).waitFor();
+        await page.locator('[data-reader-action="save"]').click();
+        await page.locator('.page[data-page="9"] .reading-marker').waitFor();
+        await page.locator("#nextBtn").click();
+        await page.waitForURL(/page=10/);
+        const stored = await page.evaluate(() => ({ mark: JSON.parse(localStorage.getItem("zad:qcf4:reading-mark-v1")), last: JSON.parse(localStorage.getItem("zad:qcf4:last-position")) }));
+        assert.equal(stored.mark.page, 9); assert.equal(stored.mark.verse, "2:60"); assert.equal(stored.last.page, 10);
+        await page.locator("#quranHomeBtn").click();
+        await page.locator('[data-reader-action="mark"]').click();
+        await page.waitForURL(/page=9/);
+        await page.locator('.page[data-page="9"] [data-key="2:60"].selected').waitFor();
+        await page.reload();
+        await page.locator('.page[data-page="9"] .reading-marker').waitFor();
+        assert.equal(await page.locator(".quran-index").count(), 0);
+        assert.deepEqual(errors, []);
+      } finally { await context.close(); }
+    }
+  }
+});
+
 test("a member's khatmah tab opens from the saved state before the server answers", async () => {
   const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
     members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],

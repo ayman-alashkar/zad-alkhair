@@ -31,6 +31,7 @@
   --green:#1B705F; --green-deep:#0A473E; --green-hi:#278573;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:#F4E8CA; --red:#B95157;
   --paper:#F5F0E4; --quran:#132823; --muted:#746F63;
+  --quran-red:#9F343E;
   --chrome:#FFFCF4; --chrome-text:#18362F; --border:#DED3BD; --line:#DED3BD;
   --select:rgba(40,122,101,.12); --select-line:rgba(197,154,74,.30);
   --sheet:#FFFCF4; --shadow:rgba(0,0,0,.18);
@@ -45,6 +46,7 @@ html[data-theme="dark"]{
   --green:#49A18C; --green-deep:#0A473E; --green-hi:#49A18C;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:rgba(228,201,128,.12); --red:#D77B80;
   --paper:#061F1D; --quran:#FFF9EA; --muted:rgba(255,249,234,.70);
+  --quran-red:#E59A9F;
   --chrome:#082D29; --chrome-text:#FFF9EA; --border:rgba(228,201,128,.24); --line:rgba(228,201,128,.24);
   --select:rgba(73,161,140,.18); --select-line:rgba(228,201,128,.28);
   --sheet:#0D3C35; --shadow:rgba(0,0,0,.48);
@@ -144,9 +146,14 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   display:inline-block;direction:rtl;color:var(--quran);
   line-height:1.33;position:relative;
 }
-.word.allah{color:var(--red)}
+.word.allah{color:var(--quran-red)}
 .word.end{color:var(--quran)}
-html:not([data-theme="dark"]) .word.end{color:var(--gold)}
+.reading-marker{position:absolute;z-index:5;top:0;left:80px;width:44px;height:40px;border:0;background:transparent;color:var(--quran-red);display:grid;place-items:start center;padding:0;cursor:pointer}
+.reading-marker svg{width:24px;height:32px;fill:currentColor;filter:drop-shadow(0 2px 2px rgba(0,0,0,.10))}
+.reading-marker:focus-visible{outline:2px solid var(--quran-red);outline-offset:-2px;border-radius:5px}
+#bookmarkBtn:disabled{opacity:.35;cursor:default}
+#bookmarkBtn.has-reading-mark{color:var(--quran-red)!important}
+#bookmarkBtn.has-reading-mark svg{fill:currentColor;stroke:currentColor}
 .page-no{
   position:absolute;left:22px;bottom:calc(12px + env(safe-area-inset-bottom));
   color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:17px
@@ -1232,6 +1239,25 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 .quran-index-head-action svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .quran-index-head-action:active{transform:scale(.96)}
 .quran-index-tabs{grid-template-columns:repeat(3,1fr)}
+.quran-reading-shortcuts{flex:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:9px;padding:12px 14px;background:var(--ui-surface);border-bottom:1px solid var(--ui-line)}
+.quran-reading-shortcuts button{appearance:none;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 13px;border:1px solid var(--ui-line);border-radius:15px;background:var(--brand-soft);color:var(--brand-strong);text-align:right;font:inherit}
+.quran-reading-shortcuts svg{flex:none;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.quran-reading-shortcuts button>span:not(.reading-shortcut-arrow){flex:1;min-width:0;display:grid;gap:5px}
+.quran-reading-shortcuts strong{font-size:14px;font-weight:600}
+.quran-reading-shortcuts small{font-size:11px;line-height:1.6}
+.quran-reading-shortcuts .reading-shortcut-arrow{font-size:26px}
+.quran-reading-shortcuts .quran-reading-mark{background:var(--ui-surface-2);color:var(--ui-text)}
+.quran-reading-mark svg{color:var(--quran-red);fill:currentColor;stroke:none}
+html[data-theme="dark"] .quran-reading-resume{background:var(--ui-surface-2);color:var(--ivory);border-color:var(--gold)}
+.reader-options-sheet{display:flex;flex-direction:column;max-height:86dvh;overflow:hidden}
+.reader-options-sheet .sheethead{flex:none}
+.reader-options-sheet .quran-hub-menu{overflow-y:auto;overscroll-behavior:contain;min-height:0;padding-bottom:5px}
+html .reader-options-sheet .quran-option-copy strong{font-size:15px;line-height:1.6}
+html .reader-options-sheet .quran-option-copy small{font-size:12px;line-height:1.7}
+.reader-options-sheet button:disabled{opacity:.50;cursor:default}
+html .reader-options-sheet .reading-mark-icon{color:var(--quran-red)}
+.reading-mark-icon svg{fill:currentColor;stroke:none}
+.reading-stop{border-color:color-mix(in srgb,var(--quran-red) 35%,var(--ui-line))}
 .quran-index-track{width:300%}
 .quran-index-pane{width:33.333333%}
 .quran-index-row-with-actions{padding-inline:14px 12px;grid-template-columns:42px minmax(0,1fr) auto;gap:9px}
@@ -1436,7 +1462,8 @@ html:not([data-theme="dark"]) .quran-index-juz-main b{
   color:var(--brand-strong) !important;
 }
 html:not([data-theme="dark"]) .quran-index-tab{
-  color:#5B756D;
+  color:#365D51;
+  font-size:14px;
 }
 html:not([data-theme="dark"]) .quran-index-tab.active{
   color:var(--brand) !important;
@@ -1445,11 +1472,11 @@ html:not([data-theme="dark"]) .quran-index-surah-num,
 html:not([data-theme="dark"]) .quran-index-page,
 html:not([data-theme="dark"]) .juz-accordion-page,
 html:not([data-theme="dark"]) .quran-index-juz-page{
-  color:#47766A !important;
+  color:#315D50 !important;
 }
 html:not([data-theme="dark"]) .quran-index-meta,
 html:not([data-theme="dark"]) .juz-accordion-title small{
-  color:#718178 !important;
+  color:#526458 !important;
 }
 
 /* Give Ruqaa names enough vertical breathing room for hamzas/diacritics. */
@@ -1703,10 +1730,10 @@ html[data-theme="dark"] .quran-option-icon.gold{
 }
 
 /* ---------- v90 · unified reference palette + selected Surah ---------- */
-/* In daylight the current Surah mirrors the night treatment: gold, not green. */
+/* A darker gold keeps the selected Surah legible on the ivory background. */
 html:not([data-theme="dark"]) .quran-index-row.current .quran-index-name,
 html:not([data-theme="dark"]) .quran-index-row.current .quran-index-surah-num{
-  color:var(--gold) !important;
+  color:#806024 !important;
 }
 
 /* One reference language everywhere: index tab and the sheet opened while reading. */

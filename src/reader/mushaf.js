@@ -332,6 +332,8 @@ function renderPage(data){
   }
 
   if(selectedKey)root.querySelectorAll(`.verse-segment[data-key="${selectedKey}"]`).forEach(x=>x.classList.add("selected"));
+  refreshReadingMarks();
+  root.querySelector(".page-stage").addEventListener("scroll",()=>positionReadingMark(root),{passive:true});
   requestAnimationFrame(()=>fitPage(data.page));
 }
 
