@@ -3833,7 +3833,7 @@ function publicSurahUrl(s,ayah=null){
 }
 function publicJuzUrl(j){
   const n=Number(j);
-  return new URL(`/juz/${n}/`,location.origin).href;
+  return new URL(`/quran-read/?juz=${n}`,location.origin).href;
 }
 function linkFor(k){
   const [s,a]=String(k||"").split(":").map(Number);
