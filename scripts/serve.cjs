@@ -1,5 +1,5 @@
 "use strict";
-// A local read-only static preview with Cloudflare's /reader clean URL alias.
+// A local read-only static preview with clean directory URLs.
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");

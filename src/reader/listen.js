@@ -360,10 +360,6 @@ async function listenReadAlong(){
   armReaderBackGuard();
 }
 function listenShareSurah(s){
-  if(!directQuranSurah(s)){
-    shareHubPayload({title:`سورة ${listenSurahName(s)} | زاد الخير`,url:publicSurahUrl(s)});
-    return;
-  }
   const url=new URL(`/quran-listen/${s}/`,location.origin);
   url.searchParams.set("qari",listenCardState().r.id);
   shareHubPayload({title:`استماع إلى سورة ${listenSurahName(s)} | زاد الخير`,url:url.href});

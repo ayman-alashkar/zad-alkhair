@@ -211,7 +211,7 @@ else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard()
 
 /* PWA shell + offline Quran/Tafsir library. The index checks status only;
-   entering reader.html is the opt-in that starts a missing full download. */
+   opening the Quran reader is the opt-in that starts a missing full download. */
 const ZK_OFFLINE_LIBRARY_KEY="zad:offline-library-v1";
 function zkRememberOfflineLibrary(ready){
   try{

@@ -111,23 +111,13 @@ const JUZ_START=[
   [21,1],  [23,1],  [25,21], [27,56], [29,46], [33,31], [36,28], [39,32],
   [41,47], [46,1],  [51,31], [58,1],  [67,1],  [78,1],
 ];
-function readerLink(j=null,khatmahCode=code){
+function readerLink(j=null,khatmahCode=code,page=null){
   const q=new URLSearchParams();
   const n=Number(j);
-  if(n>=1&&n<=30) q.set("juz",String(n));
-  else q.set("home","1");
+  if(Number.isInteger(page)&&page>=1&&page<=604) q.set("page",String(page));
+  else if(Number.isInteger(n)&&n>=1&&n<=30) q.set("juz",String(n));
   const c=String(khatmahCode||"").trim().toUpperCase();
   if(c) q.set("code",c);
   const tail=q.toString();
-  return "reader.html"+(tail?"?"+tail:"");
+  return "/quran-read/"+(tail?"?"+tail:"");
 }
-function sharedJuzLink(j,khatmahCode=code){
-  const n=Number(j);
-  if(!(n>=1&&n<=30)) return readerLink(j,khatmahCode);
-  const q=new URLSearchParams();
-  const c=String(khatmahCode||"").trim().toUpperCase();
-  if(c) q.set("code",c);
-  const tail=q.toString();
-  return `juz/${n}/`+(tail?`?${tail}`:"");
-}
-const readLink=j=>sharedJuzLink(j);

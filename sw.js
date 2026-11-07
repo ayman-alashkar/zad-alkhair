@@ -11,7 +11,7 @@
 */
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
-const SHELL_STAGE_CACHE="zad-shell-stage-v189";
+const SHELL_STAGE_CACHE="zad-shell-stage-v190";
 const QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
@@ -22,12 +22,12 @@ const DIRECT_QURAN_PATHS=new Set(["/quran-read/","/quran-read/1/","/quran-read/2
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
 const QUL_HEADER="https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf";
 
-const REQUIRED_SHELL=["./index.html","./reader.html"];
-const SHELL_FETCH_URLS={"./index.html":"./","./reader.html":"./reader"};
+const READER_SHELL="./quran-read/";
+const REQUIRED_SHELL=["./index.html",READER_SHELL];
+const SHELL_FETCH_URLS={"./index.html":"./",[READER_SHELL]:READER_SHELL};
 const SHELL_ALIASES={
   "./":"./index.html",
-  "./reader":"./reader.html",
-  "./reader.html?home=1&from=zad":"./reader.html"
+  "./quran-read":READER_SHELL
 };
 const OPTIONAL_SHELL=[
   "./quran-index/",
@@ -118,7 +118,8 @@ async function migrateLegacyShell(){
 
   for(const url of REQUIRED_SHELL){
     if(await stable.match(requestFor(url)))continue;
-    const hit=await caches.match(requestFor(url),{ignoreSearch:true});
+    const hit=await caches.match(requestFor(url),{ignoreSearch:true})||
+      (url===READER_SHELL&&await caches.match(requestFor("./reader.html"),{ignoreSearch:true}));
     if(hit)await stable.put(requestFor(url),hit.clone());
   }
   const ready=await allPresent(stable,REQUIRED_SHELL);
@@ -282,12 +283,10 @@ async function cacheFirst(request,primaryCache){
   return response;
 }
 
-function isReaderPath(pathname){return /\/reader(?:\.html)?\/?$/i.test(pathname)}
-function isIndexPath(pathname){return pathname==="/"||pathname==="/index.html"}
 function isDirectQuranPath(pathname){return DIRECT_QURAN_PATHS.has(pathname.endsWith("/")?pathname:pathname+"/")}
 async function shellFallback(url){
-  if(url.origin!==self.location.origin||(!isReaderPath(url.pathname)&&!isIndexPath(url.pathname)))return null;
-  const key=isReaderPath(url.pathname)?"./reader.html":"./index.html";
+  const key=shellKeyFor(url);
+  if(!key)return null;
   for(const name of [SHELL_CACHE,SHELL_BACKUP_CACHE]){
     const cache=await caches.open(name);
     const hit=await cache.match(requestFor(key),{ignoreSearch:true});
@@ -301,7 +300,7 @@ async function shellFallback(url){
   return null;
 }
 async function directQuranFallback(url){
-  const reader=await shellFallback(new URL("/reader",url));
+  const reader=await shellFallback(new URL(READER_SHELL,self.registration.scope));
   if(!reader)return null;
   const supported=(await reader.clone().text()).match(/<meta name="zk-direct-reader" content="([\d,]*)">/);
   const surah=url.pathname.match(/\/(\d+)\/?$/)?.[1];
@@ -311,9 +310,9 @@ async function cacheSuccessfulDocument(request,response){
   if(!cacheable(response))return;
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
-  if(isReaderPath(url.pathname)||isIndexPath(url.pathname)){
+  const key=shellKeyFor(url);
+  if(key){
     const shell=await caches.open(SHELL_CACHE);
-    const key=isReaderPath(url.pathname)?"./reader.html":"./index.html";
     await shell.put(requestFor(key),response.clone());
     await seedShellAliases(shell);
     return;
@@ -323,8 +322,8 @@ async function cacheSuccessfulDocument(request,response){
 }
 async function networkFirstDocument(request){
   const url=new URL(request.url);
-  const isShell=url.origin===self.location.origin&&(isReaderPath(url.pathname)||isIndexPath(url.pathname));
-  const direct=url.origin===self.location.origin&&isDirectQuranPath(url.pathname);
+  const isShell=!!shellKeyFor(url);
+  const direct=!isShell&&url.origin===self.location.origin&&isDirectQuranPath(url.pathname);
   const fallback=()=>direct?directQuranFallback(url):shellFallback(url);
   const controller=isShell||direct?new AbortController():null;
   const timer=controller?setTimeout(()=>controller.abort(),2000):null;
@@ -354,8 +353,8 @@ async function networkFirstDocument(request){
    before anything is cached, still goes to the network. */
 function shellKeyFor(url){
   if(url.origin!==self.location.origin)return null;
-  if(isReaderPath(url.pathname))return "./reader.html";
-  if(isIndexPath(url.pathname))return "./index.html";
+  if(url.pathname==="/quran-read/"||url.pathname==="/quran-read")return READER_SHELL;
+  if(url.pathname==="/"||url.pathname==="/index.html")return "./index.html";
   return null;
 }
 async function revalidateShellDocument(key){

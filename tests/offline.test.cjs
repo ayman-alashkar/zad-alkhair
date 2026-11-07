@@ -7,9 +7,9 @@ test('shell survives offline startup and query-string reader navigation',async()
   assert.equal(await e.run('ensureOfflineShell()'),true);
   e.setFetch(async()=>{throw Error('offline')});
   const root=await e.run("networkFirstDocument(new Request('https://example.test/'))");
-  const reader=await e.run("networkFirstDocument(new Request('https://example.test/reader.html?home=1&from=zad'))");
+  const reader=await e.run("networkFirstDocument(new Request('https://example.test/quran-read/?from=zad'))");
   assert.match(await root.text(),/ok:https:\/\/example\.test\/$/);
-  assert.match(await reader.text(),/ok:https:\/\/example\.test\/reader$/);
+  assert.match(await reader.text(),/ok:https:\/\/example\.test\/quran-read\/$/);
   await assert.rejects(e.run("networkFirstDocument(new Request('https://example.test/other/'))"),/offline/);
 });
 
@@ -18,14 +18,14 @@ test('known shell falls back on server error or a stalled network',async()=>{
   e.setFetch(async()=>new Response('server error',{status:503}));
   assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/'))")).text(),/ok:https:\/\/example\.test\/$/);
   e.setFetch((r,opts)=>new Promise((resolve,reject)=>opts.signal.addEventListener('abort',()=>reject(Error('timeout')))));
-  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/reader'))")).text(),/ok:https:\/\/example\.test\/reader$/);
+  assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/quran-read/'))")).text(),/ok:https:\/\/example\.test\/quran-read\/$/);
 });
 
 test('direct Quran URLs serve their own HTML online and can open from an updated reader offline',async()=>{
   const e=setup();
   await e.run('ensureOfflineShell()');
   const cache=await e.run('caches.open(SHELL_CACHE)');
-  const reader=new Request('https://example.test/reader.html');
+  const reader=new Request('https://example.test/quran-read/');
   const route="new Request('https://example.test/quran-listen/114/?qari=SaadAlGhamdi_Hafs')";
   e.setFetch(async()=>new Response('route-specific HTML'));
   assert.equal(await (await e.run(`shellFirstDocument(${route})`)).text(),'route-specific HTML');
@@ -38,9 +38,22 @@ test('direct Quran URLs serve their own HTML online and can open from an updated
   await assert.rejects(e.run("shellFirstDocument(new Request('https://example.test/quran-listen/113/'))"),/offline/);
 });
 
+test('an installed app can reuse its saved reader at the unified address during an offline update',async()=>{
+  const e=setup(),cache=await e.run('caches.open(SHELL_CACHE)');
+  const legacy='<meta name="zk-direct-reader" content="114"><main>Saved reader</main>';
+  await cache.put('https://example.test/index.html',new Response('Saved home'));
+  await cache.put('https://example.test/reader.html',new Response(legacy));
+  e.setFetch(async()=>{throw Error('offline')});
+  assert.equal(await e.run('ensureOfflineShell()'),true);
+  for(const path of ['/quran-read/?juz=8','/quran-read/114/','/quran-listen/114/']){
+    const response=await e.run(`shellFirstDocument(new Request('https://example.test${path}'))`);
+    assert.equal(await response.text(),legacy,path);
+  }
+});
+
 test('failed shell refresh retains last good pages',async()=>{
   const e=setup();await e.run('ensureOfflineShell()');
-  e.setFetch(async r=>r.url.endsWith('/reader')?new Response('failure',{status:503}):new Response('new index'));
+  e.setFetch(async r=>r.url.endsWith('/quran-read/')?new Response('failure',{status:503}):new Response('new index'));
   await e.run('ensureOfflineShell()');
   e.setFetch(async()=>{throw Error('offline')});
   assert.match(await (await e.run("networkFirstDocument(new Request('https://example.test/'))")).text(),/ok:https:\/\/example\.test\/$/);
@@ -76,7 +89,7 @@ test('concurrent shell refreshes share one staging operation',async()=>{
   const result=await e.run('Promise.all([ensureOfflineShell(),ensureOfflineShell(),ensureOfflineShell()])');
   assert.deepEqual(Array.from(result),[true,true,true]);
   assert.equal(e.calls.filter(u=>u==='https://example.test/').length,1);
-  assert.equal(e.calls.filter(u=>u==='https://example.test/reader').length,1);
+  assert.equal(e.calls.filter(u=>u==='https://example.test/quran-read/').length,1);
 });
 
 test('existing redirected shell responses remain usable for offline navigation',async()=>{
@@ -91,10 +104,10 @@ test('existing redirected shell responses remain usable for offline navigation',
     assert.equal(redirected.redirected,true);
     const e=setup(),cache=await e.run('caches.open("zad-shell-stable-v1")');
     await cache.put(new Request('https://example.test/index.html'),redirected.clone());
-    await cache.put(new Request('https://example.test/reader.html'),redirected.clone());
+    await cache.put(new Request('https://example.test/quran-read/'),redirected.clone());
     e.setFetch(async()=>{throw Error('offline')});
     const home=await e.run("networkFirstDocument(new Request('https://example.test/',{redirect:'manual'}))");
-    const reader=await e.run("networkFirstDocument(new Request('https://example.test/reader',{redirect:'manual'}))");
+    const reader=await e.run("networkFirstDocument(new Request('https://example.test/quran-read/',{redirect:'manual'}))");
     for(const response of [home,reader]){
       assert.equal(response.redirected,false);
       assert.equal(response.headers.get('content-type'),'text/html');
@@ -156,16 +169,16 @@ test('saved shell opens without waiting for the network, then refreshes in the b
   e.setFetch(()=>new Promise(()=>{}));
   const started=Date.now();
   const home=await e.run("shellFirstDocument(new Request('https://example.test/?zad=1'))");
-  const reader=await e.run("shellFirstDocument(new Request('https://example.test/reader.html?page=5'))");
+  const reader=await e.run("shellFirstDocument(new Request('https://example.test/quran-read/?page=5'))");
   assert.ok(Date.now()-started<500);
   assert.match(await home.text(),/ok:https:\/\/example\.test\/$/);
-  assert.match(await reader.text(),/ok:https:\/\/example\.test\/reader$/);
+  assert.match(await reader.text(),/ok:https:\/\/example\.test\/quran-read\/$/);
 
   // The background check stores a new deploy for the next opening.
   e.setFetch(async r=>new Response('new:'+r.url));
-  await e.run("shellFirstDocument(new Request('https://example.test/reader'),{waitUntil:p=>globalThis.__wait=p})");
+  await e.run("shellFirstDocument(new Request('https://example.test/quran-read/'),{waitUntil:p=>globalThis.__wait=p})");
   await e.run('globalThis.__wait');
-  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/reader'))")).text(),/^new:/);
+  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/quran-read/'))")).text(),/^new:/);
 });
 
 test('a failed background check keeps the saved shell',async()=>{
@@ -181,7 +194,7 @@ test('first visit and non-shell pages still use the network',async()=>{
   const e=setup();
   e.setFetch(async r=>new Response('net:'+r.url));
   assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/'))")).text(),/^net:/);
-  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/surah/2/'))")).text(),/^net:/);
+  assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/juz/2/'))")).text(),/^net:/);
 });
 
 test('pressing Reload fetches the newest shell instead of the saved one',async()=>{
@@ -193,6 +206,6 @@ test('pressing Reload fetches the newest shell instead of the saved one',async()
   assert.match(await (await e.run("shellFirstDocument(new Request('https://example.test/'))")).text(),/^(ok|fresh):/);
   e.setFetch(()=>new Promise(()=>{}));
   const started=Date.now();
-  assert.ok(await e.run("shellFirstDocument(new Request('https://example.test/reader'))"));
+  assert.ok(await e.run("shellFirstDocument(new Request('https://example.test/quran-read/'))"));
   assert.ok(Date.now()-started<500);
 });

@@ -41,10 +41,10 @@ test("retired migration routes cannot read, migrate or delete identity",sourceSe
 
 test("legacy redirect preserves reader path, query and fragment without reading identity",()=>{
   let destination;
-  const location={hostname:"ayman-alashkar.github.io",pathname:"/zad-alkhair/reader.html",search:"?juz=7&code=AB12",hash:"#legacy",replace:url=>destination=url};
+  const location={hostname:"ayman-alashkar.github.io",pathname:"/zad-alkhair/quran-read/",search:"?juz=7&code=AB12",hash:"#legacy",replace:url=>destination=url};
   const forbidden=new Proxy({},{get(){throw Error("retired migration accessed browser storage")}});
   vm.runInNewContext(fs.readFileSync(path.join(root,"migration.js"),"utf8"),{location,localStorage:forbidden,sessionStorage:forbidden,caches:forbidden});
-  assert.equal(destination,"https://zad-alkhair.net/reader.html?juz=7&code=AB12#legacy");
+  assert.equal(destination,"https://zad-alkhair.net/quran-read/?juz=7&code=AB12#legacy");
 });
 
 test("canonical origin does not redirect",()=>{

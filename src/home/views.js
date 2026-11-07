@@ -72,7 +72,7 @@ function myJuzCard(){
       <div class="myjuz-empty"><span class="jbadge done big" aria-hidden="true"><b>✓</b></span>
         <div><strong>أتممت أجزاءك، تقبّل الله منك</strong><span>${mine.length===1?"الجزء":"الأجزاء"} ${mine.map(x=>ar(x.n)).join(" و")}</span></div></div></section>`;
   const cur=pending[0],r=juzReading(cur.n);
-  const href=r.started?`reader.html?page=${r.reached}&amp;code=${encodeURIComponent(code)}`:readerLink(cur.n);
+  const href=readerLink(cur.n,code,r.started?r.reached:null);
   const readLabel=!r.started?"اقرأ جزءك":r.atEnd?"راجع جزءك":"تابع القراءة";
   const order=mine.length>1?`<span class="myjuz-order">${ztJuzOrder(doneCount+1,mine.length)}</span>`:"";
   const rows=mine.filter(x=>x!==cur).map(x=>{
