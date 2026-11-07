@@ -185,7 +185,7 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
     await page.locator('.quran-index[data-home-mode="1"]').waitFor();
     await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:last-position")).savedAt), 1);
-    await page.locator('[data-reading-resume]').click();
+    await page.locator('[data-hub-action="resume"]').click();
     assert.equal(new URL(page.url()).searchParams.get("page"), "45");
     await page.reload();
     await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
@@ -216,57 +216,94 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
   }
 });
 
-test("reading marks survive browsing and reload on phones and tablets in both themes", async () => {
+test("page bookmarks save directly, survive reopening, and stay separate from visits", async t => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
-  for (const profile of [PHONE, { viewport: { width: 800, height: 1100 }, isMobile: true, hasTouch: true }]) {
-    for (const theme of ["light", "dark"]) {
-      const { page, errors, context } = await appPage({ profile, storage: {
-        "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme
-      } });
-      await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
-        path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"), headers: { "Access-Control-Allow-Origin": "*" }
-      }));
-      await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
-        headers: { "Access-Control-Allow-Origin": "*" },
-        json: { page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]), font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
-          lines: Array.from({ length: 15 }, (_, i) => ({ words: [{ type: "word", text: "آية", char: "آية للقراءة", verse_key: `2:${60 + i}` }] })) }
-      }));
-      try {
-        await page.goto(BASE + "/quran-read/?page=9");
-        const verse = page.locator('.page[data-page="9"] [data-key="2:60"]');
-        await verse.click();
-        await page.locator("#quranHomeBtn").click();
-        await page.getByRole("dialog", { name: "المصحف", exact: true }).waitFor();
-        await page.locator('[data-reader-action="save"]').click();
-        await page.locator('.page[data-page="9"] .reading-marker').waitFor();
-        await page.locator("#nextBtn").click();
-        await page.waitForURL(/page=10/);
-        const stored = await page.evaluate(() => ({ mark: JSON.parse(localStorage.getItem("zad:qcf4:reading-mark-v1")), last: JSON.parse(localStorage.getItem("zad:qcf4:last-position")) }));
-        assert.equal(stored.mark.page, 9); assert.equal(stored.mark.verse, "2:60"); assert.equal(stored.last.page, 10);
-        await page.locator("#quranHomeBtn").click();
-        await page.locator('[data-reader-action="mark"]').click();
-        await page.waitForURL(/page=9/);
-        await page.locator('.page[data-page="9"] [data-key="2:60"].selected').waitFor();
-        await page.reload();
-        await page.locator('.page[data-page="9"] .reading-marker').waitFor();
-        assert.equal(await page.locator(".quran-index").count(), 0);
-        assert.equal(await page.locator("#bookmarkBtn").count(), 0);
-        await page.locator('.page[data-page="9"] [data-key="2:60"]').click();
-        await page.locator("#quranHomeBtn").click();
-        await page.getByRole("tab", { name: "الأجزاء", exact: true }).click();
-        await page.getByRole("button", { name: "الجزء ٢، الصفحة ٢٢", exact: true }).click();
-        await page.waitForURL(/page=22/);
-        assert.equal(await page.locator(".quran-index").count(), 0, "jump stays in the reader");
-        await page.locator("#quranHomeBtn").click();
-        await page.getByRole("tab", { name: "الصفحة", exact: true }).click();
-        await page.locator("#readerPageNumber").fill("9");
-        await page.getByRole("button", { name: "انتقال", exact: true }).click();
-        await page.waitForURL(/page=9/);
-        assert.deepEqual(errors, []);
-      } finally { await context.close(); }
+  for (const [label, profile, theme] of [
+    ["phone", PHONE, "light"],
+    ["tablet", { viewport: { width: 1024, height: 1366 }, isMobile: true, hasTouch: true }, "dark"]
+  ]) await t.test(label, async () => {
+    const { page, errors, context } = await appPage({ profile });
+    const oldAyahs = JSON.stringify([{ page: 8, verse: "2:50", savedAt: 1 }]);
+    await context.addInitScript(({ chapters, theme, oldAyahs }) => {
+      if (sessionStorage.getItem("bookmark-test-seeded")) return;
+      localStorage.setItem("zad:qcf4:meta-v1", JSON.stringify({ chapters }));
+      localStorage.setItem("zad:qcf4:theme", theme);
+      localStorage.setItem("zad:qcf4:page-bookmarks", JSON.stringify([{ page: 7, savedAt: 1 }]));
+      localStorage.setItem("zad:qcf4:ayah-bookmarks", oldAyahs);
+      localStorage.setItem("zad:qcf4:bookmarks", oldAyahs);
+      sessionStorage.setItem("bookmark-test-seeded", "1");
+    }, { chapters, theme, oldAyahs });
+    await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+      path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+      headers: { "Access-Control-Allow-Origin": "*" }
+    }));
+    await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+      headers: { "Access-Control-Allow-Origin": "*" },
+      json: {
+        page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
+        font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+        lines: Array.from({ length: 15 }, (_, i) => ({
+          words: [{ type: "word", text: "آية للقراءة", char: "آية للقراءة", verse_key: `2:${60 + i}` }]
+        }))
+      }
+    }));
+    const currentVerse = n => page.locator(`.page[data-page="${n}"] .verse-segment`).first();
+    const ribbon = n => page.locator(`.page[data-page="${n}"] .page-bookmark`);
+    const storedPages = () => page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:page-bookmarks")).map(x => x.page));
+    try {
+      await page.goto(BASE + "/quran-read/?page=9");
+      await currentVerse(9).click({ delay: 650 });
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      await ribbon(9).waitFor();
+      assert.deepEqual(await storedPages(), [9, 7], "existing marks kept in the same list");
+      assert.equal(await page.locator("[data-save]").count(), 0, "no second save menu");
+      const fits = await ribbon(9).evaluate(pin => {
+        const r = pin.getBoundingClientRect(), stage = pin.parentElement.querySelector(".page-stage").getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= stage.top;
+      });
+      assert.ok(fits, "ribbon stays above the Quran text within the viewport");
+
+      await page.goto(BASE + "/quran-read/?page=10");
+      await currentVerse(10).click();
+      assert.equal(await ribbon(10).count(), 0);
+      await page.locator("#bookmarkBtn").click();
+      await page.getByRole("heading", { name: "الانتقال إلى", exact: true }).waitFor();
+      await page.locator('[data-page-open="9"]').click();
+      await ribbon(9).waitFor();
+      await page.reload();
+      await ribbon(9).waitFor();
+      await currentVerse(9).click({ delay: 650 });
+      await page.getByRole("button", { name: "إزالة العلامة", exact: true }).click();
+      assert.equal(await ribbon(9).count(), 0);
+      assert.deepEqual(await storedPages(), [7]);
+
+      await currentVerse(9).click({ delay: 650 });
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      await page.locator("#quranHomeBtn").click();
+      assert.deepEqual(await page.locator(".quran-index-tab").allTextContents(), ["السور", "الأجزاء", "الانتقال إلى"]);
+      assert.equal(await page.locator("#quranSurahList .quran-index-row").count(), 114);
+      assert.equal(await page.locator("#quranSurahList .quran-index-juz-sep").count(), 0);
+      assert.doesNotMatch(await page.locator("#quranSurahList").innerText(), /الجزء/);
+      await page.locator('.quran-index-tab[data-tab="j"]').click();
+      assert.equal(await page.locator("#quranJuzList .juz-accordion").count(), 30);
+      await page.locator('.quran-index-tab[data-tab="m"]').click();
+      await page.locator("#quranBookmarkList .ref-pages .quran-bookmark-row").first().waitFor();
+      assert.deepEqual(await page.locator("#quranBookmarkList h4").allTextContents(), ["آخر الزيارات", "العلامات"]);
+      assert.equal(await page.locator(".ref-ayahs,[data-ayah-open]").count(), 0);
+      await page.getByRole("button", { name: "إزالة علامة الصفحة ٩", exact: true }).click();
+      assert.deepEqual(await storedPages(), [7]);
+      assert.equal(await ribbon(9).count(), 0, "index deletion updates the rendered page");
+      assert.deepEqual(await page.evaluate(() => [
+        localStorage.getItem("zad:qcf4:ayah-bookmarks"),
+        localStorage.getItem("zad:qcf4:bookmarks"),
+        localStorage.getItem("zad:qcf4:reading-mark-v1")
+      ]), [oldAyahs, oldAyahs, null], "old ayah data preserved; no second bookmark model");
+      assert.deepEqual(errors, []);
+    } finally {
+      await context.close();
     }
-  }
+  });
 });
 
 test("a member's khatmah tab opens from the saved state before the server answers", async () => {

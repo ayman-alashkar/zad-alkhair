@@ -7,7 +7,6 @@ const STORAGE_KEYS=Object.freeze({
   indexExcerpts:"zad:qcf4:index-excerpts-v1",
   recentVisits:"zad:qcf4:recent-visits",
   lastPosition:"zad:qcf4:last-position",
-  readingMark:"zad:qcf4:reading-mark-v1",
   lastSurface:"zad:qcf4:last-surface-v1",
   readerParent:"zad:qcf4:reader-parent-v1",
   pageBookmarks:"zad:qcf4:page-bookmarks",

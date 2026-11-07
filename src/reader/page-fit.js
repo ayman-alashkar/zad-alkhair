@@ -83,9 +83,7 @@ function fitPage(p){
       banners.push({line,banner,aspect});
       bannerExtra+=Math.max(0,widthAtBase/aspect-line.getBoundingClientRect().height);
     });
-    const tablet=typeof matchMedia==="function"&&matchMedia("(min-width: 600px) and (pointer: coarse)").matches;
-    const rowGap=tablet?base*.20:0;
-    const pageH=rawH+bannerExtra+INK_GUARD*(normal[0].getBoundingClientRect().height||base*1.33)+rowGap*Math.max(0,rows.length-1);
+    const pageH=rawH+bannerExtra+INK_GUARD*(normal[0].getBoundingClientRect().height||base*1.33);
 
     // قيد العرض لا يُخرق أبدًا: تجاوزه يقصّ السطر القرآني، وهو ما لا يُحتمل.
     // وقيد الارتفاع يُخرق عند الضرورة وحدها، فيتحوّل الأمر إلى تمرير رأسي بدل
@@ -118,7 +116,6 @@ function fitPage(p){
     stage.classList.toggle("scrolls",overflows);
     if(!overflows)stage.scrollTop=0;
     host.style.justifyContent=overflows?"flex-start":"center";
-    host.style.gap=(rowGap*scale).toFixed(2)+"px";
 
     // The line spacing is set in this same frame. Setting it one frame later let
     // the browser paint the page once with no spacing (lines drawn together)
@@ -128,10 +125,9 @@ function fitPage(p){
       const rowHeight=rows.reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
       const usable=stage.clientHeight*.955;
       const spare=Math.max(0,usable-rowHeight);
-      const gap=Math.max(0,Math.min(tablet?28:18,spare/(rows.length-1)));
+      const gap=Math.max(0,Math.min(18,spare/(rows.length-1)));
       host.style.gap=gap.toFixed(2)+"px";
     }
-    if(typeof positionReadingMark==="function")positionReadingMark(root);
 
     requestAnimationFrame(()=>{
       if(!isCurrent())return;

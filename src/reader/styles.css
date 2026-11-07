@@ -31,7 +31,6 @@
   --green:#1B705F; --green-deep:#0A473E; --green-hi:#278573;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:#F4E8CA; --red:#B95157;
   --paper:#F5F0E4; --quran:#132823; --muted:#746F63;
-  --quran-red:#9F343E;
   --chrome:#FFFCF4; --chrome-text:#18362F; --border:#DED3BD; --line:#DED3BD;
   --select:rgba(40,122,101,.12); --select-line:rgba(197,154,74,.30);
   --sheet:#FFFCF4; --shadow:rgba(0,0,0,.18);
@@ -46,7 +45,6 @@ html[data-theme="dark"]{
   --green:#49A18C; --green-deep:#0A473E; --green-hi:#49A18C;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:rgba(228,201,128,.12); --red:#D77B80;
   --paper:#061F1D; --quran:#FFF9EA; --muted:rgba(255,249,234,.70);
-  --quran-red:#E59A9F;
   --chrome:#082D29; --chrome-text:#FFF9EA; --border:rgba(228,201,128,.24); --line:rgba(228,201,128,.24);
   --select:rgba(73,161,140,.18); --select-line:rgba(228,201,128,.28);
   --sheet:#0D3C35; --shadow:rgba(0,0,0,.48);
@@ -85,6 +83,12 @@ button{cursor:pointer}
 }
 .page-meta-link:active{transform:scale(.96);color:var(--gold)}
 .page-meta-link:focus-visible{outline:2px solid color-mix(in srgb,var(--gold) 55%,transparent);outline-offset:3px}
+/* The ribbon stays in the top margin so it never covers Quran text. */
+.page-bookmark{
+  position:absolute;z-index:4;left:80px;top:env(safe-area-inset-top,0px);
+  width:24px;height:34px;color:var(--red);pointer-events:none;
+}
+.page-bookmark svg{display:block;width:100%;height:100%;fill:currentColor}
 .page-stage{
   position:absolute;
   inset:calc(43px + env(safe-area-inset-top)) 0 calc(34px + env(safe-area-inset-bottom));
@@ -146,10 +150,9 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   display:inline-block;direction:rtl;color:var(--quran);
   line-height:1.33;position:relative;
 }
-.word.allah{color:var(--quran-red)}
+.word.allah{color:var(--red)}
 .word.end{color:var(--quran)}
-.reading-marker{position:absolute;z-index:5;top:0;left:80px;width:44px;height:40px;color:var(--quran-red);display:grid;place-items:start center;pointer-events:none}
-.reading-marker svg{width:24px;height:32px;fill:currentColor;filter:drop-shadow(0 2px 2px rgba(0,0,0,.10))}
+html:not([data-theme="dark"]) .word.end{color:var(--gold)}
 .page-no{
   position:absolute;left:22px;bottom:calc(12px + env(safe-area-inset-bottom));
   color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:17px
@@ -1235,36 +1238,6 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 .quran-index-head-action svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .quran-index-head-action:active{transform:scale(.96)}
 .quran-index-tabs{grid-template-columns:repeat(3,1fr)}
-.quran-reading-shortcuts{flex:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:9px;padding:12px 14px;background:var(--ui-surface);border-bottom:1px solid var(--ui-line)}
-.quran-reading-shortcuts button{appearance:none;display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 13px;border:1px solid var(--ui-line);border-radius:15px;background:var(--brand-soft);color:var(--brand-strong);text-align:right;font:inherit}
-.quran-reading-shortcuts svg{flex:none;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.quran-reading-shortcuts button>span:not(.reading-shortcut-arrow){flex:1;min-width:0;display:grid;gap:5px}
-.quran-reading-shortcuts strong{font-size:14px;font-weight:600}
-.quran-reading-shortcuts small{font-size:11px;line-height:1.6}
-.quran-reading-shortcuts .reading-shortcut-arrow{font-size:26px}
-html[data-theme="dark"] .quran-reading-resume{background:var(--ui-surface-2);color:var(--ivory);border-color:var(--gold)}
-html .backdrop .reader-options-sheet{display:flex;flex-direction:column;width:min(520px,100%);max-height:86dvh;overflow:hidden}
-.reader-options-sheet .sheethead{flex:none}
-.reader-mark-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px}
-.reader-mark-controls button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:48px;padding:8px;border:1px solid var(--reader-line);border-radius:12px;background:var(--reader-raised);color:var(--reader-ink);font:600 14px/1.6 Alexandria,system-ui,sans-serif}
-.reader-mark-controls button:disabled{opacity:.42;cursor:default}
-.reader-mark-controls svg{flex:none;width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.reader-mark-controls [data-reader-action="save"] svg{fill:var(--quran-red);stroke:none}
-.reader-nav-tabs{flex:none;display:grid;grid-template-columns:repeat(3,1fr);border-block:1px solid var(--reader-line);margin:0 14px}
-.reader-nav-tabs button{position:relative;min-height:46px;background:transparent;border:0;color:var(--reader-muted);font:600 14px Alexandria,system-ui,sans-serif}
-.reader-nav-tabs [aria-selected="true"]{color:var(--reader-ink)}
-.reader-nav-tabs [aria-selected="true"]::after{content:"";position:absolute;bottom:0;left:15%;right:15%;height:3px;border-radius:3px;background:var(--gold)}
-.reader-nav-search{flex:none;margin:12px 14px 4px}
-.reader-nav-search input{width:100%;min-height:44px;border:1px solid var(--reader-line);border-radius:12px;background:var(--reader-raised);color:var(--reader-ink);padding:8px 12px;font:14px Alexandria,system-ui,sans-serif}
-.reader-nav-search input::placeholder{color:var(--reader-muted)}
-.reader-nav-list{min-height:130px;max-height:min(38dvh,330px);overflow-y:auto;overscroll-behavior:contain;margin:4px 14px 12px}
-.reader-nav-row{display:grid;grid-template-columns:34px minmax(0,1fr) 42px;align-items:center;gap:10px;width:100%;min-height:50px;padding:7px 6px;border:0;border-bottom:1px solid var(--reader-line);background:transparent;color:var(--reader-ink);text-align:right}
-.reader-nav-row[aria-current="true"]{background:var(--reader-raised);border-radius:10px}
-.reader-nav-number,.reader-nav-row small{font:12px Alexandria,system-ui,sans-serif;color:var(--reader-muted);text-align:center}
-.reader-nav-name{font:700 21px/1.5 "Aref Ruqaa",serif}
-.reader-nav-page{margin:16px}
-.reader-options-sheet .reader-nav-pane[hidden],.reader-options-sheet .reader-nav-search[hidden]{display:none}
-.reading-stop{border-color:color-mix(in srgb,var(--quran-red) 35%,var(--ui-line))}
 .quran-index-track{width:300%}
 .quran-index-pane{width:33.333333%}
 .quran-index-row-with-actions{padding-inline:14px 12px;grid-template-columns:42px minmax(0,1fr) auto;gap:9px}
@@ -1469,8 +1442,7 @@ html:not([data-theme="dark"]) .quran-index-juz-main b{
   color:var(--brand-strong) !important;
 }
 html:not([data-theme="dark"]) .quran-index-tab{
-  color:#365D51;
-  font-size:14px;
+  color:#5B756D;
 }
 html:not([data-theme="dark"]) .quran-index-tab.active{
   color:var(--brand) !important;
@@ -1479,11 +1451,11 @@ html:not([data-theme="dark"]) .quran-index-surah-num,
 html:not([data-theme="dark"]) .quran-index-page,
 html:not([data-theme="dark"]) .juz-accordion-page,
 html:not([data-theme="dark"]) .quran-index-juz-page{
-  color:#315D50 !important;
+  color:#47766A !important;
 }
 html:not([data-theme="dark"]) .quran-index-meta,
 html:not([data-theme="dark"]) .juz-accordion-title small{
-  color:#526458 !important;
+  color:#718178 !important;
 }
 
 /* Give Ruqaa names enough vertical breathing room for hamzas/diacritics. */
@@ -1737,10 +1709,10 @@ html[data-theme="dark"] .quran-option-icon.gold{
 }
 
 /* ---------- v90 · unified reference palette + selected Surah ---------- */
-/* A darker gold keeps the selected Surah legible on the ivory background. */
+/* In daylight the current Surah mirrors the night treatment: gold, not green. */
 html:not([data-theme="dark"]) .quran-index-row.current .quran-index-name,
 html:not([data-theme="dark"]) .quran-index-row.current .quran-index-surah-num{
-  color:#806024 !important;
+  color:var(--gold) !important;
 }
 
 /* One reference language everywhere: index tab and the sheet opened while reading. */
@@ -2229,6 +2201,8 @@ html .ayah-menu:after{border-top-color:var(--reader-surface)}
 html .ayah-menu .menu-btn{width:54px;height:54px;color:var(--reader-ink);gap:4px}
 html .ayah-menu .menu-btn.wide{width:88px}
 html .ayah-menu .menu-btn.play{color:var(--reader-gold)}
+html .ayah-menu .menu-btn.bookmark{width:68px}
+html .ayah-menu .menu-btn.bookmark.marked{color:var(--red)}
 html .ayah-menu .menu-label{font-size:10px;line-height:1.3;opacity:1}
 html .ayah-menu .menu-btn:active{background:var(--reader-selected)}
 html .ayah-menu .menu-btn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:-2px}

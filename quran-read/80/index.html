@@ -39,12 +39,12 @@
 
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 
-<link rel="stylesheet" href="/quran/runtime/reader.css?v=204aa26d63a3">
+<link rel="stylesheet" href="/quran/runtime/reader.css?v=146f5bd691fa">
 </head>
 <body class="hidden-tools zad-identity">
 <div class="reader" id="reader">
   <div class="track" id="track"></div>
-  <div class="loading" id="loading">تحميل مصحف المدينة QCF4…</div>
+  <div class="loading" id="loading">جارٍ التحميل…</div>
 </div>
 
 <div class="quran-offline-setup" id="offlineSetup" aria-live="polite" aria-atomic="true">
@@ -61,10 +61,11 @@
 </div>
 
 <header class="chrome topbar">
-  <button class="brand brand-home quran-home-link" id="quranHomeBtn" type="button" aria-label="قائمة المصحف" aria-haspopup="dialog">القائمة</button>
+  <button class="brand brand-home quran-home-link" id="quranHomeBtn" type="button" aria-label="فتح فهرس القرآن">الفهرس</button>
   <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="top-actions">
     <button type="button" class="iconbtn" id="themeBtn" aria-label="الوضع"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg></button>
+    <button type="button" class="iconbtn" id="bookmarkBtn" aria-label="الانتقال إلى" title="الانتقال إلى"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg></button>
     <button type="button" class="iconbtn zad-return-btn" id="backBtn" aria-label="الصفحة الرئيسية" title="الصفحة الرئيسية"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M11 6h4.5a4.5 4.5 0 1 1 0 9H4"/><path d="M7 12s-3 2.21-3 3s3 3 3 3"/></g></svg></button>
   </div>
 </header>
@@ -152,7 +153,7 @@
 
 <!-- التفسير الوجيز: بيانات الإنتاج المحققة مضمّنة محليًا للاختبار Offline -->
 
-<script src="/quran/runtime/reader.js?v=204aa26d63a3"></script>
+<script src="/quran/runtime/reader.js?v=146f5bd691fa"></script>
 <noscript><p>فعّل JavaScript لفتح المصحف ومشغّل التلاوة. <a href="/quran-index/">فهرس القرآن</a></p></noscript>
 </body>
 </html>
