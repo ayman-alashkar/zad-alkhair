@@ -19,13 +19,11 @@ const readerRoutes = ["read", "listen"].flatMap(mode =>
 );
 
 function readSurahPath(n) {
-  return supported.has(n) ? `/quran-read/${n}/` : `/surah/${n}/`;
+  return `/quran-read/${n}/`;
 }
 
 function listenSurahPath(n, id) {
-  const qari = encodeURIComponent(id);
-  return supported.has(n) ? `/quran-listen/${n}/?qari=${qari}`
-    : `/reader.html?surah=${n}&amp;ayah=1&amp;qari=${qari}&amp;play=1`;
+  return `/quran-listen/${n}/?qari=${encodeURIComponent(id)}`;
 }
 
 module.exports = { indexPath, readerRoutes, supported, shareOrigin, preview: !!config.previewOrigin, readSurahPath, listenSurahPath };

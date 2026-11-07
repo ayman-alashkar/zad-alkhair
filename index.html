@@ -1676,7 +1676,7 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
      فتظهر فور الضغط. لا يُجهَّز إلا رابط بصفحة أو جزء محدد. القارئ المجهَّز لا يكتب
      شيئًا ولا يبدأ تنزيل المصحف حتى يُفتح فعلًا (src/reader/state.js، offline.js). -->
 <script type="speculationrules">
-{"prerender":[{"source":"document","where":{"selector_matches":"a.zt-continue[href*='page='], .zt-card a.zt-btn[href^='reader.html']"},"eagerness":"eager"}]}
+{"prerender":[{"source":"document","where":{"selector_matches":"a.zt-continue[href*='page='], .zt-card a.zt-btn[href^='/quran-read/']"},"eagerness":"eager"}]}
 </script>
 </head>
 <body>
@@ -2011,26 +2011,16 @@ const JUZ_START=[
   [21,1],  [23,1],  [25,21], [27,56], [29,46], [33,31], [36,28], [39,32],
   [41,47], [46,1],  [51,31], [58,1],  [67,1],  [78,1],
 ];
-function readerLink(j=null,khatmahCode=code){
+function readerLink(j=null,khatmahCode=code,page=null){
   const q=new URLSearchParams();
   const n=Number(j);
-  if(n>=1&&n<=30) q.set("juz",String(n));
-  else q.set("home","1");
+  if(Number.isInteger(page)&&page>=1&&page<=604) q.set("page",String(page));
+  else if(Number.isInteger(n)&&n>=1&&n<=30) q.set("juz",String(n));
   const c=String(khatmahCode||"").trim().toUpperCase();
   if(c) q.set("code",c);
   const tail=q.toString();
-  return "reader.html"+(tail?"?"+tail:"");
+  return "/quran-read/"+(tail?"?"+tail:"");
 }
-function sharedJuzLink(j,khatmahCode=code){
-  const n=Number(j);
-  if(!(n>=1&&n<=30)) return readerLink(j,khatmahCode);
-  const q=new URLSearchParams();
-  const c=String(khatmahCode||"").trim().toUpperCase();
-  if(c) q.set("code",c);
-  const tail=q.toString();
-  return `juz/${n}/`+(tail?`?${tail}`:"");
-}
-const readLink=j=>sharedJuzLink(j);
 
 
 
@@ -2842,7 +2832,7 @@ function myJuzCard(){
       <div class="myjuz-empty"><span class="jbadge done big" aria-hidden="true"><b>✓</b></span>
         <div><strong>أتممت أجزاءك، تقبّل الله منك</strong><span>${mine.length===1?"الجزء":"الأجزاء"} ${mine.map(x=>ar(x.n)).join(" و")}</span></div></div></section>`;
   const cur=pending[0],r=juzReading(cur.n);
-  const href=r.started?`reader.html?page=${r.reached}&amp;code=${encodeURIComponent(code)}`:readerLink(cur.n);
+  const href=readerLink(cur.n,code,r.started?r.reached:null);
   const readLabel=!r.started?"اقرأ جزءك":r.atEnd?"راجع جزءك":"تابع القراءة";
   const order=mine.length>1?`<span class="myjuz-order">${ztJuzOrder(doneCount+1,mine.length)}</span>`:"";
   const rows=mine.filter(x=>x!==cur).map(x=>{
@@ -3351,7 +3341,7 @@ function openSheet(i){
       <div class="grip"></div>
       <h3>الجزء ${ar(i+1)}</h3>
       <div class="range">${JUZ[i]}</div>
-      <a class="readbtn" href="${readLink(i+1)}">
+      <a class="readbtn" href="${readerLink(i+1)}">
         <span class="rb-icon">${BOOK_ICON}</span>
         <span class="rb-text">اقرأ الجزء</span>
         <span class="rb-src">قارئ زاد الخير</span>
@@ -4842,7 +4832,7 @@ function ztReadingCard(summary){
       const progress=started?`<div class="zt-progress">
           <div class="zt-progress-row"><span>${atEnd?"وصلت إلى آخر صفحة في جزئك":`قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة`}</span><span>${started?`الصفحة ${ztArabic(reached)}`:""}</span></div>
           <span class="zt-bar"><i style="width:${(atEnd?100:read/total*100).toFixed(1)}%"></i></span></div>`:"";
-      const readHref=started?`reader.html?page=${reached}&amp;code=${encodeURIComponent(summary.code)}`:readerLink(j,summary.code);
+      const readHref=readerLink(j,summary.code,started?reached:null);
       const readLabel=!started?"اقرأ جزءك":atEnd?"راجع جزءك":"تابع القراءة";
       html=`<section class="zt-card" aria-label="جزؤك في الختمة">
         <div class="zt-card-row"><div class="zt-card-text">
@@ -5710,7 +5700,7 @@ else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard()
 
 /* PWA shell + offline Quran/Tafsir library. The index checks status only;
-   entering reader.html is the opt-in that starts a missing full download. */
+   opening the Quran reader is the opt-in that starts a missing full download. */
 const ZK_OFFLINE_LIBRARY_KEY="zad:offline-library-v1";
 function zkRememberOfflineLibrary(ready){
   try{

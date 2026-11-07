@@ -72,7 +72,7 @@ function readingSummary({mode, surah}) {
 </article>`;
 }
 
-for (const [name, output] of [["home", "index.html"], ["reader", "reader.html"]]) {
+for (const name of ["home", "reader"]) {
   const dir = path.join(root, "src", name);
   let template = fs.readFileSync(path.join(dir, "index.html"), "utf8");
   const { css, js } = appSources(dir);
@@ -80,11 +80,13 @@ for (const [name, output] of [["home", "index.html"], ["reader", "reader.html"]]
   for (const marker of [cssMarker, jsMarker]) {
     if (template.split(marker).length !== 2) throw Error(`Expected one ${marker} in ${name}`);
   }
-  if (name === "reader") {
-    template = template.replace("<!-- @quran-route-config -->", `<meta name="zk-direct-reader" content="${[...supported].join(",")}">`);
+  if (name === "home") {
+    write("index.html", template.replace(cssMarker, () => css).replace(jsMarker, () => js));
+    continue;
   }
-  write(output, template.replace(cssMarker, () => css).replace(jsMarker, () => js));
-  if (name !== "reader") continue;
+  template = template.replace("<!-- @quran-route-config -->", `<meta name="zk-direct-reader" content="${[...supported].join(",")}">`)
+    .replace("</body>", `<noscript><p>فعّل JavaScript لفتح المصحف ومشغّل التلاوة. <a href="${indexPath}">فهرس القرآن</a></p></noscript>\n</body>`);
+  const readerShell = template.replace(cssMarker, () => css).replace(jsMarker, () => js);
 
   const version = createHash("sha256").update(css).update("\0").update(js).digest("hex").slice(0, 12);
   const assets = "/quran/runtime/reader";
@@ -92,10 +94,10 @@ for (const [name, output] of [["home", "index.html"], ["reader", "reader.html"]]
   write("quran/runtime/reader.js", js);
   const directTemplate = template
     .replace(`<style>${cssMarker}</style>`, `<link rel="stylesheet" href="${assets}.css?v=${version}">`)
-    .replace(`<script>${jsMarker}</script>`, `<script src="${assets}.js?v=${version}"></script>`)
-    .replace("</body>", `<noscript><p>فعّل JavaScript لفتح المصحف ومشغّل التلاوة. <a href="${indexPath}">فهرس القرآن</a></p></noscript>\n</body>`);
+    .replace(`<script>${jsMarker}</script>`, `<script src="${assets}.js?v=${version}"></script>`);
   for (const route of readerRoutes) {
-    const html = directTemplate.replace(/<!-- @reader-meta-start -->[\s\S]*?<!-- @reader-meta-end -->/, () => readerMeta(route))
+    const pageTemplate = route.mode === "read" && !route.surah ? readerShell : directTemplate;
+    const html = pageTemplate.replace("<!-- @reader-meta -->", () => readerMeta(route))
       .replace("تحميل مصحف المدينة QCF4…", () => readingSummary(route));
     write(`${route.path.slice(1)}index.html`, html);
   }

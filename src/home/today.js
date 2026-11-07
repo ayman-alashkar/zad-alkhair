@@ -137,7 +137,7 @@ function ztReadingCard(summary){
       const progress=started?`<div class="zt-progress">
           <div class="zt-progress-row"><span>${atEnd?"وصلت إلى آخر صفحة في جزئك":`قرأت ${ztArabic(read)} من ${ztArabic(total)} صفحة`}</span><span>${started?`الصفحة ${ztArabic(reached)}`:""}</span></div>
           <span class="zt-bar"><i style="width:${(atEnd?100:read/total*100).toFixed(1)}%"></i></span></div>`:"";
-      const readHref=started?`reader.html?page=${reached}&amp;code=${encodeURIComponent(summary.code)}`:readerLink(j,summary.code);
+      const readHref=readerLink(j,summary.code,started?reached:null);
       const readLabel=!started?"اقرأ جزءك":atEnd?"راجع جزءك":"تابع القراءة";
       html=`<section class="zt-card" aria-label="جزؤك في الختمة">
         <div class="zt-card-row"><div class="zt-card-text">

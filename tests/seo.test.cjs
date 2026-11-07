@@ -6,7 +6,7 @@ const test=require("node:test");
 const root=path.resolve(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 const {reciters}=require("../src/discovery/catalog.json");
-const {readerRoutes,supported,shareOrigin}=require("../scripts/quran-routes.cjs");
+const {readerRoutes,shareOrigin}=require("../scripts/quran-routes.cjs");
 const reciterName=({display})=>display.replace(/^فضيلة الشيخ\s+/,"");
 const orderedReciters=[...reciters].sort((a,b)=>reciterName(a).localeCompare(reciterName(b),"ar"));
 
@@ -35,21 +35,22 @@ test("every sitemap URL maps to a page with its own canonical",()=>{
 });
 
 test("Quran discovery pages expose useful crawlable links",()=>{
-  const quran=read("quran/index.html");
-  assert.equal((quran.match(/href="\/surah\/\d+\/"/g)||[]).length,114);
+  const quran=read("quran-index/index.html");
+  assert.equal((quran.match(/href="\/quran-read\/\d+\/"/g)||[]).length,114);
   assert.equal((quran.match(/href="\/juz\/\d+\/"/g)||[]).length,30);
   assert.equal((quran.match(/href="\/quran\/reciters\//g)||[]).length,reciters.length);
   const slugs=[...quran.matchAll(/href="\/quran\/reciters\/([^/]+)\/"/g)].map(match=>match[1]);
   assert.deepEqual(slugs,orderedReciters.map(({slug})=>slug));
-  const mulk=read("surah/67/index.html");
-  assert.match(mulk,/سورة الملك بصوت فضيلة الشيخ أيمن سويد/);
-  assert.match(mulk,/qari=Ayman_Sowaid_64kbps/);
-  assert.match(mulk,/if\(!\["code","ayah","qari","open"\]\.some\(k=>p\.has\(k\)\)\)return/);
-  assert.doesNotMatch(mulk,/document\.getElementById\("openReader"\)\.href=u\.href;location\.replace/);
+  for(let n=1;n<=30;n++){
+    const part=read(`juz/${n}/index.html`);
+    assert.ok(part.includes(`id="openReader" href="/quran-read/?juz=${n}"`), `juz ${n}`);
+    assert.ok(part.includes(`new URL("/quran-read/?juz=${n}",location.href)`), `juz ${n} with a khatmah code`);
+  }
+  for(const old of ["reader.html","quran/index.html","surah"])assert.ok(!fs.existsSync(path.join(root,old)),old);
 });
 
 test("Quran, reciter and surah pages use the approved concise copy",()=>{
-  const quran=read("quran/index.html");
+  const quran=read("quran-index/index.html");
   const reciterNames=orderedReciters.map(({display})=>display).join("، و");
   const quranDescription=`اقرأ القرآن العظيم مع التفسير الوجيز للدكتور وهبة الزحيلي، واستمع إلى التلاوات العطرة للقراء الأفاضل: ${reciterNames}.`;
   assert.ok(quran.includes(`<meta name="description" content="${quranDescription}">`));
@@ -71,13 +72,9 @@ test("Quran, reciter and surah pages use the approved concise copy",()=>{
   assert.doesNotMatch(reciter,/استمع إلى تلاوة سور القرآن/);
   assert.doesNotMatch(reciter,/<small>بصوت/);
 
-  const mulk=read("surah/67/index.html");
-  assert.match(mulk,/اقرأ سورة الملك من المصحف الشريف/);
-  assert.match(mulk,/اختر القارئ الذي تود سماع سورة الملك بصوته/);
-  assert.match(mulk,/>فضيلة الشيخ أيمن سويد<\/a>/);
 });
 
-test("reciter honorifics are consistent in every surah description and the reader UI",()=>{
+test("reciter honorifics are consistent in the public index and the reader UI",()=>{
   const honorifics=[
     "فضيلة الشيخ مشاري راشد العفاسي",
     "فضيلة الشيخ أيمن سويد",
@@ -86,19 +83,9 @@ test("reciter honorifics are consistent in every surah description and the reade
     "فضيلة الشيخ محمد صديق المنشاوي",
     "فضيلة الشيخ محمود خليل الحصري"
   ];
-  for(let surah=1;surah<=114;surah++){
-    const html=read(`surah/${surah}/index.html`);
-    const description=(html.match(/<meta name="description" content="([^"]+)"/)||[])[1];
-    assert.ok(description,`surah/${surah}/index.html description`);
-    assert.match(description,/بصوت القراء الأفاضل:/,`surah/${surah}/index.html`);
-    for(const name of honorifics)assert.ok(description.includes(name),`surah/${surah}/index.html -> ${name}`);
-    const name=(html.match(/<title>سورة (.+?) مكتوبة/)||[])[1];
-    const share=`اقرأ سورة ${name} واستمع إليها بصوت نخبة من القراء، مع التفسير الوجيز للدكتور الزحيلي.`;
-    assert.ok(html.includes(`<meta property="og:description" content="${share}">`),`surah/${surah}/index.html og`);
-    assert.ok(html.includes(`<meta name="twitter:description" content="${share}">`),`surah/${surah}/index.html twitter`);
-  }
-
-  const reader=read("reader.html");
+  const index=read("quran-index/index.html");
+  const reader=read("quran-read/index.html");
+  for(const name of honorifics)assert.ok(index.includes(name),name);
   for(const name of honorifics)assert.match(reader,new RegExp(`name:"${name}`));
   assert.match(reader,/name:"فضيلة الشيخ محمد صديق المنشاوي — مجود"/);
   assert.match(reader,/name:"فضيلة الشيخ محمد صديق المنشاوي — مرتل"/);
@@ -140,11 +127,11 @@ test("tafsir cross-references use verse then surah order",()=>{
 });
 
 test("reader accepts a validated reciter deep link",()=>{
-  const reader=read("reader.html");
+  const reader=read("quran-read/index.html");
   assert.match(reader,/<meta name="robots" content="noindex,follow">/);
-  assert.match(reader,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/quran\/">/);
-  assert.match(reader,/<meta property="og:url" content="https:\/\/zad-alkhair\.net\/reader">/);
-  assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/social\/zad-alkhair-reader-share\.jpg">/);
+  assert.match(reader,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/quran-read\/">/);
+  assert.match(reader,/<meta property="og:url" content="https:\/\/zad-alkhair\.net\/quran-read\/">/);
+  assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/social\/zad-alkhair-reader-share-v2\.jpg">/);
   assert.match(reader,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
   assert.match(reader,/if\(entry\.qari&&!entry\.direct\)\{/);
   assert.match(reader,/if\(!entry\.direct&&entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
@@ -154,7 +141,11 @@ test("direct Quran pages boot the same reader and carry their own sharing card",
   for(const {path:route,mode,surah} of readerRoutes){
     const html=read(route.slice(1)+"index.html");
     assert.ok(html.includes(`<link rel="canonical" href="https://zad-alkhair.net${route}">`));
-    assert.match(html,/<script src="\/quran\/runtime\/reader\.js\?v=[a-f0-9]+"><\/script>/);
+    const runtime=/<script src="\/quran\/runtime\/reader\.js\?v=[a-f0-9]+"><\/script>/;
+    if(mode==="read"&&!surah){
+      assert.doesNotMatch(html,runtime);
+      assert.match(html,/function readerEntryParams\(/);
+    }else assert.match(html,runtime);
     assert.doesNotMatch(html,/location\.replace|http-equiv="refresh"/);
     const image=html.match(/<meta property="og:image" content="([^"]+)"/)[1];
     assert.equal(new URL(image).origin,shareOrigin);
@@ -173,8 +164,7 @@ test("direct Quran pages boot the same reader and carry their own sharing card",
 
 test("every local social preview image exists",()=>{
   const htmlFiles=[
-    "index.html","reader.html","install/index.html","quran/index.html","about/index.html","khatmahs/index.html",
-    ...Array.from({length:114},(_,i)=>`surah/${i+1}/index.html`),
+    "index.html","quran-read/index.html","install/index.html","quran-index/index.html","about/index.html","khatmahs/index.html",
     ...Array.from({length:30},(_,i)=>`juz/${i+1}/index.html`),
     ...reciters.map(({slug})=>`quran/reciters/${slug}/index.html`)
   ];
@@ -259,15 +249,14 @@ test("guide pages offer installation once, from the header menu",()=>{
   assert.match(script,/navigator\.clipboard\.writeText\(url\)/);
   assert.doesNotMatch(script,/get\('next'\)/);
 });
-test("new reciter pages and surah links use the exact player IDs and explain whole-surah limits",()=>{
+test("reciter pages link to the player with exact reader IDs and explain whole-surah limits",()=>{
   for(const {slug,id} of reciters){
     const page=read(`quran/reciters/${slug}/index.html`);
-    assert.equal((page.match(new RegExp(`qari=${id}(?:&amp;play=1)?"`,"g"))||[]).length,114);
-    assert.match(read("quran/index.html"),new RegExp(`/quran/reciters/${slug}/`));
+    assert.equal((page.match(new RegExp(`qari=${id}"`,"g"))||[]).length,114);
+    assert.match(read("quran-index/index.html"),new RegExp(`/quran/reciters/${slug}/`));
     for(let n=1;n<=114;n++){
-      const href=supported.has(n)?`/quran-listen/${n}/?qari=${id}`:`qari=${id}&amp;play=1`;
+      const href=`/quran-listen/${n}/?qari=${id}`;
       assert.ok(page.includes(href),`${slug}, surah ${n}`);
-      assert.ok(read(`surah/${n}/index.html`).includes(href),`${n}, ${slug}`);
     }
   }
   assert.match(read("quran/reciters/mahmoud-al-hamoud/index.html"),/متابعة الآيات وتحديد الأجزاء غير متاحين/);

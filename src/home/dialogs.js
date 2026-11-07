@@ -24,7 +24,7 @@ function openSheet(i){
       <div class="grip"></div>
       <h3>الجزء ${ar(i+1)}</h3>
       <div class="range">${JUZ[i]}</div>
-      <a class="readbtn" href="${readLink(i+1)}">
+      <a class="readbtn" href="${readerLink(i+1)}">
         <span class="rb-icon">${BOOK_ICON}</span>
         <span class="rb-text">اقرأ الجزء</span>
         <span class="rb-src">قارئ زاد الخير</span>

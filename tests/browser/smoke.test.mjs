@@ -150,7 +150,7 @@ test("a khatmah card says «افتح الختمة» on a member's device and ope
 
 test("the reader opens on a phone without script errors", async () => {
   const { page, errors, context } = await appPage();
-  await page.goto(BASE + "/reader.html?home=1", { waitUntil: "load" });
+  await page.goto(BASE + "/quran-read/", { waitUntil: "load" });
   await page.waitForTimeout(1500);
   assert.deepEqual(errors, []);
   await context.close();
@@ -184,6 +184,16 @@ test("the bare Quran reading URL opens the reader index and resuming keeps the s
     await page.reload();
     await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
     assert.equal(await page.locator('.quran-index[data-home-mode="1"]').count(), 0);
+
+    await page.goto(BASE + "/juz/8/");
+    await page.locator("#openReader").click();
+    await page.locator('.page[data-page="142"][data-loaded="1"]').waitFor({ state: "attached" });
+    assert.equal(new URL(page.url()).pathname, "/quran-read/");
+    assert.equal(new URL(page.url()).searchParams.get("juz"), "8");
+
+    await page.goto(BASE + "/juz/8/?code=AB12");
+    await page.waitForURL(BASE + "/quran-read/?juz=8&code=AB12");
+    await page.locator('.page[data-page="142"][data-loaded="1"]').waitFor({ state: "attached" });
     assert.deepEqual(errors, []);
   } finally {
     await context.close();
