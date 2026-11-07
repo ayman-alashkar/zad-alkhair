@@ -995,6 +995,12 @@ html:not([data-theme="dark"]) .hizb-ring.start{
   .audio-controls{gap:7px;grid-template-columns:66px 54px 70px 54px 54px 72px}
 }
 
+/* Touch readers turn pages by swiping; the two tool rows use the full dock. */
+@media (hover:none) and (pointer:coarse){
+  .bottom{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"listen tafsir" "shortcuts shortcuts"}
+  .bottom>.navbtn,.desktop-page-nav{display:none}
+}
+
 /* ---------- v37 · native reciter menu contrast ----------
    Native option popups are painted by the browser/OS, so give the option
    surface explicit colors instead of inheriting the player's night palette. */
@@ -2287,8 +2293,8 @@ html .topbar .top-actions{grid-column:3;grid-row:1;gap:7px;min-width:max-content
 html .topbar .iconbtn{width:40px;height:40px;background:var(--reader-raised)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
 html .topbar .iconbtn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:3px}
 html .topbar .iconbtn:active{background:var(--reader-selected)!important}
-html .topbar #bookmarkBtn.marked{color:var(--red);border-color:var(--red)}
-html .topbar #bookmarkBtn.marked svg{fill:currentColor}
+html .bottom #bookmarkBtn.marked{color:var(--red);border-color:var(--red)}
+html .bottom #bookmarkBtn.marked svg{fill:currentColor}
 .reader-context{
   grid-column:2;grid-row:1;justify-self:center;min-width:0;width:100%;max-width:190px;min-height:40px;
   display:grid;align-content:center;gap:1px;padding:4px 7px;border:1px solid var(--reader-line);border-radius:13px;
@@ -2615,7 +2621,7 @@ html[data-theme="dark"] .zl-mini-bar i{background:#C59A4A}
   <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="top-actions">
     <button type="button" class="iconbtn" id="themeBtn" aria-label="الوضع"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg></button>
-    <button type="button" class="iconbtn" id="bookmarkBtn" aria-label="أضف علامة" title="أضف علامة" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg></button>
+    <button type="button" class="iconbtn" id="readerSearchBtn" aria-label="البحث" title="البحث"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></button>
     <button type="button" class="iconbtn zad-return-btn" id="backBtn" aria-label="الصفحة الرئيسية" title="الصفحة الرئيسية"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M11 6h4.5a4.5 4.5 0 1 1 0 9H4"/><path d="M7 12s-3 2.21-3 3s3 3 3 3"/></g></svg></button>
   </div>
 </header>
@@ -2626,7 +2632,7 @@ html[data-theme="dark"] .zl-mini-bar i{background:#C59A4A}
   <button type="button" class="tool primary" id="listenBtn"><span>▶</span><span>استماع</span></button>
   <button type="button" class="navbtn bottom-next" id="nextBtn" aria-label="الصفحة التالية"><svg viewBox="0 0 24 24"><path d="M16 5l-7 7 7 7"/></svg></button>
   <div class="reader-shortcuts">
-    <button type="button" class="tool" id="readerSearchBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg><span>البحث</span></button>
+    <button type="button" class="tool" id="bookmarkBtn" aria-label="أضف علامة" title="أضف علامة" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg><span class="bookmark-label">أضف علامة</span></button>
     <button type="button" class="tool" id="jumpBookmarkBtn" title="الانتقال إلى آخر علامة محفوظة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg><span>الانتقال إلى العلامة</span></button>
   </div>
 </footer>
@@ -3914,6 +3920,7 @@ function syncPageBookmarkButton(){
   btn.setAttribute("aria-pressed",String(marked));
   btn.setAttribute("aria-label",marked?"إزالة العلامة":"أضف علامة");
   btn.title=marked?"إزالة العلامة":"أضف علامة";
+  btn.querySelector(".bookmark-label").textContent=btn.title;
 }
 function setPageBookmark(page,marked){
   const p=Number(page);

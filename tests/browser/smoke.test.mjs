@@ -221,7 +221,8 @@ test("reader shortcuts save and restore page marks, jump directly, and open sear
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
   for (const [label, profile, theme] of [
     ["phone", PHONE, "light"],
-    ["tablet", { viewport: { width: 1024, height: 1366 }, isMobile: true, hasTouch: true }, "dark"]
+    ["tablet", { viewport: { width: 1024, height: 1366 }, isMobile: true, hasTouch: true }, "dark"],
+    ["desktop", { viewport: { width: 1440, height: 900 } }, "light"]
   ]) await t.test(label, async () => {
     const { page, errors, context } = await appPage({ profile });
     const oldAyahs = JSON.stringify([{ page: 8, verse: "2:50", savedAt: 1 }]);
@@ -277,14 +278,27 @@ test("reader shortcuts save and restore page marks, jump directly, and open sear
       const shortcutsFit = await page.evaluate(() => {
         const rect = id => document.getElementById(id).getBoundingClientRect();
         const upper = Math.max(rect("tafsirBtn").bottom, rect("listenBtn").bottom);
-        return ["readerSearchBtn", "jumpBookmarkBtn"].every(id => {
+        return ["bookmarkBtn", "jumpBookmarkBtn"].every(id => {
           const r = rect(id), btn = document.getElementById(id);
           return r.top >= upper && r.left >= 0 && r.right <= innerWidth && r.height >= 44 && r.bottom <= innerHeight + 1 && btn.scrollWidth <= btn.clientWidth;
         });
       });
       assert.ok(shortcutsFit, "both shortcuts fit below tafsir and listening");
+      assert.equal(await page.locator(".top-actions #readerSearchBtn").count(), 1);
+      assert.equal(await page.locator(".reader-shortcuts #bookmarkBtn").count(), 1);
+      assert.equal(await page.locator("#desktopNextBtn").isVisible(), !profile.hasTouch, "desktop keeps arrow navigation; touch readers use swipes");
+      assert.equal(await page.locator("#prevBtn").isVisible(), false);
+      assert.equal(await page.locator("#nextBtn").isVisible(), false);
 
-      await page.goto(BASE + "/quran-read/?page=10");
+      if (profile.hasTouch) {
+        const area = await page.locator('.page[data-page="9"] .page-stage').boundingBox();
+        const y = area.y + area.height * .4;
+        await page.mouse.move(area.x + area.width * .2, y);
+        await page.mouse.down();
+        await page.mouse.move(area.x + area.width * .8, y, { steps: 8 });
+        await page.mouse.up();
+      } else await page.locator("#desktopNextBtn").click();
+      await page.waitForURL(BASE + "/quran-read/?page=10");
       await currentVerse(10).waitFor();
       await showReaderTools(10);
       assert.equal(await ribbon(10).count(), 0);

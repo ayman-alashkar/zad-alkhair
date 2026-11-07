@@ -954,6 +954,12 @@ html:not([data-theme="dark"]) .hizb-ring.start{
   .audio-controls{gap:7px;grid-template-columns:66px 54px 70px 54px 54px 72px}
 }
 
+/* Touch readers turn pages by swiping; the two tool rows use the full dock. */
+@media (hover:none) and (pointer:coarse){
+  .bottom{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"listen tafsir" "shortcuts shortcuts"}
+  .bottom>.navbtn,.desktop-page-nav{display:none}
+}
+
 /* ---------- v37 · native reciter menu contrast ----------
    Native option popups are painted by the browser/OS, so give the option
    surface explicit colors instead of inheriting the player's night palette. */
@@ -2246,8 +2252,8 @@ html .topbar .top-actions{grid-column:3;grid-row:1;gap:7px;min-width:max-content
 html .topbar .iconbtn{width:40px;height:40px;background:var(--reader-raised)!important;color:var(--reader-gold);border-color:var(--reader-line);box-shadow:none}
 html .topbar .iconbtn:focus-visible{outline:2px solid var(--reader-gold);outline-offset:3px}
 html .topbar .iconbtn:active{background:var(--reader-selected)!important}
-html .topbar #bookmarkBtn.marked{color:var(--red);border-color:var(--red)}
-html .topbar #bookmarkBtn.marked svg{fill:currentColor}
+html .bottom #bookmarkBtn.marked{color:var(--red);border-color:var(--red)}
+html .bottom #bookmarkBtn.marked svg{fill:currentColor}
 .reader-context{
   grid-column:2;grid-row:1;justify-self:center;min-width:0;width:100%;max-width:190px;min-height:40px;
   display:grid;align-content:center;gap:1px;padding:4px 7px;border:1px solid var(--reader-line);border-radius:13px;

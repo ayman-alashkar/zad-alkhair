@@ -336,6 +336,7 @@ function syncPageBookmarkButton(){
   btn.setAttribute("aria-pressed",String(marked));
   btn.setAttribute("aria-label",marked?"إزالة العلامة":"أضف علامة");
   btn.title=marked?"إزالة العلامة":"أضف علامة";
+  btn.querySelector(".bookmark-label").textContent=btn.title;
 }
 function setPageBookmark(page,marked){
   const p=Number(page);
