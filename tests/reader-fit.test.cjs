@@ -4,25 +4,42 @@ const fs=require("node:fs");
 const vm=require("node:vm");
 const source=fs.readFileSync(__dirname+"/../src/reader/page-fit.js","utf8");
 
-function fixture(){
+function fixture({width=400,height=800,columnWidth=width,page=42,headerCount=0,normalCount=15}={}){
   const frames=[];
-  const normals=Array.from({length:15},()=>({
+  const normals=Array.from({length:normalCount},()=>({
     style:{},getBoundingClientRect(){const size=parseFloat(this.style.fontSize)||104;return {width:size*16,height:size*1.33}}
   }));
-  const rows=normals.map(inner=>({
+  const surahs=[],basmalas=[],inners=[];
+  for(let i=0;i<headerCount;i++){
+    const banner={style:{},dataset:{glyph:"header"}};
+    const title={style:{},querySelector:()=>banner,
+      getBoundingClientRect(){const size=parseFloat(this.style.fontSize)||108;return {width:size*16,height:Math.max(size*1.08,parseFloat(this.style.minHeight)||0)}}};
+    const basmala={style:{},
+      getBoundingClientRect(){const size=parseFloat(this.style.fontSize)||96;return {width:size*10,height:size*1.25}}};
+    surahs.push(title);basmalas.push(basmala);inners.push(title,basmala);
+    inners.push(...normals.slice(Math.floor(i*normalCount/headerCount),Math.floor((i+1)*normalCount/headerCount)));
+  }
+  if(!headerCount)inners.push(...normals);
+  const rows=inners.map(inner=>({
     querySelector:()=>inner,getBoundingClientRect:()=>({height:inner.getBoundingClientRect().height})
   }));
-  const stage={clientWidth:400,clientHeight:800,scrollTop:0,classList:{remove(){},toggle(){}}};
-  const host={style:{},clientWidth:400,children:rows,querySelectorAll(selector){return selector.includes(":not")?normals:[]}};
+  const classes=new Set();
+  const stage={clientWidth:width,clientHeight:height,scrollTop:0,classList:{
+    remove(name){classes.delete(name)},toggle(name,on){if(on)classes.add(name);else classes.delete(name)},contains:name=>classes.has(name)
+  }};
+  const host={style:{},clientWidth:columnWidth,children:rows,querySelectorAll(selector){
+    return selector.includes(":not")?normals:selector===".surah-line"?surahs:selector===".bismillah-line"?basmalas:[];
+  }};
   const root={isConnected:true,querySelector(selector){return selector===".page-stage"?stage:selector===".mushaf"?host:null}};
   const ctx=vm.createContext({
     document:{querySelector:()=>root},requestAnimationFrame:fn=>frames.push(fn),
     getComputedStyle:()=>({marginTop:"0",marginBottom:"0"}),
     INK_GUARD:.45,MIN_LINE_PX:24,FLOOR_TOLERANCE:.90,
-    surahGlyphAspect:()=>1,renderSurahHeaderCanvas(){}
+    surahGlyphAspect:()=>12,renderSurahHeaderCanvas(){}
   });
   vm.runInContext(source,ctx);
-  return {ctx,root,stage,host,normals,run:()=>vm.runInContext("fitPage(42)",ctx),
+  return {ctx,root,stage,host,normals,surahs,basmalas,run:()=>vm.runInContext(`fitPage(${page})`,ctx),
+    contentHeight:()=>rows.reduce((sum,row)=>sum+row.getBoundingClientRect().height,0)+(parseFloat(host.style.gap)||0)*(rows.length-1),
     frame(){const pending=frames.splice(0);pending.forEach(f=>f())}};
 }
 
@@ -50,4 +67,53 @@ test("a fit queued for a removed page does not mutate it",()=>{
 test("a page with no measurable dimensions keeps its previous font size",()=>{
   const f=fixture();f.normals[0].style.fontSize="22px";f.stage.clientWidth=0;f.run();f.frame();
   assert.equal(f.normals[0].style.fontSize,"22px");
+});
+
+test("comfortable portrait pages keep their approved text size",()=>{
+  const f=fixture();f.run();f.frame();f.frame();
+  assert.ok(Math.abs(parseFloat(f.normals[0].style.fontSize)-24.625)<.001);
+  assert.ok(!f.stage.classList.contains("scrolls"));
+  assert.ok(f.contentHeight()<=f.stage.clientHeight);
+});
+
+test("a short full-page layout reserves space without clipping its last row",()=>{
+  const f=fixture({width:1363,height:859,columnWidth:780});f.run();f.frame();f.frame();
+  assert.ok(parseFloat(f.host.style.gap)>=6);
+  assert.ok(!f.stage.classList.contains("scrolls"));
+  assert.ok(f.contentHeight()<=f.stage.clientHeight);
+  assert.ok(parseFloat(f.normals[0].style.fontSize)>=24);
+});
+
+test("landscape scrolling keeps readable rows and resets only on return to a full page",()=>{
+  const f=fixture({width:844,height:313,columnWidth:780});f.stage.scrollTop=90;
+  f.run();f.frame();f.frame();
+  assert.ok(f.stage.classList.contains("scrolls"));
+  assert.ok(parseFloat(f.host.style.gap)>=6);
+  assert.equal(parseFloat(f.normals[0].style.fontSize),24);
+  assert.equal(f.stage.scrollTop,90);
+  assert.ok(f.contentHeight()>f.stage.clientHeight);
+  f.stage.clientWidth=390;f.stage.clientHeight=767;f.host.clientWidth=386;
+  f.run();f.frame();f.frame();
+  assert.ok(!f.stage.classList.contains("scrolls"));
+  assert.equal(f.stage.scrollTop,0);
+  assert.ok(f.contentHeight()<=f.stage.clientHeight);
+});
+
+test("three Surah banners and their basmalas retain their own reserved height",()=>{
+  const f=fixture({width:844,height:313,columnWidth:780,headerCount:3,normalCount:9});
+  f.run();f.frame();f.frame();
+  assert.ok(f.stage.classList.contains("scrolls"));
+  assert.ok(parseFloat(f.host.style.gap)>=6);
+  for(const title of f.surahs){
+    const banner=title.querySelector("canvas.surah-banner");
+    assert.ok(parseFloat(title.style.minHeight)>=parseFloat(banner.style.width)/12-.001);
+  }
+  f.stage.clientWidth=390;f.stage.clientHeight=767;f.host.clientWidth=386;
+  f.run();f.frame();f.frame();
+  assert.ok(!f.stage.classList.contains("scrolls"));
+  assert.ok(f.contentHeight()<=f.stage.clientHeight);
+  for(const title of f.surahs){
+    const banner=title.querySelector("canvas.surah-banner");
+    assert.ok(parseFloat(title.style.minHeight)>=parseFloat(banner.style.width)/12-.001);
+  }
 });

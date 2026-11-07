@@ -740,6 +740,10 @@ const MIN_LINE_PX=24;
    جزءًا من بكسل صفقةٌ خاسرة: تخسر الصفحةَ كاملةً وتكسب ما لا يكاد يُرى. */
 const FLOOR_TOLERANCE=.90;
 
+// Reserve readable space before choosing the font scale. This is separate
+// from the Surah banner's own height and from the page-edge ink guard.
+const MIN_LINE_GAP=6;
+
 const pageFitJobs=new WeakMap();
 function fitPage(p){
   const root=document.querySelector(`.page[data-page="${p}"]`);
@@ -812,14 +816,19 @@ function fitPage(p){
       bannerExtra+=Math.max(0,widthAtBase/aspect-line.getBoundingClientRect().height);
     });
     const pageH=rawH+bannerExtra+INK_GUARD*(normal[0].getBoundingClientRect().height||base*1.33);
-
     // قيد العرض لا يُخرق أبدًا: تجاوزه يقصّ السطر القرآني، وهو ما لا يُحتمل.
     // وقيد الارتفاع يُخرق عند الضرورة وحدها، فيتحوّل الأمر إلى تمرير رأسي بدل
     // خطٍّ لا يُقرأ. ولذلك تُقيَّد الأرضية بقيد العرض نفسه، ولا يُعمل بها إلا
     // حين ينزل المقاس عنها نزولًا معتبرًا.
     const wScale=Math.min(1,targetW/maxW);
-    const hScale=targetH/pageH;
     const floorScale=Math.min(MIN_LINE_PX/base,wScale);
+    // Comfortable portrait pages keep their existing size and spacing. A
+    // short reading area, or a page that already needs scrolling, reserves
+    // breathing room before the scale is solved. Opening pages stay intact.
+    const needsSpacing=stage.clientWidth>stage.clientHeight||targetH/pageH<floorScale*FLOOR_TOLERANCE;
+    const minGap=p>=3&&rows.length>1&&needsSpacing?MIN_LINE_GAP:0;
+    const gapHeight=minGap*Math.max(0,rows.length-1);
+    const hScale=Math.max(0,(targetH-gapHeight)/pageH);
     const scale=hScale<floorScale*FLOOR_TOLERANCE?floorScale:Math.min(wScale,hScale);
     const overflows=scale>hScale+1e-4;
 
@@ -844,6 +853,7 @@ function fitPage(p){
     stage.classList.toggle("scrolls",overflows);
     if(!overflows)stage.scrollTop=0;
     host.style.justifyContent=overflows?"flex-start":"center";
+    host.style.gap=minGap+"px";
 
     // The line spacing is set in this same frame. Setting it one frame later let
     // the browser paint the page once with no spacing (lines drawn together)
@@ -853,7 +863,7 @@ function fitPage(p){
       const rowHeight=rows.reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
       const usable=stage.clientHeight*.955;
       const spare=Math.max(0,usable-rowHeight);
-      const gap=Math.max(0,Math.min(18,spare/(rows.length-1)));
+      const gap=Math.max(minGap,Math.min(18,spare/(rows.length-1)));
       host.style.gap=gap.toFixed(2)+"px";
     }
 
