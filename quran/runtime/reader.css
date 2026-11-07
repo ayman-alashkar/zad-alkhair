@@ -30,7 +30,8 @@
   --brand:#0F5C50; --brand-strong:#0A473E; --brand-soft:#DDF1EA;
   --green:#1B705F; --green-deep:#0A473E; --green-hi:#278573;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:#F4E8CA; --red:#B95157;
-  --paper:#F5F0E4; --quran:#0F1C17; --ayah-number:#80591F; --muted:#746F63;
+  --paper:#F5F0E4; --quran:#0B1611; --ayah-number:#634314; --muted:#746F63;
+  --quran-stroke:.12px; --ayah-stroke:.18px;
   --chrome:#FFFCF4; --chrome-text:#18362F; --border:#DED3BD; --line:#DED3BD;
   --select:rgba(40,122,101,.12); --select-line:rgba(197,154,74,.30);
   --sheet:#FFFCF4; --shadow:rgba(0,0,0,.18);
@@ -45,6 +46,7 @@ html[data-theme="dark"]{
   --green:#49A18C; --green-deep:#0A473E; --green-hi:#49A18C;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:rgba(228,201,128,.12); --red:#D77B80;
   --paper:#061F1D; --quran:#FFF9EA; --ayah-number:#E4C980; --muted:rgba(255,249,234,.70);
+  --quran-stroke:.08px; --ayah-stroke:.12px;
   --chrome:#082D29; --chrome-text:#FFF9EA; --border:rgba(228,201,128,.24); --line:rgba(228,201,128,.24);
   --select:rgba(73,161,140,.18); --select-line:rgba(228,201,128,.28);
   --sheet:#0D3C35; --shadow:rgba(0,0,0,.48);
@@ -146,6 +148,7 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
    the QCF line metrics used by fitPage(). */
 .bismillah-line{font-family:"QCF4_Hafs_01";line-height:1.25;margin:.04em 0 .12em;position:relative;color:var(--quran);transform:translateY(3px)}
 .bismillah-original{display:inline}.bismillah-desktop{display:none}
+.bismillah-original,.bismillah-desktop{-webkit-text-stroke:var(--quran-stroke) currentColor}
 .verse-segment{
   display:inline-flex;direction:rtl;align-items:center;
   user-select:none;-webkit-user-select:none;touch-action:pan-y;
@@ -156,9 +159,12 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 .word{
   display:inline-block;direction:rtl;color:var(--quran);
   line-height:1.33;position:relative;
+  /* A small ink increase also reaches the diacritics and pause signs inside
+     each source glyph, without changing its advance width or page fitting. */
+  -webkit-text-stroke:var(--quran-stroke) currentColor;
 }
 .word.allah{color:var(--red)}
-.word.end{color:var(--ayah-number)}
+.word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
   position:absolute;left:22px;bottom:calc(12px + env(safe-area-inset-bottom));
   color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:17px
