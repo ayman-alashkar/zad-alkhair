@@ -184,7 +184,8 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
       }));
       const measure = () => page.locator('.page[data-page="9"]').evaluate(root => {
         const stage = root.querySelector(".page-stage"), bounds = stage.getBoundingClientRect();
-        const lines = [...root.querySelectorAll(".line-inner")];
+        const lines = [...root.querySelectorAll(".line-inner")], host = root.querySelector(".mushaf");
+        const columnWidth = host.getBoundingClientRect().width;
         const contrast = (foreground, background) => {
           const luminance = color => {
             const [r, g, b] = color.match(/[\d.]+/g).slice(0, 3).map(x => {
@@ -198,8 +199,11 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         const background = getComputedStyle(root).backgroundColor;
         return {
           fontSize: parseFloat(getComputedStyle(lines[0]).fontSize),
-          columnWidth: root.querySelector(".mushaf").getBoundingClientRect().width,
-          gap: parseFloat(getComputedStyle(root.querySelector(".mushaf")).rowGap),
+          columnWidth,
+          widthFit: getComputedStyle(host).getPropertyValue("--mushaf-fit-width").trim() === "1",
+          widthUsed: Math.max(...lines.map(line => line.getBoundingClientRect().width)) / columnWidth,
+          gap: parseFloat(getComputedStyle(host).rowGap),
+          edgePadding: [host.style.paddingTop, host.style.paddingBottom],
           scrolls: stage.classList.contains("scrolls"),
           scrollTop: stage.scrollTop,
           fitsWidth: lines.every(line => {
@@ -218,6 +222,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         await page.locator('.page[data-page="9"] .word.end').first().waitFor();
         await page.waitForTimeout(300);
         const portrait = await measure();
+        assert.ok(!portrait.widthFit, "portrait retains the complete-page fitting mode");
         assert.ok(portrait.fits, "all fifteen lines fit the portrait reading area");
         assert.ok(portrait.textContrast >= 7, "Quran text has strong contrast");
         assert.ok(portrait.numberContrast >= 4.5, "verse numbers remain legible in either theme");
@@ -225,6 +230,11 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         await page.setViewportSize({ width: height, height: width });
         await page.waitForTimeout(300);
         const landscape = await measure();
+        assert.ok(landscape.widthFit, "touch landscape activates width fitting");
+        assert.ok(landscape.columnWidth >= height - 33, "landscape uses the screen width with small side margins");
+        assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, "the longest Quran line fills its column");
+        assert.ok(landscape.fontSize > portrait.fontSize * 1.3, "landscape makes the text noticeably larger");
+        assert.ok(landscape.scrolls, "the enlarged landscape page scrolls vertically");
         assert.ok(landscape.gap >= 6, "short reading areas keep space between rows");
         assert.ok(landscape.fitsWidth, "rotation never clips the sides of a line");
         if (landscape.scrolls) {
@@ -237,6 +247,8 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(300);
         const restored = await measure();
+        assert.ok(!restored.widthFit, "portrait leaves width fitting");
+        assert.deepEqual(restored.edgePadding, ["", ""], "portrait clears the enlarged ink padding");
         assert.ok(restored.fits, "returning to portrait preserves the complete page");
         assert.equal(restored.scrollTop, 0, "portrait has no leftover scroll offset");
         assert.ok(Math.abs(restored.fontSize - portrait.fontSize) < .1, "rotation does not accumulate text shrinkage");

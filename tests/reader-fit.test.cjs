@@ -4,7 +4,7 @@ const fs=require("node:fs");
 const vm=require("node:vm");
 const source=fs.readFileSync(__dirname+"/../src/reader/page-fit.js","utf8");
 
-function fixture({width=400,height=800,columnWidth=width,page=42,headerCount=0,normalCount=15}={}){
+function fixture({width=400,height=800,columnWidth=width,page=42,headerCount=0,normalCount=15,widthFit=false}={}){
   const frames=[];
   const normals=Array.from({length:normalCount},()=>({
     style:{},getBoundingClientRect(){const size=parseFloat(this.style.fontSize)||104;return {width:size*16,height:size*1.33}}
@@ -27,13 +27,13 @@ function fixture({width=400,height=800,columnWidth=width,page=42,headerCount=0,n
   const stage={clientWidth:width,clientHeight:height,scrollTop:0,classList:{
     remove(name){classes.delete(name)},toggle(name,on){if(on)classes.add(name);else classes.delete(name)},contains:name=>classes.has(name)
   }};
-  const host={style:{},clientWidth:columnWidth,children:rows,querySelectorAll(selector){
+  const host={style:{},clientWidth:columnWidth,widthFit,children:rows,querySelectorAll(selector){
     return selector.includes(":not")?normals:selector===".surah-line"?surahs:selector===".bismillah-line"?basmalas:[];
   }};
   const root={isConnected:true,querySelector(selector){return selector===".page-stage"?stage:selector===".mushaf"?host:null}};
   const ctx=vm.createContext({
     document:{querySelector:()=>root},requestAnimationFrame:fn=>frames.push(fn),
-    getComputedStyle:()=>({marginTop:"0",marginBottom:"0"}),
+    getComputedStyle:()=>({marginTop:"0",marginBottom:"0",getPropertyValue:()=>host.widthFit?"1":"0"}),
     INK_GUARD:.45,MIN_LINE_PX:24,FLOOR_TOLERANCE:.90,
     surahGlyphAspect:()=>12,renderSurahHeaderCanvas(){}
   });
@@ -115,5 +115,52 @@ test("three Surah banners and their basmalas retain their own reserved height",(
   for(const title of f.surahs){
     const banner=title.querySelector("canvas.surah-banner");
     assert.ok(parseFloat(title.style.minHeight)>=parseFloat(banner.style.width)/12-.001);
+  }
+});
+
+test("touch landscape fills the available width and restores the portrait fit",()=>{
+  const f=fixture({width:844,height:313,columnWidth:812,widthFit:true});
+  f.run();f.frame();f.frame();
+  const size=parseFloat(f.normals[0].style.fontSize);
+  assert.ok(size>48);
+  assert.ok(size*16>=f.host.clientWidth*.98&&size*16<=f.host.clientWidth);
+  assert.ok(f.stage.classList.contains("scrolls"));
+  assert.ok(parseFloat(f.host.style.gap)>=size*.15);
+  assert.ok(parseFloat(f.host.style.paddingTop)>=10);
+  assert.ok(parseFloat(f.host.style.paddingBottom)>=26);
+  f.stage.scrollTop=300;
+  f.stage.clientWidth=390;f.stage.clientHeight=767;f.host.clientWidth=386;f.host.widthFit=false;
+  f.run();f.frame();f.frame();
+  const portrait=fixture({width:390,height:767,columnWidth:386});portrait.run();portrait.frame();portrait.frame();
+  assert.equal(f.normals[0].style.fontSize,portrait.normals[0].style.fontSize);
+  assert.ok(!f.stage.classList.contains("scrolls"));
+  assert.equal(f.stage.scrollTop,0);
+  assert.equal(f.host.style.paddingTop,"");
+  assert.equal(f.host.style.paddingBottom,"");
+});
+
+test("wide touch screens can enlarge beyond the measurement font size",()=>{
+  const f=fixture({width:2200,height:900,columnWidth:2168,widthFit:true});
+  f.run();f.frame();f.frame();
+  const size=parseFloat(f.normals[0].style.fontSize);
+  assert.ok(size>104);
+  assert.ok(size*16>=f.host.clientWidth*.98&&size*16<=f.host.clientWidth);
+  assert.ok(f.stage.classList.contains("scrolls"));
+});
+
+test("width fitting preserves title reservations on opening and multi-Surah pages",()=>{
+  for(const page of [1,2,604]){
+    const f=fixture({width:844,height:313,columnWidth:812,widthFit:true,page,
+      headerCount:page===604?3:1,normalCount:page===604?9:6});
+    f.run();f.frame();f.frame();
+    const size=parseFloat(f.normals[0].style.fontSize);
+    assert.ok(size>48);
+    assert.ok(parseFloat(f.host.style.gap)>=6);
+    assert.ok(f.stage.classList.contains("scrolls"));
+    for(const title of f.surahs){
+      const banner=title.querySelector("canvas.surah-banner");
+      assert.ok(parseFloat(title.style.minHeight)>=parseFloat(banner.style.width)/12-.001);
+    }
+    assert.ok(f.basmalas.every(line=>parseFloat(line.style.fontSize)>40));
   }
 });

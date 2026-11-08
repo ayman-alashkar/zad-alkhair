@@ -140,6 +140,7 @@ button{cursor:pointer}
 .page-stage.special{align-items:center}
 .page-stage.full{align-items:center;padding-top:0}
 .mushaf{
+  --mushaf-fit-width:0;
   width:min(99.2vw,780px);max-width:100%;height:100%;direction:rtl;
   display:flex;flex-direction:column;align-items:stretch;justify-content:center;
   transform-origin:center center;
@@ -150,6 +151,11 @@ button{cursor:pointer}
   .mushaf{width:min(calc(100vw - 32px),1120px)}
   .page-meta{font-size:19px}
   .page-no{font-size:19px}
+}
+/* A rotated phone or tablet reads at the available width, with vertical
+   scrolling for the rest of the page. Portrait retains the approved fit. */
+@media (orientation:landscape) and (hover:none) and (pointer:coarse){
+  .mushaf{--mushaf-fit-width:1;width:calc(100vw - 32px)}
 }
 .line{
   width:100%;display:flex;justify-content:center;align-items:center;
@@ -457,9 +463,8 @@ html[data-theme="dark"] .quran-index{--index-separator:color-mix(in srgb,var(--u
 .quran-index-tab.active:after{content:"";position:absolute;left:18%;right:18%;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--ui-gold)}
 .quran-index-scroll{flex:1 1 auto;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-bottom:calc(14px + env(safe-area-inset-bottom));scrollbar-width:none;touch-action:pan-y}
 .quran-index-scroll::-webkit-scrollbar{display:none}
-/* No scroll bars on panels and lists, on phone or computer (as on home). The
-   Mushaf page keeps its bar in the rare emergency-scroll state
-   (.page-stage.scrolls), where it is the only sign that the page continues. */
+/* No scroll bars on panels and lists, on phone or computer (as on home). A
+   scrolling Mushaf page keeps its bar as a sign that the page continues. */
 :not(.page-stage){scrollbar-width:none}
 :not(.page-stage)::-webkit-scrollbar{display:none}
 .quran-index-row{width:100%;min-height:78px;border:0;background:transparent;color:var(--quran);padding:9px 22px 9px 21px;display:grid;grid-template-columns:44px minmax(0,1fr) 48px;gap:11px;align-items:center;text-align:right}
@@ -1247,12 +1252,12 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 
 /* ---------- v78 · اكتمال الصفحة على أيّ شاشة ----------
    نموذج قراءة واحد لكل الأجهزة: الصفحة تُلاءم عرضًا وارتفاعًا معًا، فتبقى
-   صفحةً كاملة كما في المصحف. لا صلة للتخطيط بنوع المؤشّر ولا بعرض النافذة؛
-   المسألة هندسية بحتة تحسمها fitPage().
+   صفحةً كاملة كما في المصحف. أفقي اللمس يستفيد من العرض والتمرير، وتختار
+   fitPage() المقياس المناسب لكل حالة.
 
-   التمرير مخرج طوارئ لا أصل: تُضاف .scrolls إلى صفحةٍ بعينها حين تعجز عن
-   الاكتمال بحجم مقروء (نافذة قصيرة جدًّا، أو تكبير شديد)، وتُنزع عنها متى
-   اتّسع المسرح. لا تمسّ هذه الحالة أي صفحة أخرى. */
+   تُضاف .scrolls إلى صفحةٍ بعينها عند القراءة بعرض الشاشة في أفقي اللمس،
+   أو حين تعجز عن الاكتمال بحجم مقروء. وتُنزع عنها متى عادت ملاءمة الصفحة
+   كاملةً. لا تمسّ هذه الحالة أي صفحة أخرى. */
 .page-stage.scrolls{
   overflow-x:hidden;
   overflow-y:auto;
@@ -3506,11 +3511,14 @@ function fitPage(p){
     stage.classList.remove("scrolls");
     host.style.justifyContent="center";
     host.style.gap="0px";
+    host.style.paddingTop="";
+    host.style.paddingBottom="";
     surahs.forEach(x=>x.style.minHeight="");
 
     // Measure the responsive Mushaf column rather than imposing a second,
     // fixed desktop width on tablets. Keep space for ink at either edge.
     const targetW=Math.min(stage.clientWidth*.985,host.clientWidth*.995);
+    const widthFit=getComputedStyle(host).getPropertyValue("--mushaf-fit-width").trim()==="1";
     const targetH=stage.clientHeight*.955;
     const maxW=Math.max(...normal.map(x=>x.getBoundingClientRect().width),1);
 
@@ -3542,21 +3550,22 @@ function fitPage(p){
       banners.push({line,banner,aspect});
       bannerExtra+=Math.max(0,widthAtBase/aspect-line.getBoundingClientRect().height);
     });
-    const pageH=rawH+bannerExtra+INK_GUARD*(normal[0].getBoundingClientRect().height||base*1.33);
-    // قيد العرض لا يُخرق أبدًا: تجاوزه يقصّ السطر القرآني، وهو ما لا يُحتمل.
-    // وقيد الارتفاع يُخرق عند الضرورة وحدها، فيتحوّل الأمر إلى تمرير رأسي بدل
-    // خطٍّ لا يُقرأ. ولذلك تُقيَّد الأرضية بقيد العرض نفسه، ولا يُعمل بها إلا
-    // حين ينزل المقاس عنها نزولًا معتبرًا.
-    const wScale=Math.min(1,targetW/maxW);
+    const inkGuard=INK_GUARD*(normal[0].getBoundingClientRect().height||base*1.33);
+    const pageH=rawH+bannerExtra+inkGuard;
+    // قيد العرض لا يُخرق: تجاوزه يقصّ السطر القرآني. في أفقي اللمس يتبع
+    // المقاس العرض وحده. وفي بقية الأوضاع تُحفظ الصفحة كاملةً، إلا حين
+    // ينزل الخط عن الحد المقروء نزولًا معتبرًا فتُفتح للتمرير.
+    const wScale=widthFit?targetW/maxW:Math.min(1,targetW/maxW);
     const floorScale=Math.min(MIN_LINE_PX/base,wScale);
     // Comfortable portrait pages keep their existing size and spacing. A
     // short reading area, or a page that already needs scrolling, reserves
-    // breathing room before the scale is solved. Opening pages stay intact.
-    const needsSpacing=stage.clientWidth>stage.clientHeight||targetH/pageH<floorScale*FLOOR_TOLERANCE;
-    const minGap=p>=3&&rows.length>1&&needsSpacing?MIN_LINE_GAP:0;
+    // breathing room before the scale is solved. Opening pages stay intact
+    // outside the explicit landscape width-reading mode.
+    const needsSpacing=widthFit||stage.clientWidth>stage.clientHeight||targetH/pageH<floorScale*FLOOR_TOLERANCE;
+    const minGap=(p>=3||widthFit)&&rows.length>1&&needsSpacing?(widthFit?Math.max(MIN_LINE_GAP,base*wScale*.15):MIN_LINE_GAP):0;
     const gapHeight=minGap*Math.max(0,rows.length-1);
     const hScale=Math.max(0,(targetH-gapHeight)/pageH);
-    const scale=hScale<floorScale*FLOOR_TOLERANCE?floorScale:Math.min(wScale,hScale);
+    const scale=widthFit?wScale:hScale<floorScale*FLOOR_TOLERANCE?floorScale:Math.min(wScale,hScale);
     const overflows=scale>hScale+1e-4;
 
     // Exactly the same page scale is applied to Quran lines, QCF title metrics,
@@ -3581,6 +3590,12 @@ function fitPage(p){
     if(!overflows)stage.scrollTop=0;
     host.style.justifyContent=overflows?"flex-start":"center";
     host.style.gap=minGap+"px";
+    if(widthFit&&overflows){
+      // The original ink guard grows with the enlarged glyphs, so the first
+      // diacritics and the last verse marker remain inside the scroll area.
+      host.style.paddingTop=Math.ceil(Math.max(10,inkGuard*scale/2))+"px";
+      host.style.paddingBottom=Math.ceil(Math.max(26,inkGuard*scale))+"px";
+    }
 
     // The line spacing is set in this same frame. Setting it one frame later let
     // the browser paint the page once with no spacing (lines drawn together)
