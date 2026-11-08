@@ -156,6 +156,62 @@ test("the reader opens on a phone without script errors", async () => {
   await context.close();
 });
 
+test("the collapsed player can move without opening and stays reachable after resizing", async t => {
+  for (const [name, profile] of [["phone", PHONE], ["desktop", { viewport: { width: 1440, height: 900 } }]]) {
+    await t.test(name, async () => {
+      const { page, errors, context } = await appPage({ profile });
+      try {
+        await page.goto(BASE + "/quran-read/?page=9", { waitUntil: "load" });
+        // Expose only the collapsed UI; no live recording is needed for this gesture.
+        await page.evaluate(() => document.body.classList.add("player-on"));
+        const fab = page.locator("#audioFab"), panel = page.locator("#audioPanel");
+        const bounds = () => fab.boundingBox();
+        const opened = () => panel.isVisible();
+        const dragTo = async (x, y) => {
+          const box = await bounds();
+          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+          await page.mouse.down();
+          await page.mouse.move(x, y, { steps: 8 });
+          await page.mouse.up();
+        };
+        assert.equal(await fab.evaluate(el => getComputedStyle(el).touchAction), "none");
+        await dragTo(2, 2);
+        assert.equal(await opened(), false, "dragging does not open the player");
+        const topLeft = await bounds();
+        assert.ok(topLeft.x >= 13.5 && topLeft.y >= 13.5, "control stays inside the top and left edges");
+        const { width, height } = page.viewportSize();
+        await dragTo(width - 2, height - 2);
+        assert.equal(await opened(), false, "release near the other corner is still a drag");
+        const bottomRight = await bounds();
+        assert.ok(bottomRight.x + bottomRight.width <= width - 13.5);
+        assert.ok(bottomRight.y + bottomRight.height <= height - 13.5);
+
+        // Small finger movement is a tap, and expanding/collapsing keeps the position.
+        const centerX = bottomRight.x + bottomRight.width / 2, centerY = bottomRight.y + bottomRight.height / 2;
+        await page.mouse.move(centerX, centerY);
+        await page.mouse.down();
+        await page.mouse.move(centerX + 2, centerY + 1);
+        await page.mouse.up();
+        assert.equal(await opened(), true, "a tap with small movement opens the player");
+        await page.locator("#collapsePlayer").click();
+        assert.deepEqual(await bounds(), bottomRight, "the moved position survives opening the player");
+
+        const resized = name === "phone" ? { width: 844, height: 390 } : { width: 390, height: 844 };
+        await page.setViewportSize(resized);
+        const afterResize = await bounds();
+        assert.ok(afterResize.x >= 13.5 && afterResize.y >= 13.5);
+        assert.ok(afterResize.x + afterResize.width <= resized.width - 13.5);
+        assert.ok(afterResize.y + afterResize.height <= resized.height - 13.5);
+        await fab.press("Enter");
+        assert.equal(await opened(), true, "native keyboard activation remains available");
+        assert.deepEqual(errors, []);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
 test("Quran text and verse numbers stay readable when a phone or tablet rotates", async t => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));

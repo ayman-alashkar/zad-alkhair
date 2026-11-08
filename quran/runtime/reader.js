@@ -2046,6 +2046,43 @@ function showPlayer(expand=true){
 }
 function collapsePlayer(){document.body.classList.remove("player-expanded")}
 function expandPlayer(){if(document.body.classList.contains("player-on"))document.body.classList.add("player-expanded")}
+/* Move the collapsed control without seeking, pausing, or opening the player. */
+function installAudioFabDrag(){
+  const fab=document.getElementById("audioFab");
+  let drag=null,suppressClick=false;
+  fab.addEventListener("pointerdown",e=>{
+    if(drag||!e.isPrimary||e.button!==0)return;
+    const rect=fab.getBoundingClientRect();
+    drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:rect.left,top:rect.top,moved:false};
+    suppressClick=false;
+    fab.setPointerCapture(e.pointerId);
+  });
+  fab.addEventListener("pointermove",e=>{
+    if(!drag||e.pointerId!==drag.id)return;
+    const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(!drag.moved&&Math.hypot(dx,dy)<6)return;
+    drag.moved=true;
+    fab.style.setProperty("--audio-fab-x",(drag.left+dx)+"px");
+    fab.style.setProperty("--audio-fab-y",(drag.top+dy)+"px");
+    fab.classList.add("is-positioned","is-dragging");
+    e.preventDefault();
+  });
+  const finish=e=>{
+    if(!drag||e.pointerId!==drag.id)return;
+    suppressClick=drag.moved;
+    drag=null;
+    fab.classList.remove("is-dragging");
+    if(fab.hasPointerCapture(e.pointerId))fab.releasePointerCapture(e.pointerId);
+  };
+  fab.addEventListener("pointerup",finish);
+  fab.addEventListener("pointercancel",finish);
+  fab.addEventListener("lostpointercapture",finish);
+  fab.onclick=e=>{
+    if(suppressClick&&e.detail!==0){suppressClick=false;e.preventDefault();return}
+    suppressClick=false;
+    expandPlayer();
+  };
+}
 function stopPlayer(){
   playbackWanted=false;
   clearTimeout(audioRetryTimer);audioRetryTimer=null;
@@ -2411,7 +2448,7 @@ async function startSelected(){
   await playCurrent(true);
 }
 document.getElementById("listenBtn").onclick=startSelected;
-document.getElementById("audioFab").onclick=expandPlayer;
+installAudioFabDrag();
 document.getElementById("collapsePlayer").onclick=collapsePlayer;
 document.getElementById("stopPlayer").onclick=stopPlayer;
 document.getElementById("panelPlay").onclick=async()=>{

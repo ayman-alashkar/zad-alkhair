@@ -278,12 +278,21 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 
 /* ---------- Madinah-style collapsible audio ---------- */
 .audio-fab{
+  --audio-fab-size:54px;
   position:fixed;z-index:58;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));
-  width:54px;height:54px;border:0;border-radius:50%;
+  width:var(--audio-fab-size);height:var(--audio-fab-size);border:0;border-radius:50%;
   background:linear-gradient(145deg,#C59A4A,#9B702D);
   color:#FFF9EA;display:none;align-items:center;justify-content:center;
   box-shadow:0 10px 28px rgba(0,0,0,.28),0 0 0 7px color-mix(in srgb,var(--gold) 11%,transparent);
+  touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
 }
+/* CSS keeps the last position reachable after rotation, including safe areas. */
+.audio-fab.is-positioned{
+  right:auto;bottom:auto;
+  left:clamp(calc(14px + env(safe-area-inset-left)),var(--audio-fab-x),calc(100% - var(--audio-fab-size) - 14px - env(safe-area-inset-right)));
+  top:clamp(calc(14px + env(safe-area-inset-top)),var(--audio-fab-y),calc(100% - var(--audio-fab-size) - 14px - env(safe-area-inset-bottom)));
+}
+.audio-fab.is-dragging{cursor:grabbing}
 body.player-on:not(.player-expanded) .audio-fab{display:flex}
 .wave{display:flex;align-items:center;gap:3px;height:24px}
 .wave i{display:block;width:3px;border-radius:9px;background:currentColor;height:8px;opacity:.96}

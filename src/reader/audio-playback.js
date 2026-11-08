@@ -244,7 +244,7 @@ async function startSelected(){
   await playCurrent(true);
 }
 document.getElementById("listenBtn").onclick=startSelected;
-document.getElementById("audioFab").onclick=expandPlayer;
+installAudioFabDrag();
 document.getElementById("collapsePlayer").onclick=collapsePlayer;
 document.getElementById("stopPlayer").onclick=stopPlayer;
 document.getElementById("panelPlay").onclick=async()=>{
