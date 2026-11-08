@@ -3463,7 +3463,6 @@ audio.addEventListener("durationchange",listenApplyPendingSeek);
 /* ---------- theme + tap states ---------- */
 function setTheme(t){
   document.documentElement.dataset.theme=t;storageSet(STORAGE_KEYS.theme,t);
-  document.querySelector('meta[name="theme-color"]').content=t==="dark"?"#061F1D":"#F5F0E4";
   document.getElementById("themeBtn").innerHTML=t==="dark"
     ?'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>'
     :'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2 12h2M20 12h2M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5"/></svg>';
