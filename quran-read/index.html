@@ -1021,6 +1021,27 @@ html:not([data-theme="dark"]) .hizb-ring.start{
   .bottom{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"listen tafsir" "shortcuts shortcuts"}
   .bottom>.navbtn,.desktop-page-nav{display:none}
 }
+/* Larger touch screens get readable controls in either orientation. The
+   short-side bounds keep ordinary phones and mouse-driven computers intact. */
+@media (min-width:600px) and (min-height:600px) and (hover:none) and (pointer:coarse){
+  .bottom{
+    --tablet-tool-height:clamp(56px,6vmin,64px);
+    --tablet-tool-icon:clamp(22px,2.4vmin,26px);
+    gap:clamp(8px,1vmin,10px);
+  }
+  .bottom .tool{
+    height:var(--tablet-tool-height);min-height:var(--tablet-tool-height);
+    font-size:clamp(14px,1.5vmin,16px);border-radius:clamp(14px,1.6vmin,17px);
+    gap:clamp(7px,.8vmin,10px);padding-inline:clamp(12px,1.5vmin,18px);
+  }
+  .bottom .tool svg{
+    width:var(--tablet-tool-icon);height:var(--tablet-tool-icon);flex-basis:var(--tablet-tool-icon);
+  }
+  .bottom #listenBtn>span:first-child{font-size:var(--tablet-tool-icon);line-height:1}
+}
+@media (min-width:900px) and (min-height:600px) and (hover:none) and (pointer:coarse){
+  .bottom{width:min(680px,calc(100vw - 80px))}
+}
 
 /* ---------- v37 · native reciter menu contrast ----------
    Native option popups are painted by the browser/OS, so give the option
