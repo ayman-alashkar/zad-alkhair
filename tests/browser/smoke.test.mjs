@@ -280,6 +280,9 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
         if (profile.hasTouch) await last.tap({ position }); else await last.click({ position });
         await page.waitForTimeout(220);
         assert.equal(await page.locator("body.reader-tools-top").count(), 1, "low taps put the tools at the top");
+        const toolsStyle = await toolbar.evaluate(el => ({ opacity: getComputedStyle(el).opacity, pointerEvents: getComputedStyle(el).pointerEvents }));
+        assert.ok(Number(toolsStyle.opacity) > .99, "the relocated tools finish appearing");
+        assert.notEqual(toolsStyle.pointerEvents, "none", "the relocated tools accept the next deliberate touch");
         const toolsBox = await toolbar.boundingBox(), headerBox = await page.locator(".topbar").boundingBox();
         assert.ok(toolsBox.y >= headerBox.y + headerBox.height + 3, "tools clear the header");
         assert.ok(toolsBox.y + toolsBox.height < point.y - 8, "tools clear the selecting finger and text");
