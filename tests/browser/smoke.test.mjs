@@ -255,10 +255,26 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
         await page.waitForTimeout(300);
         await stage.evaluate(el => { el.scrollTop = el.scrollHeight; });
         const last = root.locator(".line:last-child .verse-segment").first();
-        const box = await last.boundingBox(), position = { x: box.width / 2, y: box.height - 2 };
-        const point = { x: box.x + position.x, y: box.y + position.y };
         const toolbar = page.locator(".bottom");
-        const before = await toolbar.evaluate(el => ({ top: el.offsetTop, height: el.offsetHeight }));
+        const tapGeometry = async () => {
+          const box = await last.boundingBox(), position = { x: box.width / 2, y: box.height - 2 };
+          return { position, point: { x: box.x + position.x, y: box.y + position.y }, before: await toolbar.evaluate(el => ({ top: el.offsetTop, height: el.offsetHeight })) };
+        };
+        let geometry = await tapGeometry();
+        // Neutral sample text leaves extra space on a tall phone. Confirm
+        // that it keeps the bottom dock, then use a shorter portrait viewport
+        // to exercise an actual collision without changing the page layout.
+        if (name === "phone" && geometry.point.y < geometry.before.top - 8) {
+          await last.tap({ position: geometry.position });
+          assert.equal(await page.locator("body.reader-tools-top").count(), 0, "a clear last row keeps the bottom dock");
+          assert.equal(await page.locator(".backdrop,body.player-on").count(), 0);
+          await last.tap({ position: geometry.position });
+          await page.setViewportSize({ width: profile.viewport.width, height: 640 });
+          await page.waitForTimeout(300);
+          await stage.evaluate(el => { el.scrollTop = el.scrollHeight; });
+          geometry = await tapGeometry();
+        }
+        const { position, point, before } = geometry;
         assert.ok(point.y >= before.top - 8, "fixture taps a line inside the actual bottom toolbar area");
         const scrollBefore = await stage.evaluate(el => el.scrollTop);
         if (profile.hasTouch) await last.tap({ position }); else await last.click({ position });
