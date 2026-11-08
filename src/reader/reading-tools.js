@@ -53,11 +53,12 @@ function loadList(key){
   const x=storageJsonGet(key,[]);return Array.isArray(x)?x:[];
 }
 function saveList(key,list){return storageJsonSet(key,list)}
+const RECENT_VISITS_LIMIT=5;
 function archivePreviousVisit(item){
   if(!item||!Number.isFinite(+item.page))return;
   const key=STORAGE_KEYS.recentVisits,list=loadList(key);
   list.unshift({page:+item.page,savedAt:+item.savedAt||Date.now()});
-  saveList(key,list.slice(0,3));
+  saveList(key,list.slice(0,RECENT_VISITS_LIMIT));
 }
 function saveLastPosition(){
   storageJsonSet(STORAGE_KEYS.lastPosition,{page:currentPage,savedAt:Date.now()});
@@ -131,6 +132,7 @@ function updatePage(animate=true,savePosition=true){
   document.getElementById("desktopPrevBtn").disabled=currentPage===1;
   document.getElementById("desktopNextBtn").disabled=currentPage===TOTAL_PAGES;
   closeMenu();
+  syncPageBookmarkButton();
   if(savePosition)saveLastPosition();
   const milestone=pageMilestoneLabel(currentPage);
   if(milestone)showNotice(milestone);
@@ -183,8 +185,7 @@ function openPrimaryMenu(anchor){
   menu.innerHTML=`
     <button type="button" class="menu-btn play" data-act="listen"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg><span class="menu-label">${isSurahOnly()?"استماع للسورة":"استماع"}</span></button>
     <button type="button" class="menu-btn" data-act="tafsir"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M5.333 3c2.46-.003 4.836.887 6.667 2.5V21a10.07 10.07 0 0 0-6.667-2.5c-1.562 0-2.343 0-2.688-.22a1.16 1.16 0 0 1-.424-.425C2 17.51 2 16.895 2 15.663v-9.26c0-1.428 0-2.141.549-2.72c.548-.579 1.11-.609 2.234-.668Q5.056 3 5.333 3m13.334 0A10.07 10.07 0 0 0 12 5.5V21a10.07 10.07 0 0 1 6.667-2.5c1.562 0 2.343 0 2.688-.22c.207-.133.291-.218.424-.425c.221-.345.221-.96.221-2.192v-9.26c0-1.428 0-2.141-.549-2.72s-1.11-.609-2.234-.668Q18.944 3 18.667 3"/><path d="M19 7.326a10.4 10.4 0 0 0-2 .13m2 3.55q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.681m4 2.819q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.68M5 7.326a10.4 10.4 0 0 1 2 .13m-2 3.55q.166-.005.333-.005A10.1 10.1 0 0 1 9 11.682m-4 2.819q.166-.005.333-.005a10.1 10.1 0 0 1 3.667.68"/></g></svg><span class="menu-label">التفسير</span></button>
-    <button type="button" class="menu-btn" data-act="share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg><span class="menu-label">مشاركة</span></button>
-    <button type="button" class="menu-btn" data-act="bookmark"><svg viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5Z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg><span class="menu-label">حفظ</span></button>`;
+    <button type="button" class="menu-btn" data-act="share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg><span class="menu-label">مشاركة</span></button>`;
   bindPrimaryMenu();placeMenu(anchor);
 }
 function openShareMenu(){
@@ -194,21 +195,10 @@ function openShareMenu(){
   menu.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>doShare(b.dataset.share));
   if(selectedAnchor)placeMenu(selectedAnchor);
 }
-function openSaveMenu(){
-  menu.innerHTML=`
-    <button type="button" class="menu-btn wide" data-save="page"><svg viewBox="0 0 24 24"><path d="M6 3h12v19l-6-4-6 4Z"/><path d="M9 7h6"/></svg><span class="menu-label">صفحة مرجعية</span></button>
-    <button type="button" class="menu-btn wide" data-save="ayah"><svg viewBox="0 0 24 24"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/><path d="M9 8h6M9 12h4"/></svg><span class="menu-label">آية مرجعية</span></button>`;
-  menu.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{
-    const kind=b.dataset.save;closeMenu();
-    if(kind==="page")savePageBookmark();else saveAyahBookmark();
-  });
-  if(selectedAnchor)placeMenu(selectedAnchor);
-}
 function bindPrimaryMenu(){
   menu.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=b.dataset.act;
     if(a==="share"){openShareMenu();return}
-    if(a==="bookmark"){openSaveMenu();return}
     closeMenu();
     if(a==="listen")startSelected();
     if(a==="tafsir")openTafsir();
@@ -337,78 +327,62 @@ async function doShare(kind){
   }catch(e){if(e?.name!=="AbortError")showToast("تعذّرت المشاركة الآن")}
   closeMenu();
 }
-function loadPageBookmarks(){return loadList(STORAGE_KEYS.pageBookmarks)}
-function loadAyahBookmarks(){
-  let list=loadList(STORAGE_KEYS.ayahBookmarks);
-  if(!list.length){
-    const legacy=loadList(STORAGE_KEYS.legacyBookmarks).filter(x=>x&&x.verse);
-    if(legacy.length){list=legacy;saveList(STORAGE_KEYS.ayahBookmarks,list)}
+function loadPageBookmarks(){
+  const list=loadList(STORAGE_KEYS.pageBookmarks);
+  let mark=null;
+  for(const item of list){
+    const page=Number(item?.page);
+    if(!Number.isInteger(page)||page<1||page>TOTAL_PAGES)continue;
+    if(!mark||(Number(item.savedAt)||0)>(Number(mark.savedAt)||0))mark=item;
   }
-  return list;
+  const result=mark?[mark]:[];
+  // Upgrade older lists to one stopping mark, keeping the newest saved page.
+  if(list.length!==result.length)saveList(STORAGE_KEYS.pageBookmarks,result);
+  return result;
 }
-function savePageBookmark(){
-  const item={page:currentPage,savedAt:Date.now()};
-  const list=loadPageBookmarks().filter(x=>x.page!==currentPage);
-  list.unshift(item);saveList(STORAGE_KEYS.pageBookmarks,list);
-  showToast(`حُفظت الصفحة ${ar(currentPage)} كصفحة مرجعية`);
+function hasPageBookmark(page=currentPage){
+  return loadPageBookmarks().some(x=>Number(x?.page)===Number(page));
 }
-function saveAyahBookmark(){
-  if(!selectedKey){showToast("اختر آية أولًا");return}
-  const item={page:currentPage,verse:selectedKey,excerpt:firstFourWords(verseTextCached(selectedKey)),savedAt:Date.now()};
-  const list=loadAyahBookmarks().filter(x=>x.verse!==selectedKey);
-  list.unshift(item);saveList(STORAGE_KEYS.ayahBookmarks,list);
-  showToast("حُفظت الآية كآية مرجعية");
+function syncPageBookmarkButton(){
+  const btn=document.getElementById("bookmarkBtn"),marked=hasPageBookmark();
+  btn.classList.toggle("marked",marked);
+  btn.setAttribute("aria-pressed",String(marked));
+  btn.setAttribute("aria-label",marked?"إزالة العلامة":"أضف علامة");
+  btn.title=marked?"إزالة العلامة":"أضف علامة";
+  btn.querySelector(".bookmark-label").textContent=btn.title;
 }
-function firstFourWords(text){
-  const words=String(text||"").trim().split(/\s+/).filter(Boolean).slice(0,4);
-  return words.length?words.join(" ")+"…":"الآية المحفوظة";
+function setPageBookmark(page,marked){
+  const p=Number(page);
+  if(!Number.isInteger(p)||p<1||p>TOTAL_PAGES)return false;
+  const list=marked?[{page:p,savedAt:Date.now()}]:loadPageBookmarks().filter(x=>Number(x.page)!==p);
+  if(!saveList(STORAGE_KEYS.pageBookmarks,list)){showToast("تعذّر حفظ التغيير على هذا الجهاز");return false}
+  refreshPageBookmarks();return true;
 }
-async function bookmarkAyahExcerpt(item){
-  if(item?.excerpt)return String(item.excerpt);
-  const p=Number(item?.page)||await getVersePage(item?.verse);
-  try{
-    if(p)await getPageData(p);
-    return firstFourWords(await verseTextFull(item?.verse,p));
-  }catch(_){return firstFourWords(verseTextCached(item?.verse))}
+function togglePageBookmark(){
+  const marked=!hasPageBookmark();
+  if(setPageBookmark(currentPage,marked))showToast(marked?`أُضيفت علامة للصفحة ${ar(currentPage)}`:"أُزيلت العلامة");
 }
-function openBookmarks(){
-  const b=sheet("العلامات المرجعية",`<div class="bookmark-sections">
-    <section class="bookmark-section ref-recent"><div class="bookmark-title"><h4>آخر المتصفحات</h4><small>آخر ٣ زيارات</small></div><div class="bookmark-list" id="recentList"></div></section>
-    <section class="bookmark-section ref-pages"><div class="bookmark-title"><h4>مرجعيات الصفحات</h4></div><div class="bookmark-list" id="pageBookmarkList"></div></section>
-    <section class="bookmark-section ref-ayahs"><div class="bookmark-title"><h4>مرجعيات الآيات</h4></div><div class="bookmark-list" id="ayahBookmarkList"></div></section>
-  </div>`);
-  const recentHost=b.querySelector("#recentList"),pageHost=b.querySelector("#pageBookmarkList"),ayahHost=b.querySelector("#ayahBookmarkList");
-
-  async function drawRecent(){
-    const list=loadList(STORAGE_KEYS.recentVisits).slice(0,3);
-    if(!list.length){recentHost.innerHTML='<div class="empty-state">ستظهر هنا مواضع آخر زياراتك.</div>';return}
-    recentHost.innerHTML='<div class="empty-state">تحميل المواضع…</div>';
-    const rows=await Promise.all(list.map(async(x,i)=>{const info=await pageDisplayInfo(x.page);return `<div class="bookmark-row recent"><button type="button" class="bookmark-main" data-recent="${i}"><b>سورة ${escapeHtml(info.sname)}</b><small>الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}</small></button></div>`}));
-    recentHost.innerHTML=rows.join("");
-    recentHost.querySelectorAll("[data-recent]").forEach(btn=>btn.onclick=()=>{const x=loadList(STORAGE_KEYS.recentVisits)[+btn.dataset.recent];if(!x)return;b.remove();go(x.page)});
+/* One stopping mark uses the existing storage key. */
+function renderPageBookmark(root){
+  let pin=root.querySelector(".page-bookmark");
+  if(!hasPageBookmark(root.dataset.page)){pin?.remove();return}
+  if(!pin){
+    pin=document.createElement("span");pin.className="page-bookmark";pin.setAttribute("role","img");
+    pin.innerHTML='<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 0h18v30l-9-6-9 6Z"/></svg>';
+    root.querySelector(".page-meta").appendChild(pin);
   }
-  async function drawPages(){
-    const list=loadPageBookmarks();
-    if(!list.length){pageHost.innerHTML='<div class="empty-state">لا توجد صفحات مرجعية محفوظة بعد.</div>';return}
-    pageHost.innerHTML='<div class="empty-state">تحميل المرجعيات…</div>';
-    const rows=await Promise.all(list.map(async(x,i)=>{const info=await pageDisplayInfo(x.page);return `<div class="bookmark-row"><button type="button" class="bookmark-main" data-page-open="${i}"><b>سورة ${escapeHtml(info.sname)}</b><small>الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}</small></button><button type="button" class="bookmark-delete" data-page-del="${i}" aria-label="حذف الصفحة المرجعية">×</button></div>`}));
-    pageHost.innerHTML=rows.join("");
-    pageHost.querySelectorAll("[data-page-open]").forEach(btn=>btn.onclick=()=>{const x=loadPageBookmarks()[+btn.dataset.pageOpen];if(!x)return;b.remove();go(x.page)});
-    pageHost.querySelectorAll("[data-page-del]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();const list=loadPageBookmarks();list.splice(+btn.dataset.pageDel,1);saveList(STORAGE_KEYS.pageBookmarks,list);drawPages();showToast("حُذفت الصفحة المرجعية")});
-  }
-  async function drawAyahs(){
-    const list=loadAyahBookmarks();
-    if(!list.length){ayahHost.innerHTML='<div class="empty-state">لا توجد آيات مرجعية محفوظة بعد.</div>';return}
-    ayahHost.innerHTML='<div class="empty-state">تحميل المرجعيات…</div>';
-    const rows=await Promise.all(list.map(async(x,i)=>{
-      const v=verseParts(x.verse),excerpt=await bookmarkAyahExcerpt(x),p=Number(x.page)||await getVersePage(x.verse),j=juzForPage(p||1);
-      return `<div class="bookmark-row"><button type="button" class="bookmark-main" data-ayah-open="${i}"><b class="ayah-excerpt">${escapeHtml(excerpt)}</b><small>سورة ${escapeHtml(v.sname)} · الآية ${ar(v.a)} · الجزء ${ar(j)}</small></button><button type="button" class="bookmark-delete" data-ayah-del="${i}" aria-label="حذف الآية المرجعية">×</button></div>`;
-    }));
-    ayahHost.innerHTML=rows.join("");
-    ayahHost.querySelectorAll("[data-ayah-open]").forEach(btn=>btn.onclick=async()=>{const x=loadAyahBookmarks()[+btn.dataset.ayahOpen];if(!x)return;b.remove();await go(x.page);const a=document.querySelector(`.page[data-page="${x.page}"] .verse-segment[data-key="${x.verse}"]`);if(a)selectVerse(x.verse,a)});
-    ayahHost.querySelectorAll("[data-ayah-del]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();const list=loadAyahBookmarks();list.splice(+btn.dataset.ayahDel,1);saveList(STORAGE_KEYS.ayahBookmarks,list);drawAyahs();showToast("حُذفت الآية المرجعية")});
-  }
-  drawRecent().catch(console.error);drawPages().catch(console.error);drawAyahs().catch(console.error);
+  pin.setAttribute("aria-label",`علامة الصفحة ${ar(root.dataset.page)}`);
+}
+function refreshPageBookmarks(){
+  document.querySelectorAll('.page[data-loaded="1"]').forEach(renderPageBookmark);
+  syncPageBookmarkButton();
+}
+window.addEventListener("storage",e=>{if(e.key===STORAGE_KEYS.pageBookmarks||e.key===null)refreshPageBookmarks()});
+async function jumpToPageBookmark(){
+  const mark=loadPageBookmarks()[0];
+  if(!mark){showToast("لحفظ موضعك، اضغط «أضف علامة» من أدوات القراءة");return}
+  await go(mark.page);
+  showToolsFor(5400);
 }
 
 /* ---------- sheets ---------- */
@@ -486,7 +460,9 @@ async function openTafsir(){
   await render(selectedKey);
 }
 document.getElementById("tafsirBtn").onclick=openTafsir;
-document.getElementById("bookmarkBtn").onclick=openBookmarks;
+document.getElementById("bookmarkBtn").onclick=togglePageBookmark;
+document.getElementById("readerSearchBtn").onclick=()=>openQuranSearch();
+document.getElementById("jumpBookmarkBtn").onclick=jumpToPageBookmark;
 const zadReturnBtn=document.getElementById("backBtn");
 let zadReturnHoldTimer=null,zadReturnHeld=false;
 function cancelZadReturnHold(){clearTimeout(zadReturnHoldTimer);zadReturnHoldTimer=null}

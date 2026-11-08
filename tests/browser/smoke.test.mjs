@@ -156,6 +156,122 @@ test("the reader opens on a phone without script errors", async () => {
   await context.close();
 });
 
+test("Quran text and verse numbers stay readable when a phone or tablet rotates", async t => {
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
+  for (const [width, height] of [[390, 844], [768, 1024], [834, 1194], [1024, 1366]]) {
+    for (const theme of ["light", "dark"]) await t.test(`${width}×${height} ${theme}`, async () => {
+      const { page, errors, context } = await appPage({
+        profile: { viewport: { width, height }, isMobile: true, hasTouch: true },
+        storage: { "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme }
+      });
+      // A local Arabic font and neutral sample text exercise layout without
+      // depending on the CDN, live data, or replacement Quran glyphs.
+      await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+        path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+        headers: { "Access-Control-Allow-Origin": "*" }
+      }));
+      await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+        headers: { "Access-Control-Allow-Origin": "*" },
+        json: {
+          page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
+          font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+          lines: Array.from({ length: 15 }, (_, i) => ({ words: [
+            ...Array.from({ length: 6 + i % 3 }, () => ({ type: "word", text: "نص تجريبي", char: "نَصٌّ تَجْرِيبِيٌّ", verse_key: `2:${60 + i}` })),
+            { type: "end", text: `V${60 + i}`, char: "١٢٣", verse_key: `2:${60 + i}` }
+          ] }))
+        }
+      }));
+      const measure = () => page.locator('.page[data-page="9"]').evaluate(root => {
+        const stage = root.querySelector(".page-stage"), bounds = stage.getBoundingClientRect();
+        const lines = [...root.querySelectorAll(".line-inner")], host = root.querySelector(".mushaf");
+        const columnWidth = host.getBoundingClientRect().width;
+        const contrast = (foreground, background) => {
+          const luminance = color => {
+            const [r, g, b] = color.match(/[\d.]+/g).slice(0, 3).map(x => {
+              const c = Number(x) / 255; return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+            });
+            return .2126 * r + .7152 * g + .0722 * b;
+          };
+          const a = luminance(foreground), b = luminance(background);
+          return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+        };
+        const background = getComputedStyle(root).backgroundColor;
+        return {
+          fontSize: parseFloat(getComputedStyle(lines[0]).fontSize),
+          columnWidth,
+          widthFit: getComputedStyle(host).getPropertyValue("--mushaf-fit-width").trim() === "1",
+          widthUsed: Math.max(...lines.map(line => line.getBoundingClientRect().width)) / columnWidth,
+          gap: parseFloat(getComputedStyle(host).rowGap),
+          edgePadding: [host.style.paddingTop, host.style.paddingBottom],
+          stageHeight: stage.clientHeight,
+          headingTop: root.querySelector(".page-meta").getBoundingClientRect().top,
+          footerTop: root.querySelector(".page-footer").getBoundingClientRect().top,
+          stageBottom: bounds.bottom,
+          scrolls: stage.classList.contains("scrolls"),
+          scrollTop: stage.scrollTop,
+          fitsWidth: lines.every(line => {
+            const r = line.getBoundingClientRect();return r.left >= bounds.left - 1 && r.right <= bounds.right + 1;
+          }),
+          fits: !stage.classList.contains("scrolls") && lines.every(line => {
+            const r = line.getBoundingClientRect();
+            return r.left >= bounds.left - 1 && r.right <= bounds.right + 1 && r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
+          }),
+          textContrast: contrast(getComputedStyle(root.querySelector(".word:not(.end)")).color, background),
+          numberContrast: contrast(getComputedStyle(root.querySelector(".word.end")).color, background)
+        };
+      });
+      try {
+        await page.goto(BASE + "/quran-read/?page=9");
+        await page.locator('.page[data-page="9"] .word.end').first().waitFor();
+        await page.waitForTimeout(300);
+        const portrait = await measure();
+        assert.ok(!portrait.widthFit, "portrait retains the complete-page fitting mode");
+        assert.ok(portrait.fits, "all fifteen lines fit the portrait reading area");
+        assert.ok(portrait.textContrast >= 7, "Quran text has strong contrast");
+        assert.ok(portrait.numberContrast >= 4.5, "verse numbers remain legible in either theme");
+        assert.ok(portrait.columnWidth > width * .9, "portrait reading uses the available width");
+        await page.setViewportSize({ width: height, height: width });
+        await page.waitForTimeout(300);
+        const landscape = await measure();
+        assert.ok(landscape.widthFit, "touch landscape activates width fitting");
+        assert.ok(landscape.columnWidth >= height - 33, "landscape uses the screen width with small side margins");
+        assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, "the longest Quran line fills its column");
+        assert.ok(landscape.fontSize > portrait.fontSize * 1.3, "landscape makes the text noticeably larger");
+        assert.ok(landscape.scrolls, "the enlarged landscape page scrolls vertically");
+        assert.ok(landscape.stageHeight >= width - 1, "scrolling uses the full screen height");
+        assert.ok(landscape.footerTop >= landscape.stageBottom, "the footer follows the page instead of staying on screen");
+        assert.ok(landscape.gap >= 6, "short reading areas keep space between rows");
+        assert.ok(landscape.fitsWidth, "rotation never clips the sides of a line");
+        if (landscape.scrolls) {
+          assert.ok(await page.locator('.page[data-page="9"] .page-stage').evaluate(stage => {
+            stage.scrollTop = 70;
+            const header = stage.querySelector(".page-meta").getBoundingClientRect(), bounds = stage.getBoundingClientRect();
+            return header.bottom <= bounds.top + 1;
+          }), "the heading scrolls away to free the top of the reading area");
+          assert.ok(await page.locator('.page[data-page="9"] .page-stage').evaluate(stage => {
+            stage.scrollTop = stage.scrollHeight;
+            const last = stage.querySelector(".line:last-child .line-inner").getBoundingClientRect(), bounds = stage.getBoundingClientRect();
+            const footer = stage.querySelector(".page-footer").getBoundingClientRect();
+            return last.top >= bounds.top - 1 && last.bottom <= footer.top + 1 && footer.bottom <= bounds.bottom + 1;
+          }), "the last row and page number are reachable together at the end of scrolling");
+        } else assert.ok(landscape.fits, "the complete page fits when the height permits it");
+        await page.setViewportSize({ width, height });
+        await page.waitForTimeout(300);
+        const restored = await measure();
+        assert.ok(!restored.widthFit, "portrait leaves width fitting");
+        assert.deepEqual(restored.edgePadding, ["", ""], "portrait clears the enlarged ink padding");
+        assert.ok(restored.fits, "returning to portrait preserves the complete page");
+        assert.equal(restored.scrollTop, 0, "portrait has no leftover scroll offset");
+        assert.ok(Math.abs(restored.fontSize - portrait.fontSize) < .1, "rotation does not accumulate text shrinkage");
+        assert.deepEqual(errors, []);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
 test("the Quran index resumes the saved page and shares a direct juz link", async () => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
@@ -214,6 +330,174 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
   } finally {
     await context.close();
   }
+});
+
+test("one reading mark moves between pages and the index keeps five recent visits", async t => {
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
+  for (const [label, profile, theme] of [
+    ["phone", PHONE, "light"],
+    ["tablet", { viewport: { width: 1024, height: 1366 }, isMobile: true, hasTouch: true }, "dark"],
+    ["desktop", { viewport: { width: 1440, height: 900 } }, "light"]
+  ]) await t.test(label, async () => {
+    const { page, errors, context } = await appPage({ profile });
+    const oldAyahs = JSON.stringify([{ page: 8, verse: "2:50", savedAt: 1 }]);
+    await context.addInitScript(({ chapters, theme, oldAyahs }) => {
+      if (sessionStorage.getItem("bookmark-test-seeded")) return;
+      localStorage.setItem("zad:qcf4:meta-v1", JSON.stringify({ chapters }));
+      localStorage.setItem("zad:qcf4:theme", theme);
+      localStorage.setItem("zad:qcf4:page-bookmarks", JSON.stringify([{ page: 7, savedAt: 1 }, { page: 8, savedAt: 2 }]));
+      localStorage.setItem("zad:qcf4:last-position", JSON.stringify({ page: 15, savedAt: 1 }));
+      localStorage.setItem("zad:qcf4:recent-visits", JSON.stringify([14, 13, 12, 11, 10, 5].map(page => ({ page, savedAt: 1 }))));
+      localStorage.setItem("zad:qcf4:search-v1", JSON.stringify([{ key: "2:60", s: 2, a: 60, page: 10, text: "آية للقراءة" }]));
+      localStorage.setItem("zad:qcf4:ayah-bookmarks", oldAyahs);
+      localStorage.setItem("zad:qcf4:bookmarks", oldAyahs);
+      sessionStorage.setItem("bookmark-test-seeded", "1");
+    }, { chapters, theme, oldAyahs });
+    await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+      path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+      headers: { "Access-Control-Allow-Origin": "*" }
+    }));
+    await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+      headers: { "Access-Control-Allow-Origin": "*" },
+      json: {
+        page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
+        font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+        lines: Array.from({ length: 15 }, (_, i) => ({
+          words: [{ type: "word", text: "آية للقراءة", char: "آية للقراءة", verse_key: `2:${60 + i}` }]
+        }))
+      }
+    }));
+    const currentVerse = n => page.locator(`.page[data-page="${n}"] .verse-segment`).first();
+    const ribbon = n => page.locator(`.page[data-page="${n}"] .page-bookmark`);
+    const storedPages = () => page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:page-bookmarks")).map(x => x.page));
+    const showReaderTools = async n => {
+      if (await page.locator("body").evaluate(el => el.classList.contains("hidden-tools")))
+        await page.locator(`.page[data-page="${n}"] .page-no`).click();
+    };
+    try {
+      await page.goto(BASE + "/quran-read/?page=9");
+      await currentVerse(9).waitFor();
+      assert.deepEqual(await storedPages(), [8], "the newest previous mark is kept when upgrading an older list");
+      assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:recent-visits")).map(x => x.page)), [15, 14, 13, 12, 11]);
+      await showReaderTools(9);
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      await ribbon(9).waitFor();
+      assert.equal(await page.locator("#bookmarkBtn").getAttribute("aria-pressed"), "true");
+      assert.ok(await page.locator("#bookmarkBtn").evaluate(btn => {
+        const color = getComputedStyle(btn).color, [r, g, b] = color.match(/\d+/g).map(Number);
+        return r > g * 1.3 && r > b * 1.3 && getComputedStyle(btn.querySelector("svg")).fill === color;
+      }), "the saved mark icon is filled red in either theme");
+      assert.deepEqual(await storedPages(), [9], "saving a page replaces the previous mark");
+      assert.equal(await ribbon(8).count(), 0);
+      assert.equal(await page.locator(".page-bookmark").count(), 1);
+      assert.equal(await page.locator("[data-save]").count(), 0, "no second save menu");
+      const fits = await ribbon(9).evaluate(pin => {
+        const r = pin.getBoundingClientRect(), firstLine = pin.closest(".page").querySelector(".line").getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= firstLine.top;
+      });
+      assert.ok(fits, "ribbon stays above the Quran text within the viewport");
+      const shortcutsFit = await page.evaluate(() => {
+        const rect = id => document.getElementById(id).getBoundingClientRect();
+        const upper = Math.max(rect("tafsirBtn").bottom, rect("listenBtn").bottom);
+        return ["bookmarkBtn", "jumpBookmarkBtn"].every(id => {
+          const r = rect(id), btn = document.getElementById(id);
+          return r.top >= upper && r.left >= 0 && r.right <= innerWidth && r.height >= 44 && r.bottom <= innerHeight + 1 && btn.scrollWidth <= btn.clientWidth;
+        });
+      });
+      assert.ok(shortcutsFit, "both shortcuts fit below tafsir and listening");
+      assert.equal(await page.locator(".top-actions #readerSearchBtn").count(), 1);
+      assert.equal(await page.locator(".reader-shortcuts #bookmarkBtn").count(), 1);
+      assert.equal(await page.locator("#desktopNextBtn").isVisible(), !profile.hasTouch, "desktop keeps arrow navigation; touch readers use swipes");
+      assert.equal(await page.locator("#prevBtn").isVisible(), false);
+      assert.equal(await page.locator("#nextBtn").isVisible(), false);
+
+      if (profile.hasTouch) {
+        const area = await page.locator('.page[data-page="9"] .page-stage').boundingBox();
+        const y = area.y + area.height * .4;
+        await page.mouse.move(area.x + area.width * .2, y);
+        await page.mouse.down();
+        await page.mouse.move(area.x + area.width * .8, y, { steps: 8 });
+        await page.mouse.up();
+      } else await page.locator("#desktopNextBtn").click();
+      await page.waitForURL(BASE + "/quran-read/?page=10");
+      await currentVerse(10).waitFor();
+      await showReaderTools(10);
+      assert.equal(await ribbon(10).count(), 0);
+      assert.equal(await page.locator("#bookmarkBtn").getAttribute("aria-pressed"), "false");
+      await page.getByRole("button", { name: "الانتقال إلى العلامة", exact: true }).click();
+      await page.waitForURL(BASE + "/quran-read/?page=9");
+      await ribbon(9).waitFor();
+      assert.equal(await page.locator(".backdrop").count(), 0, "jump opens the saved page directly");
+      assert.equal(await page.locator("#bookmarkBtn").getAttribute("aria-pressed"), "true");
+
+      await page.locator("#readerSearchBtn").click();
+      await page.getByRole("searchbox", { name: "البحث في القرآن", exact: true }).fill("آية");
+      await page.locator(".quran-search-result").click();
+      await page.waitForURL(BASE + "/quran-read/?page=10");
+      await showReaderTools(10);
+      await page.locator("#jumpBookmarkBtn").click();
+      await page.waitForURL(BASE + "/quran-read/?page=9");
+      await page.reload();
+      await ribbon(9).waitFor();
+      await showReaderTools(9);
+      await page.getByRole("button", { name: "إزالة العلامة", exact: true }).click();
+      assert.equal(await ribbon(9).count(), 0);
+      assert.deepEqual(await storedPages(), []);
+
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      await page.goto(BASE + "/quran-read/?page=10");
+      await currentVerse(10).waitFor();
+      await showReaderTools(10);
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      assert.deepEqual(await storedPages(), [10]);
+      assert.equal(await ribbon(9).count(), 0, "moving the mark clears its previous ribbon");
+      await page.goto(BASE + "/quran-read/?page=9");
+      await currentVerse(9).waitFor();
+      await showReaderTools(9);
+      assert.equal(await page.locator("#bookmarkBtn").getAttribute("aria-pressed"), "false");
+      await page.locator("#jumpBookmarkBtn").click();
+      await page.waitForURL(BASE + "/quran-read/?page=10");
+      await ribbon(10).waitFor();
+      await page.goto(BASE + "/quran-read/?page=9");
+      await currentVerse(9).waitFor();
+      await showReaderTools(9);
+      await page.getByRole("button", { name: "أضف علامة", exact: true }).click();
+      assert.deepEqual(await storedPages(), [9]);
+      assert.equal(await ribbon(10).count(), 0);
+      await page.locator("#quranHomeBtn").click();
+      assert.deepEqual(await page.locator(".quran-index-tab").allTextContents(), ["السور", "الأجزاء", "الانتقال إلى"]);
+      assert.equal(await page.locator("#quranSurahList .quran-index-row").count(), 114);
+      assert.equal(await page.locator("#quranSurahList .quran-index-juz-sep").count(), 0);
+      assert.doesNotMatch(await page.locator("#quranSurahList").innerText(), /الجزء/);
+      await page.locator('.quran-index-tab[data-tab="j"]').click();
+      assert.equal(await page.locator("#quranJuzList .juz-accordion").count(), 30);
+      await page.locator('.quran-index-tab[data-tab="m"]').click();
+      await page.locator("#quranBookmarkList .ref-pages .quran-bookmark-row").first().waitFor();
+      assert.deepEqual(await page.locator("#quranBookmarkList h4").allTextContents(), ["آخر الزيارات", "الانتقال إلى العلامة"]);
+      assert.equal(await page.locator("#quranBookmarkList .ref-recent .quran-bookmark-row").count(), 5);
+      assert.equal(await page.locator("#quranBookmarkList .ref-pages .quran-bookmark-row").count(), 1);
+      assert.equal(await page.locator(".ref-ayahs,[data-ayah-open]").count(), 0);
+      await page.getByRole("button", { name: "إزالة علامة الصفحة ٩", exact: true }).click();
+      assert.deepEqual(await storedPages(), []);
+      assert.equal(await ribbon(9).count(), 0, "index deletion updates the rendered page");
+      assert.equal(await page.locator("#bookmarkBtn").getAttribute("aria-pressed"), "false");
+      await page.locator('[data-hub-action="resume"]').click();
+      await showReaderTools(9);
+      await page.locator("#jumpBookmarkBtn").click();
+      assert.equal(new URL(page.url()).searchParams.get("page"), "9");
+      assert.deepEqual(await storedPages(), [], "older marks never return after the single mark is removed");
+      assert.match(await page.locator("#toast").innerText(), /أضف علامة/);
+      assert.deepEqual(await page.evaluate(() => [
+        localStorage.getItem("zad:qcf4:ayah-bookmarks"),
+        localStorage.getItem("zad:qcf4:bookmarks"),
+        localStorage.getItem("zad:qcf4:reading-mark-v1")
+      ]), [oldAyahs, oldAyahs, null], "old ayah data preserved; no second bookmark model");
+      assert.deepEqual(errors, []);
+    } finally {
+      await context.close();
+    }
+  });
 });
 
 test("a member's khatmah tab opens from the saved state before the server answers", async () => {
