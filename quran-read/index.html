@@ -320,12 +320,21 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 
 /* ---------- Madinah-style collapsible audio ---------- */
 .audio-fab{
+  --audio-fab-size:54px;
   position:fixed;z-index:58;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));
-  width:54px;height:54px;border:0;border-radius:50%;
+  width:var(--audio-fab-size);height:var(--audio-fab-size);border:0;border-radius:50%;
   background:linear-gradient(145deg,#C59A4A,#9B702D);
   color:#FFF9EA;display:none;align-items:center;justify-content:center;
   box-shadow:0 10px 28px rgba(0,0,0,.28),0 0 0 7px color-mix(in srgb,var(--gold) 11%,transparent);
+  touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;
 }
+/* CSS keeps the last position reachable after rotation, including safe areas. */
+.audio-fab.is-positioned{
+  right:auto;bottom:auto;
+  left:clamp(calc(14px + env(safe-area-inset-left)),var(--audio-fab-x),calc(100% - var(--audio-fab-size) - 14px - env(safe-area-inset-right)));
+  top:clamp(calc(14px + env(safe-area-inset-top)),var(--audio-fab-y),calc(100% - var(--audio-fab-size) - 14px - env(safe-area-inset-bottom)));
+}
+.audio-fab.is-dragging{cursor:grabbing}
 body.player-on:not(.player-expanded) .audio-fab{display:flex}
 .wave{display:flex;align-items:center;gap:3px;height:24px}
 .wave i{display:block;width:3px;border-radius:9px;background:currentColor;height:8px;opacity:.96}
@@ -4806,6 +4815,43 @@ function showPlayer(expand=true){
 }
 function collapsePlayer(){document.body.classList.remove("player-expanded")}
 function expandPlayer(){if(document.body.classList.contains("player-on"))document.body.classList.add("player-expanded")}
+/* Move the collapsed control without seeking, pausing, or opening the player. */
+function installAudioFabDrag(){
+  const fab=document.getElementById("audioFab");
+  let drag=null,suppressClick=false;
+  fab.addEventListener("pointerdown",e=>{
+    if(drag||!e.isPrimary||e.button!==0)return;
+    const rect=fab.getBoundingClientRect();
+    drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:rect.left,top:rect.top,moved:false};
+    suppressClick=false;
+    fab.setPointerCapture(e.pointerId);
+  });
+  fab.addEventListener("pointermove",e=>{
+    if(!drag||e.pointerId!==drag.id)return;
+    const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(!drag.moved&&Math.hypot(dx,dy)<6)return;
+    drag.moved=true;
+    fab.style.setProperty("--audio-fab-x",(drag.left+dx)+"px");
+    fab.style.setProperty("--audio-fab-y",(drag.top+dy)+"px");
+    fab.classList.add("is-positioned","is-dragging");
+    e.preventDefault();
+  });
+  const finish=e=>{
+    if(!drag||e.pointerId!==drag.id)return;
+    suppressClick=drag.moved;
+    drag=null;
+    fab.classList.remove("is-dragging");
+    if(fab.hasPointerCapture(e.pointerId))fab.releasePointerCapture(e.pointerId);
+  };
+  fab.addEventListener("pointerup",finish);
+  fab.addEventListener("pointercancel",finish);
+  fab.addEventListener("lostpointercapture",finish);
+  fab.onclick=e=>{
+    if(suppressClick&&e.detail!==0){suppressClick=false;e.preventDefault();return}
+    suppressClick=false;
+    expandPlayer();
+  };
+}
 function stopPlayer(){
   playbackWanted=false;
   clearTimeout(audioRetryTimer);audioRetryTimer=null;
@@ -5171,7 +5217,7 @@ async function startSelected(){
   await playCurrent(true);
 }
 document.getElementById("listenBtn").onclick=startSelected;
-document.getElementById("audioFab").onclick=expandPlayer;
+installAudioFabDrag();
 document.getElementById("collapsePlayer").onclick=collapsePlayer;
 document.getElementById("stopPlayer").onclick=stopPlayer;
 document.getElementById("panelPlay").onclick=async()=>{
