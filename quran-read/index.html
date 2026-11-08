@@ -119,7 +119,7 @@ button{cursor:pointer}
   position:relative;z-index:3;width:calc(100% - 24px);height:100%;
   display:flex;justify-content:space-between;align-items:flex-start;
   padding:calc(12px + env(safe-area-inset-top)) 3px 0;
-  color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,18px);line-height:1.35;
+  color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,24px);line-height:1.15;
 }
 .page-meta-link{
   appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
@@ -154,7 +154,7 @@ button{cursor:pointer}
    The page fitter still checks both dimensions, including after rotation. */
 @media (min-width:600px) and (min-height:600px) and (hover:none) and (pointer:coarse){
   .mushaf{width:min(calc(100vw - 32px),1120px)}
-  .page-stage{--page-label-size:21px}
+  .page-stage{--page-label-size:26px}
 }
 /* A rotated phone or tablet reads at the available width, with vertical
    scrolling for the rest of the page. Portrait retains the approved fit. */
@@ -217,8 +217,8 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 .word.allah{color:var(--red)}
 .word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
-  position:absolute;left:22px;bottom:calc(12px + env(safe-area-inset-bottom));
-  color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,19px);line-height:1
+  position:absolute;left:22px;bottom:calc(8px + env(safe-area-inset-bottom));
+  color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,24px);line-height:1
 }
 .qcf-mark{
   position:absolute;right:50%;transform:translateX(50%);
