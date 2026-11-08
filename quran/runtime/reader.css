@@ -74,9 +74,10 @@ button{cursor:pointer}
   padding:calc(18px + env(safe-area-inset-top)) 2px calc(18px + env(safe-area-inset-bottom));
 }
 .page-meta{
-  position:absolute;z-index:3;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;
-  height:25px;display:flex;justify-content:space-between;align-items:flex-start;
-  padding-inline:3px;color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:16px;
+  position:relative;z-index:3;width:calc(100% - 24px);height:100%;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:calc(12px + env(safe-area-inset-top)) 3px 0;
+  color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:16px;
 }
 .page-meta-link{
   appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
@@ -87,17 +88,20 @@ button{cursor:pointer}
 .page-meta-link:focus-visible{outline:2px solid color-mix(in srgb,var(--gold) 55%,transparent);outline-offset:3px}
 /* The ribbon stays in the top margin so it never covers Quran text. */
 .page-bookmark{
-  position:absolute;z-index:4;left:80px;top:env(safe-area-inset-top,0px);
+  position:absolute;z-index:4;left:68px;top:env(safe-area-inset-top,0px);
   width:24px;height:34px;color:var(--red);pointer-events:none;
 }
 .page-bookmark svg{display:block;width:100%;height:100%;fill:currentColor}
 .page-stage{
-  position:absolute;
-  inset:calc(43px + env(safe-area-inset-top)) 0 calc(34px + env(safe-area-inset-bottom));
-  display:flex;justify-content:center;overflow:hidden;
+  --page-head:calc(43px + env(safe-area-inset-top));
+  --page-foot:calc(34px + env(safe-area-inset-bottom));
+  position:absolute;inset:0;
+  display:grid;grid-template-rows:var(--page-head) minmax(0,1fr) var(--page-foot);
+  justify-items:center;overflow:hidden;
 }
 .page-stage.special{align-items:center}
 .page-stage.full{align-items:center;padding-top:0}
+.page-footer{position:relative;width:100%;height:100%}
 .mushaf{
   --mushaf-fit-width:0;
   width:min(99.2vw,780px);max-width:100%;height:100%;direction:rtl;
@@ -1218,10 +1222,9 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
    أو حين تعجز عن الاكتمال بحجم مقروء. وتُنزع عنها متى عادت ملاءمة الصفحة
    كاملةً. لا تمسّ هذه الحالة أي صفحة أخرى. */
 .page-stage.scrolls{
+  display:block;
   overflow-x:hidden;
   overflow-y:auto;
-  align-items:flex-start;
-  justify-content:center;
   scrollbar-width:thin;
   scrollbar-color:color-mix(in srgb,var(--gold) 28%,transparent) transparent;
 }
@@ -1234,9 +1237,12 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 /* بلا height:auto لا ينمو المصحف، فلا يجد المسرحُ ما يمرّره. */
 .page-stage.scrolls .mushaf{
   height:auto;
-  min-height:100%;
+  min-height:calc(100% - var(--page-head) - var(--page-foot));
+  margin-inline:auto;
   padding-block:10px 26px;
 }
+.page-stage.scrolls>.page-meta{height:var(--page-head);margin-inline:auto}
+.page-stage.scrolls>.page-footer{height:var(--page-foot)}
 
 /* بسملة الحاسب: استبدال محرف أُقرّ سابقًا، لا علاقة له بتخطيط الصفحة،
    فيبقى على معياره كما هو.

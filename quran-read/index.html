@@ -115,9 +115,10 @@ button{cursor:pointer}
   padding:calc(18px + env(safe-area-inset-top)) 2px calc(18px + env(safe-area-inset-bottom));
 }
 .page-meta{
-  position:absolute;z-index:3;top:calc(12px + env(safe-area-inset-top));left:12px;right:12px;
-  height:25px;display:flex;justify-content:space-between;align-items:flex-start;
-  padding-inline:3px;color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:16px;
+  position:relative;z-index:3;width:calc(100% - 24px);height:100%;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  padding:calc(12px + env(safe-area-inset-top)) 3px 0;
+  color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:16px;
 }
 .page-meta-link{
   appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
@@ -128,17 +129,20 @@ button{cursor:pointer}
 .page-meta-link:focus-visible{outline:2px solid color-mix(in srgb,var(--gold) 55%,transparent);outline-offset:3px}
 /* The ribbon stays in the top margin so it never covers Quran text. */
 .page-bookmark{
-  position:absolute;z-index:4;left:80px;top:env(safe-area-inset-top,0px);
+  position:absolute;z-index:4;left:68px;top:env(safe-area-inset-top,0px);
   width:24px;height:34px;color:var(--red);pointer-events:none;
 }
 .page-bookmark svg{display:block;width:100%;height:100%;fill:currentColor}
 .page-stage{
-  position:absolute;
-  inset:calc(43px + env(safe-area-inset-top)) 0 calc(34px + env(safe-area-inset-bottom));
-  display:flex;justify-content:center;overflow:hidden;
+  --page-head:calc(43px + env(safe-area-inset-top));
+  --page-foot:calc(34px + env(safe-area-inset-bottom));
+  position:absolute;inset:0;
+  display:grid;grid-template-rows:var(--page-head) minmax(0,1fr) var(--page-foot);
+  justify-items:center;overflow:hidden;
 }
 .page-stage.special{align-items:center}
 .page-stage.full{align-items:center;padding-top:0}
+.page-footer{position:relative;width:100%;height:100%}
 .mushaf{
   --mushaf-fit-width:0;
   width:min(99.2vw,780px);max-width:100%;height:100%;direction:rtl;
@@ -1259,10 +1263,9 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
    أو حين تعجز عن الاكتمال بحجم مقروء. وتُنزع عنها متى عادت ملاءمة الصفحة
    كاملةً. لا تمسّ هذه الحالة أي صفحة أخرى. */
 .page-stage.scrolls{
+  display:block;
   overflow-x:hidden;
   overflow-y:auto;
-  align-items:flex-start;
-  justify-content:center;
   scrollbar-width:thin;
   scrollbar-color:color-mix(in srgb,var(--gold) 28%,transparent) transparent;
 }
@@ -1275,9 +1278,12 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
 /* بلا height:auto لا ينمو المصحف، فلا يجد المسرحُ ما يمرّره. */
 .page-stage.scrolls .mushaf{
   height:auto;
-  min-height:100%;
+  min-height:calc(100% - var(--page-head) - var(--page-foot));
+  margin-inline:auto;
   padding-block:10px 26px;
 }
+.page-stage.scrolls>.page-meta{height:var(--page-head);margin-inline:auto}
+.page-stage.scrolls>.page-footer{height:var(--page-foot)}
 
 /* بسملة الحاسب: استبدال محرف أُقرّ سابقًا، لا علاقة له بتخطيط الصفحة،
    فيبقى على معياره كما هو.
@@ -3334,9 +3340,11 @@ function renderPage(data){
   const root=document.querySelector(`.page[data-page="${data.page}"]`);
   const surahId=surahIdFromPageData(data),juz=juzForPage(data.page);
   root.dataset.loaded="1";
-  root.innerHTML=`<div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
-    <div class="page-stage ${data.page<=2?"special":"full"}"><div class="mushaf" id="mushaf-${data.page}"></div></div>
-    <div class="page-no">${ar(data.page)}</div><div class="qcf-mark">QCF4 · 1441هـ</div>`;
+  root.innerHTML=`<div class="page-stage ${data.page<=2?"special":"full"}">
+    <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
+    <div class="mushaf" id="mushaf-${data.page}"></div>
+    <div class="page-footer"><div class="page-no">${ar(data.page)}</div><div class="qcf-mark">QCF4 · 1441هـ</div></div>
+  </div>`;
   root.querySelectorAll(".page-meta-link").forEach(btn=>btn.addEventListener("click",e=>{
     e.stopPropagation();
     openQuranIndex(btn.dataset.indexTab||"s");
@@ -3499,6 +3507,7 @@ function fitPage(p){
 
   requestAnimationFrame(()=>{
     if(!isCurrent()||stage.clientWidth<=0||stage.clientHeight<=0)return;
+    const scrollTop=stage.scrollTop;
     // Reset and measure in the same frame. Superseded fits must never measure
     // a previous fit's scaled text as though it still had the base font size.
     normal.forEach(x=>x.style.fontSize=base+"px");
@@ -3519,7 +3528,10 @@ function fitPage(p){
     // fixed desktop width on tablets. Keep space for ink at either edge.
     const targetW=Math.min(stage.clientWidth*.985,host.clientWidth*.995);
     const widthFit=getComputedStyle(host).getPropertyValue("--mushaf-fit-width").trim()==="1";
-    const targetH=stage.clientHeight*.955;
+    // In the neutral grid, the middle cell is exactly the reading area left
+    // between the page heading and footer. Both join the flow when scrolling.
+    const readingH=host.clientHeight;
+    const targetH=readingH*.955;
     const maxW=Math.max(...normal.map(x=>x.getBoundingClientRect().width),1);
 
     // Measure the actual Quran rows, not mushaf.scrollHeight. The Mushaf host is
@@ -3561,7 +3573,7 @@ function fitPage(p){
     // short reading area, or a page that already needs scrolling, reserves
     // breathing room before the scale is solved. Opening pages stay intact
     // outside the explicit landscape width-reading mode.
-    const needsSpacing=widthFit||stage.clientWidth>stage.clientHeight||targetH/pageH<floorScale*FLOOR_TOLERANCE;
+    const needsSpacing=widthFit||stage.clientWidth>readingH||targetH/pageH<floorScale*FLOOR_TOLERANCE;
     const minGap=(p>=3||widthFit)&&rows.length>1&&needsSpacing?(widthFit?Math.max(MIN_LINE_GAP,base*wScale*.15):MIN_LINE_GAP):0;
     const gapHeight=minGap*Math.max(0,rows.length-1);
     const hScale=Math.max(0,(targetH-gapHeight)/pageH);
@@ -3587,7 +3599,6 @@ function fitPage(p){
     // لا سبيل للقارئ إلى ردّها. ولا يُمسّ الموضع ما دامت الصفحة في التمرير،
     // فلا يُقذف القارئ إلى أوّلها كلّما غُيّر حجم النافذة.
     stage.classList.toggle("scrolls",overflows);
-    if(!overflows)stage.scrollTop=0;
     host.style.justifyContent=overflows?"flex-start":"center";
     host.style.gap=minGap+"px";
     if(widthFit&&overflows){
@@ -3603,11 +3614,14 @@ function fitPage(p){
     // sheet or the keyboard changed the window size for a moment.
     if(p>=3&&!overflows&&rows.length>1){
       const rowHeight=rows.reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
-      const usable=stage.clientHeight*.955;
+      const usable=readingH*.955;
       const spare=Math.max(0,usable-rowHeight);
       const gap=Math.max(minGap,Math.min(18,spare/(rows.length-1)));
       host.style.gap=gap.toFixed(2)+"px";
     }
+    // Resetting to the measuring grid can clamp the old offset. Restore it
+    // only after the scrolling content has its final height and spacing.
+    stage.scrollTop=overflows?scrollTop:0;
 
     requestAnimationFrame(()=>{
       if(!isCurrent())return;
@@ -3992,7 +4006,7 @@ function renderPageBookmark(root){
   if(!pin){
     pin=document.createElement("span");pin.className="page-bookmark";pin.setAttribute("role","img");
     pin.innerHTML='<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 0h18v30l-9-6-9 6Z"/></svg>';
-    root.appendChild(pin);
+    root.querySelector(".page-meta").appendChild(pin);
   }
   pin.setAttribute("aria-label",`علامة الصفحة ${ar(root.dataset.page)}`);
 }

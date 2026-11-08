@@ -4,7 +4,7 @@ const fs=require("node:fs");
 const vm=require("node:vm");
 const source=fs.readFileSync(__dirname+"/../src/reader/page-fit.js","utf8");
 
-function fixture({width=400,height=800,columnWidth=width,page=42,headerCount=0,normalCount=15,widthFit=false}={}){
+function fixture({width=400,height=800,columnWidth=width,page=42,headerCount=0,normalCount=15,widthFit=false,chromeHeight=0}={}){
   const frames=[];
   const normals=Array.from({length:normalCount},()=>({
     style:{},getBoundingClientRect(){const size=parseFloat(this.style.fontSize)||104;return {width:size*16,height:size*1.33}}
@@ -27,7 +27,7 @@ function fixture({width=400,height=800,columnWidth=width,page=42,headerCount=0,n
   const stage={clientWidth:width,clientHeight:height,scrollTop:0,classList:{
     remove(name){classes.delete(name)},toggle(name,on){if(on)classes.add(name);else classes.delete(name)},contains:name=>classes.has(name)
   }};
-  const host={style:{},clientWidth:columnWidth,widthFit,children:rows,querySelectorAll(selector){
+  const host={style:{},clientWidth:columnWidth,get clientHeight(){return stage.clientHeight-chromeHeight},widthFit,children:rows,querySelectorAll(selector){
     return selector.includes(":not")?normals:selector===".surah-line"?surahs:selector===".bismillah-line"?basmalas:[];
   }};
   const root={isConnected:true,querySelector(selector){return selector===".page-stage"?stage:selector===".mushaf"?host:null}};
@@ -74,6 +74,15 @@ test("comfortable portrait pages keep their approved text size",()=>{
   assert.ok(Math.abs(parseFloat(f.normals[0].style.fontSize)-24.625)<.001);
   assert.ok(!f.stage.classList.contains("scrolls"));
   assert.ok(f.contentHeight()<=f.stage.clientHeight);
+});
+
+test("page heading and footer do not count towards the Quran fitting height",()=>{
+  const baseline=fixture();baseline.run();baseline.frame();baseline.frame();
+  const page=fixture({height:877,chromeHeight:77});page.run();page.frame();page.frame();
+  assert.equal(page.normals[0].style.fontSize,baseline.normals[0].style.fontSize);
+  assert.equal(page.host.style.gap,baseline.host.style.gap);
+  assert.ok(page.contentHeight()<=page.host.clientHeight);
+  assert.ok(!page.stage.classList.contains("scrolls"));
 });
 
 test("a short full-page layout reserves space without clipping its last row",()=>{

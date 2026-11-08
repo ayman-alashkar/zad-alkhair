@@ -369,7 +369,7 @@ function renderPageBookmark(root){
   if(!pin){
     pin=document.createElement("span");pin.className="page-bookmark";pin.setAttribute("role","img");
     pin.innerHTML='<svg viewBox="0 0 24 32" aria-hidden="true"><path d="M3 0h18v30l-9-6-9 6Z"/></svg>';
-    root.appendChild(pin);
+    root.querySelector(".page-meta").appendChild(pin);
   }
   pin.setAttribute("aria-label",`علامة الصفحة ${ar(root.dataset.page)}`);
 }

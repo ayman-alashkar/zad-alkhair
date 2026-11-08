@@ -204,6 +204,10 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
           widthUsed: Math.max(...lines.map(line => line.getBoundingClientRect().width)) / columnWidth,
           gap: parseFloat(getComputedStyle(host).rowGap),
           edgePadding: [host.style.paddingTop, host.style.paddingBottom],
+          stageHeight: stage.clientHeight,
+          headingTop: root.querySelector(".page-meta").getBoundingClientRect().top,
+          footerTop: root.querySelector(".page-footer").getBoundingClientRect().top,
+          stageBottom: bounds.bottom,
           scrolls: stage.classList.contains("scrolls"),
           scrollTop: stage.scrollTop,
           fitsWidth: lines.every(line => {
@@ -235,14 +239,22 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, "the longest Quran line fills its column");
         assert.ok(landscape.fontSize > portrait.fontSize * 1.3, "landscape makes the text noticeably larger");
         assert.ok(landscape.scrolls, "the enlarged landscape page scrolls vertically");
+        assert.ok(landscape.stageHeight >= width - 1, "scrolling uses the full screen height");
+        assert.ok(landscape.footerTop >= landscape.stageBottom, "the footer follows the page instead of staying on screen");
         assert.ok(landscape.gap >= 6, "short reading areas keep space between rows");
         assert.ok(landscape.fitsWidth, "rotation never clips the sides of a line");
         if (landscape.scrolls) {
           assert.ok(await page.locator('.page[data-page="9"] .page-stage').evaluate(stage => {
+            stage.scrollTop = 70;
+            const header = stage.querySelector(".page-meta").getBoundingClientRect(), bounds = stage.getBoundingClientRect();
+            return header.bottom <= bounds.top + 1;
+          }), "the heading scrolls away to free the top of the reading area");
+          assert.ok(await page.locator('.page[data-page="9"] .page-stage').evaluate(stage => {
             stage.scrollTop = stage.scrollHeight;
             const last = stage.querySelector(".line:last-child .line-inner").getBoundingClientRect(), bounds = stage.getBoundingClientRect();
-            return last.top >= bounds.top - 1 && last.bottom <= bounds.bottom + 1;
-          }), "the last row is reachable when a short phone needs scrolling");
+            const footer = stage.querySelector(".page-footer").getBoundingClientRect();
+            return last.top >= bounds.top - 1 && last.bottom <= footer.top + 1 && footer.bottom <= bounds.bottom + 1;
+          }), "the last row and page number are reachable together at the end of scrolling");
         } else assert.ok(landscape.fits, "the complete page fits when the height permits it");
         await page.setViewportSize({ width, height });
         await page.waitForTimeout(300);
@@ -381,8 +393,8 @@ test("one reading mark moves between pages and the index keeps five recent visit
       assert.equal(await page.locator(".page-bookmark").count(), 1);
       assert.equal(await page.locator("[data-save]").count(), 0, "no second save menu");
       const fits = await ribbon(9).evaluate(pin => {
-        const r = pin.getBoundingClientRect(), stage = pin.parentElement.querySelector(".page-stage").getBoundingClientRect();
-        return r.width > 0 && r.height > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= stage.top;
+        const r = pin.getBoundingClientRect(), firstLine = pin.closest(".page").querySelector(".line").getBoundingClientRect();
+        return r.width > 0 && r.height > 0 && r.left >= 0 && r.right <= innerWidth && r.bottom <= firstLine.top;
       });
       assert.ok(fits, "ribbon stays above the Quran text within the viewport");
       const shortcutsFit = await page.evaluate(() => {
