@@ -18,14 +18,6 @@ function ztApplyTheme(){
   document.documentElement.dataset.zkTheme=dark?"dark":"light";
   const button=ztEl("zt-theme");
   if(button)button.setAttribute("aria-label",dark?"تفعيل الوضع النهاري":"تفعيل الوضع الليلي");
-  ztPaintChrome();
-}
-/* لون شريط المتصفح: لون شاشة اليوم وهي مفتوحة، واللون الداكن للختمات. */
-function ztPaintChrome(){
-  const meta=document.querySelector('meta[name="theme-color"]');
-  if(!meta)return;
-  const open=document.body.classList.contains("zk-launch-open");
-  meta.content=!open?"#082D29":ztTheme()==="dark"?"#061F1D":"#F5F0E4";
 }
 
 /* ── التاريخ ── */
@@ -279,7 +271,7 @@ function ztNavigateAfterTab(id,url){
 window.addEventListener("pageshow",event=>{if(event.persisted)ztPaintTabs()});
 /* تُستدعى من zkShowLaunch و zkHideLaunch */
 function ztOnLaunchChange(){
-  ztPaintTabs();ztPaintChrome();ztMenu(false);
+  ztPaintTabs();ztMenu(false);
   if(document.body.classList.contains("zk-launch-open"))ztRefresh();
 }
 function ztRefresh(){
