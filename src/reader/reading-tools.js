@@ -15,7 +15,26 @@ function clearVerseSelection(){
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   selectedKey=null;selectedAnchor=null;closeMenu();
 }
-function selectVerse(k,anchor,force=false){
+/* Choose once per tap; do not move a control while that tap is in progress. */
+function placeReaderToolbar(anchor=null,point=null){
+  const toolbar=document.querySelector(".bottom"),header=document.querySelector(".topbar");
+  document.body.classList.remove("reader-tools-top");
+  if(!toolbar||!header)return;
+  const rect=anchor?.getBoundingClientRect();
+  const target=point||(rect?{x:rect.left+rect.width/2,y:rect.top+rect.height/2}:null);
+  if(!target)return;
+  // offsetTop excludes the toolbar's hide/show translation. Measuring its
+  // normal position also respects the phone, tablet and desktop dock sizes.
+  const bounds=toolbar.getBoundingClientRect(),bottomTop=toolbar.offsetTop;
+  const top=header.offsetTop+header.offsetHeight+4;
+  const overlaps=target.x>=bounds.left-8&&target.x<=bounds.right+8&&
+    target.y>=bottomTop-8&&target.y<=bottomTop+toolbar.offsetHeight+8;
+  if(overlaps&&target.y>top+toolbar.offsetHeight+8){
+    toolbar.style.setProperty("--reader-tools-top",top+"px");
+    document.body.classList.add("reader-tools-top");
+  }
+}
+function selectVerse(k,anchor,force=false,point=null){
   if(!force && selectedKey===k){
     clearVerseSelection();
     hideTools();
@@ -24,6 +43,7 @@ function selectVerse(k,anchor,force=false){
   selectedKey=k;selectedAnchor=anchor||selectedAnchor;
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach(x=>x.classList.add("selected"));
+  placeReaderToolbar(selectedAnchor,point);
   const v=verseParts(k);showVerseContext(v);
   return true;
 }
@@ -35,15 +55,17 @@ function bindSegment(seg){
     clearTimeout(longTimer);
     longTimer=setTimeout(()=>{
       if(moved)return;
-      longTriggered=true;clearTimeout(toolsTimer);selectVerse(seg.dataset.key,seg,true);openPrimaryMenu(seg);
+      longTriggered=true;clearTimeout(toolsTimer);selectVerse(seg.dataset.key,seg,true,{x:sx,y:sy});openPrimaryMenu(seg);
     },520);
   });
   seg.addEventListener("pointermove",e=>{
     if(Math.hypot(e.clientX-sx,e.clientY-sy)>10){moved=true;clearTimeout(longTimer)}
   });
-  seg.addEventListener("pointerup",e=>{
-    clearTimeout(longTimer);
-    if(!moved&&!longTriggered){const on=selectVerse(seg.dataset.key,seg,false);if(on)showToolsFor(2800)}
+  seg.addEventListener("pointerup",()=>clearTimeout(longTimer));
+  seg.addEventListener("click",e=>{
+    // The click's target is already fixed before the toolbar appears. The
+    // selecting tap can therefore never become a click on a new tool button.
+    if(!moved&&!longTriggered){const on=selectVerse(seg.dataset.key,seg,false,{x:e.clientX,y:e.clientY});if(on)showToolsFor(2800)}
   });
   seg.addEventListener("pointercancel",()=>clearTimeout(longTimer));
 }

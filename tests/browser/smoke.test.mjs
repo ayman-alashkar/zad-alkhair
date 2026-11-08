@@ -59,6 +59,32 @@ async function appPage({ profile = PHONE, rpc = {}, storage = {}, realtime = () 
   return { page, errors, context };
 }
 
+/* Real reader layout with neutral Arabic text and local fonts, without CDN audio/data. */
+async function readerPage({ profile = PHONE, theme = "light" } = {}) {
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
+  const fixture = await appPage({
+    profile,
+    storage: { "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme }
+  });
+  await fixture.context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+    path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+    headers: { "Access-Control-Allow-Origin": "*" }
+  }));
+  await fixture.context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+    headers: { "Access-Control-Allow-Origin": "*" },
+    json: {
+      page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
+      font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+      lines: Array.from({ length: 15 }, (_, i) => ({ words: [
+        ...Array.from({ length: 6 + i % 3 }, () => ({ type: "word", text: "نص تجريبي", char: "نَصٌّ تَجْرِيبِيٌّ", verse_key: `2:${60 + i}` })),
+        { type: "end", text: `V${60 + i}`, char: "١٢٣", verse_key: `2:${60 + i}` }
+      ] }))
+    }
+  }));
+  return fixture;
+}
+
 /* هل العنصر هو ما يظهر فعلًا في منتصفه، لا شيءٌ يغطيه؟ */
 const isOnTop = (page, selector) => page.$eval(selector, el => {
   const r = el.getBoundingClientRect();
@@ -212,32 +238,83 @@ test("the collapsed player can move without opening and stays reachable after re
   }
 });
 
+test("reader tools avoid low-page taps and require a separate tap to open tafsir", async t => {
+  const profiles = [
+    ["phone", PHONE],
+    ["landscape phone", { viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true }],
+    ["tablet", { viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true }],
+    ["desktop", { viewport: { width: 1440, height: 900 } }]
+  ];
+  for (const [name, profile] of profiles) for (const theme of ["light", "dark"]) {
+    await t.test(`${name} ${theme}`, async () => {
+      const { page, errors, context } = await readerPage({ profile, theme });
+      try {
+        await page.goto(BASE + "/quran-read/?page=9");
+        const root = page.locator('.page[data-page="9"]'), stage = root.locator(".page-stage");
+        await root.locator(".word.end").first().waitFor();
+        await page.waitForTimeout(300);
+        await stage.evaluate(el => { el.scrollTop = el.scrollHeight; });
+        const last = root.locator(".line:last-child .verse-segment").first();
+        const toolbar = page.locator(".bottom");
+        const tapGeometry = async () => {
+          const box = await last.boundingBox(), position = { x: box.width / 2, y: box.height - 2 };
+          return { position, point: { x: box.x + position.x, y: box.y + position.y }, before: await toolbar.evaluate(el => ({ top: el.offsetTop, height: el.offsetHeight })) };
+        };
+        let geometry = await tapGeometry();
+        // Neutral sample text leaves extra space on a tall phone. Confirm
+        // that it keeps the bottom dock, then use a shorter portrait viewport
+        // to exercise an actual collision without changing the page layout.
+        if (name === "phone" && geometry.point.y < geometry.before.top - 8) {
+          await last.tap({ position: geometry.position });
+          assert.equal(await page.locator("body.reader-tools-top").count(), 0, "a clear last row keeps the bottom dock");
+          assert.equal(await page.locator(".backdrop,body.player-on").count(), 0);
+          await last.tap({ position: geometry.position });
+          await page.setViewportSize({ width: profile.viewport.width, height: 640 });
+          await page.waitForTimeout(300);
+          await stage.evaluate(el => { el.scrollTop = el.scrollHeight; });
+          geometry = await tapGeometry();
+        }
+        const { position, point, before } = geometry;
+        assert.ok(point.y >= before.top - 8, "fixture taps a line inside the actual bottom toolbar area");
+        const scrollBefore = await stage.evaluate(el => el.scrollTop);
+        if (profile.hasTouch) await last.tap({ position }); else await last.click({ position });
+        await page.waitForTimeout(220);
+        assert.equal(await page.locator("body.reader-tools-top").count(), 1, "low taps put the tools at the top");
+        const toolsStyle = await toolbar.evaluate(el => ({ opacity: getComputedStyle(el).opacity, pointerEvents: getComputedStyle(el).pointerEvents }));
+        assert.ok(Number(toolsStyle.opacity) > .99, "the relocated tools finish appearing");
+        assert.notEqual(toolsStyle.pointerEvents, "none", "the relocated tools accept the next deliberate touch");
+        const toolsBox = await toolbar.boundingBox(), headerBox = await page.locator(".topbar").boundingBox();
+        assert.ok(toolsBox.y >= headerBox.y + headerBox.height + 3, "tools clear the header");
+        assert.ok(toolsBox.y + toolsBox.height < point.y - 8, "tools clear the selecting finger and text");
+        assert.ok(await root.locator('.verse-segment.selected[data-key="2:74"]').count());
+        assert.equal(await page.locator(".backdrop").count(), 0, "selecting does not open tafsir");
+        assert.equal(await page.locator("body.player-on").count(), 0, "selecting does not open the player");
+        assert.equal(await root.locator(".page-bookmark").count(), 0, "selecting does not add a bookmark");
+        assert.equal(await stage.evaluate(el => el.scrollTop), scrollBefore, "selection keeps the reading position");
+
+        // Clear the selection, then select a high row with a fresh gesture.
+        if (profile.hasTouch) await last.tap({ position }); else await last.click({ position });
+        await stage.evaluate(el => { el.scrollTop = 0; });
+        const first = root.locator(".line:first-child .verse-segment").first();
+        if (profile.hasTouch) await first.tap(); else await first.click();
+        assert.equal(await page.locator("body.reader-tools-top").count(), 0, "high taps retain the bottom tools");
+        if (profile.hasTouch) await page.locator("#tafsirBtn").tap(); else await page.locator("#tafsirBtn").click();
+        await page.locator(".backdrop").waitFor({ state: "visible" });
+        assert.deepEqual(errors, []);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+});
+
 test("Quran text and verse numbers stay readable when a phone or tablet rotates", async t => {
-  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
-  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
   for (const [width, height] of [[390, 844], [768, 1024], [834, 1194], [1024, 1366]]) {
     for (const theme of ["light", "dark"]) await t.test(`${width}×${height} ${theme}`, async () => {
-      const { page, errors, context } = await appPage({
+      const { page, errors, context } = await readerPage({
         profile: { viewport: { width, height }, isMobile: true, hasTouch: true },
-        storage: { "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme }
+        theme
       });
-      // A local Arabic font and neutral sample text exercise layout without
-      // depending on the CDN, live data, or replacement Quran glyphs.
-      await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
-        path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
-        headers: { "Access-Control-Allow-Origin": "*" }
-      }));
-      await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
-        headers: { "Access-Control-Allow-Origin": "*" },
-        json: {
-          page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
-          font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
-          lines: Array.from({ length: 15 }, (_, i) => ({ words: [
-            ...Array.from({ length: 6 + i % 3 }, () => ({ type: "word", text: "نص تجريبي", char: "نَصٌّ تَجْرِيبِيٌّ", verse_key: `2:${60 + i}` })),
-            { type: "end", text: `V${60 + i}`, char: "١٢٣", verse_key: `2:${60 + i}` }
-          ] }))
-        }
-      }));
       const measure = () => page.locator('.page[data-page="9"]').evaluate(root => {
         const stage = root.querySelector(".page-stage"), bounds = stage.getBoundingClientRect();
         const lines = [...root.querySelectorAll(".line-inner")], host = root.querySelector(".mushaf");
@@ -274,7 +351,12 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
             return r.left >= bounds.left - 1 && r.right <= bounds.right + 1 && r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
           }),
           textContrast: contrast(getComputedStyle(root.querySelector(".word:not(.end)")).color, background),
-          numberContrast: contrast(getComputedStyle(root.querySelector(".word.end")).color, background)
+          numberContrast: contrast(getComputedStyle(root.querySelector(".word.end")).color, background),
+          labelContrast: Math.min(...[...root.querySelectorAll(".page-meta-link,.page-no")].map(el => contrast(getComputedStyle(el).color, background))),
+          labelsStayInMargins: [...root.querySelectorAll(".page-meta-link,.page-no")].every(el => {
+            const r = el.getBoundingClientRect(), margin = el.closest(".page-meta,.page-footer").getBoundingClientRect();
+            return r.top >= margin.top - 1 && r.bottom <= margin.bottom + 1 && r.left >= margin.left - 1 && r.right <= margin.right + 1;
+          })
         };
       });
       try {
@@ -286,6 +368,8 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(portrait.fits, "all fifteen lines fit the portrait reading area");
         assert.ok(portrait.textContrast >= 7, "Quran text has strong contrast");
         assert.ok(portrait.numberContrast >= 4.5, "verse numbers remain legible in either theme");
+        assert.ok(portrait.labelContrast >= 7, "surah, juz and page labels have strong contrast");
+        assert.ok(portrait.labelsStayInMargins, "larger labels stay inside the existing page margins");
         assert.ok(portrait.columnWidth > width * .9, "portrait reading uses the available width");
         await page.setViewportSize({ width: height, height: width });
         await page.waitForTimeout(300);
@@ -299,6 +383,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(landscape.footerTop >= landscape.stageBottom, "the footer follows the page instead of staying on screen");
         assert.ok(landscape.gap >= 6, "short reading areas keep space between rows");
         assert.ok(landscape.fitsWidth, "rotation never clips the sides of a line");
+        assert.ok(landscape.labelsStayInMargins, "landscape keeps the labels inside their scrolling margins");
         if (landscape.scrolls) {
           assert.ok(await page.locator('.page[data-page="9"] .page-stage').evaluate(stage => {
             stage.scrollTop = 70;

@@ -30,7 +30,7 @@
   --brand:#0F5C50; --brand-strong:#0A473E; --brand-soft:#DDF1EA;
   --green:#1B705F; --green-deep:#0A473E; --green-hi:#278573;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:#F4E8CA; --red:#B95157;
-  --paper:#F5F0E4; --quran:#0B1611; --ayah-number:#634314; --muted:#746F63;
+  --paper:#F5F0E4; --quran:#0B1611; --ayah-number:#634314; --muted:#746F63; --page-label:#465044;
   --quran-stroke:.18px; --ayah-stroke:.24px;
   --chrome:#FFFCF4; --chrome-text:#18362F; --border:#DED3BD; --line:#DED3BD;
   --select:rgba(40,122,101,.12); --select-line:rgba(197,154,74,.30);
@@ -45,7 +45,7 @@ html[data-theme="dark"]{
   /* الوضع الليلي مأخوذ من خلفية وهوية النسخة النهائية لزاد الخير */
   --green:#49A18C; --green-deep:#0A473E; --green-hi:#49A18C;
   --gold:#C59A4A; --gold-hi:#E4C980; --gold-soft:rgba(228,201,128,.12); --red:#D77B80;
-  --paper:#061F1D; --quran:#FFF9EA; --ayah-number:#E4C980; --muted:rgba(255,249,234,.70);
+  --paper:#061F1D; --quran:#FFF9EA; --ayah-number:#E4C980; --muted:rgba(255,249,234,.70); --page-label:#DED8C3;
   --quran-stroke:.12px; --ayah-stroke:.16px;
   --chrome:#082D29; --chrome-text:#FFF9EA; --border:rgba(228,201,128,.24); --line:rgba(228,201,128,.24);
   --select:rgba(73,161,140,.18); --select-line:rgba(228,201,128,.28);
@@ -77,7 +77,7 @@ button{cursor:pointer}
   position:relative;z-index:3;width:calc(100% - 24px);height:100%;
   display:flex;justify-content:space-between;align-items:flex-start;
   padding:calc(12px + env(safe-area-inset-top)) 3px 0;
-  color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:16px;
+  color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,24px);line-height:1.15;
 }
 .page-meta-link{
   appearance:none;-webkit-appearance:none;border:0;background:transparent;padding:0;margin:0;
@@ -112,8 +112,7 @@ button{cursor:pointer}
    The page fitter still checks both dimensions, including after rotation. */
 @media (min-width:600px) and (min-height:600px) and (hover:none) and (pointer:coarse){
   .mushaf{width:min(calc(100vw - 32px),1120px)}
-  .page-meta{font-size:19px}
-  .page-no{font-size:19px}
+  .page-stage{--page-label-size:26px}
 }
 /* A rotated phone or tablet reads at the available width, with vertical
    scrolling for the rest of the page. Portrait retains the approved fit. */
@@ -176,8 +175,8 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 .word.allah{color:var(--red)}
 .word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
-  position:absolute;left:22px;bottom:calc(12px + env(safe-area-inset-bottom));
-  color:var(--muted);font-family:"Aref Ruqaa",serif;font-size:17px
+  position:absolute;left:22px;bottom:calc(8px + env(safe-area-inset-bottom));
+  color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,24px);line-height:1
 }
 .qcf-mark{
   position:absolute;right:50%;transform:translateX(50%);
@@ -2320,6 +2319,19 @@ html .toast{top:calc(70px + env(safe-area-inset-top))}
 @media(max-width:350px){html .topbar{padding-inline:9px;column-gap:5px}html .topbar .top-actions{gap:5px}}
 @media(min-width:900px){.context-surah{font-size:11px}.context-ayah{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.reader-context{transition:none}}
+
+/* Low-page taps use the same tools below the header, away from the selected
+   text. Their existing widths, button sizes and tab order remain in place. */
+html body.reader-tools-top .bottom{
+  top:var(--reader-tools-top);bottom:auto;
+  padding-bottom:4px;
+  background:linear-gradient(180deg,var(--reader-surface) 0%,var(--reader-surface) 70%,transparent 100%);
+}
+html body.reader-tools-top.hidden-tools .bottom{transform:translateY(-14px)}
+@media(min-width:900px){
+  html body.reader-tools-top .bottom{padding-bottom:8px}
+  html body.reader-tools-top.hidden-tools .bottom{transform:translate(-50%,-14px)}
+}
 
 .queue-source{padding:14px;border:1px solid var(--reader-line);border-radius:15px;background:var(--reader-raised)}
 .queue-source-label{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px;cursor:pointer;font-size:13px;color:var(--reader-ink)}
