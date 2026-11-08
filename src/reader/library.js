@@ -300,11 +300,14 @@ async function shareHubPayload(payload){
   catch(e){if(e?.name!=="AbortError")showToast("تعذّرت المشاركة الآن")}
 }
 function setIndexPlaybackBoundary(stop){detachQueue();if(stop)repeatMode="off";continuousStopRef=stop||null}
-function playSurahFromHub(s,closeHub){
-  listenTarget={surah:Number(s),reciter};
-  closeHub();
-  openListenPage();
-  return listenPlaySurah(s,1);
+async function playSurahFromHub(s,closeHub){
+  s=Number(s)||1;
+  if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(s,{chooseWhenMultiple:true}))return;
+  setIndexPlaybackBoundary(null);
+  continuousMode=true;storageSet(STORAGE_KEYS.continuous,"1");
+  play={surah:s,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
+  pendingSurahBasmala=(s!==1&&s!==9);basmalaFallbackTarget=null;
+  closeHub();const p=Number(chapterMap.get(s)?.pages?.[0]||1);await go(p);await playCurrent(true);
 }
 function prepareSurahFromDeepLink(s){
   s=Number(s)||1;
@@ -392,7 +395,7 @@ function openQuranIndex(initialTab="s",options={}){
     for(const ch of(qcfMeta?.chapters||[])){
       const start=Number(ch.pages?.[0]||1),end=Number(ch.pages?.[1]||start),isCurrent=currentPage>=start&&currentPage<=end,row=document.createElement("div");row.className="quran-index-row quran-index-row-with-actions"+(isCurrent?" current":"");
       row.innerHTML=`<span class="quran-index-surah-num">${ar(ch.id)}</span><button class="quran-index-row-main" type="button"><span class="quran-index-main"><span class="quran-index-name">سورة ${escapeHtml(ch.name_arabic)}</span><span class="quran-index-meta">${revelationArabic(ch.revelation_place)} - ${ar(ch.verses_count)} آية</span></span><span class="quran-index-page">${ar(start)}</span></button><span class="quran-index-actions"><button class="quran-index-action play" type="button" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}">${HUB_PLAY_ICON}</button><button class="quran-index-action share" type="button" aria-label="مشاركة سورة ${escapeHtml(ch.name_arabic)}">${HUB_SHARE_ICON}</button><button class="quran-index-action download" type="button" aria-label="تنزيل سورة ${escapeHtml(ch.name_arabic)} للاستماع دون اتصال">${HUB_DOWNLOAD_ICON}</button></span>`;
-      row.querySelector(".quran-index-row-main").onclick=async()=>{leaveHubForReader();await go(start)};row.querySelector(".play").onclick=()=>playSurahFromHub(ch.id,close);row.querySelector(".share").onclick=()=>shareHubPayload({title:`سورة ${ch.name_arabic} | زاد الخير`,url:publicSurahUrl(ch.id)});bindSurahDownloadButton(row.querySelector(".download"),ch.id);frag.appendChild(row);
+      row.querySelector(".quran-index-row-main").onclick=async()=>{leaveHubForReader();await go(start)};row.querySelector(".play").onclick=()=>playSurahFromHub(ch.id,leaveHubForReader);row.querySelector(".share").onclick=()=>shareHubPayload({title:`سورة ${ch.name_arabic} | زاد الخير`,url:publicSurahUrl(ch.id)});bindSurahDownloadButton(row.querySelector(".download"),ch.id);frag.appendChild(row);
     }
     surahHost.appendChild(frag);surahHost.dataset.ready="1";const current=surahHost.querySelector(".quran-index-row.current");if(current)centerIndexItem(surahHost,current);
   }

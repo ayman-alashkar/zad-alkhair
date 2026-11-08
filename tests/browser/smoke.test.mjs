@@ -473,6 +473,44 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
   }
 });
 
+test("surah play buttons in both Quran indexes open the mushaf player", async t => {
+  for (const [device, profile] of [["phone", PHONE], ["desktop", { viewport: { width: 1440, height: 900 } }]]) {
+    for (const home of [true, false]) {
+      await t.test(`${device} ${home ? "home index" : "reader index"}`, async () => {
+        const { page, errors, context } = await readerPage({ profile });
+        try {
+          await page.addInitScript(() => {
+            localStorage.setItem("zad:qcf4:qari", JSON.stringify({ id: "Ayman_Sowaid_64kbps" }));
+            localStorage.setItem("zad:qcf4:last-position", JSON.stringify({ page: 45 }));
+            // Exercise the real player state without loading a live recording.
+            const paused = new WeakMap();
+            Object.defineProperty(HTMLMediaElement.prototype, "paused", { get() { return paused.get(this) !== false; } });
+            HTMLMediaElement.prototype.play = async function () { paused.set(this, false); };
+            HTMLMediaElement.prototype.pause = function () { paused.set(this, true); };
+          });
+          await page.goto(BASE + (home ? "/quran-read/" : "/quran-read/?page=45"));
+          await page.locator('.page[data-page="45"][data-loaded="1"]').waitFor({ state: "attached" });
+          if (!home) await page.locator('.page[data-page="45"] [data-index-tab="s"]').click();
+          const index = page.locator(`.quran-index[data-home-mode="${home ? 1 : 0}"]`);
+          await index.getByRole("button", { name: "تشغيل سورة الفاتحة", exact: true }).click();
+          await page.locator("body.player-on.player-expanded").waitFor({ state: "attached" });
+          await page.waitForFunction(() => !document.getElementById("audio").paused);
+          assert.equal(await page.locator(".quran-index, .zad-listen").count(), 0);
+          assert.equal(await page.locator("#audioPanel").isVisible(), true);
+          assert.match(await page.locator("#audioNow").textContent(), /الفاتحة/);
+          assert.match(await page.locator("#audio").getAttribute("src"), /Ayman_Sowaid_64kbps\/001001\.mp3$/);
+          assert.equal(new URL(page.url()).pathname, "/quran-read/");
+          assert.equal(new URL(page.url()).searchParams.get("page"), "1");
+          assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:last-surface-v1")).surface), "reader");
+          assert.deepEqual(errors, []);
+        } finally {
+          await context.close();
+        }
+      });
+    }
+  }
+});
+
 test("one reading mark moves between pages and the index keeps five recent visits", async t => {
   const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
   const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
