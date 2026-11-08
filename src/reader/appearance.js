@@ -16,6 +16,7 @@ document.getElementById("reader").addEventListener("click",e=>{
   if(e.target.closest(".verse-segment"))return;
   closeMenu();
   if(!document.body.classList.contains("hidden-tools")){hideTools();return}
+  placeReaderToolbar(null,{x:e.clientX,y:e.clientY});
   showToolsFor(2800);
 });
 document.querySelectorAll(".chrome,.audio-panel,.audio-fab").forEach(x=>x.addEventListener("click",e=>e.stopPropagation()));
@@ -38,6 +39,7 @@ function refitIfResized(delay){
     if(size===fittedSize)return;
     fittedSize=size;
     document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page)));
+    requestAnimationFrame(()=>{if(!document.body.classList.contains("hidden-tools"))placeReaderToolbar(selectedAnchor)});
   },delay);
 }
 window.addEventListener("resize",()=>refitIfResized(150));
