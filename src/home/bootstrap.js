@@ -183,7 +183,6 @@ window.addEventListener("hashchange",()=>{
   }
   if(!zkLaunchVisible())boot();
 });
-window.addEventListener("resize",queueTopUserSync,{passive:true});
 window.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});

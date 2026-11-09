@@ -99,8 +99,6 @@ function bind(){
     $("btn-back").onclick=()=>{gateName="";render();};
   }
 
-  if($("btn-logout")) $("btn-logout").onclick=logoutCurrent;
-
   document.querySelectorAll(".cell").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
   document.querySelectorAll("[data-sheet]").forEach(el=>el.onclick=()=>openSheet(+el.dataset.sheet));
   document.querySelectorAll("[data-complete]").forEach(b=>b.onclick=async()=>{
@@ -118,13 +116,10 @@ function bind(){
   document.querySelectorAll("[data-member]").forEach(b=>b.onclick=()=>memberDialog(b.dataset.member));
 
 
-  if($("btn-link")) $("btn-link").onclick=reminderFromAccountMenu;
   if($("btn-link-big")) $("btn-link-big").onclick=()=>{
     if(state&&state.accessType==="public") askReminderHour();
     else linkTelegram();
   };
-  if($("btn-mine")) $("btn-mine").onclick=e=>{e.stopPropagation();showTopMenu("mine",false);};
-  if($("btn-history"))  $("btn-history").onclick=historyDialog;
 
 
   if($("btn-share")) $("btn-share").onclick=shareText;
