@@ -2347,9 +2347,10 @@ html body.reader-tools-top.hidden-tools .bottom{transform:translateY(-14px)}
    numbers sit in a single column by construction at every width. The values are
    the ones Surah rows already used; separators reserve exactly the width of the
    three row actions (play, share, download). */
-.quran-index{--ix-pad-left:12px;--ix-pad-right:14px;--ix-gap:9px;--ix-num:42px;--ix-page:50px;--ix-page-gap:8px;--ix-btn:40px;--ix-btn-gap:5px}
-@media(max-width:390px){.quran-index{--ix-pad-left:9px;--ix-pad-right:11px;--ix-num:36px;--ix-page:44px;--ix-btn-gap:4px}}
-@media(max-width:350px){.quran-index{--ix-pad-right:9px;--ix-gap:6px;--ix-num:32px;--ix-page-gap:5px}}
+/* بين الأزرار ‎8px‎ لتتباعد عناوينها في الشريط فوقها؛ في أضيق الشاشات (‎350px‎ وأقل) تبقى ‎4px‎ كي لا تُقصّ أسماء السور. */
+.quran-index{--ix-pad-left:12px;--ix-pad-right:14px;--ix-gap:9px;--ix-num:42px;--ix-page:50px;--ix-page-gap:8px;--ix-btn:40px;--ix-btn-gap:8px}
+@media(max-width:390px){.quran-index{--ix-pad-left:9px;--ix-pad-right:11px;--ix-num:36px;--ix-page:44px}}
+@media(max-width:350px){.quran-index{--ix-pad-right:9px;--ix-gap:6px;--ix-num:32px;--ix-page-gap:5px;--ix-btn-gap:4px}}
 html body .quran-index .quran-index-row-with-actions,
 html body .quran-index .quran-index-juz-sep{padding-left:var(--ix-pad-left);padding-right:var(--ix-pad-right);column-gap:var(--ix-gap);grid-template-columns:var(--ix-num) minmax(0,1fr) calc(3 * var(--ix-btn) + 2 * var(--ix-btn-gap))}
 html body .quran-index .quran-index-row-main,
@@ -2642,7 +2643,7 @@ html .quran-index .quran-index-head-action svg{width:20px;height:20px}
 .quran-index-pane>.quran-index-scroll{flex:1 1 auto;height:auto;min-height:0}
 html body .quran-index .quran-index-colhead{flex:none;min-height:0;padding-top:7px;padding-bottom:7px;
   border-bottom:1px solid var(--hd-line);background:transparent;cursor:default;
-  font-family:Alexandria,system-ui,sans-serif;font-size:12px;font-weight:600;line-height:1.4;color:var(--hd-gold)}
+  font-family:Alexandria,system-ui,sans-serif;font-size:11px;font-weight:600;line-height:1.4;color:var(--hd-gold)}
 html body .quran-index .quran-index-colhead .quran-index-row-main{padding:0}
 html body .quran-index .quran-index-colhead .quran-index-main,
 html body .quran-index .quran-index-colhead .quran-index-page,
@@ -2650,6 +2651,5 @@ html body .quran-index .quran-index-colhead .juz-accordion-title{font:inherit;co
 html body .quran-index .quran-index-colhead .quran-index-page{text-align:center}
 html body .quran-index .quran-index-colhead .quran-index-action{height:auto;border:0;border-radius:0;background:none;color:inherit;white-space:nowrap}
 html body .quran-index .quran-index-colhead .juz-accordion-head-main{padding-block:0}
-@media(max-width:360px){html body .quran-index .quran-index-colhead{font-size:10.5px}}
 /* صف الجزء بلا عمود صفحات: النطاق مكتوب تحت اسم الجزء («الصفحات ١–٢١»). */
 .juz-accordion-head-main{grid-template-columns:minmax(0,1fr) 22px}
