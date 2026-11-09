@@ -191,7 +191,6 @@ function publicCardsMarkup(){
 }
 
 /* ===================== الشاشات ===================== */
-let topUserObserver=null,topUserResizeFrame=0;
 function closeTopMenu(){
   const menu=document.getElementById("tb-popover"),btn=document.getElementById("tb-user");
   if(menu){menu.hidden=true;menu.innerHTML="";}
@@ -204,10 +203,14 @@ function topMineMarkup(withBack=false){
       <span>${esc(x.title||"ختمة")}</span><small>${esc(x.name||"")}</small></button>`).join(""):
       '<div class="tb-menu-empty">لا توجد ختمات محفوظة على هذا الجهاز.</div>'}`;
 }
+/* قائمة الحساب في شاشة الختمة: الاسم وشارتاه في رأسها، ثم ما كان في شريط المستخدم. */
 function topAccountMarkup(){
-  return `<button class="tb-menu-item" data-top-action="mine">ختماتي</button>
+  const me=viewer&&state?memberOf(viewer.id):null;
+  const head=viewer?`<div class="tb-menu-head"><b>${esc(viewer.name)}</b>
+      ${isOrganizer()?'<span class="tag">المنظّم</span>':""}${me&&me.linked?'<span class="tag j">التذكير مفعّل</span>':""}</div>`:"";
+  return `${head}<button class="tb-menu-item" data-top-action="mine">ختماتي</button>
     <button class="tb-menu-item" data-top-action="history">سجلي</button>
-    <button class="tb-menu-item" data-top-action="reminder">أعد تفعيل التذكير</button>
+    <button class="tb-menu-item" data-top-action="reminder">${me&&me.linked?"أعد تفعيل التذكير":"فعّل التذكير"}</button>
     <button class="tb-menu-item" data-top-action="logout">خروج</button>
     ${viewer&&state&&!isOrganizer()?'<button class="tb-menu-item danger" data-top-action="leave">مغادرة الختمة</button>':""}`;
 }
@@ -223,42 +226,30 @@ function toggleTopMenu(){
   if(!menu.hidden){closeTopMenu();return;}
   showTopMenu(screen==="home"?"mine":"account");
 }
+/* قائمة الختمات وشاشة الختمة لهما رأس كبقية التبويبات: «الختمات الجماعية» يمينًا،
+   وزرّ بأيقونة شخص يسارًا يفتح «ختماتي» في القائمة، وقائمة الحساب داخل الختمة.
+   النص المخفي في الزر يبقى، فـ toggleTopMenu تفتح القائمة متى كان للزر نص. */
+const TOP_USER_ICON=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.5c.8-3.8 3.6-5.8 7-5.8s6.2 2 7 5.8"/></svg>`;
 function syncTopUser(){
   const topUser=document.getElementById("tb-user");
   if(!topUser) return;
   closeTopMenu();
-  if(topUserObserver){topUserObserver.disconnect();topUserObserver=null;}
+  const inMain=!!(viewer&&screen==="main");
   document.body.classList.remove("show-top-user","show-home-mine");
-  /* قائمة الختمات لها رأس كبقية التبويبات: العنوان، و«ختماتي» زرٌّ بأيقونة. */
-  document.body.classList.toggle("kh-home",screen==="home");
+  document.body.classList.toggle("kh-head",screen==="home"||inMain);
   topUser.textContent="";
   topUser.removeAttribute("aria-label");
   topUser.disabled=true;
 
-  if(screen==="home"){
-    if(mineGet().length){
-      /* النص المخفي يبقى، فـ toggleTopMenu تفتح القائمة متى كان للزر نص. */
-      topUser.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.5c.8-3.8 3.6-5.8 7-5.8s6.2 2 7 5.8"/></svg><span class="tb-sr">ختماتي</span>`;
-      topUser.setAttribute("aria-label","ختماتي");topUser.disabled=false;
-      document.body.classList.add("show-home-mine");
-    }
-    return;
+  if(screen==="home"&&mineGet().length){
+    topUser.innerHTML=`${TOP_USER_ICON}<span class="tb-sr">ختماتي</span>`;
+    topUser.setAttribute("aria-label","ختماتي");topUser.disabled=false;
+    document.body.classList.add("show-home-mine");
+  }else if(inMain){
+    topUser.innerHTML=`${TOP_USER_ICON}<span class="tb-sr">${esc(viewer.name)}</span>`;
+    topUser.setAttribute("aria-label",`حسابي: ${viewer.name}`);topUser.disabled=false;
+    document.body.classList.add("show-top-user");
   }
-  if(!(viewer&&screen==="main")) return;
-  topUser.textContent=viewer.name;topUser.disabled=false;
-  const bar=document.getElementById("main-userbar");
-  if(!bar) return;
-  topUserObserver=new IntersectionObserver(entries=>{
-    const entry=entries[0];
-    const show=!entry.isIntersecting&&entry.boundingClientRect.top<64;
-    document.body.classList.toggle("show-top-user",show);
-    if(!show) closeTopMenu();
-  },{root:null,rootMargin:"-64px 0px 0px 0px",threshold:0});
-  topUserObserver.observe(bar);
-}
-function queueTopUserSync(){
-  cancelAnimationFrame(topUserResizeFrame);
-  topUserResizeFrame=requestAnimationFrame(syncTopUser);
 }
 
 /* The khatmah screen is drawn from the saved state first and again when the
@@ -468,18 +459,6 @@ function viewMain(){
     </div>`;
   }).join("");
   return `<div class="khatma-shell">
-  <div class="userbar" id="main-userbar">
-    <span class="avatar">${esc(norm(viewer.name).charAt(0)||"؟")}</span>
-    <span class="user-name">${esc(viewer.name)}</span>
-    ${isOrganizer()?'<span class="tag">المنظّم</span>':""}
-    ${me.linked?'<span class="tag j">التذكير مفعّل</span>':""}
-    <span class="spacer"></span>
-    <button class="btn quiet sm" id="btn-mine">ختماتي</button>
-    <button class="btn quiet sm" id="btn-history">سجلي</button>
-    <button class="btn quiet sm" id="btn-link">${me.linked?"أعد تفعيل التذكير":"فعّل التذكير"}</button>
-    <button class="btn quiet sm" id="btn-logout">خروج</button>
-  </div>
-
   <div class="frame hero">
     <div class="hero-intro">
       <div class="display">${esc(state.title)}</div>
