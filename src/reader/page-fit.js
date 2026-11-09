@@ -156,6 +156,8 @@ function fitPage(p){
     // Resetting to the measuring grid can clamp the old offset. Restore it
     // only after the scrolling content has its final height and spacing.
     stage.scrollTop=overflows?scrollTop:0;
+    // Reading tools may be waiting for this page's final height (see revealVerse).
+    if(typeof afterPageFit==="function")afterPageFit(root);
 
     requestAnimationFrame(()=>{
       if(!isCurrent())return;

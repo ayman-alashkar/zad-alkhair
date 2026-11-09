@@ -13,7 +13,7 @@ function showVerseContext(v){
 function clearVerseSelection(){
   clearVerseContext();
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
-  selectedKey=null;selectedAnchor=null;closeMenu();
+  selectedKey=null;selectedAnchor=null;pendingReveal=null;closeMenu();
 }
 /* Choose once per tap; do not move a control while that tap is in progress. */
 function placeReaderToolbar(anchor=null,point=null){
@@ -34,6 +34,46 @@ function placeReaderToolbar(anchor=null,point=null){
     document.body.classList.add("reader-tools-top");
   }
 }
+/* When a page is taller than the screen (landscape, tablets), a verse chosen
+   by a link, bookmark, index or the recitation may sit below the fold. Scroll
+   its page so the verse rests in the upper third, clear of the bottom tools.
+   A tapped verse is already on screen, so taps never scroll.
+   The page is often still being fitted when the verse is chosen (it cannot
+   scroll yet), so the request waits in pendingReveal; fitPage() applies it
+   once the page has its final height. */
+let pendingReveal=null;
+function revealVerse(anchor){
+  pendingReveal=anchor||null;
+  applyPendingReveal();
+}
+function afterPageFit(root){
+  if(pendingReveal&&root.contains(pendingReveal))applyPendingReveal();
+}
+function applyPendingReveal(){
+  const anchor=pendingReveal;
+  if(!anchor?.isConnected){pendingReveal=null;return}
+  const stage=anchor.closest(".page-stage");
+  if(!stage||!stage.classList.contains("scrolls"))return; // not fitted yet, or the page fits the screen
+  pendingReveal=null;
+  const header=document.querySelector(".topbar");
+  const view=stage.getBoundingClientRect(),verse=anchor.getBoundingClientRect();
+  const visibleTop=Math.max(view.top,header?header.getBoundingClientRect().bottom:view.top);
+  const visibleBottom=view.bottom-(document.querySelector(".bottom")?.offsetHeight||0);
+  if(verse.top>=visibleTop&&verse.bottom<=visibleBottom)return;
+  // At the start of a surah, show its name banner and basmala above the verse
+  // too, as long as the verse itself still fits on screen.
+  let start=verse.top,line=anchor.closest(".line");
+  for(let i=0;i<2&&(line=line?.previousElementSibling);i++){
+    if(!line.querySelector(".surah-line,.bismillah-line"))break;
+    start=line.getBoundingClientRect().top;
+  }
+  const room=visibleBottom-visibleTop;
+  stage.scrollTop+=start<verse.top&&verse.bottom-start+8<=room
+    ?start-visibleTop-4
+    :verse.top-visibleTop-room/3;
+  // The tools were placed against the verse's old position; place them again.
+  if(selectedAnchor===anchor)placeReaderToolbar(anchor);
+}
 function selectVerse(k,anchor,force=false,point=null){
   if(!force && selectedKey===k){
     clearVerseSelection();
@@ -43,6 +83,7 @@ function selectVerse(k,anchor,force=false,point=null){
   selectedKey=k;selectedAnchor=anchor||selectedAnchor;
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach(x=>x.classList.add("selected"));
+  if(point)pendingReveal=null;else revealVerse(selectedAnchor);
   placeReaderToolbar(selectedAnchor,point);
   const v=verseParts(k);showVerseContext(v);
   return true;

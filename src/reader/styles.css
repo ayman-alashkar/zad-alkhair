@@ -988,6 +988,11 @@ html:not([data-theme="dark"]) .hizb-ring.start{
   .bottom{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"listen tafsir" "shortcuts shortcuts"}
   .bottom>.navbtn,.desktop-page-nav{display:none}
 }
+/* A rotated phone has little height: the four tools share one row, in the
+   same right-to-left order as the two portrait rows. */
+@media (orientation:landscape) and (max-height:599px) and (hover:none) and (pointer:coarse){
+  .bottom{grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"shortcuts shortcuts listen tafsir"}
+}
 /* Larger touch screens get readable controls in either orientation. The
    short-side bounds keep ordinary phones and mouse-driven computers intact. */
 @media (min-width:600px) and (min-height:600px) and (hover:none) and (pointer:coarse){
