@@ -2650,6 +2650,24 @@ html body .quran-index .quran-index-colhead .juz-accordion-title{font:inherit;co
 html body .quran-index .quran-index-colhead .quran-index-page{text-align:center}
 html body .quran-index .quran-index-colhead .quran-index-action{height:auto;border:0;border-radius:0;background:none;color:inherit;white-space:nowrap}
 html body .quran-index .quran-index-colhead .juz-accordion-head-main{padding-block:0}
-@media(max-width:360px){html body .quran-index .quran-index-colhead{font-size:10.5px}}
 /* صف الجزء بلا عمود صفحات: النطاق مكتوب تحت اسم الجزء («الصفحات ١–٢١»). */
 .juz-accordion-head-main{grid-template-columns:minmax(0,1fr) 22px}
+
+/* ═══════════ فواصل الأعمدة في فهرسي السور والأجزاء ═══════════
+   خط رأسي رفيع بين الأعمدة يقع في منتصف الفراغ بينها (نصف ‎--ix-page-gap‎ أو
+   ‎--ix-gap‎ أو ‎--ix-btn-gap‎). في الصفوف يفصل الاسم والصفحة والأزرار؛ الأزرار
+   نفسها مربعات منفصلة، فلا خط بينها إلا في شريط العناوين حيث الكلمات متجاورة. */
+html body .quran-index .quran-index-row-with-actions .quran-index-page,
+html body .quran-index .quran-index-actions,
+html body .quran-index .quran-index-colhead .quran-index-action{position:relative}
+html body .quran-index .quran-index-row-with-actions .quran-index-page::before,
+html body .quran-index .quran-index-actions::before,
+html body .quran-index .quran-index-colhead .quran-index-action+.quran-index-action::before{
+  content:"";position:absolute;top:50%;width:1px;height:34px;transform:translateY(-50%);background:var(--hd-line);pointer-events:none}
+html body .quran-index .quran-index-row-with-actions .quran-index-page::before{inset-inline-start:calc(var(--ix-page-gap) / -2 - .5px)}
+html body .quran-index .quran-index-row-with-actions .quran-index-actions::before{inset-inline-start:calc(var(--ix-gap) / -2 - .5px)}
+html body .quran-index .juz-accordion-head-v80 .quran-index-actions::before{inset-inline-start:-4.5px}
+html body .quran-index .quran-index-colhead .quran-index-action+.quran-index-action::before{inset-inline-start:calc(var(--ix-btn-gap) / -2 - .5px)}
+html body .quran-index .quran-index-colhead .quran-index-page::before,
+html body .quran-index .quran-index-colhead .quran-index-actions::before,
+html body .quran-index .quran-index-colhead .quran-index-action+.quran-index-action::before{height:18px}

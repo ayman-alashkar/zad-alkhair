@@ -353,8 +353,8 @@ const READER_APP_TABS=`<nav class="reader-app-tabs" aria-label="الأقسام" 
 /* شريط عناوين الأعمدة فوق فهرسي السور والأجزاء: يقول ما هو الرقم وما هي الأزرار.
    يأخذ أصناف الصفوف نفسها، فيقع كل عنوان فوق عموده بالقياسات نفسها على كل عرض.
    aria-hidden لأن لكل زر في الصف اسمه الكامل لقارئ الشاشة أصلًا. */
-const SURAH_COLUMN_HEAD=`<div class="quran-index-row quran-index-row-with-actions quran-index-colhead" aria-hidden="true"><span class="quran-index-surah-num"></span><span class="quran-index-row-main"><span class="quran-index-main">السورة</span><span class="quran-index-page">الصفحة</span></span><span class="quran-index-actions"><span class="quran-index-action">تشغيل</span><span class="quran-index-action">مشاركة</span><span class="quran-index-action">تنزيل</span></span></div>`;
-const JUZ_COLUMN_HEAD=`<div class="juz-accordion-head-v80 quran-index-colhead" aria-hidden="true"><span class="juz-accordion-head-main"><span class="juz-accordion-title">الجزء</span><span></span></span><span class="quran-index-actions"><span class="quran-index-action">تشغيل</span><span class="quran-index-action">مشاركة</span></span></div>`;
+const SURAH_COLUMN_HEAD=`<div class="quran-index-row quran-index-row-with-actions quran-index-colhead" aria-hidden="true"><span class="quran-index-surah-num"></span><span class="quran-index-row-main"><span class="quran-index-main">السورة</span><span class="quran-index-page">الصفحة</span></span><span class="quran-index-actions"><span class="quran-index-action">شغّل</span><span class="quran-index-action">شارك</span><span class="quran-index-action">نزّل</span></span></div>`;
+const JUZ_COLUMN_HEAD=`<div class="juz-accordion-head-v80 quran-index-colhead" aria-hidden="true"><span class="juz-accordion-head-main"><span class="juz-accordion-title">الجزء</span><span></span></span><span class="quran-index-actions"><span class="quran-index-action">شغّل</span><span class="quran-index-action">شارك</span></span></div>`;
 function openQuranIndex(initialTab="s",options={}){
   document.querySelector(".quran-index")?.remove();
   const homeMode=!!options.home,fromReader=!homeMode;
