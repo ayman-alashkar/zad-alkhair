@@ -2653,3 +2653,16 @@ html body .quran-index .quran-index-colhead .quran-index-action{height:auto;bord
 html body .quran-index .quran-index-colhead .juz-accordion-head-main{padding-block:0}
 /* صف الجزء بلا عمود صفحات: النطاق مكتوب تحت اسم الجزء («الصفحات ١–٢١»). */
 .juz-accordion-head-main{grid-template-columns:minmax(0,1fr) 22px}
+
+/* ═══════════ «ما تيسّر» ═══════════
+   زر رابع في صف أدوات البطاقة، يتلوّن بالذهبي حين يكون الوضع مفعّلًا؛ ووسم صغير
+   أعلى البطاقة، وسطر «التالي» فوق أزرار التحكم. */
+.zl-actions{grid-template-columns:repeat(4,minmax(0,1fr))}
+.zl-act.zl-tayassur.on{color:#E4C980;background:rgba(228,201,128,.12)}
+html[data-theme="dark"] .zl-act.zl-tayassur.on{color:#8E6A28;background:rgba(197,154,74,.16)}
+.zl-tag{display:inline-flex;align-items:center;padding:1px 10px;border:1px solid currentColor;border-radius:999px;font-weight:600;color:#E4C980}
+html[data-theme="dark"] .zl-tag{color:#8E6A28}
+.zl-upnext{margin:6px 8px 0;text-align:center;font-size:12px;color:rgba(255,249,234,.74);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.zl-upnext[hidden]{display:none}
+html[data-theme="dark"] .zl-upnext{color:#6B6350}
+.zl-qrow:disabled{opacity:.45;cursor:default}

@@ -900,3 +900,24 @@ test("live sync: joins the khatmah's channel, and a «changed» signal refreshes
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+/* «ما تيسّر»: الزر يفعّل الوضع (الوسم وسطر «التالي»)، والضغطة الثانية تطفئه.
+   الصوت هنا ممنوع، فالمطلوب حالة الواجهة لا التلاوة نفسها. */
+test("«ما تيسّر» turns on with its tag and up-next line, and a second press turns it off", async () => {
+  const { page, errors, context } = await readerPage();
+  try {
+    await page.goto(BASE + "/quran-listen/?from=zad", { waitUntil: "load" });
+    await page.waitForSelector(".zl-card .zl-tayassur");
+    await page.click(".zl-tayassur");
+    await page.waitForFunction(() => document.querySelector(".zl-tayassur").getAttribute("aria-pressed") === "true");
+    assert.match(await page.locator(".zl-eyebrow").innerText(), /ما تيسّر/);
+    assert.match(await page.locator(".zl-upnext").innerText(), /^التالي: سورة /);
+    assert.doesNotMatch(await page.locator(".zl-qari-name").innerText(), /الحمود/, "never the whole-surah reciter");
+    await page.click(".zl-tayassur");
+    await page.waitForFunction(() => document.querySelector(".zl-tayassur").getAttribute("aria-pressed") === "false");
+    assert.equal(await page.locator(".zl-upnext").isHidden(), true);
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+  }
+});

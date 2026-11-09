@@ -43,6 +43,8 @@ async function finishCurrentAyah(){
       pendingSurahBasmala=(play.surah!==1&&play.surah!==9);await playCurrent(false);return;
     }
     if(continuousStopRef&&play.surah===continuousStopRef.s&&play.current===continuousStopRef.a){
+      /* «ما تيسّر»: نهاية المقطع بداية المقطع التالي. */
+      if(tayassurActive()){await tayassurPlay(tayassur.i+1);return}
       continuousStopRef=null;playbackWanted=false;audio.pause();syncPlay();completeAudioProgress();return;
     }
     const previousSurah=play.surah,n=atSurahEnd()?nextSurahRef():nextAyahRef(play.surah,play.current);
