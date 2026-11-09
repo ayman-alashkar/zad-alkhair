@@ -2666,3 +2666,5 @@ html[data-theme="dark"] .zl-tag{color:#8E6A28}
 .zl-upnext[hidden]{display:none}
 html[data-theme="dark"] .zl-upnext{color:#6B6350}
 .zl-qrow:disabled{opacity:.45;cursor:default}
+/* التنزيل معطّل في «ما تيسّر»؛ setAudioDownloadButton قد يعيد تفعيل الزر نفسه، فاللمس يُمنع من الحاوية. */
+.zl-act-dl.off{opacity:.4;pointer-events:none}
