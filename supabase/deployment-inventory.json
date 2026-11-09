@@ -10,9 +10,9 @@
     },
     {
       "slug": "send-reminders",
-      "version": 25,
+      "version": 26,
       "verify_jwt": false,
-      "bundle_sha256": "f7ac78fc4947d46b0b3699e3835345ebf58caf300392ee6ba1c099c47cd94934"
+      "bundle_sha256": "1c87448b8d2df882d126e18b521a85b2cf61ea743f80da3edd776568459c0c90"
     },
     {
       "slug": "notify-done",

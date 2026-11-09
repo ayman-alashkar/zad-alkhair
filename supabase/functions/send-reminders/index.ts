@@ -173,29 +173,14 @@ function quote(i: number) {
   return `<i>${m.t}</i>\n${body}\n— ${m.s}`;
 }
 
-const JUZ_START: [number, number][] = [
-  [1,1],   [2,142], [2,253], [3,93],  [4,24],  [4,148], [5,82],  [6,111],
-  [7,88],  [8,41],  [9,93],  [11,6],  [12,53], [15,1],  [17,1],  [18,75],
-  [21,1],  [23,1],  [25,21], [27,56], [29,46], [33,31], [36,28], [39,32],
-  [41,47], [46,1],  [51,31], [58,1],  [67,1],  [78,1],
-];
-
-const readLink = (juz: number, code: string, _legacyToken = "") =>
-  readerLink(code, juz);
-
-function juzWord(n: number) {
-  if (n === 1) return "جزؤك";
-  if (n === 2) return "جزءاك";
-  return `أجزاؤك ال${n <= 10 ? ["","","","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة","عشرة"][n] : ar(n)}`;
-}
-function juzList(nums: number[], code: string, migrationToken = "", respectful = false) {
+function juzList(nums: number[], code: string, respectful = false) {
   const invitation = respectful ? "يمكنكم" : "يمكنك";
   return nums.map((n) =>
-    `• الجزء ${ar(n)} — ${JUZ[n - 1]}\n  📖 ${invitation} قراءة هذا الجزء من <a href="${esc(readLink(n, code, migrationToken))}">هنا</a>`
+    `• الجزء ${ar(n)} — ${JUZ[n - 1]}\n  📖 ${invitation} قراءة هذا الجزء من <a href="${esc(readerLink(code, n))}">هنا</a>`
   ).join("\n");
 }
 
-function daily(g: Group, migrationToken = "") {
+function daily(g: Group) {
   const nums = g.juz;
   const first = nums[0];
   const per = Math.max(1, Math.ceil(20 * nums.length / Math.max(1, g.daysLeft || 1)));
@@ -223,10 +208,10 @@ function daily(g: Group, migrationToken = "") {
     ? `ابدؤوا بالجزء ${ar(first)}، ولو صفحة واحدة.`
     : "افتحوا المصحف الآن، ولو صفحة واحدة.";
 
-  return `🕌 <b>زاد الخير</b>\n\nالسلام عليكم يا ${esc(g.name)}\n\n${subject} ${waiting} بانتظار الإتمام.\n\n${juzList(nums, g.code, migrationToken, true)}\n<b>وردكم اليوم:</b> ${ar(per)} صفحات تقريبًا${group}\n\n${quote(first - 1)}\n\n${tail}\n\n———\nوصلتكم هذه الرسالة لأن ${reasonSubject} ${notMarked} بعد. إن كنتم قد أتممتم القراءة، فتفضّلوا ${marking} في التطبيق. جزاكم الله خيرًا وكتب لكم القبول.`;
+  return `🕌 <b>زاد الخير</b>\n\nالسلام عليكم يا ${esc(g.name)}\n\n${subject} ${waiting} بانتظار الإتمام.\n\n${juzList(nums, g.code, true)}\n<b>وردكم اليوم:</b> ${ar(per)} صفحات تقريبًا${group}\n\n${quote(first - 1)}\n\n${tail}\n\n———\nوصلتكم هذه الرسالة لأن ${reasonSubject} ${notMarked} بعد. إن كنتم قد أتممتم القراءة، فتفضّلوا ${marking} في التطبيق. جزاكم الله خيرًا وكتب لكم القبول.`;
 }
 
-function lastDay(g: Group, migrationToken = "") {
+function lastDay(g: Group) {
   const nums = g.juz;
   const first = nums[0];
   const numberList = nums.length === 1
@@ -242,10 +227,10 @@ function lastDay(g: Group, migrationToken = "") {
   const waiting = nums.length === 1 ? "ما زال" : nums.length === 2 ? "ما زالا" : "ما تزال";
   const marking = nums.length === 1 ? "بتعليمه" : nums.length === 2 ? "بتعليمهما" : "بتعليمها";
 
-  return `🕌 <b>زاد الخير</b> — اليوم آخر يوم\n\nالسلام عليكم يا ${esc(g.name)}\n\n${subject} ${waiting} بانتظار الإتمام، وموعد انتهاء الختمة اليوم. إن كنتم قد أتممتم القراءة، فتفضّلوا ${marking} في التطبيق، وإن لم يتيسّر بعد فاقرؤوا ما استطعتم. جزاكم الله خيرًا وكتب لكم القبول.\n\n${juzList(nums, g.code, migrationToken, true)}\n\n${quote(first - 1)}`;
+  return `🕌 <b>زاد الخير</b> — اليوم آخر يوم\n\nالسلام عليكم يا ${esc(g.name)}\n\n${subject} ${waiting} بانتظار الإتمام، وموعد انتهاء الختمة اليوم. إن كنتم قد أتممتم القراءة، فتفضّلوا ${marking} في التطبيق، وإن لم يتيسّر بعد فاقرؤوا ما استطعتم. جزاكم الله خيرًا وكتب لكم القبول.\n\n${juzList(nums, g.code, true)}\n\n${quote(first - 1)}`;
 }
 
-function overdue(g: Group, migrationToken = "") {
+function overdue(g: Group) {
   const nums = g.juz;
   const first = nums[0];
   const late = Math.abs(g.daysLeft);
@@ -258,7 +243,7 @@ function overdue(g: Group, migrationToken = "") {
     ? `${esc(g.name)}، ${when}، ولم يبق من الختمة إلا ما بين يديك.`
     : `${esc(g.name)}، ${when}، وما زال ${nums.length === 1 ? "جزؤك" : "ما حجزت"} بانتظارك.`;
 
-  return `🕌 <b>زاد الخير</b>\n\n${line} وباب الخير مفتوح، فما فات وقته عند الله شيء.\n\n${juzList(nums, g.code, migrationToken)}\n\n${quote(first - 1)}\n\nاقرأ اليوم ما تيسّر، ولو صفحة.`;
+  return `🕌 <b>زاد الخير</b>\n\n${line} وباب الخير مفتوح، فما فات وقته عند الله شيء.\n\n${juzList(nums, g.code)}\n\n${quote(first - 1)}\n\nاقرأ اليوم ما تيسّر، ولو صفحة.`;
 }
 
 function localNow() {
