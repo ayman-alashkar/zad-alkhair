@@ -319,6 +319,8 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
         if (profile.hasTouch) await last.tap({ position }); else await last.click({ position });
         await page.waitForTimeout(220);
         assert.equal(await page.locator("body.reader-tools-top").count(), 1, "low taps put the tools at the top");
+        /* الظهور انتقال CSS؛ WebKit في CI قد يتأخر عن ‎220ms‎، فيُنتظر انتهاؤه بدل فحص لحظة ثابتة. */
+        await page.waitForFunction(() => Number(getComputedStyle(document.querySelector(".bottom")).opacity) > .99, null, { timeout: 2000 }).catch(() => {});
         const toolsStyle = await toolbar.evaluate(el => ({ opacity: getComputedStyle(el).opacity, pointerEvents: getComputedStyle(el).pointerEvents }));
         assert.ok(Number(toolsStyle.opacity) > .99, "the relocated tools finish appearing");
         assert.notEqual(toolsStyle.pointerEvents, "none", "the relocated tools accept the next deliberate touch");
