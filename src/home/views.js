@@ -229,12 +229,17 @@ function syncTopUser(){
   closeTopMenu();
   if(topUserObserver){topUserObserver.disconnect();topUserObserver=null;}
   document.body.classList.remove("show-top-user","show-home-mine");
+  /* قائمة الختمات لها رأس كبقية التبويبات: العنوان، و«ختماتي» زرٌّ بأيقونة. */
+  document.body.classList.toggle("kh-home",screen==="home");
   topUser.textContent="";
+  topUser.removeAttribute("aria-label");
   topUser.disabled=true;
 
   if(screen==="home"){
     if(mineGet().length){
-      topUser.textContent="ختماتي";topUser.disabled=false;
+      /* النص المخفي يبقى، فـ toggleTopMenu تفتح القائمة متى كان للزر نص. */
+      topUser.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.5c.8-3.8 3.6-5.8 7-5.8s6.2 2 7 5.8"/></svg><span class="tb-sr">ختماتي</span>`;
+      topUser.setAttribute("aria-label","ختماتي");topUser.disabled=false;
       document.body.classList.add("show-home-mine");
     }
     return;

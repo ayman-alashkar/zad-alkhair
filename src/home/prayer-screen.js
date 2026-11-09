@@ -206,9 +206,9 @@ function zpRender(){
   if(!host)return;
   const cfg=zpSafeCfg();
   const todayNoon=zpTodayNoon(cfg&&cfg.tz);
+  const pin=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg>`;
   const head=`<header class="zp-head zt-rise">
-      <div><h2>مواقيت الصلاة</h2>${cfg?`<p>${esc(cfg.city)}، ${esc(cfg.land)}</p>`:""}</div>
-      ${cfg?`<button class="zp-change" type="button" data-zp-city><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg><span>تغيير</span></button>`:""}
+      <div><h2>مواقيت الصلاة</h2>${cfg?`<p><span>${esc(cfg.city)}، ${esc(cfg.land)}</span><span aria-hidden="true">·</span><button class="zp-change" type="button" data-zp-city aria-label="تغيير المدينة">${pin}<span>تغيير</span></button></p>`:""}</div>
     </header>`;
   const day=cfg?zpDayHtml(cfg):(zpHero=null,`<section class="zt-prayer zp-empty"><div class="zt-prayer-empty">
       <span class="zp-pin" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z"/><circle cx="12" cy="9" r="2.5"/></svg></span>

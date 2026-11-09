@@ -1115,7 +1115,7 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 
 .zt-head{display:flex;align-items:center;justify-content:space-between;min-height:48px;position:relative;z-index:3}
 .zt-brand{display:flex;align-items:center;gap:10px}
-.zt-brand h1{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:25px;line-height:1;color:var(--zt-ink)}
+.zt-brand h1{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:28px;line-height:1.3;color:var(--zt-ink)}
 .zt-mark{position:relative;display:block;width:40px;height:40px;overflow:hidden}
 .zt-mark img{display:block;width:40px;height:40px}
 :root[data-zk-theme="dark"] .zt-mark img{content:url("icons/zad-mark-reverse.svg")}
@@ -1389,12 +1389,15 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 
 /* ═══ Prayer-times screen (prayer-screen.js): the second page of the home layer ═══ */
 .zt-page[hidden]{display:none}
-.zp-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;min-height:64px}
-.zp-head h2{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:32px;line-height:1.35;color:var(--zt-ink)}
-.zp-head p{margin:0;font-size:13px;color:var(--zt-muted)}
-.zp-change{flex:none;min-height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border:1px solid var(--zt-line);border-radius:14px;
-  background:var(--zt-surface);color:var(--zt-gold);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.zp-change svg,.zp-step svg,.zp-pin svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.zp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px}
+.zp-head h2{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:28px;line-height:1.3;color:var(--zt-ink)}
+.zp-head p{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0;font-size:13px;color:var(--zt-muted)}
+/* «تغيير» يغيّر المدينة المكتوبة بجانبه، فهو رابط في السطر نفسه لا زرٌّ في زاوية الرأس.
+   الحشوة السالبة تبقي مساحة اللمس قرابة ‎44px‎ دون أن تباعد السطر. */
+.zp-change{display:inline-flex;align-items:center;gap:3px;margin:-12px -8px;padding:12px 8px;border:0;border-radius:10px;
+  background:none;color:var(--zt-gold);font:inherit;font-weight:600;cursor:pointer}
+.zp-change svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.zp-step svg,.zp-step svg,.zp-pin svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .zp-grid{display:grid;gap:16px}
 .zp-still .zt-rise,.zp-still .zt-arc-fill,.zp-still .zt-sun-dot{animation:none}
 .zp-col{display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -1465,7 +1468,6 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 .zp-adj button:disabled{opacity:.35;cursor:default}
 
 @media (min-width:860px){
-  .zp-head h2{font-size:42px}
   .zp-head p{font-size:15px}
   .zp-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
   .zp-hero .zt-arc-label{inset:44px 0 0}
@@ -1622,3 +1624,23 @@ body:not(.zk-launch-open),.bg-veil{background:radial-gradient(ellipse at 50% 0%,
 .people-panel>summary.sec-head{flex-wrap:nowrap}
 
 @media (prefers-reduced-motion:reduce){.kp-ring .kw{animation:none}}
+
+/* ═══════════ رأس صفحة الختمات ═══════════
+   رأس الختمات كرؤوس بقية التبويبات: العنوان بخط الرقعة ‎28px‎ يمينًا، و«ختماتي»
+   زرّ ‎44px‎ يسارًا بشكل أزرار الرؤوس. يظهر في قائمة الختمات وحدها؛ داخل الختمة
+   يبقى الشريط العلوي لاسم المستخدم كما كان. الختمات داكنة دائمًا، فألوانه ليلية. */
+.tb-title{display:none;margin:0;font-family:var(--ruqaa);font-weight:700;font-size:28px;line-height:1.3;color:#FFF5DC}
+body.kh-home .topbar{justify-content:space-between;min-height:0;padding:max(18px,env(safe-area-inset-top)) max(18px,calc((100vw - 1220px)/2)) 12px;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(5,29,27,.97) 0%,rgba(5,29,27,.86) 68%,rgba(5,29,27,0) 100%)!important}
+body.kh-home .tb-title{display:block}
+body.kh-home .tb-user{width:44px;height:44px;max-width:none!important;flex:none;display:grid!important;place-items:center;padding:0;
+  border:1px solid rgba(228,201,128,.18);border-radius:14px;background:#0A2B26;color:#E4C980;text-shadow:none}
+body.kh-home .tb-user:hover{background:#0F332D}
+body.kh-home .tb-user[aria-expanded="true"]{background:rgba(228,201,128,.11);border-color:#E4C980}
+body.kh-home .tb-user::after{content:none}
+body.kh-home .tb-user svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* على الحاسب يحاذي العنوانُ عناوينَ الرئيسية والمواقيت (عرض ‎1120px‎ وحشوة ‎32px‎). */
+@media (min-width:860px){
+  body.kh-home .topbar{padding:32px max(32px,calc((100vw - 1120px)/2 + 32px)) 12px}
+}
+.tb-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
