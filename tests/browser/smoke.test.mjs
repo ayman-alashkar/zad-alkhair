@@ -106,6 +106,33 @@ test("home opens on a phone without script errors and shows the bottom tabs", as
   await context.close();
 });
 
+/* هواتف أندرويد كثيرة عرضها ٣٦٠، ويقلّ العرض أكثر حين يكبّر المستخدم الخط من إعدادات الهاتف.
+   صف المواقيت يبقى سطرًا واحدًا لكل وقت، دون انكسار أو فيض خارج خانته. */
+test("the home prayer row keeps every time on one line down to a 320px-wide page", async () => {
+  const prayer = JSON.stringify({ land: "اليابان", city: "ناها", lat: 26.2124, lng: 127.6809, tz: "Asia/Tokyo", method: "MuslimWorldLeague", madhab: "Shafi" });
+  for (const width of [320, 360]) {
+    const { page, errors, context } = await appPage({
+      profile: { ...PHONE, viewport: { width, height: 844 } },
+      storage: { "zad:prayer": prayer }
+    });
+    await page.clock.setFixedTime(new Date("2026-11-06T00:45:00+09:00"));
+    await page.goto(BASE + "/", { waitUntil: "load" });
+    await page.waitForSelector(".zt-prayers li");
+    const cells = await page.$$eval(".zt-prayers li", items => items.map(li => {
+      const t = li.querySelector(".t");
+      return { text: li.innerText, fits: li.scrollWidth <= li.clientWidth, lines: Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight || "0") || 1) };
+    }));
+    assert.equal(cells.length, 5, `${width}px`);
+    for (const c of cells) {
+      assert.ok(c.fits, `${width}px: «${c.text}» spills out of its cell`);
+      assert.ok(c.lines <= 1, `${width}px: «${c.text}» wraps`);
+      assert.doesNotMatch(c.text, /صباحًا|ظهرًا|عصرًا|مساءً/, "the prayer name already tells the time of day");
+    }
+    assert.deepEqual(errors, []);
+    await context.close();
+  }
+});
+
 test("records cold home startup at phone and desktop sizes", async t => {
   for (const [label, profile] of [["phone", PHONE], ["desktop", { viewport: { width: 1440, height: 900 } }]]) {
     const samples = [];

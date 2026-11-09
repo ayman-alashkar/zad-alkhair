@@ -1222,7 +1222,7 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zt-prayers{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
 .zt-prayers li{display:flex;flex-direction:column;align-items:center;gap:1px;padding:7px 0;border-radius:12px;color:rgba(255,249,234,.78);font-size:11px}
 .zt-prayers li.is-next{background:rgba(228,201,128,.16);color:#E4C980;font-weight:700}
-.zt-prayers .t{font-variant-numeric:tabular-nums;opacity:.85}
+.zt-prayers .t{font-variant-numeric:tabular-nums;opacity:.85;white-space:nowrap}
 .zt-prayer-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 4px 8px;text-align:center}
 .zt-prayer-empty h3{margin:0;font-family:"Aref Ruqaa",serif;font-weight:700;font-size:24px;color:#E4C980}
 .zt-btn-gold{min-height:48px;padding:0 26px;border:0;border-radius:15px;background:#E4C980;color:#173E35;font-size:14px;font-weight:700;cursor:pointer}
@@ -2140,11 +2140,11 @@ function ptTimes(cfg,when){
     new adhan.Coordinates(cfg.lat,cfg.lng),dateForZone(when,cfg.tz),p);
 }
 /* التوقيت يُعرض بساعة المدينة المختارة لا بساعة الجهاز */
-function ptFmt(d,tz){
+function ptFmt(d,tz,withPeriod=true){
   const s=new Intl.DateTimeFormat("en-GB",
     {timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(d);
   const [h,m]=s.split(":").map(Number);
-  return fmtTime(h,m);
+  return fmtTime(h,m,withPeriod);
 }
 /* الصلاة القادمة: إن مضى العشاء فهي فجر الغد */
 function ptNext(cfg){
@@ -2393,10 +2393,12 @@ const isoParts=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-
 const todayISO=()=>isoParts(new Date());
 const plusDays=n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+n);return isoParts(d);};
 const fmtG=iso=>{const d=new Date(iso+"T12:00:00");return `${ar(d.getDate())} ${MONTHS[d.getMonth()]}`;};
-const fmtTime=(h,m)=>{
+/* withPeriod=false يحذف «صباحًا/ظهرًا/…» حيث يغني عنها اسم الصلاة. */
+const fmtTime=(h,m,withPeriod=true)=>{
   const per = h<12 ? "صباحًا" : h<15 ? "ظهرًا" : h<17 ? "عصرًا" : "مساءً";
   const h12 = h%12===0 ? 12 : h%12;
-  return `${ar(h12)}:${ar(String(m).padStart(2,"0"))} ${per}`;
+  const clock=`${ar(h12)}:${ar(String(m).padStart(2,"0"))}`;
+  return withPeriod ? `${clock} ${per}` : clock;
 };
 const hourOptions=sel=>Array.from({length:24},(_,h)=>
   `<option value="${h}" ${h===sel?"selected":""}>${fmtTime(h,0)}</option>`).join("");
@@ -4756,7 +4758,7 @@ function ztPrayerRender(){
   ztPrayerTimes={prevAt,tz:cfg.tz,next:{key:next.key,at:next.at.getTime()}};
   const items=ZT_PRAYERS.map(k=>{
     const isNext=k===next.key;
-    return `<li class="${isNext?"is-next":""}"><span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz)}</bdi></span></li>`;
+    return `<li class="${isNext?"is-next":""}"><span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz,false)}</bdi></span></li>`;
   }).join("");
   host.innerHTML=`<div class="zt-prayer-top"><span>الصلاة القادمة في ${esc(cfg.city)}</span><span class="zt-clock" id="zt-clock"></span></div>
     <div class="zt-arc">

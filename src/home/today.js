@@ -61,7 +61,7 @@ function ztPrayerRender(){
   ztPrayerTimes={prevAt,tz:cfg.tz,next:{key:next.key,at:next.at.getTime()}};
   const items=ZT_PRAYERS.map(k=>{
     const isNext=k===next.key;
-    return `<li class="${isNext?"is-next":""}"><span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz)}</bdi></span></li>`;
+    return `<li class="${isNext?"is-next":""}"><span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz,false)}</bdi></span></li>`;
   }).join("");
   host.innerHTML=`<div class="zt-prayer-top"><span>الصلاة القادمة في ${esc(cfg.city)}</span><span class="zt-clock" id="zt-clock"></span></div>
     <div class="zt-arc">
