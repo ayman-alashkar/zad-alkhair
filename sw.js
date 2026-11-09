@@ -108,6 +108,14 @@ async function restoreShellBackup(){
   const stable=await caches.open(SHELL_CACHE);
   return copyRequiredShell(backup,stable);
 }
+/* نسخة reader.html المحفوظة من إصدار سابق تصلح بديلًا للقارئ دون اتصال،
+   أما صفحة التحويل المتقاعدة بالاسم نفسه فلا: اعتمادها قارئًا يحوّل إلى
+   /quran-read/ فيعود إليها بلا نهاية. */
+async function savedLegacyReader(){
+  const hit=await caches.match(requestFor("./reader.html"),{ignoreSearch:true});
+  if(!hit)return null;
+  return (await hit.clone().text()).includes('name="zk-retired-reader"')?null:hit;
+}
 async function migrateLegacyShell(){
   const stable=await caches.open(SHELL_CACHE);
   if(await allPresent(stable,REQUIRED_SHELL)){
@@ -119,7 +127,7 @@ async function migrateLegacyShell(){
   for(const url of REQUIRED_SHELL){
     if(await stable.match(requestFor(url)))continue;
     const hit=await caches.match(requestFor(url),{ignoreSearch:true})||
-      (url===READER_SHELL&&await caches.match(requestFor("./reader.html"),{ignoreSearch:true}));
+      (url===READER_SHELL&&await savedLegacyReader());
     if(hit)await stable.put(requestFor(url),hit.clone());
   }
   const ready=await allPresent(stable,REQUIRED_SHELL);
@@ -310,6 +318,8 @@ async function cacheSuccessfulDocument(request,response){
   if(!cacheable(response))return;
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
+  // صفحة التحويل المتقاعدة لا تُحفظ، كي لا تُعتمد يومًا بديلًا للقارئ.
+  if(/^\/reader(?:\.html)?$/.test(url.pathname))return;
   const key=shellKeyFor(url);
   if(key){
     const shell=await caches.open(SHELL_CACHE);

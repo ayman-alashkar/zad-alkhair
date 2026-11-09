@@ -209,3 +209,17 @@ test('pressing Reload fetches the newest shell instead of the saved one',async()
   assert.ok(await e.run("shellFirstDocument(new Request('https://example.test/quran-read/'))"));
   assert.ok(Date.now()-started<500);
 });
+
+test('the retired reader.html redirect is never cached or adopted as the offline reader',async()=>{
+  const e=setup(),shell=await e.run('caches.open(SHELL_CACHE)');
+  const retired='<meta name="zk-retired-reader" content="1"><script>location.replace("/quran-read/")</script>';
+  e.setFetch(async()=>new Response(retired));
+  await e.run("networkFirstDocument(new Request('https://example.test/reader.html?juz=7&code=AB12'))");
+  const runtime=await e.run('caches.open(RUNTIME_CACHE)');
+  assert.equal(await runtime.match('https://example.test/reader.html?juz=7&code=AB12'),undefined,'not cached at runtime');
+  // An older worker may still have saved the redirect page under reader.html.
+  await shell.put('https://example.test/index.html',new Response('Saved home'));
+  await shell.put('https://example.test/reader.html',new Response(retired));
+  e.setFetch(async()=>{throw Error('offline')});
+  assert.equal(await e.run('ensureOfflineShell()'),false,'the redirect page does not stand in for the reader');
+});
