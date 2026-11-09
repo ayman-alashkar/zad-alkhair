@@ -21,10 +21,12 @@ const isoParts=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-
 const todayISO=()=>isoParts(new Date());
 const plusDays=n=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+n);return isoParts(d);};
 const fmtG=iso=>{const d=new Date(iso+"T12:00:00");return `${ar(d.getDate())} ${MONTHS[d.getMonth()]}`;};
-const fmtTime=(h,m)=>{
+/* withPeriod=false يحذف «صباحًا/ظهرًا/…» حيث يغني عنها اسم الصلاة. */
+const fmtTime=(h,m,withPeriod=true)=>{
   const per = h<12 ? "صباحًا" : h<15 ? "ظهرًا" : h<17 ? "عصرًا" : "مساءً";
   const h12 = h%12===0 ? 12 : h%12;
-  return `${ar(h12)}:${ar(String(m).padStart(2,"0"))} ${per}`;
+  const clock=`${ar(h12)}:${ar(String(m).padStart(2,"0"))}`;
+  return withPeriod ? `${clock} ${per}` : clock;
 };
 const hourOptions=sel=>Array.from({length:24},(_,h)=>
   `<option value="${h}" ${h===sel?"selected":""}>${fmtTime(h,0)}</option>`).join("");

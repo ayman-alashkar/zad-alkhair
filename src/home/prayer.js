@@ -114,11 +114,11 @@ function ptTimes(cfg,when){
     new adhan.Coordinates(cfg.lat,cfg.lng),dateForZone(when,cfg.tz),p);
 }
 /* التوقيت يُعرض بساعة المدينة المختارة لا بساعة الجهاز */
-function ptFmt(d,tz){
+function ptFmt(d,tz,withPeriod=true){
   const s=new Intl.DateTimeFormat("en-GB",
     {timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false}).format(d);
   const [h,m]=s.split(":").map(Number);
-  return fmtTime(h,m);
+  return fmtTime(h,m,withPeriod);
 }
 /* الصلاة القادمة: إن مضى العشاء فهي فجر الغد */
 function ptNext(cfg){
