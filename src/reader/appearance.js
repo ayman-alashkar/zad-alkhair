@@ -1,9 +1,12 @@
 /* ---------- theme + tap states ---------- */
 function setTheme(t){
   document.documentElement.dataset.theme=t;storageSet(STORAGE_KEYS.theme,t);
-  document.getElementById("themeBtn").innerHTML=t==="dark"
-    ?'<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>'
-    :'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2 12h2M20 12h2M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5"/></svg>';
+  /* أيقونة الوضع كما في الرئيسية ومشغّل التلاوة: قمر نهارًا (للانتقال إلى الليل)، وشمس ليلًا. */
+  const btn=document.getElementById("themeBtn");
+  btn.innerHTML=t==="dark"
+    ?'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>'
+    :'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.8 8.8 0 1 0 11.6 11.6Z"/></svg>';
+  btn.setAttribute("aria-label",t==="dark"?"تفعيل الوضع النهاري":"تفعيل الوضع الليلي");
   requestAnimationFrame(()=>document.querySelectorAll("canvas.surah-banner").forEach(c=>renderSurahHeaderCanvas(c,c.dataset.glyph)));
 }
 document.getElementById("themeBtn").onclick=()=>setTheme((document.documentElement.dataset.theme||"light")==="light"?"dark":"light");
