@@ -279,6 +279,7 @@ async function movePlayerTo(ref){
   await playCurrent(false);
 }
 async function stepPlayer(direction){
+  if(tayassurActive()){await tayassurPlay(tayassur.i+direction);return}
   if(queueActive){
     let index=queueIndex+direction;
     if(repeatMode==="all")index=(index+playbackQueue.length)%playbackQueue.length;

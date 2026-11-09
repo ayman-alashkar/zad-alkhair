@@ -143,6 +143,7 @@ function installAudioFabDrag(){
   };
 }
 function stopPlayer(){
+  tayassurStop();
   playbackWanted=false;
   clearTimeout(audioRetryTimer);audioRetryTimer=null;
   playbackRequestId++;

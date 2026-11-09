@@ -24,7 +24,7 @@ function fixture(){
   // Register real transport/queue controls while keeping browser media effects
   // outside this deterministic policy fixture.
   for(const name of ['populateReciters','syncReciterCapabilities','installMediaSession'])ctx[name]=mocks[name];
-  for(const name of ['audio-playback','transport-controls','playlist','playlist-ui'])vm.runInContext(source(name),ctx);
+  for(const name of ['audio-playback','transport-controls','playlist','playlist-ui','tayassar'])vm.runInContext(source(name),ctx);
   const actual={playCurrent:ctx.playCurrent,primeNextTimedSurah:ctx.primeNextTimedSurah};
   Object.assign(ctx,mocks);
   vm.runInContext(`async function playCurrent(){played.push([play.surah,play.current])}`,ctx);
@@ -216,4 +216,58 @@ test('whole-surah preloading follows the active playlist source',async()=>{
   f.ctx.primeNextTimedSurah=f.actual.primeNextTimedSurah;
   await f.run('primeNextTimedSurah()');assert.match(f.ctx.audioPreload.src,/114\.mp3$/);
   f.ctx.sleepAfterSurah=true;f.ctx.audioPreload.src='unchanged';await f.run('primeNextTimedSurah()');assert.equal(f.ctx.audioPreload.src,'unchanged');
+});
+
+/* «ما تيسّر»: المواضع والمقاطع، والانتقال من مقطع إلى الذي بعده داخل المحرّك. */
+function tayassurFixture(){
+  const f=fixture();
+  const quarters=eval(fs.readFileSync(__dirname+'/../src/reader/state.js','utf8').match(/const LOCAL_HIZB_QUARTERS=(\[\[.*?\]\]);/s)[1]);
+  const verses=Object.fromEntries(JSON.parse(fs.readFileSync(__dirname+'/../src/discovery/catalog.json','utf8')).surahs.map(s=>[s.n,s.verses]));
+  Object.assign(f.ctx,{LOCAL_HIZB_QUARTERS:quarters,maxAyah:s=>verses[s],listenActive:()=>true,listenPaint(){},
+    listenQuietReciter(r){f.ctx.reciter=r},listenSurahName:s=>String(s),listenReciterName:()=>'',ar:String,
+    setIndexPlaybackBoundary(){},listenTarget:null,listenPending:null,listenSeekAfterLoad:null,detachQueue(){}});
+  f.ctx.reciter={id:'husary',provider:'mp3quran-timed'};
+  return {f,quarters,verses};
+}
+test('«ما تيسّر» offers every surah start and the mid-surah quarters that leave more than ten ayahs',()=>{
+  const {f,quarters,verses}=tayassurFixture();
+  const list=f.run('tayassurPositions()');
+  const mid=quarters.filter(([s,a])=>a>1);
+  const short=mid.filter(([s,a])=>verses[s]-a+1<=10);
+  assert.equal(short.length,15);
+  assert.equal(list.length,114+mid.length-short.length);
+  assert.equal(list.length,298);
+  assert.equal(new Set(list.map(p=>`${p.s}:${p.a}`)).size,list.length,'no position twice');
+  assert.ok(!list.some(p=>p.s===73&&p.a===20),'al-Muzzammil 20 leaves one ayah');
+});
+test('a «ما تيسّر» segment ends before the next quarter, or at the end of its surah',()=>{
+  const {f}=tayassurFixture();
+  assert.deepEqual(JSON.parse(f.run('JSON.stringify([tayassurEnd({s:2,a:1}),tayassurEnd({s:2,a:26}),tayassurEnd({s:112,a:1}),tayassurEnd({s:114,a:1})])')),[25,43,4,6]);
+});
+test('at the end of a segment «ما تيسّر» plays the next one, and next/previous move through the same order',async()=>{
+  const {f}=tayassurFixture();
+  for(let i=0;i<30;i++){await f.run('tayassurStart()');assert.notEqual(f.ctx.reciter.provider,'surah','never the whole-surah reciter')}
+  f.run('tayassur.order=[{s:2,a:26},{s:112,a:1},{s:36,a:1}]');
+  await f.run('tayassurPlay(0)');
+  assert.deepEqual(JSON.parse(f.run('JSON.stringify([play.surah,play.current,continuousStopRef.s,continuousStopRef.a])')),[2,26,2,43]);
+  f.ctx.played.length=0;
+  f.ctx.play.current=43;await f.run('finishCurrentAyah()');
+  assert.deepEqual(JSON.parse(JSON.stringify(f.ctx.played)),[[112,1]],'next segment, not ayah 44');
+  assert.equal(f.ctx.pendingSurahBasmala,true);
+  await f.run('stepPlayer(1)');assert.deepEqual([...f.ctx.played.at(-1)],[36,1]);
+  await f.run('stepPlayer(-1)');assert.deepEqual([...f.ctx.played.at(-1)],[112,1]);
+  assert.equal(f.run('tayassurActive()'),true);
+  // Turning it off keeps the recitation going from where it is.
+  f.run('tayassurStop()');
+  assert.equal(f.run('tayassurActive()'),false);
+  assert.equal(f.ctx.continuousStopRef,null,'no segment end any more');
+  assert.equal(f.ctx.continuousMode,true,'the surah carries on');
+});
+test('choosing another start ends «ما تيسّر» by itself',async()=>{
+  const {f}=tayassurFixture();
+  await f.run('tayassurStart()');
+  assert.equal(f.run('tayassurActive()'),true);
+  f.ctx.continuousStopRef=null; // e.g. a surah picked from the list, or «متابعة التلاوة»
+  assert.equal(f.run('tayassurActive()'),false);
+  assert.equal(f.run('tayassur'),null);
 });

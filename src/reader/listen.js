@@ -18,6 +18,7 @@ const LISTEN_ICONS={
   search:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>',
   check:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.2 4.2L19 7"/></svg>',
   heart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.2s-7.5-4.4-9.1-9.3C1.8 7.4 4 4.3 7.3 4.3c2 0 3.5 1.1 4.7 2.8 1.2-1.7 2.7-2.8 4.7-2.8 3.3 0 5.5 3.1 4.4 6.6-1.6 4.9-9.1 9.3-9.1 9.3Z"/></svg>',
+  tayassur:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c2 0 3.2 1 4.3 2.6l2.4 4.8c1.1 1.6 2.3 2.6 4.3 2.6H21M3 17h3.5c1.6 0 2.7-.6 3.6-1.7M14 8.7c.9-1.1 2-1.7 3.5-1.7H21M18 4l3 3-3 3M18 14l3 3-3 3"/></svg>',
   headphones:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/></svg>'
 };
 let readerReturnToListen=false;
@@ -56,6 +57,7 @@ function listenFriday(){return new Date().getDay()===5}
 
 /* تقدّم السورة كلها، لا تقدّم الآية: في تلاوة الآية آيةً آية يُحسب من رقم الآية وموضعها. */
 function listenProgress(){
+  const seg=tayassurProgress();if(seg)return seg;
   const d=Number(audio.duration),t=Number(audio.currentTime)||0,max=maxAyah(play.surah);
   const mode=audio.dataset.playMode;
   if((mode==="surah"||mode==="gapless")&&Number.isFinite(d)&&d>0)return {f:Math.min(1,t/d),t,d,timed:true};
@@ -111,6 +113,8 @@ function listenAyahLine(st){
   if(isSurahOnly(st.r))return "السورة كاملة";
   const max=maxAyah(st.s);
   if(st.kind==="now"&&audio.dataset.playMode==="basmala")return "البسملة";
+  const seg=st.kind==="now"?tayassurSegment():null;
+  if(seg)return seg.from===seg.to?`الآية ${ar(seg.from)}`:`الآية ${ar(play.current)} · من ${ar(seg.from)} إلى ${ar(seg.to)}`;
   if(st.kind!=="now"&&listenPending&&listenPending.s===st.s)return listenIdleLabel(st,listenPending.f);
   return st.kind==="start"||st.kind==="link"?listenAyahCount(max):`الآية ${ar(st.a)} من ${ar(max)}`;
 }
@@ -119,7 +123,11 @@ function listenPaint(){
   const st=listenCardState(),card=listenPanel.querySelector(".zl-card");
   const playing=st.kind==="now"&&!audio.paused&&!!audio.dataset.playMode;
   card.dataset.kind=st.kind;card.classList.toggle("playing",playing);
-  card.querySelector(".zl-eyebrow").innerHTML=st.kind==="now"
+  const ty=st.kind==="now"&&tayassurActive();
+  card.classList.toggle("tayassur",ty);
+  card.querySelector(".zl-eyebrow").innerHTML=ty
+    ?`<span class="zl-tag">ما تيسّر</span>${playing?"":playbackWanted?"جارٍ التحميل…":"متوقفة مؤقتًا"}`
+    :st.kind==="now"
     ?(playing?`<span class="zl-wave on" aria-hidden="true"><i></i><i></i><i></i><i></i></span>يُتلى الآن`:playbackWanted?"جارٍ تحميل التلاوة…":"متوقفة مؤقتًا")
     :st.kind==="resume"?"تابع الاستماع":st.kind==="link"?"استمع إلى السورة":(listenFriday()?"سنّة يوم الجمعة":"ابدأ الاستماع");
   card.querySelector(".zl-name").textContent=`سورة ${listenSurahName(st.s)}`;
@@ -128,8 +136,12 @@ function listenPaint(){
   main.innerHTML=playing?LISTEN_ICONS.pause:LISTEN_ICONS.play;
   main.setAttribute("aria-label",playing?"إيقاف مؤقت":st.kind==="resume"?"متابعة الاستماع":"تشغيل");
   const whole=isSurahOnly(st.r);
-  card.querySelector(".zl-prev").setAttribute("aria-label",whole?"السورة السابقة":"الآية السابقة");
-  card.querySelector(".zl-next").setAttribute("aria-label",whole?"السورة التالية":"الآية التالية");
+  card.querySelector(".zl-prev").setAttribute("aria-label",ty?"المقطع السابق":whole?"السورة السابقة":"الآية السابقة");
+  card.querySelector(".zl-next").setAttribute("aria-label",ty?"المقطع التالي":whole?"السورة التالية":"الآية التالية");
+  const tyBtn=card.querySelector(".zl-tayassur");
+  tyBtn.classList.toggle("on",ty);tyBtn.setAttribute("aria-pressed",String(ty));
+  const up=card.querySelector(".zl-upnext"),next=ty?tayassurNext():null;
+  up.hidden=!next;up.textContent=next?`التالي: ${tayassurRefLabel(next)}`:"";
   const rep=card.querySelector(".zl-repeat");
   rep.classList.toggle("on",repeatMode!=="off");rep.dataset.badge=repeatMode==="one"?"١":repeatMode==="all"?"∞":"";
   rep.setAttribute("aria-pressed",String(repeatMode!=="off"));
@@ -181,6 +193,7 @@ function listenQuietReciter(r,{persist=true}={}){
 }
 async function listenPlaySurah(s,a=1){
   s=Math.max(1,Math.min(114,Number(s)||1));
+  tayassurStop();
   listenPending=null;listenSeekAfterLoad=null;
   if(listenTarget)listenQuietReciter(listenTarget.reciter,{persist:false});
   if(!navigator.onLine&&!await ensureOfflinePlaybackReciter(s,{chooseWhenMultiple:!listenTarget,confirmDifferent:!!listenTarget}))return;
@@ -226,6 +239,7 @@ function listenArcFraction(e,svg){
 }
 async function listenSeekTo(f){
   if(!listenActive())return;
+  if(await tayassurSeekTo(f))return;
   const mode=audio.dataset.playMode,d=Number(audio.duration);
   if(mode==="surah"&&Number.isFinite(d)&&d>0){try{audio.currentTime=f*d}catch(_){ }return}
   if(mode==="gapless"&&Number.isFinite(d)&&d>0&&Array.isArray(activeTimingRows)){
@@ -252,6 +266,11 @@ function listenBindArc(svg){
     listenDrag.f=listenArcFraction(e,svg);listenPaintArc(listenDrag.f);
     const el=label();
     if(el&&!listenActive()){el.textContent=listenIdleLabel(listenCardState(),listenDrag.f);return}
+    if(el&&tayassurActive()){
+      const seg=tayassurSegment(),a=tayassurAyahAt(listenDrag.f);
+      el.textContent=listenDrag.f>=TAYASSUR_NEXT_AT?"المقطع التالي":`الآية ${ar(a)} · من ${ar(seg.from)} إلى ${ar(seg.to)}`;
+      return;
+    }
     if(el){
       if(isSurahOnly()||audio.dataset.playMode==="surah"){const d=Number(audio.duration);if(d>0)el.textContent=formatAudioTime(listenDrag.f*d)}
       else if(audio.dataset.playMode==="gapless"&&Number(audio.duration)>0){const row=timingRowAt(listenDrag.f*audio.duration);if(row)el.textContent=`الآية ${ar(row.ayah)} من ${ar(maxAyah(play.surah))}`}
@@ -271,11 +290,12 @@ function listenBindArc(svg){
 /* ---------- النوافذ: القارئ، والمزيد ---------- */
 function listenOpenReciters(){
   const offline=audioOfflinePackages(),count=id=>Object.keys(offline).filter(k=>k.startsWith(id+":")).length;
-  const selected=listenCardState().r;
+  const selected=listenCardState().r,ty=tayassurActive();
   const rows=RECITERS.map(r=>{
-    const whole=isSurahOnly(r),n=count(r.id),on=r.id===selected.id;
+    const whole=isSurahOnly(r),n=count(r.id),on=r.id===selected.id,off=ty&&whole;
     const meta=[whole?"السورة كاملة":"تتبع الآيات"];if(n)meta.push(n===1?"سورة منزّلة":`${ar(n)} سور منزّلة`);
-    return `<button type="button" class="zl-qrow${on?" on":""}" data-qari="${escapeHtml(r.id)}" aria-pressed="${on}"><span class="zl-qmono">${escapeHtml(listenMonogram(r))}</span><span class="zl-qcopy"><b>${escapeHtml(listenReciterName(r))}</b><small><i class="zl-dot${whole?" whole":""}"></i>${meta.join("، ")}</small></span>${on?`<span class="zl-qcheck">${LISTEN_ICONS.check}</span>`:""}</button>`;
+    if(off)meta.splice(0,meta.length,"غير متاح في «ما تيسّر»");
+    return `<button type="button" class="zl-qrow${on?" on":""}" data-qari="${escapeHtml(r.id)}" aria-pressed="${on}"${off?" disabled":""}><span class="zl-qmono">${escapeHtml(listenMonogram(r))}</span><span class="zl-qcopy"><b>${escapeHtml(listenReciterName(r))}</b><small><i class="zl-dot${whole?" whole":""}"></i>${meta.join("، ")}</small></span>${on?`<span class="zl-qcheck">${LISTEN_ICONS.check}</span>`:""}</button>`;
   }).join("");
   const b=sheet("اختر القارئ",`<div class="zl-legend"><span><i class="zl-dot"></i>تتبع الآيات في المصحف</span><span><i class="zl-dot whole"></i>السورة كاملة</span></div><div class="zl-qlist">${rows}</div>`);
   b.classList.add("player-backdrop","zl-sheet");
@@ -451,6 +471,7 @@ function openListenPage(){
         </svg>
         <div class="zl-arc-label"><div class="zl-name"></div><div class="zl-ayah"></div><div class="zl-time" hidden></div></div>
       </div>
+      <div class="zl-upnext" hidden></div>
       <div class="zl-controls">
         <button type="button" class="zl-ctl zl-more" aria-label="خيارات الاستماع">${LISTEN_ICONS.more}</button>
         <button type="button" class="zl-ctl zl-prev">${LISTEN_ICONS.prev}</button>
@@ -461,6 +482,7 @@ function openListenPage(){
       <button type="button" class="zl-qari"><span class="zl-qari-mono"></span><span class="zl-qari-name"></span>${LISTEN_ICONS.chevron}</button>
       <div class="zl-actions">
         <button type="button" class="zl-act zl-read">${LISTEN_ICONS.read}<span>اقرأ مع التلاوة</span></button>
+        <button type="button" class="zl-act zl-tayassur" aria-pressed="false">${LISTEN_ICONS.tayassur}<span>ما تيسّر</span></button>
         <span class="zl-act zl-act-dl"><button type="button" class="zl-dl quran-index-action download"></button><span class="zl-dl-label">تنزيل</span></span>
         <button type="button" class="zl-act zl-share">${HUB_SHARE_ICON}<span>مشاركة</span></button>
       </div>
@@ -482,6 +504,7 @@ function openListenPage(){
   card.querySelector(".zl-more").onclick=listenOpenMore;
   card.querySelector(".zl-qari").onclick=listenOpenReciters;
   card.querySelector(".zl-read").onclick=listenReadAlong;
+  card.querySelector(".zl-tayassur").onclick=tayassurToggle;
   card.querySelector(".zl-share").onclick=listenShare;
   /* زر الوضع كالذي في الرئيسية: الإعداد نفسه للتطبيق كله. */
   panel.querySelector(".zl-theme").onclick=e=>{

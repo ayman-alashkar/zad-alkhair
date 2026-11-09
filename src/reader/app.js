@@ -48,6 +48,7 @@ const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=tru
 /* @include playlist.js */
 /* @include playlist-ui.js */
 /* @include listen.js */
+/* @include tayassar.js */
 /* @include appearance.js */
 
 
