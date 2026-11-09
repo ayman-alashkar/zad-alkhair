@@ -33,7 +33,7 @@ function readerLink(code?: string, juz?: number) {
         ? root.pathname.replace(/[^/]*$/, "")
         : root.pathname + "/";
     }
-    const url = new URL("reader.html", root);
+    const url = new URL("quran-read/", root);
     if (Number.isInteger(juz) && Number(juz) >= 1 && Number(juz) <= 30) {
       url.searchParams.set("juz", String(juz));
     }
@@ -59,7 +59,7 @@ function navigationRows(sourceUrl: string) {
     }
     const app = new URL(root.href);
     if (code) app.hash = code;
-    const reader = new URL("reader.html", root);
+    const reader = new URL("quran-read/", root);
     return [[
       { text: "افتح زاد الخير", url: app.href },
       { text: "افتح المصحف", url: reader.href },

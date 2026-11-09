@@ -53,7 +53,7 @@ function appLink(code?: string) {
 function readerLink(code?: string, juz?: number) {
   const root = appRoot();
   if (!root) return APP_URL;
-  const url = new URL("reader.html", root);
+  const url = new URL("quran-read/", root);
   if (Number.isInteger(juz) && Number(juz) >= 1 && Number(juz) <= 30) {
     url.searchParams.set("juz", String(juz));
   }
@@ -63,7 +63,7 @@ function readerLink(code?: string, juz?: number) {
 
 function generalReaderLink() {
   const root = appRoot();
-  return root ? new URL("reader.html", root).href : APP_URL;
+  return root ? new URL("quran-read/", root).href : APP_URL;
 }
 
 function codeFromUrl(url?: string) {
