@@ -257,5 +257,6 @@ async function syncPlaybackSelection(requestId){
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   matches.forEach(x=>x.classList.add("selected"));
   selectedKey=k;selectedAnchor=matches[0];
+  revealVerse(selectedAnchor);
   return true;
 }

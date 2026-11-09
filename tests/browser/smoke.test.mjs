@@ -301,6 +301,18 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
           await stage.evaluate(el => { el.scrollTop = el.scrollHeight; });
           geometry = await tapGeometry();
         }
+        // The one-row landscape dock is short enough that the last row clears
+        // it once the page is scrolled to the end. Confirm that, then scroll
+        // the row down under the dock to exercise an actual collision.
+        if (name === "landscape phone" && geometry.point.y < geometry.before.top - 8) {
+          await last.tap({ position: geometry.position });
+          assert.equal(await page.locator("body.reader-tools-top").count(), 0, "a clear last row keeps the bottom dock");
+          await last.tap({ position: geometry.position });
+          const shift = geometry.before.top + geometry.before.height / 2 - geometry.point.y;
+          await stage.evaluate((el, d) => { el.scrollTop -= d; }, shift);
+          await page.waitForTimeout(150);
+          geometry = await tapGeometry();
+        }
         const { position, point, before } = geometry;
         assert.ok(point.y >= before.top - 8, "fixture taps a line inside the actual bottom toolbar area");
         const scrollBefore = await stage.evaluate(el => el.scrollTop);
@@ -333,6 +345,41 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
       }
     });
   }
+});
+
+/* في الوضع الأفقي تكون الصفحة أطول من الشاشة. الآية التي يفتحها رابط أو علامة أو
+   فهرس يجب أن تظهر، لا أن تبقى تحت حافة الشاشة، والأدوات الأربع في صف واحد. */
+test("a linked verse is scrolled into view on a rotated phone, with the four tools in one row", async t => {
+  for (const [width, height] of [[852, 393], [780, 360]]) await t.test(`${width}×${height}`, async () => {
+    const { page, errors, context } = await readerPage({
+      profile: { viewport: { width, height }, isMobile: true, hasTouch: true }
+    });
+    try {
+      // The fixture's page 9 ends with verse 2:74, the last of its 15 lines.
+      await context.route(/quran-qcf4@[^/]+\/verses\.json/, route => route.fulfill({
+        headers: { "Access-Control-Allow-Origin": "*" }, json: { "2:74": { page: 9 } }
+      }));
+      await page.goto(BASE + "/quran-read/2/?ayah=74");
+      const verse = page.locator('.page[data-page="9"] .verse-segment.selected').first();
+      await verse.waitFor();
+      await page.waitForTimeout(600);
+      const layout = await verse.evaluate(el => {
+        const r = el.getBoundingClientRect(), stage = el.closest(".page-stage");
+        const top = document.querySelector(".topbar").getBoundingClientRect().bottom;
+        const dock = document.querySelector(".bottom");
+        const tools = [...dock.querySelectorAll(".tool")].filter(b => b.offsetParent).map(b => Math.round(b.getBoundingClientRect().top));
+        return { scrolls: stage.classList.contains("scrolls"), top: r.top, bottom: r.bottom, limitTop: top, limitBottom: Math.round(dock.getBoundingClientRect().top), tools, toolsTop: document.body.classList.contains("reader-tools-top") };
+      });
+      assert.ok(layout.scrolls, "the page is taller than the screen");
+      assert.ok(layout.top >= layout.limitTop - 1 && layout.bottom <= layout.limitBottom + 1,
+        `verse at ${Math.round(layout.top)}–${Math.round(layout.bottom)} is outside ${Math.round(layout.limitTop)}–${layout.limitBottom}`);
+      assert.equal(layout.toolsTop, false, "a verse in view leaves the tools at the bottom");
+      assert.equal(new Set(layout.tools).size, 1, `tools share one row: ${layout.tools}`);
+      assert.deepEqual(errors, []);
+    } finally {
+      await context.close();
+    }
+  });
 });
 
 test("Quran text and verse numbers stay readable when a phone or tablet rotates", async t => {
