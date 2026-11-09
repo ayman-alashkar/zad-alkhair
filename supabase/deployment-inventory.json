@@ -1,18 +1,18 @@
 {
-  "captured_at": "2026-11-02",
+  "captured_at": "2026-11-09",
   "project_ref": "webqpbcijjbawatykoxe",
   "edge_functions": [
     {
       "slug": "telegram-webhook",
-      "version": 21,
+      "version": 22,
       "verify_jwt": false,
-      "bundle_sha256": "567bede6f656f3e0fd8bc80a1e7053d38eefb11dd175a60050afc5b2d8537aef"
+      "bundle_sha256": "e80e731fd2c85c995ccb6c54e013e730b5888884861b29cef0de66bb78775afb"
     },
     {
       "slug": "send-reminders",
-      "version": 24,
+      "version": 25,
       "verify_jwt": false,
-      "bundle_sha256": "753c573b64231ae1d75000a867f5085aa3a9c03a7de618dd74b511b9a0759928"
+      "bundle_sha256": "f7ac78fc4947d46b0b3699e3835345ebf58caf300392ee6ba1c099c47cd94934"
     },
     {
       "slug": "notify-done",
@@ -28,15 +28,15 @@
     },
     {
       "slug": "send-message",
-      "version": 9,
+      "version": 10,
       "verify_jwt": false,
-      "bundle_sha256": "a7805010fe4bc9f4bb0a0079befad0a7f62d754817f1d62752c1cb52e094a723"
+      "bundle_sha256": "3e23c89c87988b9e15e66abd8fb12439b9c9beafbbbe0b9b5a82123dd3c9ee79"
     },
     {
       "slug": "announce",
-      "version": 9,
+      "version": 10,
       "verify_jwt": false,
-      "bundle_sha256": "12601e56535740907cf05d644672d5a85c905ef931be7aea2f407c7234d134ba"
+      "bundle_sha256": "0e379e5f860dae8e35ce455cc0d38db2ec6071f253c8ecf57b8d6dd3a79d6622"
     },
     {
       "slug": "migration-handoff",
@@ -52,9 +52,9 @@
     },
     {
       "slug": "send-completions",
-      "version": 1,
+      "version": 2,
       "verify_jwt": false,
-      "bundle_sha256": "c1bfae2a797295fcca3cc900e0cb4ab3d692922a0388dfea2c531be42a71391e"
+      "bundle_sha256": "d54727642de060badd7f8e0768237d1d04a4124400df8dfb9cdd436f091beb0c"
     }
   ],
   "migrations": [

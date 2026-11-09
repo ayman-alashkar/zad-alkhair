@@ -46,7 +46,8 @@ test("Quran discovery pages expose useful crawlable links",()=>{
     assert.ok(part.includes(`id="openReader" href="/quran-read/?juz=${n}"`), `juz ${n}`);
     assert.ok(part.includes(`new URL("/quran-read/?juz=${n}",location.href)`), `juz ${n} with a khatmah code`);
   }
-  for(const old of ["reader.html","quran/index.html","surah"])assert.ok(!fs.existsSync(path.join(root,old)),old);
+  // reader.html remains only as a retired redirect (tests/retired-reader.test.cjs).
+  for(const old of ["quran/index.html","surah"])assert.ok(!fs.existsSync(path.join(root,old)),old);
 });
 
 test("Quran, reciter and surah pages use the approved concise copy",()=>{

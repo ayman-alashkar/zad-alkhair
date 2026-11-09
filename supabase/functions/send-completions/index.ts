@@ -50,7 +50,7 @@ function appLink(code?: string) {
 
 function readerLink() {
   const root = appRoot();
-  return root ? new URL("reader.html", root).href : APP_URL;
+  return root ? new URL("quran-read/", root).href : APP_URL;
 }
 
 function navRows(code?: string) {

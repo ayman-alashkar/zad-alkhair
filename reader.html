@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="zk-retired-reader" content="1">
+  <title>زاد الخير</title>
+  <!-- تحويل متقاعد: يحمي روابط reader.html في رسائل تيليغرام القديمة.
+       لا يشير إليه شيء جديد؛ يحوّل إلى المسار الموحد مع الجزء ورمز الختمة. -->
+  <script>
+(()=>{
+  const q=new URLSearchParams(location.search);
+  const mode=q.get("listen")==="1"?"listen":"read";
+  const surah=Number(q.get("surah"));
+  const path=Number.isInteger(surah)&&surah>=1&&surah<=114
+    ?`/quran-${mode}/${surah}/`:`/quran-${mode}/`;
+  for(const key of ["surah","listen","home"])q.delete(key);
+  const query=q.toString();
+  location.replace(path+(query?"?"+query:"")+location.hash);
+})();
+  </script>
+</head>
+<body><a href="/quran-read/">افتح المصحف</a></body>
+</html>
