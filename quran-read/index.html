@@ -220,11 +220,6 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   position:absolute;left:22px;bottom:calc(8px + env(safe-area-inset-bottom));
   color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,24px);line-height:1
 }
-.qcf-mark{
-  position:absolute;right:50%;transform:translateX(50%);
-  bottom:calc(11px + env(safe-area-inset-bottom));
-  color:var(--muted);font-size:8px;opacity:.48
-}
 .loading{
   position:fixed;inset:0;z-index:70;display:grid;place-items:center;
   background:var(--paper);color:var(--muted);font-size:11px;
@@ -3391,7 +3386,7 @@ function renderPage(data){
   root.innerHTML=`<div class="page-stage ${data.page<=2?"special":"full"}">
     <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
     <div class="mushaf" id="mushaf-${data.page}"></div>
-    <div class="page-footer"><div class="page-no">${ar(data.page)}</div><div class="qcf-mark">QCF4 · 1441هـ</div></div>
+    <div class="page-footer"><div class="page-no">${ar(data.page)}</div></div>
   </div>`;
   root.querySelectorAll(".page-meta-link").forEach(btn=>btn.addEventListener("click",e=>{
     e.stopPropagation();

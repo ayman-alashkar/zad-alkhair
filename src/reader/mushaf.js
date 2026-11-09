@@ -273,7 +273,7 @@ function renderPage(data){
   root.innerHTML=`<div class="page-stage ${data.page<=2?"special":"full"}">
     <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
     <div class="mushaf" id="mushaf-${data.page}"></div>
-    <div class="page-footer"><div class="page-no">${ar(data.page)}</div><div class="qcf-mark">QCF4 · 1441هـ</div></div>
+    <div class="page-footer"><div class="page-no">${ar(data.page)}</div></div>
   </div>`;
   root.querySelectorAll(".page-meta-link").forEach(btn=>btn.addEventListener("click",e=>{
     e.stopPropagation();
