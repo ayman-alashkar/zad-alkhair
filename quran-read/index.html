@@ -2708,6 +2708,8 @@ html[data-theme="dark"] .zl-tag{color:#8E6A28}
 .zl-upnext[hidden]{display:none}
 html[data-theme="dark"] .zl-upnext{color:#6B6350}
 .zl-qrow:disabled{opacity:.45;cursor:default}
+/* التنزيل معطّل في «ما تيسّر»؛ setAudioDownloadButton قد يعيد تفعيل الزر نفسه، فاللمس يُمنع من الحاوية. */
+.zl-act-dl.off{opacity:.4;pointer-events:none}
 </style>
 </head>
 <body class="hidden-tools zad-identity">
@@ -6000,6 +6002,8 @@ function listenPaint(){
   card.querySelector(".zl-qari-mono").textContent=listenMonogram(st.r);
   card.querySelector(".zl-qari-name").textContent=listenReciterName(st.r);
   const dl=card.querySelector(".zl-dl");
+  /* في «ما تيسّر» تتغيّر السورة كل بضع دقائق، فلا معنى لتنزيل سورة المقطع الجاري. */
+  dl.disabled=ty;dl.tabIndex=ty?-1:0;dl.parentElement.classList.toggle("off",ty);
   if(dl.dataset.audioDownload!==String(st.s)){dl.dataset.audioDownload=String(st.s);bindListenDownload(dl,st.s)}
   else refreshAudioDownloadButton(dl,st.s).then(()=>listenLabelDownload(dl)).catch(()=>{});
   listenPanel.querySelector(".zl-mini-name").textContent=`سورة ${listenSurahName(st.s)}`;
@@ -6476,6 +6480,11 @@ async function tayassurPlay(i){
   const n=tayassur.order.length;i=((i%n)+n)%n;
   const p=tayassur.order[i];
   tayassur.i=i;tayassur.stop={s:p.s,a:tayassurEnd(p)};
+  /* القارئ الموقّت يحتاج وقتًا ليجلب توقيت السورة الجديدة، والملف القديم ما زال يُسمع.
+     لو بقي توقيته فعّالًا لنقل play.current إلى آيته، فيبدأ المقطع الجديد من آية خاطئة
+     أو يقفز مقطعًا. لذلك يُسكت الملف القديم ويُفصل توقيته قبل الانتقال. */
+  activeSegment=null;activeTimingRows=null;
+  if(!audio.paused)audio.pause();
   detachQueue();repeatMode="off";
   continuousMode=true;continuousStopRef=tayassur.stop;
   listenPending=null;listenSeekAfterLoad=null;

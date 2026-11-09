@@ -154,6 +154,8 @@ function listenPaint(){
   card.querySelector(".zl-qari-mono").textContent=listenMonogram(st.r);
   card.querySelector(".zl-qari-name").textContent=listenReciterName(st.r);
   const dl=card.querySelector(".zl-dl");
+  /* في «ما تيسّر» تتغيّر السورة كل بضع دقائق، فلا معنى لتنزيل سورة المقطع الجاري. */
+  dl.disabled=ty;dl.tabIndex=ty?-1:0;dl.parentElement.classList.toggle("off",ty);
   if(dl.dataset.audioDownload!==String(st.s)){dl.dataset.audioDownload=String(st.s);bindListenDownload(dl,st.s)}
   else refreshAudioDownloadButton(dl,st.s).then(()=>listenLabelDownload(dl)).catch(()=>{});
   listenPanel.querySelector(".zl-mini-name").textContent=`سورة ${listenSurahName(st.s)}`;

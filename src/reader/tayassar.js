@@ -48,6 +48,11 @@ async function tayassurPlay(i){
   const n=tayassur.order.length;i=((i%n)+n)%n;
   const p=tayassur.order[i];
   tayassur.i=i;tayassur.stop={s:p.s,a:tayassurEnd(p)};
+  /* القارئ الموقّت يحتاج وقتًا ليجلب توقيت السورة الجديدة، والملف القديم ما زال يُسمع.
+     لو بقي توقيته فعّالًا لنقل play.current إلى آيته، فيبدأ المقطع الجديد من آية خاطئة
+     أو يقفز مقطعًا. لذلك يُسكت الملف القديم ويُفصل توقيته قبل الانتقال. */
+  activeSegment=null;activeTimingRows=null;
+  if(!audio.paused)audio.pause();
   detachQueue();repeatMode="off";
   continuousMode=true;continuousStopRef=tayassur.stop;
   listenPending=null;listenSeekAfterLoad=null;

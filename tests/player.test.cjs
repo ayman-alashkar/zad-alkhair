@@ -271,3 +271,13 @@ test('choosing another start ends «ما تيسّر» by itself',async()=>{
   assert.equal(f.run('tayassurActive()'),false);
   assert.equal(f.run('tayassur'),null);
 });
+test('moving to another «ما تيسّر» segment silences the old file and drops its timing first',async()=>{
+  const {f}=tayassurFixture();
+  await f.run('tayassurStart()');
+  f.run('tayassur.order=[{s:2,a:26},{s:36,a:13}]');
+  f.ctx.audio.paused=false;f.ctx.activeTimingRows=[{ayah:30,start_time:0,end_time:1}];f.ctx.activeSegment={start:0,end:1};
+  await f.run('stepPlayer(1)');
+  assert.equal(f.ctx.audio.paused,true);
+  assert.equal(f.ctx.activeTimingRows,null,'the old surah timing cannot move play.current');
+  assert.deepEqual([...f.ctx.played.at(-1)],[36,13]);
+});
