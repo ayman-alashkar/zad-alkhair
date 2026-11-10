@@ -4,6 +4,7 @@
     <path d="M41 58V47c0-10 6-17 19-25 13 8 19 15 19 25v11" stroke="#E4C980" stroke-width="4"/>
     <path d="M14 65c18-3 33 2 46 14 13-12 28-17 46-14v29c-18-2-33 3-46 16-13-13-28-18-46-16V65Z" stroke="#FFF9EA" stroke-width="4.2"/>
     <path d="M60 79v31M24 76c13 0 23 3 31 10M96 76c-13 0-23 3-31 10" stroke="#E4C980" stroke-width="3.3"/>
+    <path d="M31 89c10 .2 18 2.7 24 8M89 89c-10 .2-18 2.7-24 8" stroke="#FFF9EA" stroke-width="2.2" opacity=".52"/>
     <path d="m60 13 4 5-4 5-4-5 4-5Z" fill="#E4C980" stroke="none"/>
   </g>
 </svg>
