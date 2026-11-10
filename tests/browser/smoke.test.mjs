@@ -99,11 +99,8 @@ test("copying an ayah gives its Uthmani text from Tanzil, not the simplified tex
   const word = page.locator('.page[data-page="9"] .line:first-child .verse-segment').first();
   await word.waitFor();
   /* ضغطة مطوّلة تفتح قائمة الآية. */
-  const box = await word.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2;
-  /* الآية التي تحت الإصبع فعلًا (يختلف التخطيط قليلًا بين المحركين). */
-  const key = await page.evaluate(([px, py]) => document.elementFromPoint(px, py)?.closest("[data-key]")?.dataset.key, [x, y]);
-  assert.match(key || "", /^2:\d+$/);
-  await page.mouse.move(x, y);
+  const box = await word.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(650);
   await page.mouse.up();
@@ -111,8 +108,11 @@ test("copying an ayah gives its Uthmani text from Tanzil, not the simplified tex
   await page.click('[data-share="copy"]');
   await page.waitForFunction(() => typeof window.__copied === "string", null, { timeout: 3000 });
   const copied = await page.evaluate(() => window.__copied);
-  assert.equal(copied.split("\n")[0], `﴿${tanzil[key]}﴾`);
-  assert.match(copied.split("\n")[1], /^سورة البقرة، الآية [٠-٩]+$/);
+  /* الآية المنسوخة هي التي يذكرها سطرها الثاني (قد تختلف الآية التي تحت المؤشر بين المحركين). */
+  const [, digits] = copied.split("\n")[1].match(/^سورة البقرة، الآية ([٠-٩]+)$/) || [];
+  assert.ok(digits, copied);
+  const ayah = [...digits].map(d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).join("");
+  assert.equal(copied.split("\n")[0], `﴿${tanzil[`2:${ayah}`]}﴾`);
   assert.deepEqual(errors, []);
   await context.close();
 });
