@@ -3481,6 +3481,7 @@ function openListenPage(){
   listenReturnUrl=null;
   readerReturnToListen=false;
   document.querySelector(".quran-index")?.remove();
+  if(!listenTarget)tayassurRestore();
   const picks=(listenFriday()?LISTEN_PICKS:LISTEN_PICKS.slice(1).concat(18)).map(s=>`<button type="button" class="zl-chip${listenFriday()&&s===18?" gold":""}" data-pick="${s}">${escapeHtml(listenSurahName(s))}${listenFriday()&&s===18?" · يوم الجمعة":""}</button>`).join("");
   const panel=document.createElement("section");panel.className="zad-listen";panel.setAttribute("aria-label","مشغّل التلاوة");
   panel.innerHTML=`<div class="zl-pattern" aria-hidden="true"></div><div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave zl-mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button><span class="zl-mini-bar" aria-hidden="true"><i></i></span></div>
@@ -3616,6 +3617,9 @@ audio.addEventListener("durationchange",listenApplyPendingSeek);
    القارئ يُغيَّر متى شاء المستخدم ولا يتغيّر الترتيب. الوضع يعيش في المحرّك نفسه:
    continuousStopRef هو نهاية المقطع، وعندها يبدأ المقطع التالي بدل التوقف. */
 const TAYASSUR_MIN_REMAINING=11;
+/* يبقى الوضع محفوظًا حين يُغادَر مشغّل التلاوة إلى صفحة أخرى (الرئيسية، الختمات،
+   المواقيت) فيتوقف الصوت؛ عند العودة يظهر مفعّلًا متوقفًا عند موضعه، والتشغيل يكمل منه. */
+const TAYASSUR_KEY="zad:listen:tayassur-v1";
 /* سحب القوس إلى آخره (آخر ٢٪) ينقل إلى المقطع التالي. */
 const TAYASSUR_NEXT_AT=.98;
 let tayassur=null;
@@ -3642,7 +3646,36 @@ function tayassurShuffle(list){
 function tayassurActive(){
   if(!tayassur)return false;
   if(continuousStopRef===tayassur.stop&&!isSurahOnly())return true;
-  tayassur=null;return false;
+  tayassur=null;tayassurForget();return false;
+}
+function tayassurSave(){
+  if(!tayassur||!tayassur.stop)return;
+  storageJsonSet(TAYASSUR_KEY,{o:tayassur.order.map(p=>`${p.s}:${p.a}`).join(","),i:tayassur.i,a:Number(play.current)||tayassur.order[tayassur.i].a,q:reciter.id});
+}
+function tayassurForget(){try{localStorage.removeItem(TAYASSUR_KEY)}catch(_){}}
+/* يُستدعى عند فتح مشغّل التلاوة دون تلاوة جارية: يجهّز المشغّل متوقفًا على المقطع المحفوظ. */
+function tayassurRestore(){
+  if(tayassur||listenActive())return false;
+  const v=storageJsonGet(TAYASSUR_KEY,null);
+  const order=String(v?.o||"").split(",").map(x=>{const[s,a]=x.split(":").map(Number);return{s,a}}).filter(p=>p.s>=1&&p.s<=114&&p.a>=1&&p.a<=maxAyah(p.s));
+  const i=Number(v?.i),r=RECITERS.find(x=>x.id===v?.q);
+  if(order.length<2||!Number.isInteger(i)||i<0||i>=order.length||!r||isSurahOnly(r)){tayassurForget();return false}
+  listenQuietReciter(r);
+  const p=order[i];
+  tayassur={order,i,stop:{s:p.s,a:tayassurEnd(p)}};
+  const a=Number(v.a)>=p.a&&Number(v.a)<=tayassur.stop.a?Number(v.a):p.a;
+  detachQueue();repeatMode="off";
+  continuousMode=true;continuousStopRef=tayassur.stop;
+  play={surah:p.s,from:a,to:a,current:a,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
+  pendingSurahBasmala=a===1&&p.s!==1&&p.s!==9;basmalaFallbackTarget=null;
+  playbackWanted=false;
+  updatePlayer();showPlayer(false);
+  return true;
+}
+/* الموضع داخل المقطع يُحفظ عند مغادرة الصفحة أو إخفائها (الاختبارات تحمّل الملف دون نافذة). */
+if(typeof addEventListener==="function"&&typeof document!=="undefined"){
+  addEventListener("pagehide",()=>{if(tayassurActive())tayassurSave()});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&tayassurActive())tayassurSave()});
 }
 function tayassurSegment(){
   if(!tayassurActive())return null;
@@ -3667,6 +3700,7 @@ async function tayassurPlay(i){
   listenPending=null;listenSeekAfterLoad=null;
   play={surah:p.s,from:p.a,to:p.a,current:p.a,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:play.speed||1};
   pendingSurahBasmala=p.a===1&&p.s!==1&&p.s!==9;basmalaFallbackTarget=null;
+  tayassurSave();
   await playCurrent(false);
 }
 async function tayassurStart(){
@@ -3683,7 +3717,7 @@ async function tayassurStart(){
 function tayassurStop(){
   if(!tayassur)return;
   const wasActive=continuousStopRef===tayassur.stop;
-  tayassur=null;
+  tayassur=null;tayassurForget();
   if(wasActive){continuousMode=true;continuousStopRef=null;releaseAudioPreload();primeNextEveryAyah();primeNextTimedSurah()}
 }
 async function tayassurToggle(){
