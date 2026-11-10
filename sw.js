@@ -43,7 +43,10 @@ const QURAN_CORE=[QCF_BASE+"index.json",QCF_BASE+"verses.json",QCF_BASE+"fonts-w
 const QURAN_FONTS=Array.from({length:47},(_,i)=>QCF_BASE+`fonts-woff2/QCF4_Hafs_${String(i+1).padStart(2,"0")}_W.woff2`);
 const QURAN_PAGES=Array.from({length:604},(_,i)=>QCF_BASE+`pages/${String(i+1).padStart(3,"0")}.json`);
 const QURAN_REQUIRED=[...QURAN_CORE,...QURAN_FONTS,...QURAN_PAGES];
-const TAFSIR_REQUIRED=["./data/tafsir/al-wajeez/index.json","./data/tafsir/al-wajeez/fadl.json",...Array.from({length:114},(_,i)=>`./data/tafsir/al-wajeez/${String(i+1).padStart(3,"0")}.json`)];
+/* حزمة التفسير تحمل معها نص المصحف العثماني (للنسخ ونتائج البحث). من اكتملت حزمته قبل إضافته
+   تنقصه هذه الملفات وحدها، فتُنزَّل في التجهيز التالي دون إعادة التفسير. */
+const UTHMANI_REQUIRED=Array.from({length:114},(_,i)=>`./data/quran-uthmani/${String(i+1).padStart(3,"0")}.json`);
+const TAFSIR_REQUIRED=["./data/tafsir/al-wajeez/index.json","./data/tafsir/al-wajeez/fadl.json",...Array.from({length:114},(_,i)=>`./data/tafsir/al-wajeez/${String(i+1).padStart(3,"0")}.json`),...UTHMANI_REQUIRED];
 const QURAN_MARKER="./__zad_quran_core_v1_ready__";
 const TAFSIR_MARKER="./__zad_tafsir_alwajeez_v1_ready__";
 
@@ -459,7 +462,7 @@ self.addEventListener("fetch",event=>{
   }
   /* تصحيحات التقويم الهجري: من الشبكة دائمًا، والصفحة تحفظ آخر نسخة بنفسها. */
   if(url.origin===self.location.origin&&/\/data\/hijri-adjustments\.json$/.test(url.pathname))return;
-  if(url.origin===self.location.origin&&/\/data\/tafsir\/al-wajeez\//.test(url.pathname)){
+  if(url.origin===self.location.origin&&/\/data\/(?:tafsir\/al-wajeez|quran-uthmani)\//.test(url.pathname)){
     event.respondWith(cacheFirst(request,TAFSIR_CACHE));
     return;
   }

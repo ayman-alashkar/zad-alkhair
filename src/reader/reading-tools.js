@@ -81,6 +81,7 @@ function selectVerse(k,anchor,force=false,point=null){
     return false;
   }
   selectedKey=k;selectedAnchor=anchor||selectedAnchor;
+  uthmaniLoad(verseParts(k).s);
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach(x=>x.classList.add("selected"));
   if(point)pendingReveal=null;else revealVerse(selectedAnchor);
@@ -282,7 +283,13 @@ function collectVerseWords(data,k,out){
   }
   return found;
 }
+/* نص الآية للنسخ والمشاركة: بالرسم العثماني (uthmani.js)، ومن صفحات المصحف إن تعذّر. */
 async function verseTextFull(k,pageHint=null){
+  const uthmani=uthmaniVerseNow(k)||await uthmaniVerse(k);
+  if(uthmani)return uthmani;
+  return cleanSimpleQuranText(await verseTextFromPages(k,pageHint));
+}
+async function verseTextFromPages(k,pageHint=null){
   const out=[];
   const hinted=Number(pageHint);
   let start=null;

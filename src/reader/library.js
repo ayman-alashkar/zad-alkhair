@@ -16,7 +16,7 @@ async function verseExcerptForIndex(k,p){
       if(out.length>=4)break;
     }
   }
-  const txt=out.length?out.slice(0,4).join(" ")+"…":"";
+  const txt=out.length?cleanSimpleQuranText(out.slice(0,4).join(" "))+"…":"";
   if(txt){
     indexExcerptCache[k]=txt;
     scheduleIndexExcerptSave();
@@ -276,11 +276,17 @@ async function openQuranSearch(){
     const frag=document.createDocumentFragment();
     for(const item of matches){
       const btn=document.createElement("button");btn.type="button";btn.className="quran-search-result";
-      btn.innerHTML=`<b>${escapeHtml(item.text)}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
+      btn.innerHTML=`<b>${escapeHtml(uthmaniVerseNow(item.key)||cleanSimpleQuranText(item.text))}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
       btn.onclick=async()=>{b.remove();const hp=document.querySelector(".quran-index");if(hp?.dataset.homeMode==="1")readerReturnToQuranHome=true;hp?.remove();await go(item.page);await ensurePage(item.page);const a=document.querySelector(`.page[data-page="${item.page}"] .verse-segment[data-key="${item.key}"]`);if(a)selectVerse(item.key,a,true)};
       frag.appendChild(btn);
     }
     results.appendChild(frag);
+    /* نص النتائج بالرسم العثماني حين تصل ملفات سورها، والمطابقة بقيت على النص المبسّط. */
+    const rows=[...results.children];
+    for(const s of new Set(matches.map(item=>item.s)))uthmaniLoad(s).then(verses=>{
+      if(!verses||mine!==token)return;
+      matches.forEach((item,i)=>{if(item.s===s){const text=uthmaniVerseNow(item.key);if(text&&rows[i])rows[i].querySelector("b").textContent=text}});
+    });
   }
   let timer=0;input.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(run,180)});setTimeout(()=>input.focus(),80);
 }

@@ -899,6 +899,51 @@ function fitPage(p){
   });
 }
 
+/* ---------- نص المصحف بالرسم العثماني للنسخ ونتائج البحث ----------
+   الخطوط تعرض الصفحة كما في المصحف، لكن النص المرافق لكلماتها إملاء مبسّط، وفي بعضه
+   بقايا رموز (&#1621; و#1969). فما يُنسخ أو يُقرأ نصًّا يُؤخذ من نص مشروع تنزيل العثماني
+   (data/quran-uthmani/، يولّده scripts/build-quran-uthmani.cjs)، وتبقى مطابقة البحث على المبسّط.
+   يُحمَّل ملف السورة عند الضغط على آية، فيكون جاهزًا عند «نسخ»، ويُحفظ مع حزمة التفسير دون اتصال. */
+const UTHMANI_BASE="/data/quran-uthmani/";
+const uthmaniSurahs=new Map(),uthmaniReady=new Map();
+function uthmaniLoad(s){
+  s=Number(s);
+  if(!Number.isInteger(s)||s<1||s>114)return Promise.resolve(null);
+  if(!uthmaniSurahs.has(s)){
+    const job=fetch(`${UTHMANI_BASE}${pad3(s)}.json`,{cache:"force-cache"})
+      .then(response=>response.ok?response.json():null)
+      .then(data=>Array.isArray(data?.verses)?data.verses:null)
+      .catch(()=>null)
+      .then(verses=>{
+        if(verses)uthmaniReady.set(s,verses);
+        else uthmaniSurahs.delete(s);
+        return verses;
+      });
+    uthmaniSurahs.set(s,job);
+  }
+  return uthmaniSurahs.get(s);
+}
+/* ملف تنزيل يبدأ الآية الأولى من كل سورة بالبسملة، والبسملة آية من الفاتحة وحدها. */
+function uthmaniPick(verses,s,a){
+  const text=verses?.[a-1];
+  if(!text)return null;
+  if(a!==1||s===1||s===9)return text;
+  const words=text.split(" ");
+  return words[0].replace(/[ً-ْ]/g,"")==="بسم"?words.slice(4).join(" "):text;
+}
+/* الآية إن كان ملف سورتها قد وصل، وإلا null (لا ينتظر). */
+function uthmaniVerseNow(k){
+  const v=verseParts(k);
+  return uthmaniPick(uthmaniReady.get(v.s),v.s,v.a);
+}
+async function uthmaniVerse(k){
+  const v=verseParts(k);
+  return uthmaniPick(await uthmaniLoad(v.s),v.s,v.a);
+}
+/* النص المبسّط حين لا يتوفر العثماني: تُفكّ الرموز الرقمية، و#1969 علامة السجدة. */
+function cleanSimpleQuranText(text){
+  return String(text||"").replace(/&#(\d+);/g,(_,code)=>String.fromCodePoint(Number(code))).replace(/\s*#1969\b/g," ۩").replace(/\s{2,}/g," ").trim();
+}
 function clearVerseContext(){
   const context=document.getElementById("readerContext");if(!context)return;
   clearTimeout(context._t);context.classList.remove("show");context.replaceChildren();context.removeAttribute("title");
@@ -982,6 +1027,7 @@ function selectVerse(k,anchor,force=false,point=null){
     return false;
   }
   selectedKey=k;selectedAnchor=anchor||selectedAnchor;
+  uthmaniLoad(verseParts(k).s);
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach(x=>x.classList.add("selected"));
   if(point)pendingReveal=null;else revealVerse(selectedAnchor);
@@ -1183,7 +1229,13 @@ function collectVerseWords(data,k,out){
   }
   return found;
 }
+/* نص الآية للنسخ والمشاركة: بالرسم العثماني (uthmani.js)، ومن صفحات المصحف إن تعذّر. */
 async function verseTextFull(k,pageHint=null){
+  const uthmani=uthmaniVerseNow(k)||await uthmaniVerse(k);
+  if(uthmani)return uthmani;
+  return cleanSimpleQuranText(await verseTextFromPages(k,pageHint));
+}
+async function verseTextFromPages(k,pageHint=null){
   const out=[];
   const hinted=Number(pageHint);
   let start=null;
@@ -1462,7 +1514,7 @@ async function verseExcerptForIndex(k,p){
       if(out.length>=4)break;
     }
   }
-  const txt=out.length?out.slice(0,4).join(" ")+"…":"";
+  const txt=out.length?cleanSimpleQuranText(out.slice(0,4).join(" "))+"…":"";
   if(txt){
     indexExcerptCache[k]=txt;
     scheduleIndexExcerptSave();
@@ -1722,11 +1774,17 @@ async function openQuranSearch(){
     const frag=document.createDocumentFragment();
     for(const item of matches){
       const btn=document.createElement("button");btn.type="button";btn.className="quran-search-result";
-      btn.innerHTML=`<b>${escapeHtml(item.text)}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
+      btn.innerHTML=`<b>${escapeHtml(uthmaniVerseNow(item.key)||cleanSimpleQuranText(item.text))}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
       btn.onclick=async()=>{b.remove();const hp=document.querySelector(".quran-index");if(hp?.dataset.homeMode==="1")readerReturnToQuranHome=true;hp?.remove();await go(item.page);await ensurePage(item.page);const a=document.querySelector(`.page[data-page="${item.page}"] .verse-segment[data-key="${item.key}"]`);if(a)selectVerse(item.key,a,true)};
       frag.appendChild(btn);
     }
     results.appendChild(frag);
+    /* نص النتائج بالرسم العثماني حين تصل ملفات سورها، والمطابقة بقيت على النص المبسّط. */
+    const rows=[...results.children];
+    for(const s of new Set(matches.map(item=>item.s)))uthmaniLoad(s).then(verses=>{
+      if(!verses||mine!==token)return;
+      matches.forEach((item,i)=>{if(item.s===s){const text=uthmaniVerseNow(item.key);if(text&&rows[i])rows[i].querySelector("b").textContent=text}});
+    });
   }
   let timer=0;input.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(run,180)});setTimeout(()=>input.focus(),80);
 }
