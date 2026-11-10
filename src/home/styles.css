@@ -1182,34 +1182,37 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 :root[data-zk-theme="dark"] .zf-kahf.done .zf-kahf-badge{background:#E4C980;color:#173E35}
 .zf-kahf-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:21px;line-height:1.35}
 
-/* ── «وردك اليوم» في الرئيسية ── */
+/* ── السطر المنكمش بعد الإتمام (بطاقة الأذكار) ── */
 .zw-done{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid var(--zt-line);border-radius:22px;
   background:var(--zt-surface);color:var(--zt-ink);font:inherit;text-align:start;cursor:pointer}
 .zw-done-badge{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#C59A4A;color:#FFF9EA}
 :root[data-zk-theme="dark"] .zw-done-badge{background:#E4C980;color:#173E35}
 .zw-done-badge svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .zw-done-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:19px;line-height:1.35}
-.zw-card{display:flex;flex-direction:column;gap:12px;padding:16px 14px 14px;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink)}
-.zw-card-head{display:flex;align-items:baseline;justify-content:space-between;padding-inline:4px}
-.zw-card-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;line-height:1.3}
-.zw-items{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.zw-item{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 4px 8px;border:0;border-radius:18px;background:transparent;color:inherit;font-family:inherit;cursor:pointer;transition:transform .15s ease,background .2s ease}
-.zw-item:active{transform:scale(.97)}
-.zw-item.done{background:var(--zt-gold-soft)}
-.zw-mini{position:relative;width:72px;height:72px;display:block}
-.zw-mini>svg{display:block;width:72px;height:72px;transform:rotate(-90deg)}
-.zw-mini circle{fill:none;stroke-width:7}
-.zw-mini .bg{stroke:var(--zt-track)}
-.zw-mini .fg{stroke:var(--zt-gold);stroke-linecap:round;stroke-dasharray:213.6;transition:stroke-dashoffset .6s cubic-bezier(.3,.8,.2,1)}
-.zw-mini .full{fill:#C59A4A;stroke:#C59A4A}
-:root[data-zk-theme="dark"] .zw-mini .full{fill:#E4C980;stroke:#E4C980}
-.zw-mini-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.zw-mini-mid b{font-size:18px;line-height:1.1}
-.zw-mini-mid small{font-size:9px;color:var(--zt-muted)}
-.zw-check{width:28px;height:28px;fill:none;stroke:#FFF9EA;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-:root[data-zk-theme="dark"] .zw-check{stroke:#173E35}
-.zw-name{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:15px;line-height:1.4;text-align:center}
-@media (min-width:860px){.zt-wird{grid-column:1/-1;order:3}}
+@media (min-width:860px){.zt-adhkar{grid-column:1/-1;order:3}}
+
+/* ── بطاقة الأذكار في الرئيسية ── */
+.za-card{display:flex;flex-direction:column;border:1px solid var(--zt-line);border-radius:24px;background:var(--zt-surface);color:var(--zt-ink);overflow:hidden}
+.za-card-main{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;padding:18px 18px 14px;border:0;background:transparent;color:inherit;font:inherit;text-align:start;cursor:pointer;transition:transform .15s ease}
+.za-card-main:active{transform:scale(.98)}
+.za-card-main .zt-card-text,.za-hero .zt-card-text,.za-line .zt-card-text{flex:1}
+.za-card-main .zt-badge,.za-hero .zt-badge{flex:none;width:52px;height:52px;border-radius:18px;display:grid;place-items:center;background:var(--zt-gold-soft);color:var(--zt-gold)}
+.za-card-main .zt-badge svg,.za-hero .zt-badge svg,.za-tile-icon{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.za-card .za-bar{margin:0 18px}
+.za-card-all{display:flex;align-items:center;justify-content:space-between;min-height:44px;margin-top:10px;padding:0 18px;border:0;border-top:1px solid var(--zt-line);
+  background:transparent;color:var(--zt-gold);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.za-chev{flex:none;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.za-line{color:var(--zt-ink)}
+.za-line .za-chev{color:var(--zt-gold)}
+
+/* ── «الآن» ورابط أذكار الصلاة في بطاقة الصلاة ── */
+.zt-prayers.has-now{margin-top:24px}
+.zt-prayers li{position:relative}
+.zt-prayers li.is-now{box-shadow:inset 0 0 0 1px rgba(228,201,128,.75);color:#FFF9EA;font-weight:600}
+.zt-now{position:absolute;top:-18px;inset-inline:0;text-align:center;font-size:10px;font-weight:700;line-height:1.4;color:#E4C980}
+.zt-adhkar-link{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;margin:4px auto -10px;padding:0 14px;border:0;
+  background:transparent;color:#E4C980;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.zt-adhkar-link svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── شاشة العدّ: تتبع الوضع النهاري والليلي ──
    ألوانها من متغيرات الرئيسية، وما يخصها في --zw-*. */
@@ -1261,6 +1264,60 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .zw-complete[hidden]{display:none}
 .zw-reset{min-height:44px;padding:0 18px;border:1px solid var(--zw-line);border-radius:14px;background:transparent;color:var(--zw-muted);font:inherit;font-size:13px;cursor:pointer}
 @media (max-height:700px){.zw-ring,.zw-ring>svg{width:210px;height:210px}.zw-live b{font-size:58px}.zw-text{font-size:27px}}
+
+/* ── صفحة الأذكار: على أساس شاشة العدّ وألوانها ── */
+.za-screen{gap:12px}
+.za-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none}
+.za-body::-webkit-scrollbar{display:none}
+.za-index{display:flex;flex-direction:column;gap:14px;flex:1;padding-bottom:4px}
+.za-hero{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;padding:18px;border:0;border-radius:24px;
+  background:radial-gradient(circle at 30% 30%,rgba(228,201,128,.14),transparent 18rem),linear-gradient(145deg,#0D3C35,#082D29);color:#FFF9EA;
+  font:inherit;text-align:start;cursor:pointer;box-shadow:0 18px 40px -22px rgba(6,40,35,.65)}
+:root[data-zk-theme="dark"] .za-hero{box-shadow:inset 0 0 0 1px var(--zt-line)}
+.za-hero .zt-eyebrow{color:#E4C980}
+.za-hero .zt-sub{color:rgba(255,249,234,.74)}
+.za-hero .zt-badge{background:rgba(228,201,128,.16);color:#E4C980}
+.za-hero .zt-bar{margin-top:8px;background:rgba(255,249,234,.12)}
+.za-hero .zt-bar i{background:#E4C980}
+.za-tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.za-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:96px;box-sizing:border-box;padding:16px;
+  border:1px solid var(--zt-line);border-radius:22px;background:var(--zt-surface);color:var(--zt-ink);font:inherit;text-align:start;cursor:pointer;transition:transform .15s ease}
+.za-tile:active{transform:scale(.97)}
+.za-tile-icon{color:var(--zt-gold)}
+.za-tile-name{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:20px;line-height:1.3}
+.za-tile-state{font-size:11.5px;color:var(--zt-muted)}
+.za-tile-check{position:absolute;top:12px;inset-inline-end:12px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--zw-done);color:var(--zw-done-ink)}
+.za-tile-check svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.za-credit{margin:auto 0 0;padding-top:6px;text-align:center;font-size:11px;line-height:1.8;color:var(--zt-muted)}
+.za-reader{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.za-progress{display:flex;flex-direction:column;gap:8px}
+.za-reader .zt-bar i{animation:none;transition:width .3s ease}
+.za-progress-row{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--zt-muted)}
+.za-text-card{flex:1;min-height:140px;display:flex;flex-direction:column;overflow-y:auto;box-sizing:border-box;padding:20px 18px;
+  border:1px solid var(--zt-line);border-radius:26px;background:var(--zt-surface);scrollbar-width:none}
+.za-text-card::-webkit-scrollbar{display:none}
+.za-inner{margin:auto 0}
+.za-note{margin:0 0 12px;font-size:12.5px;line-height:1.8;color:var(--zt-muted);text-align:center}
+.za-text{margin:0;font-family:"Amiri",serif;font-size:22px;line-height:2.05;text-align:center;white-space:pre-line}
+.za-text.short{font-size:30px;line-height:1.8}
+.za-tap{flex:none;min-height:0;gap:6px;padding:2px 0}
+.za-tap .zw-ring,.za-tap .zw-ring>svg{width:128px;height:128px}
+.za-tap .zw-live b{font-size:34px}
+.za-tap .zw-live small{font-size:11px}
+.za-tap .zw-full svg{width:44px;height:44px}
+.za-tap .zw-hint{font-size:12px}
+.za-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.za-nav button{min-height:48px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--zw-line);border-radius:16px;
+  background:var(--zt-surface);color:var(--zt-ink);font:inherit;font-size:13px;cursor:pointer}
+:root[data-zk-theme="dark"] .za-nav button{background:transparent}
+.za-nav button:disabled{opacity:.4;cursor:default}
+.za-nav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.za-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+.za-done-badge{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:var(--zw-done);color:var(--zw-done-ink)}
+.za-done-badge svg{width:44px;height:44px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.za-done-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:26px;line-height:1.4}
+.za-done-sub{font-size:14px;color:var(--zt-muted)}
+@media (max-height:700px){.za-tap .zw-ring,.za-tap .zw-ring>svg{width:104px;height:104px}.za-tap .zw-live b{font-size:28px}.za-text{font-size:20px}}
 
 /* Bottom navigation */
 .zk-tabs{position:fixed;z-index:130;inset:auto 0 0 0;box-sizing:border-box;height:calc(72px + env(safe-area-inset-bottom));

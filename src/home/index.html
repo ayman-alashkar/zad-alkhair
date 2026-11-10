@@ -103,11 +103,20 @@
       <div class="zt-grid">
         <section class="zt-prayer zt-rise" id="zt-prayer" aria-label="الصلاة القادمة" aria-live="off"></section>
         <div class="zt-reading zt-rise" id="zt-reading"></div>
-        <div class="zt-wird zt-rise" id="zt-wird"></div>
+        <div class="zt-adhkar zt-rise" id="zt-adhkar"></div>
       </div>
     </div>
     <div class="zt-page zp-page" id="zt-prayer-page" hidden></div>
   </div>
+</section>
+
+<!-- صفحة الأذكار (adhkar.js): الفهرس ثم الأذكار واحدًا واحدًا. شاشة الورد بعدها فتظهر فوقها. -->
+<section class="zw-screen za-screen" id="za-screen" aria-label="الأذكار" hidden>
+  <header class="zw-head">
+    <button class="zw-back" id="za-back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>رجوع</span></button>
+    <span class="zw-head-title" id="za-title">الأذكار</span>
+  </header>
+  <div class="za-body" id="za-body"></div>
 </section>
 
 <!-- شاشة العدّ لـ«وردك اليوم» (friday-wird.js): تتبع الوضع النهاري والليلي، فوق الشريط السفلي. -->
