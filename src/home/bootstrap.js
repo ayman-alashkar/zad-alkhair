@@ -152,6 +152,7 @@ function zkConfirmNativeExit(){
 }
 function zkRootBack(){
   if(typeof zwIsOpen==="function"&&zwIsOpen()){zwClose();zkArmRootGuard();return}
+  if(typeof zaIsOpen==="function"&&zaIsOpen()){zaBack();zkArmRootGuard();return}
   if(document.getElementById("layer")?.innerHTML){closeLayer();zkArmRootGuard();return}
   const topMenu=document.getElementById("tb-popover");
   if(topMenu&&!topMenu.hidden){closeTopMenu();zkArmRootGuard();return}

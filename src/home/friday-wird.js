@@ -1,4 +1,5 @@
 /* ═══════════ الجمعة وسورة الكهف، و«وردك اليوم» ═══════════
+   «وردك اليوم» يُفتح من صفحة الأذكار (adhkar.js).
    كلاهما على الجهاز وحده: لا يُرسل شيء منهما إلى الخادم ولا يرتبط بالختمة. */
 
 /* ── يوم الجمعة: من مغرب الخميس إلى مغرب الجمعة ──
@@ -108,30 +109,6 @@ function zwLoad(){
 }
 function zwSave(wird){try{localStorage.setItem(ZW_KEY,JSON.stringify(wird))}catch(_){}}
 
-function zwCardRender(){
-  const host=ztEl("zt-wird");
-  if(!host)return;
-  const {counts}=zwLoad();
-  /* بعد إتمام الأذكار الثلاثة تنكمش البطاقة إلى سطر، ويبقى الضغط عليه يفتح شاشة العدّ. */
-  const html=counts.every(n=>n>=ZW_GOAL)
-    ?`<button class="zw-done" type="button" data-zw-open="0">
-        <span class="zw-done-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-        <span class="zt-card-text"><span class="zt-eyebrow">وردك اليوم</span><span class="zw-done-title">أتممته، تقبّل الله منك</span></span>
-        <span class="zt-sub">يتجدّد بعد الفجر</span></button>`
-    :`<section class="zw-card" aria-label="وردك اليوم">
-    <div class="zw-card-head"><span class="zw-card-title">وردك اليوم</span><span class="zt-sub">يتجدّد بعد الفجر</span></div>
-    <div class="zw-items">${ZW_ITEMS.map((it,i)=>{
-      const n=counts[i],done=n>=ZW_GOAL;
-      const ring=done
-        ?`<svg viewBox="0 0 84 84" aria-hidden="true"><circle class="full" cx="42" cy="42" r="34"/></svg><span class="zw-mini-mid"><svg class="zw-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`
-        :`<svg viewBox="0 0 84 84" aria-hidden="true"><circle class="bg" cx="42" cy="42" r="34"/><circle class="fg" cx="42" cy="42" r="34" style="stroke-dashoffset:${(ZW_RING*(1-n/ZW_GOAL)).toFixed(1)}"/></svg><span class="zw-mini-mid"><b>${ztArabic(n)}</b><small>من ${ztArabic(ZW_GOAL)}</small></span>`;
-      return `<button class="zw-item${done?" done":""}" type="button" data-zw-open="${i}" aria-label="${it.text}، ${done?"اكتمل":ztArabic(n)+" من "+ztArabic(ZW_GOAL)}">
-        <span class="zw-mini">${ring}</span><span class="zw-name">${it.text}</span></button>`;
-    }).join("")}</div></section>`;
-  if(host.dataset.zwHtml!==html){host.dataset.zwHtml=html;host.innerHTML=html}
-  host.querySelectorAll("[data-zw-open]").forEach(b=>b.onclick=()=>zwOpen(Number(b.dataset.zwOpen)));
-}
-
 /* ── شاشة العدّ ── */
 function zwOpen(i){
   zwActive=Math.max(0,Math.min(ZW_ITEMS.length-1,Number(i)||0));
@@ -148,7 +125,7 @@ function zwClose(){
   if(!screen||screen.hidden)return false;
   screen.hidden=true;
   document.body.classList.remove("zw-open");
-  zwCardRender();
+  if(typeof zaOnWirdClose==="function")zaOnWirdClose();
   return true;
 }
 function zwIsOpen(){return !!ztEl("zw-screen")&&!ztEl("zw-screen").hidden}

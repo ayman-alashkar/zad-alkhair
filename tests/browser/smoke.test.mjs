@@ -788,10 +788,13 @@ test("on Friday the home greets with «جمعتكم مباركة» and counts th
   await context.close();
 });
 
-test("«وردك اليوم» counts every tap, keeps the count, and the Back button closes the counter", async () => {
+test("«وردك اليوم» opens from the adhkar page, counts every tap, and Back returns to the adhkar page", async () => {
   const { page, errors, context } = await appPage();
   await page.goto(BASE + "/", { waitUntil: "load" });
-  await page.click('[data-zw-open="2"]');
+  await page.click("#zt-adhkar [data-za-index]");
+  await page.waitForFunction(() => !document.getElementById("za-screen").hidden, null, { timeout: 2000 });
+  await page.click("[data-za-wird]");
+  await page.click('[data-zw-tab="2"]');
   for (let i = 0; i < 5; i++) await page.click("#zw-tap");
   /* ذكرٌ قُرئ خارج التطبيق: «أتممته» يكمله، و«إعادة العدّ» تتراجع عنه. */
   await page.click('[data-zw-tab="0"]');
@@ -805,22 +808,65 @@ test("«وردك اليوم» counts every tap, keeps the count, and the Back bu
   assert.deepEqual(JSON.parse(await page.evaluate(() => localStorage.getItem("zad:wird-v1"))).counts, [0, 0, 5]);
   await page.goBack();
   await page.waitForFunction(() => document.getElementById("zw-screen").hidden, null, { timeout: 2000 });
-  assert.match(await page.innerText('[data-zw-open="2"]'), /٥/);
+  assert.equal(await page.isVisible("#za-screen .za-tiles"), true, "back on the adhkar page");
+  await page.goBack();
+  await page.waitForFunction(() => document.getElementById("za-screen").hidden, null, { timeout: 2000 });
   assert.deepEqual(errors, []);
   await context.close();
 });
 
-test("after all three adhkar reach 100 the wird card shrinks to one line that still opens the counter", async () => {
-  const day = new Date(); const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
-  const { page, errors, context } = await appPage({ storage: { "zad:wird-v1": JSON.stringify({ day: key, counts: [100, 100, 100] }) } });
+test("in the morning the adhkar card opens the morning adhkar, a full count moves to the next one, and Back returns home", async () => {
+  const { page, errors, context } = await appPage();
+  await page.clock.install({ time: new Date("2026-11-10T08:00:00").getTime() });
   await page.goto(BASE + "/", { waitUntil: "load" });
-  await page.waitForSelector(".zw-done");
-  assert.equal(await page.$(".zw-card"), null);
-  await page.click(".zw-done");
-  await page.waitForFunction(() => !document.getElementById("zw-screen").hidden, null, { timeout: 2000 });
+  await page.waitForSelector(".za-card-main");
+  assert.match(await page.innerText(".za-card-main"), /أذكار الصباح[\s\S]*٣١ ذكرًا/);
+  await page.click(".za-card-main");
+  assert.equal(await page.textContent("#za-title"), "أذكار الصباح");
+  assert.match(await page.innerText(".za-progress-row"), /الذكر ١ من ٣١/);
+  assert.match(await page.innerText(".za-text"), /﴿٢٥٥﴾/, "Ayat al-Kursi from the mushaf text");
+  await page.click("#za-tap");
+  await page.clock.runFor(600);
+  assert.match(await page.innerText(".za-progress-row"), /الذكر ٢ من ٣١/);
+  for (let i = 0; i < 2; i++) await page.click("#za-tap");
+  assert.equal(await page.textContent("#za-count"), "٢");
+  assert.match(await page.innerText(".za-reader"), /من ٣/);
+  await page.goBack();
+  await page.waitForFunction(() => document.getElementById("za-screen").hidden, null, { timeout: 2000 });
+  assert.match(await page.innerText(".za-card-main"), /أتممت ١ من ٣١/);
+  /* أتمّها كلها: تنكمش البطاقة إلى سطر يفتح صفحة الأذكار. */
+  await page.evaluate(() => { const st = zaLoad("morning"); st.counts = st.items.map(it => it.count); zaSave("morning", st); zaCardRender(); });
+  assert.match(await page.innerText("#zt-adhkar .zw-done"), /أتممتها، تقبّل الله منك/);
+  await page.click("#zt-adhkar .zw-done");
+  assert.equal(await page.isVisible("#za-screen .za-tiles"), true);
+  assert.equal(await page.$("#za-screen .za-hero"), null, "no «now» card once they are done");
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+/* الصلاة القائم وقتها: «الآن» فوقها ورابط أذكارها تحتها. للفجر زيادات، والفجر ينتهي بالشروق. */
+test("the prayer card marks the current prayer and links to its adhkar, with Fajr's extras and nothing after sunrise", async () => {
+  const prayer = JSON.stringify({ land: "اليابان", city: "ناها", lat: 26.2124, lng: 127.6809, tz: "Asia/Tokyo", method: "MuslimWorldLeague", madhab: "Shafi" });
+  for (const [at, name, total] of [["2026-11-10T16:00:00+09:00", "العصر", "١٢"], ["2026-11-10T06:10:00+09:00", "الفجر", "١٤"], ["2026-11-10T08:30:00+09:00", null, null]]) {
+    const { page, errors, context } = await appPage({ storage: { "zad:prayer": prayer } });
+    await page.clock.setFixedTime(new Date(at));
+    await page.goto(BASE + "/", { waitUntil: "load" });
+    await page.waitForSelector(".zt-prayers li");
+    if (!name) {
+      assert.equal(await page.$(".zt-prayers li.is-now"), null, `${at}: no prayer between sunrise and dhuhr`);
+      assert.equal(await page.$(".zt-adhkar-link"), null);
+    } else {
+      assert.match(await page.innerText(".zt-prayers li.is-now"), new RegExp(`الآن[\\s\\S]*${name}`));
+      assert.equal((await page.innerText(".zt-adhkar-link")).trim(), `أذكار بعد صلاة ${name}`);
+      await page.click(".zt-adhkar-link");
+      assert.equal(await page.textContent("#za-title"), `أذكار بعد صلاة ${name}`);
+      assert.match(await page.innerText(".za-progress-row"), new RegExp(`من ${total}`));
+    }
+    assert.deepEqual(errors, []);
+    await context.close();
+  }
+});
+
 
 test("a reload stays on the screen that is showing (home, khatmahs or prayer times)", async () => {
   const { page, errors, context } = await appPage();

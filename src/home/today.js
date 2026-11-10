@@ -59,10 +59,14 @@ function ztPrayerRender(){
       :ptTimes(cfg,new Date(now-864e5)).isha.getTime();
   }catch(_){host.hidden=true;ztPrayerTimes=null;return}
   ztPrayerTimes={prevAt,tz:cfg.tz,next:{key:next.key,at:next.at.getTime()}};
+  /* الصلاة القائم وقتها: «الآن» فوقها ورابط أذكارها تحت الصف. بين الشروق والظهر لا فريضة (ptCurrent). */
+  let current=null;
+  try{current=ptCurrent(cfg)}catch(_){}
   const items=ZT_PRAYERS.map(k=>{
-    const isNext=k===next.key;
-    return `<li class="${isNext?"is-next":""}"><span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz,false)}</bdi></span></li>`;
+    const cls=k===next.key?"is-next":k===current?"is-now":"";
+    return `<li class="${cls}">${k===current?'<span class="zt-now">الآن</span>':""}<span>${ptName(k,today[k],cfg.tz)}</span><span class="t"><bdi>${ptFmt(today[k],cfg.tz,false)}</bdi></span></li>`;
   }).join("");
+  const adhkarLink=current?`<button class="zt-adhkar-link" type="button" data-za-prayer="${current}"><span>أذكار بعد صلاة ${ptName(current,today[current],cfg.tz)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>`:"";
   host.innerHTML=`<div class="zt-prayer-top"><span>الصلاة القادمة في ${esc(cfg.city)}</span><span class="zt-clock" id="zt-clock"></span></div>
     <div class="zt-arc">
       <svg viewBox="-8 -2 236 124" aria-hidden="true">
@@ -75,8 +79,9 @@ function ztPrayerRender(){
         <div class="zt-countdown" id="zt-countdown"></div>
       </div>
     </div>
-    <ol class="zt-prayers">${items}</ol>`;
+    <ol class="zt-prayers${current?" has-now":""}">${items}</ol>${adhkarLink}`;
   host.onclick=null;
+  host.querySelector("[data-za-prayer]")?.addEventListener("click",event=>zaOpen("prayer",{direct:true,prayer:event.currentTarget.dataset.zaPrayer}));
   ztPrayerTick();
 }
 /* العدّ التنازلي والقوس والشمس، دون إعادة رسم البطاقة */
@@ -277,7 +282,7 @@ function ztOnLaunchChange(){
 function ztRefresh(){
   ztPaintDates();
   if(ztView==="prayer")zpRender();
-  else{ztPrayerRender();zfKahfRender();zwCardRender();ztReadingRender()}
+  else{ztPrayerRender();zfKahfRender();zaCardRender();ztReadingRender()}
 }
 /* صفحتان داخل طبقة الرئيسية: «اليوم» و«مواقيت الصلاة». */
 let ztView="today";

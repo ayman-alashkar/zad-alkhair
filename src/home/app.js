@@ -42,5 +42,7 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
 /* @include today.js */
 /* @include prayer-screen.js */
 /* @include friday-wird.js */
+/* @include adhkar-data.js */
+/* @include adhkar.js */
 
 /* @include bootstrap.js */
