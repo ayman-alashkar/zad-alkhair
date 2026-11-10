@@ -85,6 +85,35 @@ async function readerPage({ profile = PHONE, theme = "light" } = {}) {
   return fixture;
 }
 
+/* «نسخ» يأخذ الآية بالرسم العثماني من نص تنزيل، لا الإملاء المبسّط المرافق لخطوط الصفحة. */
+test("copying an ayah gives its Uthmani text from Tanzil, not the simplified text behind the page fonts", async () => {
+  const tanzil = Object.fromEntries(readFileSync(path.join(root, "data/quran-uthmani/tanzil-uthmani-1.1.txt"), "utf8")
+    .split("\n").filter(line => /^\d/.test(line)).map(line => { const [s, a, t] = line.split("|"); return [`${s}:${a}`, t]; }));
+  const { page, errors, context } = await readerPage();
+  /* يُلتقط ما يُكتب في الحافظة، فيعمل الاختبار في Chromium وWebKit دون أذونات الحافظة. */
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async text => { window.__copied = text; } } });
+  });
+  await page.goto(BASE + "/quran-read/?page=9");
+  /* في الصفحة التجريبية: السطر الأول كله من الآية ٢:٦٠، ونصها المبسّط «نص تجريبي». */
+  const word = page.locator('.page[data-page="9"] .line:first-child .verse-segment').first();
+  await word.waitFor();
+  /* ضغطة مطوّلة تفتح قائمة الآية. */
+  const box = await word.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(650);
+  await page.mouse.up();
+  await page.click('[data-act="share"]');
+  await page.click('[data-share="copy"]');
+  await page.waitForFunction(() => typeof window.__copied === "string", null, { timeout: 3000 });
+  const copied = await page.evaluate(() => window.__copied);
+  assert.equal(copied.split("\n")[0], `﴿${tanzil["2:60"]}﴾`);
+  assert.equal(copied.split("\n")[1], "سورة البقرة، الآية ٦٠");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 /* هل العنصر هو ما يظهر فعلًا في منتصفه، لا شيءٌ يغطيه؟ */
 const isOnTop = (page, selector) => page.$eval(selector, el => {
   const r = el.getBoundingClientRect();
