@@ -923,3 +923,39 @@ test("«ما تيسّر» turns on with its tag and up-next line, and a second p
     await context.close();
   }
 });
+
+/* الانتقال من سورة إلى أخرى مع قارئ موقّت (ملف للسورة وتوقيت للآيات): توقيت السورة
+   الجديدة يتأخر، والملف القديم ما زال يُسمع. كان توقيته ينقل الآية الجارية إليه فتظهر
+   «الآية ١٢١ من ٤» ولا تبدأ السورة الجديدة. الصوت والتوقيت هنا وهميان ومحليّان. */
+test("switching surah with a timed reciter starts the new surah from its first ayah", { skip: ENGINE !== "chromium" && "mp3 playback is checked in Chromium" }, async () => {
+  const { page, errors, context } = await readerPage();
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const verses = Object.fromEntries(surahs.map(s => [s.n, s.verses]));
+  const tone = readFileSync(path.join(root, "tests/browser/tone-12s.mp3"));
+  const cors = { "Access-Control-Allow-Origin": "*" };
+  await context.addInitScript(() => localStorage.setItem("zad:qcf4:qari", "Husary_128kbps"));
+  await context.route(/mp3quran\.net\/api\/v3\/ayat_timing\/reads/, route => route.fulfill({ headers: cors,
+    json: [{ id: 8, name: "محمود خليل الحصري", rewaya: "حفص عن عاصم - مرتل", folder_url: "https://audio.test/husary/" }] }));
+  await context.route(/mp3quran\.net\/api\/v3\/ayat_timing\?surah=\d+/, async route => {
+    const s = Number(route.request().url().match(/surah=(\d+)/)[1]);
+    await new Promise(r => setTimeout(r, 800));
+    /* 40ms لكل آية، فالآية ١٢١ من البقرة عند الثانية ٤٫٨ من الملف. */
+    route.fulfill({ headers: cors, json: Array.from({ length: verses[s] }, (_, i) => ({ ayah: i + 1, start_time: i * 40, end_time: (i + 1) * 40 })) });
+  });
+  await context.route(/^https:\/\/audio\.test\//, route => route.fulfill({ status: 200, contentType: "audio/mpeg", body: tone, headers: { ...cors, "Accept-Ranges": "bytes" } }));
+  try {
+    await page.goto(BASE + "/quran-listen/?from=zad", { waitUntil: "load" });
+    await page.waitForSelector(".zl-row-main");
+    assert.match(await page.locator(".zl-qari-name").innerText(), /الحصري/);
+    await page.locator(".zl-row-main").nth(1).click();
+    await page.waitForFunction(() => !document.querySelector("audio").paused, null, { timeout: 8000 });
+    await page.evaluate(() => { document.querySelector("audio").currentTime = 4.82; });
+    await page.waitForFunction(() => /الآية ١٢١ من/.test(document.querySelector(".zl-ayah").textContent), null, { timeout: 3000 });
+    await page.locator(".zl-row-main").nth(111).click();
+    await page.waitForFunction(() => document.querySelector(".zl-name").textContent.includes("الإخلاص") && !document.querySelector("audio").paused && document.querySelector("audio").currentTime < 1, null, { timeout: 5000 });
+    assert.equal(await page.locator(".zl-ayah").innerText(), "الآية ١ من ٤");
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+  }
+});

@@ -266,7 +266,7 @@ const storedReciter=storageJsonGet(STORAGE_KEYS.qari,null);
 let reciter=RECITERS.find(r=>r.id===storedReciter?.id)||defaultReciter();
 let play={surah:1,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:1};
 let continuousMode=storageGet(STORAGE_KEYS.continuous,"0")==="1";
-let activeSegment=null,activeTimingRows=null,segmentAdvancing=false,playbackRequestId=0,continuousStopRef=null;
+let activeSegment=null,activeTimingRows=null,activeTimingSurah=0,segmentAdvancing=false,playbackRequestId=0,continuousStopRef=null;
 let primedEveryAyahSrc="",primedTimedSurahSrc="",pendingSurahBasmala=false,basmalaFallbackTarget=null;
 let repeatMode="off";
 let audioRetryTimer=null,audioRetryKey="",audioRetryCount=0,playbackWanted=false;
@@ -2470,10 +2470,17 @@ async function playCurrent(expand=false){
     }
 
     if(isTimedProvider()){
+      /* الانتقال إلى سورة أخرى: توقيتها يُجلب والملف القديم ما زال يُسمع. لو بقي توقيت
+         القديم فعّالًا لنقل play.current إلى آيته (فتظهر «الآية ١٢١ من ٤»)، ولم تجد السورة
+         الجديدة تلك الآية فلا تبدأ، ويبقى المؤقت على الملف القديم. لذلك يُسكت ويُفصل أولًا. */
+      if(activeTimingRows&&activeTimingSurah!==play.surah){
+        activeSegment=null;activeTimingRows=null;
+        if(!audio.paused)audio.pause();
+      }
       const {src,rows,t}=await resolveGaplessForCurrentSurah();
       if(requestId!==playbackRequestId)return;
 
-      activeTimingRows=rows;
+      activeTimingRows=rows;activeTimingSurah=play.surah;
       activeSegment={start:Number(t.start_time)/1000,end:Number(t.end_time)/1000};
       audio.dataset.playMode="gapless";
 
