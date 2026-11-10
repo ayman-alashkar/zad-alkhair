@@ -191,10 +191,17 @@ async function playCurrent(expand=false){
     }
 
     if(isTimedProvider()){
+      /* الانتقال إلى سورة أخرى: توقيتها يُجلب والملف القديم ما زال يُسمع. لو بقي توقيت
+         القديم فعّالًا لنقل play.current إلى آيته (فتظهر «الآية ١٢١ من ٤»)، ولم تجد السورة
+         الجديدة تلك الآية فلا تبدأ، ويبقى المؤقت على الملف القديم. لذلك يُسكت ويُفصل أولًا. */
+      if(activeTimingRows&&activeTimingSurah!==play.surah){
+        activeSegment=null;activeTimingRows=null;
+        if(!audio.paused)audio.pause();
+      }
       const {src,rows,t}=await resolveGaplessForCurrentSurah();
       if(requestId!==playbackRequestId)return;
 
-      activeTimingRows=rows;
+      activeTimingRows=rows;activeTimingSurah=play.surah;
       activeSegment={start:Number(t.start_time)/1000,end:Number(t.end_time)/1000};
       audio.dataset.playMode="gapless";
 

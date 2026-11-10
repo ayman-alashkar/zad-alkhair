@@ -70,7 +70,7 @@ const storedReciter=storageJsonGet(STORAGE_KEYS.qari,null);
 let reciter=RECITERS.find(r=>r.id===storedReciter?.id)||defaultReciter();
 let play={surah:1,from:1,to:1,current:1,repeatAyah:1,repeatAyahLeft:1,repeatGroup:1,repeatGroupLeft:1,repeatSurah:1,repeatSurahLeft:1,speed:1};
 let continuousMode=storageGet(STORAGE_KEYS.continuous,"0")==="1";
-let activeSegment=null,activeTimingRows=null,segmentAdvancing=false,playbackRequestId=0,continuousStopRef=null;
+let activeSegment=null,activeTimingRows=null,activeTimingSurah=0,segmentAdvancing=false,playbackRequestId=0,continuousStopRef=null;
 let primedEveryAyahSrc="",primedTimedSurahSrc="",pendingSurahBasmala=false,basmalaFallbackTarget=null;
 let repeatMode="off";
 let audioRetryTimer=null,audioRetryKey="",audioRetryCount=0,playbackWanted=false;
