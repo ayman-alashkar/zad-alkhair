@@ -225,7 +225,8 @@ function tayassurFixture(){
   const verses=Object.fromEntries(JSON.parse(fs.readFileSync(__dirname+'/../src/discovery/catalog.json','utf8')).surahs.map(s=>[s.n,s.verses]));
   Object.assign(f.ctx,{LOCAL_HIZB_QUARTERS:quarters,maxAyah:s=>verses[s],listenActive:()=>true,listenPaint(){},
     listenQuietReciter(r){f.ctx.reciter=r},listenSurahName:s=>String(s),listenReciterName:()=>'',ar:String,
-    setIndexPlaybackBoundary(){},listenTarget:null,listenPending:null,listenSeekAfterLoad:null,detachQueue(){}});
+    setIndexPlaybackBoundary(){},listenTarget:null,listenPending:null,listenSeekAfterLoad:null,detachQueue(){},
+    saved:{},storageJsonSet(k,v){f.ctx.saved[k]=JSON.parse(JSON.stringify(v))},storageJsonGet(k,d){return k in f.ctx.saved?f.ctx.saved[k]:d},localStorage:{removeItem(k){delete f.ctx.saved[k]}}});
   f.ctx.reciter={id:'husary',provider:'mp3quran-timed'};
   return {f,quarters,verses};
 }
@@ -280,4 +281,24 @@ test('moving to another «ما تيسّر» segment silences the old file and dr
   assert.equal(f.ctx.audio.paused,true);
   assert.equal(f.ctx.activeTimingRows,null,'the old surah timing cannot move play.current');
   assert.deepEqual([...f.ctx.played.at(-1)],[36,13]);
+});
+test('«ما تيسّر» survives leaving the page: it comes back on, paused at its saved place',async()=>{
+  const a=tayassurFixture();
+  await a.f.run('tayassurStart()');
+  a.f.run('tayassur.order=[{s:2,a:26},{s:36,a:13},{s:112,a:1}]');
+  await a.f.run('tayassurPlay(1)');
+  a.f.ctx.play.current=20;a.f.run('tayassurSave()');
+  const saved=a.f.ctx.saved;
+  // A new page load: nothing in memory, the saved record only.
+  const b=tayassurFixture();
+  Object.assign(b.f.ctx,{listenActive:()=>false,updatePlayer(){},showPlayer(){b.f.ctx.shown=true},saved});
+  b.f.ctx.played.length=0;
+  assert.equal(b.f.run('tayassurRestore()'),true);
+  assert.equal(b.f.run('tayassurActive()'),true);
+  assert.deepEqual(JSON.parse(b.f.run('JSON.stringify([play.surah,play.current,continuousStopRef.s,continuousStopRef.a,tayassur.i])')),[36,20,36,b.f.run('tayassurEnd({s:36,a:13})'),1]);
+  assert.equal(b.f.ctx.shown,true);
+  assert.equal(b.f.ctx.played.length,0,'restoring does not start the sound by itself');
+  // Turning it off forgets it.
+  b.f.run('tayassurStop()');
+  assert.equal(Object.keys(saved).length,0);
 });

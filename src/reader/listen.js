@@ -456,6 +456,7 @@ function openListenPage(){
   listenReturnUrl=null;
   readerReturnToListen=false;
   document.querySelector(".quran-index")?.remove();
+  if(!listenTarget)tayassurRestore();
   const picks=(listenFriday()?LISTEN_PICKS:LISTEN_PICKS.slice(1).concat(18)).map(s=>`<button type="button" class="zl-chip${listenFriday()&&s===18?" gold":""}" data-pick="${s}">${escapeHtml(listenSurahName(s))}${listenFriday()&&s===18?" · يوم الجمعة":""}</button>`).join("");
   const panel=document.createElement("section");panel.className="zad-listen";panel.setAttribute("aria-label","مشغّل التلاوة");
   panel.innerHTML=`<div class="zl-pattern" aria-hidden="true"></div><div class="zl-mini" aria-hidden="true"><button type="button" class="zl-mini-open"><span class="zl-wave zl-mini-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="zl-mini-copy"><span class="zl-mini-name"></span><small class="zl-mini-ayah"></small></span></button><button type="button" class="zl-mini-play" tabindex="-1"></button><span class="zl-mini-bar" aria-hidden="true"><i></i></span></div>
