@@ -114,7 +114,7 @@ function listenAyahLine(st){
   const max=maxAyah(st.s);
   if(st.kind==="now"&&audio.dataset.playMode==="basmala")return "البسملة";
   const seg=st.kind==="now"?tayassurSegment():null;
-  if(seg)return seg.from===seg.to?`الآية ${ar(seg.from)}`:`الآية ${ar(play.current)} · من ${ar(seg.from)} إلى ${ar(seg.to)}`;
+  if(seg)return seg.from===seg.to?`الآية ${ar(seg.from)}`:`الآية ${ar(play.current)}، من ${ar(seg.from)} إلى ${ar(seg.to)}`;
   if(st.kind!=="now"&&listenPending&&listenPending.s===st.s)return listenIdleLabel(st,listenPending.f);
   return st.kind==="start"||st.kind==="link"?listenAyahCount(max):`الآية ${ar(st.a)} من ${ar(max)}`;
 }
@@ -270,7 +270,7 @@ function listenBindArc(svg){
     if(el&&!listenActive()){el.textContent=listenIdleLabel(listenCardState(),listenDrag.f);return}
     if(el&&tayassurActive()){
       const seg=tayassurSegment(),a=tayassurAyahAt(listenDrag.f);
-      el.textContent=listenDrag.f>=TAYASSUR_NEXT_AT?"المقطع التالي":`الآية ${ar(a)} · من ${ar(seg.from)} إلى ${ar(seg.to)}`;
+      el.textContent=listenDrag.f>=TAYASSUR_NEXT_AT?"المقطع التالي":`الآية ${ar(a)}، من ${ar(seg.from)} إلى ${ar(seg.to)}`;
       return;
     }
     if(el){

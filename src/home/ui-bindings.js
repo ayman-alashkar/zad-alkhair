@@ -31,7 +31,7 @@ function bind(){
 
   if($("f-end")){
     const u=()=>{$("p-fend").textContent=
-      $("f-end").value?`${fmtG($("f-end").value)} · ${fmtH($("f-end").value)}`:"";};
+      $("f-end").value?`${fmtG($("f-end").value)}، ${fmtH($("f-end").value)}`:"";};
     $("f-end").oninput=u; u();
   }
 
@@ -188,7 +188,7 @@ function settings(){
 
   const eEnd=document.getElementById("s-end");
   const upd=()=>{document.getElementById("p-end").textContent=
-    eEnd.value?`${fmtG(eEnd.value)} · ${fmtH(eEnd.value)}`:"";};
+    eEnd.value?`${fmtG(eEnd.value)}، ${fmtH(eEnd.value)}`:"";};
   eEnd.oninput=upd; upd();
 
   document.getElementById("s-close2").onclick=closeLayer;
@@ -236,7 +236,7 @@ function datePicker(title,note,okLabel,onOk){
       <button class="btn quiet" id="d-no">إلغاء</button></div>`);
   const e=document.getElementById("d-end");
   const u=()=>{document.getElementById("p-dend").textContent=
-    e.value?`${fmtG(e.value)} · ${fmtH(e.value)}`:"";};
+    e.value?`${fmtG(e.value)}، ${fmtH(e.value)}`:"";};
   e.oninput=u; u();
   document.getElementById("d-no").onclick=closeLayer;
   document.getElementById("d-go").onclick=async()=>{

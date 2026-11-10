@@ -80,7 +80,7 @@ function fmtDate(iso: string) {
   } catch {
     /* التقويم الميلادي يبقى متاحًا. */
   }
-  return hijri ? `${gregorian} · ${hijri}` : gregorian;
+  return hijri ? `${gregorian}، ${hijri}` : gregorian;
 }
 
 async function rpc(fn: string, args: unknown = {}) {

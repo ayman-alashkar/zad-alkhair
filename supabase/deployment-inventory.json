@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-09",
+  "captured_at": "2026-11-10",
   "project_ref": "webqpbcijjbawatykoxe",
   "edge_functions": [
     {
@@ -34,9 +34,9 @@
     },
     {
       "slug": "announce",
-      "version": 10,
+      "version": 11,
       "verify_jwt": false,
-      "bundle_sha256": "0e379e5f860dae8e35ce455cc0d38db2ec6071f253c8ecf57b8d6dd3a79d6622"
+      "bundle_sha256": "3681954d600b4778730a4454186788300d9c8176a19d5037c8ffa8e5a3c66e75"
     },
     {
       "slug": "migration-handoff",
