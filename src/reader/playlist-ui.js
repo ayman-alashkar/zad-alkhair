@@ -17,7 +17,7 @@ function openPlaybackQueue(){
     syncQueueControls();
     list.innerHTML=playbackQueue.length?playbackQueue.map((item,i)=>`<li class="queue-row ${queueActive&&i===queueIndex?"current":""}" data-index="${i}">
       <button type="button" class="queue-handle" aria-label="اسحب لترتيب سورة ${escapeHtml(verseParts(item.s+":1").sname)}">⠿</button>
-      <button type="button" class="queue-track" data-play="${i}">${ar(i+1)} · ${escapeHtml(verseParts(item.s+":1").sname)}<small>${queueActive&&i===queueIndex?"قيد التشغيل":"تشغيل السورة"}</small></button>
+      <button type="button" class="queue-track" data-play="${i}">${ar(i+1)} - ${escapeHtml(verseParts(item.s+":1").sname)}<small>${queueActive&&i===queueIndex?"قيد التشغيل":"تشغيل السورة"}</small></button>
       <span class="queue-actions"><button type="button" data-up="${i}" aria-label="نقل إلى الأعلى" ${i===0?"disabled":""}>↑</button><button type="button" data-down="${i}" aria-label="نقل إلى الأسفل" ${i===playbackQueue.length-1?"disabled":""}>↓</button><button type="button" data-remove="${i}" aria-label="حذف السورة">×</button></span></li>`).join(""):"<p class='queue-empty'>القائمة فارغة. أضف السور التي ترغب في سماعها.</p>";
     b.querySelector("#queueStart").disabled=!playbackQueue.length;
     list.querySelectorAll(".queue-handle").forEach(handle=>{

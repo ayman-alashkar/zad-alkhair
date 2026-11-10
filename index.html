@@ -1714,7 +1714,7 @@ body.kh-head:not(.zk-launch-open){padding-top:max(5.4rem,calc(env(safe-area-inse
       <svg viewBox="0 0 260 260" aria-hidden="true"><circle class="disc" cx="130" cy="130" r="110"/><circle class="bg" cx="130" cy="130" r="110"/><circle class="arc" id="zw-arc" cx="130" cy="130" r="110"/></svg>
       <span class="zw-ring-mid">
         <span class="zw-live"><b id="zw-count">٠</b><small>من ١٠٠</small></span>
-        <span class="zw-full"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>اكتمل · ١٠٠</span></span>
+        <span class="zw-full"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>اكتمل ١٠٠ مرة</span></span>
       </span>
     </span>
     <span class="zw-hint" id="zw-hint"></span>
@@ -4411,7 +4411,7 @@ function bind(){
 
   if($("f-end")){
     const u=()=>{$("p-fend").textContent=
-      $("f-end").value?`${fmtG($("f-end").value)} · ${fmtH($("f-end").value)}`:"";};
+      $("f-end").value?`${fmtG($("f-end").value)}، ${fmtH($("f-end").value)}`:"";};
     $("f-end").oninput=u; u();
   }
 
@@ -4568,7 +4568,7 @@ function settings(){
 
   const eEnd=document.getElementById("s-end");
   const upd=()=>{document.getElementById("p-end").textContent=
-    eEnd.value?`${fmtG(eEnd.value)} · ${fmtH(eEnd.value)}`:"";};
+    eEnd.value?`${fmtG(eEnd.value)}، ${fmtH(eEnd.value)}`:"";};
   eEnd.oninput=upd; upd();
 
   document.getElementById("s-close2").onclick=closeLayer;
@@ -4616,7 +4616,7 @@ function datePicker(title,note,okLabel,onOk){
       <button class="btn quiet" id="d-no">إلغاء</button></div>`);
   const e=document.getElementById("d-end");
   const u=()=>{document.getElementById("p-dend").textContent=
-    e.value?`${fmtG(e.value)} · ${fmtH(e.value)}`:"";};
+    e.value?`${fmtG(e.value)}، ${fmtH(e.value)}`:"";};
   e.oninput=u; u();
   document.getElementById("d-no").onclick=closeLayer;
   document.getElementById("d-go").onclick=async()=>{
@@ -5111,7 +5111,7 @@ function zpDayHtml(cfg){
   }
   return `<div class="zp-daynav">
       <button class="zp-step" type="button" data-zp-day="-1" aria-label="اليوم السابق"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
-      <div class="zp-daytitle"><b>${title}</b><span><span class="zt-hijri">${zpHijriLong(dayNoon)}</span> · ${zpGreg(dayNoon,{day:"numeric",month:"long",year:"numeric"})}</span></div>
+      <div class="zp-daytitle"><b>${title}</b><span><span class="zt-hijri">${zpHijriLong(dayNoon)}</span>، ${zpGreg(dayNoon,{day:"numeric",month:"long",year:"numeric"})}</span></div>
       <button class="zp-step" type="button" data-zp-day="1" aria-label="اليوم التالي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
     </div>
     ${hero}

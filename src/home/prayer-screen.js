@@ -137,7 +137,7 @@ function zpDayHtml(cfg){
   }
   return `<div class="zp-daynav">
       <button class="zp-step" type="button" data-zp-day="-1" aria-label="اليوم السابق"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
-      <div class="zp-daytitle"><b>${title}</b><span><span class="zt-hijri">${zpHijriLong(dayNoon)}</span> · ${zpGreg(dayNoon,{day:"numeric",month:"long",year:"numeric"})}</span></div>
+      <div class="zp-daytitle"><b>${title}</b><span><span class="zt-hijri">${zpHijriLong(dayNoon)}</span>، ${zpGreg(dayNoon,{day:"numeric",month:"long",year:"numeric"})}</span></div>
       <button class="zp-step" type="button" data-zp-day="1" aria-label="اليوم التالي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
     </div>
     ${hero}

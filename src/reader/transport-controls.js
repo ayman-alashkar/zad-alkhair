@@ -165,7 +165,7 @@ function audioStartSelection(surah,value){
 function playerSurahOptions(selected){
   return [...chapterMap.values()]
     .sort((a,b)=>Number(a.id)-Number(b.id))
-    .map(c=>`<option value="${Number(c.id)}" ${Number(c.id)===Number(selected)?"selected":""}>${ar(Number(c.id))} · ${escapeHtml(c.name_arabic||"")}</option>`)
+    .map(c=>`<option value="${Number(c.id)}" ${Number(c.id)===Number(selected)?"selected":""}>${ar(Number(c.id))} - ${escapeHtml(c.name_arabic||"")}</option>`)
     .join("");
 }
 document.getElementById("audioJump").onclick=()=>{

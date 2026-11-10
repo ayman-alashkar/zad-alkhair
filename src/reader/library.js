@@ -276,7 +276,7 @@ async function openQuranSearch(){
     const frag=document.createDocumentFragment();
     for(const item of matches){
       const btn=document.createElement("button");btn.type="button";btn.className="quran-search-result";
-      btn.innerHTML=`<b>${escapeHtml(item.text)}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)} · الصفحة ${ar(item.page)}</small>`;
+      btn.innerHTML=`<b>${escapeHtml(item.text)}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
       btn.onclick=async()=>{b.remove();const hp=document.querySelector(".quran-index");if(hp?.dataset.homeMode==="1")readerReturnToQuranHome=true;hp?.remove();await go(item.page);await ensurePage(item.page);const a=document.querySelector(`.page[data-page="${item.page}"] .verse-segment[data-key="${item.key}"]`);if(a)selectVerse(item.key,a,true)};
       frag.appendChild(btn);
     }
@@ -419,7 +419,7 @@ function openQuranIndex(initialTab="s",options={}){
     const recent=loadList(STORAGE_KEYS.recentVisits).slice(0,RECENT_VISITS_LIMIT),pagesList=loadPageBookmarks(),groups=[];
     for(const [name,kind,items] of [["آخر الزيارات","recent",recent],["الانتقال إلى العلامة","page",pagesList]]){
       const rows=[];
-      for(const x of items){const info=await pageDisplayInfo(x.page);rows.push({kind,page:info.page,title:`سورة ${info.sname}`,meta:`الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}`})}
+      for(const x of items){const info=await pageDisplayInfo(x.page);rows.push({kind,page:info.page,title:`سورة ${info.sname}`,meta:`الصفحة ${ar(info.page)}، الجزء ${ar(info.juz)}`})}
       groups.push({name,kind,rows});
     }
     if(!alive)return;

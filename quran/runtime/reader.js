@@ -328,7 +328,7 @@ function pageMilestoneLabel(p){
     if(h.phase===0)labels.push(`الحزب ${ar(h.hizb)}`);
     else if(h.phase===2)labels.push(`نصف الحزب ${ar(h.hizb)}`);
   }
-  return labels.join(" · ");
+  return labels.join("، ");
 }
 function validateStaticData(){
   if(TAFSIR_DATASET.surahs!==114||TAFSIR_DATASET.ayahs!==6236||TAFSIR_DATASET.fadl!==60)throw new Error("tafsir config integrity");
@@ -1722,7 +1722,7 @@ async function openQuranSearch(){
     const frag=document.createDocumentFragment();
     for(const item of matches){
       const btn=document.createElement("button");btn.type="button";btn.className="quran-search-result";
-      btn.innerHTML=`<b>${escapeHtml(item.text)}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)} · الصفحة ${ar(item.page)}</small>`;
+      btn.innerHTML=`<b>${escapeHtml(item.text)}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
       btn.onclick=async()=>{b.remove();const hp=document.querySelector(".quran-index");if(hp?.dataset.homeMode==="1")readerReturnToQuranHome=true;hp?.remove();await go(item.page);await ensurePage(item.page);const a=document.querySelector(`.page[data-page="${item.page}"] .verse-segment[data-key="${item.key}"]`);if(a)selectVerse(item.key,a,true)};
       frag.appendChild(btn);
     }
@@ -1865,7 +1865,7 @@ function openQuranIndex(initialTab="s",options={}){
     const recent=loadList(STORAGE_KEYS.recentVisits).slice(0,RECENT_VISITS_LIMIT),pagesList=loadPageBookmarks(),groups=[];
     for(const [name,kind,items] of [["آخر الزيارات","recent",recent],["الانتقال إلى العلامة","page",pagesList]]){
       const rows=[];
-      for(const x of items){const info=await pageDisplayInfo(x.page);rows.push({kind,page:info.page,title:`سورة ${info.sname}`,meta:`الصفحة ${ar(info.page)} · الجزء ${ar(info.juz)}`})}
+      for(const x of items){const info=await pageDisplayInfo(x.page);rows.push({kind,page:info.page,title:`سورة ${info.sname}`,meta:`الصفحة ${ar(info.page)}، الجزء ${ar(info.juz)}`})}
       groups.push({name,kind,rows});
     }
     if(!alive)return;
@@ -2779,7 +2779,7 @@ function audioStartSelection(surah,value){
 function playerSurahOptions(selected){
   return [...chapterMap.values()]
     .sort((a,b)=>Number(a.id)-Number(b.id))
-    .map(c=>`<option value="${Number(c.id)}" ${Number(c.id)===Number(selected)?"selected":""}>${ar(Number(c.id))} · ${escapeHtml(c.name_arabic||"")}</option>`)
+    .map(c=>`<option value="${Number(c.id)}" ${Number(c.id)===Number(selected)?"selected":""}>${ar(Number(c.id))} - ${escapeHtml(c.name_arabic||"")}</option>`)
     .join("");
 }
 document.getElementById("audioJump").onclick=()=>{
@@ -2973,7 +2973,7 @@ function openPlaybackQueue(){
     syncQueueControls();
     list.innerHTML=playbackQueue.length?playbackQueue.map((item,i)=>`<li class="queue-row ${queueActive&&i===queueIndex?"current":""}" data-index="${i}">
       <button type="button" class="queue-handle" aria-label="اسحب لترتيب سورة ${escapeHtml(verseParts(item.s+":1").sname)}">⠿</button>
-      <button type="button" class="queue-track" data-play="${i}">${ar(i+1)} · ${escapeHtml(verseParts(item.s+":1").sname)}<small>${queueActive&&i===queueIndex?"قيد التشغيل":"تشغيل السورة"}</small></button>
+      <button type="button" class="queue-track" data-play="${i}">${ar(i+1)} - ${escapeHtml(verseParts(item.s+":1").sname)}<small>${queueActive&&i===queueIndex?"قيد التشغيل":"تشغيل السورة"}</small></button>
       <span class="queue-actions"><button type="button" data-up="${i}" aria-label="نقل إلى الأعلى" ${i===0?"disabled":""}>↑</button><button type="button" data-down="${i}" aria-label="نقل إلى الأسفل" ${i===playbackQueue.length-1?"disabled":""}>↓</button><button type="button" data-remove="${i}" aria-label="حذف السورة">×</button></span></li>`).join(""):"<p class='queue-empty'>القائمة فارغة. أضف السور التي ترغب في سماعها.</p>";
     b.querySelector("#queueStart").disabled=!playbackQueue.length;
     list.querySelectorAll(".queue-handle").forEach(handle=>{
@@ -3139,7 +3139,7 @@ function listenAyahLine(st){
   const max=maxAyah(st.s);
   if(st.kind==="now"&&audio.dataset.playMode==="basmala")return "البسملة";
   const seg=st.kind==="now"?tayassurSegment():null;
-  if(seg)return seg.from===seg.to?`الآية ${ar(seg.from)}`:`الآية ${ar(play.current)} · من ${ar(seg.from)} إلى ${ar(seg.to)}`;
+  if(seg)return seg.from===seg.to?`الآية ${ar(seg.from)}`:`الآية ${ar(play.current)}، من ${ar(seg.from)} إلى ${ar(seg.to)}`;
   if(st.kind!=="now"&&listenPending&&listenPending.s===st.s)return listenIdleLabel(st,listenPending.f);
   return st.kind==="start"||st.kind==="link"?listenAyahCount(max):`الآية ${ar(st.a)} من ${ar(max)}`;
 }
@@ -3295,7 +3295,7 @@ function listenBindArc(svg){
     if(el&&!listenActive()){el.textContent=listenIdleLabel(listenCardState(),listenDrag.f);return}
     if(el&&tayassurActive()){
       const seg=tayassurSegment(),a=tayassurAyahAt(listenDrag.f);
-      el.textContent=listenDrag.f>=TAYASSUR_NEXT_AT?"المقطع التالي":`الآية ${ar(a)} · من ${ar(seg.from)} إلى ${ar(seg.to)}`;
+      el.textContent=listenDrag.f>=TAYASSUR_NEXT_AT?"المقطع التالي":`الآية ${ar(a)}، من ${ar(seg.from)} إلى ${ar(seg.to)}`;
       return;
     }
     if(el){

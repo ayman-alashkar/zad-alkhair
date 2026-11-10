@@ -132,5 +132,5 @@ function pageMilestoneLabel(p){
     if(h.phase===0)labels.push(`الحزب ${ar(h.hizb)}`);
     else if(h.phase===2)labels.push(`نصف الحزب ${ar(h.hizb)}`);
   }
-  return labels.join(" · ");
+  return labels.join("، ");
 }
