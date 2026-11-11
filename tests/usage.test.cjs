@@ -10,6 +10,7 @@ function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=
   const RealDate=Date;
   class FakeDate extends RealDate{constructor(...a){super(...(a.length?a:[clock.now]))}static now(){return clock.now}}
   const ctx={
+    Intl:{DateTimeFormat:()=>({resolvedOptions:()=>({timeZone:"Asia/Damascus"})})},
     Date:FakeDate,JSON,Math,Number,String,Object,URLSearchParams,Uint8Array,Promise,
     crypto:{randomUUID:()=>"0b8f2c1e-1111-4222-8333-444455556666"},
     localStorage:{getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
@@ -64,7 +65,7 @@ test("flush sends one request per day and keeps what arrived meanwhile",async()=
   await flushing;
   assert.equal(env.sent.length,2);
   assert.match(env.sent[0].url,/\/rest\/v1\/rpc\/record_usage$/);
-  assert.deepEqual(env.sent[0].body,{p_device:"0b8f2c1e-1111-4222-8333-444455556666",p_day:"2026-11-11",p_platform:"android",p_installed:false,p_counts:{home:2,listen_seconds:30}});
+  assert.deepEqual(env.sent[0].body,{p_device:"0b8f2c1e-1111-4222-8333-444455556666",p_day:"2026-11-11",p_platform:"android",p_installed:false,p_tz:"Asia/Damascus",p_counts:{home:2,listen_seconds:30}});
   assert.deepEqual(JSON.parse(JSON.stringify(env.api.zuRead())),{"2026-11-12":{reader:1}});
 });
 
