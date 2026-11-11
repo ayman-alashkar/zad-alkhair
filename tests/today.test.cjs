@@ -136,3 +136,15 @@ test("the support address is offered in the home menu, the about page and the ta
   assert.ok(read("about/index.html").includes(mail));
   assert.ok(read("src/reader/reading-tools.js").includes("فنرجو تنبيهنا إلى ذلك على <a "+mail));
 });
+
+test("guide pages carry the home menu beside the theme button, sharing the install link",()=>{
+  for(const page of ["about/index.html","khatmahs/index.html","quran-index/index.html","install/index.html"]){
+    const html=read(page);
+    assert.match(html,/id="guideTheme"[^>]*><\/button><div class="guide-menu-wrap">/,page);
+    assert.ok(html.includes('href="mailto:support@zad-alkhair.net"')&&html.includes('href="/?help"')&&html.includes("data-share-app"),page);
+    assert.doesNotMatch(html,/footer-actions/,page);
+  }
+  assert.match(read("seo-install.js"),/url=location\.origin\+'\/install\/'/);
+  assert.match(read("src/home/today.js"),/new URL\("\/install\/",location\.origin\)/);
+  assert.match(read("src/home/bootstrap.js"),/zkArmRootGuard\(\);\n\/\* «تعليمات»/);
+});

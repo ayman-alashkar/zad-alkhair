@@ -65,10 +65,18 @@ const themeButton=`<button class="guide-theme" id="guideTheme" type="button" ari
 const navIcon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
 const installIcon=navIcon('<path d="M12 3v11m-4-4 4 4 4-4M5 17v3h14v-3"/>');
 // The menu stays hidden until seo-pages.js confirms the app is not already installed.
-const installMenu=`<div class="install-menu" id="installMenu" hidden><button class="guide-install" id="guideInstall" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="installPanel">${installIcon}<span>حمّل التطبيق</span></button><div class="install-panel" id="installPanel" role="dialog" aria-label="تثبيت زاد الخير" tabindex="-1" hidden><div class="ip-head"><strong>أضف زاد الخير إلى جهازك</strong><button class="ip-close" type="button" aria-label="إغلاق">${navIcon('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div><div class="ip-body"></div></div></div>`;
-const siteHead=`<header class="site-head">${brandLink}<div class="head-tools">${installMenu}${themeButton}</div></header>`;
-// /install/ shows the guide inline, so its header carries only the theme control.
-const installSiteHead=`<header class="site-head">${brandLink}<div class="head-tools">${themeButton}</div></header>`;
+const installMenu=`<div class="install-menu" id="installMenu" hidden><button class="guide-install" id="guideInstall" type="button" aria-label="حمّل التطبيق" aria-haspopup="dialog" aria-expanded="false" aria-controls="installPanel">${installIcon}<span>حمّل التطبيق</span></button><div class="install-panel" id="installPanel" role="dialog" aria-label="تثبيت زاد الخير" tabindex="-1" hidden><div class="ip-head"><strong>أضف زاد الخير إلى جهازك</strong><button class="ip-close" type="button" aria-label="إغلاق">${navIcon('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div><div class="ip-body"></div></div></div>`;
+// قائمة «المزيد» كالتي في الرئيسية، بجانب زر الوضع؛ seo-install.js يفتحها ويغلقها ويشارك رابط التثبيت.
+const guideMenuItem=(href,label,path)=>`<a href="${href}" role="menuitem">${navIcon(path)}<span>${label}</span></a>`;
+const guideMenu=`<div class="guide-menu-wrap"><button class="guide-menu-btn" id="guideMenuBtn" type="button" aria-label="المزيد" aria-haspopup="menu" aria-expanded="false" aria-controls="guideMenu">${navIcon('<path d="M4 7h16M4 12h16M10 17h10"/>')}</button><div class="guide-menu" id="guideMenu" role="menu" aria-label="المزيد" hidden><div class="guide-menu-label">دليل زاد الخير</div>${
+  guideMenuItem(indexPath,"الفهرس والقراء",'<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>')}${
+  guideMenuItem("/khatmahs/","كيف تعمل الختمات؟",'<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5"/>')}${
+  guideMenuItem("/about/","عن التطبيق",'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.01"/>')}<div class="guide-menu-sep" role="separator"></div>${
+  guideMenuItem("/?help","تعليمات",'<circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.7 2.7 0 0 1 5.2 1c0 1.9-2.6 2.2-2.6 3.9M12 17.3h.01"/>')}${
+  guideMenuItem("mailto:support@zad-alkhair.net","تواصل معنا",'<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/>')}<button type="button" role="menuitem" data-share-app>${navIcon('<path d="M12 15V3m-4 4 4-4 4 4M6 11H5v10h14V11h-1"/>')}<span>شارك التطبيق</span></button></div></div>`;
+const siteHead=`<header class="site-head">${brandLink}<div class="head-tools">${installMenu}${themeButton}${guideMenu}</div></header>`;
+// /install/ shows the guide inline, so its header carries the theme control and the menu only.
+const installSiteHead=`<header class="site-head">${brandLink}<div class="head-tools">${themeButton}${guideMenu}</div></header>`;
 // The same three guide links as the «دليل زاد الخير» menu on the home screen; the brand link above leads home.
 const footerLinks=[
 [indexPath,"الفهرس والقراء",'<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>'],
@@ -77,9 +85,7 @@ const footerLinks=[
 ].map(([href,label,path])=>`<a href="${href}">${navIcon(path)}<span>${label}</span></a>`).join("");
 // seo-install.js hides the install link once the app is installed. /install/ itself omits it.
 const footerInstallLink=`<a class="footer-install-link" href="/install/" data-install-link>${installIcon}<span>تثبيت التطبيق</span></a>`;
-// «تواصل معنا» و«شارك التطبيق» كما في قائمة «المزيد» بالرئيسية؛ seo-install.js يشارك رابط الرئيسية.
-const footerActions=`<div class="footer-actions"><a href="mailto:support@zad-alkhair.net">${navIcon('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/>')}<span>تواصل معنا</span></a><button type="button" data-share-app>${navIcon('<path d="M12 15V3m-4 4 4-4 4 4M6 11H5v10h14V11h-1"/>')}<span>شارك التطبيق</span></button></div>`;
-const footerHtml=withInstall=>`<footer class="discovery-footer"><nav class="footer-links" aria-label="روابط زاد الخير">${footerLinks}${withInstall?footerInstallLink:""}</nav>${footerActions}<p class="footer-motto">كلامُ الباري يجمعُنا</p></footer>`;
+const footerHtml=withInstall=>`<footer class="discovery-footer"><nav class="footer-links" aria-label="روابط زاد الخير">${footerLinks}${withInstall?footerInstallLink:""}</nav><p class="footer-motto">كلامُ الباري يجمعُنا</p></footer>`;
 const footer=footerHtml(true);
 const installFooter=footerHtml(false);
 function crumbs(items){return `<nav class="breadcrumbs" aria-label="مسار الصفحة">${items.map((x,i)=>i===items.length-1?`<b>${esc(x[0])}</b>`:`<a href="${x[1]}">${esc(x[0])}</a><span>‹</span>`).join("")}</nav>`}

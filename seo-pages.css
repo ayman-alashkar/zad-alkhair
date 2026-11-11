@@ -49,8 +49,22 @@ html[data-theme=dark] .install-panel{background:#0A2B26;box-shadow:0 22px 50px -
 .install-guide .ip-title{font-size:15px}
 @media(hover:hover){.guide-install:hover,.ip-device:hover{background:var(--selected);border-color:var(--gold)}.ip-close:hover{color:var(--ink);background:var(--selected)}}
 @media(max-width:400px){.guide-install{padding:0 11px;font-size:11px}.head-tools{gap:6px}}
+/* مع زر القائمة لا يتسع العرض الضيق لنص «حمّل التطبيق»: تبقى أيقونته وحدها، واسمه في aria-label. */
+@media(max-width:389px){.guide-install{width:44px;padding:0;justify-content:center}.guide-install span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
 .guide-theme{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:13px;background:var(--raised);color:var(--gold);cursor:pointer}
 .guide-theme[hidden]{display:none}
+/* قائمة «المزيد» كالتي في الرئيسية. */
+.guide-menu-wrap{position:relative}
+.guide-menu-btn{display:grid;place-items:center;flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:13px;background:var(--raised);color:var(--gold);cursor:pointer}
+.guide-menu-btn svg{width:21px;height:21px}
+.guide-menu-btn[aria-expanded=true]{background:var(--selected);border-color:var(--gold)}
+.guide-menu{position:absolute;z-index:21;top:calc(100% + 10px);inset-inline-end:0;width:250px;padding:8px;box-sizing:border-box;border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:0 22px 50px -20px var(--shadow),0 2px 6px rgba(0,0,0,.06);text-align:start}
+html[data-theme=dark] .guide-menu{background:#0A2B26;box-shadow:0 22px 50px -18px rgba(0,0,0,.6)}
+.guide-menu[hidden]{display:none}
+.guide-menu a,.guide-menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;box-sizing:border-box;border:0;border-radius:14px;background:transparent;color:var(--ink);font:inherit;font-size:14px;text-decoration:none;text-align:start;cursor:pointer}
+.guide-menu svg{width:20px;height:20px;flex:none;color:var(--gold)}
+.guide-menu-sep{height:1px;margin:6px 12px;background:var(--line)}
+.guide-menu-label{padding:4px 12px 2px;font-size:11px;color:var(--muted)}
 .guide-theme svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .breadcrumbs{display:flex;align-items:center;gap:8px;width:min(930px,calc(100% - 32px));margin:0 auto 16px;min-height:32px;color:var(--muted);font-size:11px;line-height:1.8;flex-wrap:wrap;overflow-wrap:anywhere}
 .breadcrumbs a{text-decoration:none;color:var(--muted);padding-block:6px}
@@ -95,14 +109,11 @@ footer{width:min(930px,calc(100% - 32px));margin:auto;padding:0 0 calc(26px + en
 .footer-links a[hidden]{display:none}
 .footer-links a{display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--raised);text-decoration:none;color:var(--ink);font-size:11px}
 .footer-links svg{color:var(--gold)}
-.footer-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
-.footer-actions>*{display:flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--raised);text-decoration:none;color:var(--ink);font:inherit;font-size:11px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.footer-actions svg{width:21px;height:21px;flex:none;color:var(--gold)}
 .footer-motto{margin:18px auto 0;font:700 22px/1.8 'Aref Ruqaa',serif;color:var(--gold)}
 /* Two columns until five labels fit in one row; the install link takes the odd last slot. */
 @media(max-width:820px){.footer-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.footer-links .footer-install-link{grid-column:1/-1}}
 @media(max-width:480px){.footer-links a:not(.footer-install-link){flex-direction:column;gap:5px;min-height:66px;padding:9px 6px;text-align:center;line-height:1.35}}
 :focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:8px}
-@media(hover:hover){.secondary:hover,.card.link:hover,.item:hover,.listen:hover,.guide-theme:hover{background:var(--selected);border-color:var(--gold)}.primary:hover{filter:brightness(1.04)}.footer-links a:hover,.footer-actions>*:hover{color:var(--gold)}}
+@media(hover:hover){.secondary:hover,.card.link:hover,.item:hover,.listen:hover,.guide-theme:hover,.guide-menu-btn:hover{background:var(--selected);border-color:var(--gold)}.guide-menu a:hover,.guide-menu button:hover{background:var(--selected)}.primary:hover{filter:brightness(1.04)}.footer-links a:hover{color:var(--gold)}}
 @media(max-width:640px){.site-head{padding:16px 0;gap:12px}.mark{width:36px;height:36px}.brand{font-size:30px}.motto{font-size:9px}.guide-home{gap:10px}.breadcrumbs{font-size:10px;gap:6px;margin-bottom:12px}main{padding:22px 18px;border-radius:20px}h1{font-size:29px}h2{margin-top:26px}.feature-grid,.reciter-grid{grid-template-columns:minmax(0,1fr)}.link-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.listen{gap:8px;flex-wrap:wrap}.listen::after{margin-inline-start:auto}.card{padding:16px}.lead{font-size:13px}.actions .btn{flex:1 1 auto}.item{font-size:12px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

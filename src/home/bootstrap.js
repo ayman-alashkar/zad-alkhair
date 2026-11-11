@@ -215,7 +215,17 @@ function zkCountSurface(){
 }
 if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
-zkArmRootGuard()
+zkArmRootGuard();
+/* «تعليمات» من قائمة صفحات الدليل تفتح الرئيسية بـ?help: تُعرض التعليمات ويُحذف المعامل. */
+(function zkOpenHelpFromLink(){
+  try{
+    const url=new URL(location.href);
+    if(!url.searchParams.has("help"))return;
+    url.searchParams.delete("help");
+    history.replaceState(history.state,"",url.href);
+  }catch(_){return}
+  document.body.classList.add("zk-launch-prayer");helpDialog();
+})();
 
 /* PWA shell + offline Quran/Tafsir library. The index checks status only;
    opening the Quran reader is the opt-in that starts a missing full download. */
