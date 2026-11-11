@@ -318,6 +318,8 @@ function ztMenu(open){
   document.addEventListener("click",event=>{if(!event.target.closest(".zt-menu-wrap"))ztMenu(false)});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")ztMenu(false)});
   ztEl("zt-help")?.addEventListener("click",()=>{ztMenu(false);document.body.classList.add("zk-launch-prayer");helpDialog()});
+  /* «راسلنا» يفتح تطبيق البريد ولا يغادر الصفحة، فتُغلق القائمة بنفسها. */
+  ztEl("zt-menu")?.addEventListener("click",event=>{if(event.target.closest('a[href^="mailto:"]'))ztMenu(false)});
   ztEl("zk-tab-home")?.addEventListener("click",()=>{zkShowLaunch();ztSetView("today");zkArmRootGuard()});
   requestAnimationFrame(()=>requestAnimationFrame(()=>ztEl("zk-tabs")?.classList.add("zk-tabs-ready")));
   /* بعد إغلاق أي نافذة (كاختيار المدينة) تُحدَّث البطاقات. */
