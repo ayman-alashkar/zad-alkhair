@@ -31,7 +31,7 @@ const SHELL_ALIASES={
 };
 const OPTIONAL_SHELL=[
   "./quran-index/",
-  "./seo-pages.css?v=a7f27f9ff4","./seo-pages.js?v=a7f27f9ff4","./seo-install.js?v=a7f27f9ff4",
+  "./seo-pages.css?v=b5ce147b38","./seo-pages.js?v=b5ce147b38","./seo-install.js?v=b5ce147b38",
   "./manifest.json","./migration.js","./vendor/adhan-4.4.4.umd.min.js",
   "./fonts/alexandria-arabic-400-800.woff2","./fonts/alexandria-latin-400-800.woff2",
   "./fonts/amiri-arabic-400.woff2","./fonts/amiri-latin-400.woff2","./fonts/amiri-arabic-700.woff2","./fonts/amiri-latin-700.woff2",

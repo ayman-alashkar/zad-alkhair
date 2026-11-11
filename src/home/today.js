@@ -300,9 +300,9 @@ function ztSetView(view){
 }
 
 /* ── قائمة «المزيد» ── */
-/* «شارك التطبيق»: رابط الرئيسية، وله صورة المشاركة ووصفها. */
+/* «شارك التطبيق»: رابط صفحة التثبيت، فيرى من يصله خطوات جهازه. */
 async function ztShareApp(){
-  const url=new URL("/",location.origin).href;
+  const url=new URL("/install/",location.origin).href;
   if(navigator.share){
     try{await navigator.share({title:"زاد الخير",url});return}
     catch(error){if(error&&error.name==="AbortError")return}

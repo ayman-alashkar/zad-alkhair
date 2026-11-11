@@ -156,15 +156,23 @@ ${id===myDevice&&embedded?'<p class="ip-note">إذا فتحت الرابط دا�
     paint();
   }
   try{window.matchMedia('(display-mode: standalone)').addEventListener('change',paint)}catch(_){}
-  /* «شارك التطبيق» في ذيل الصفحات: رابط الرئيسية، أو نسخه حيث لا توجد مشاركة. */
-  document.querySelectorAll('[data-share-app]').forEach(btn=>btn.addEventListener('click',async()=>{
-    const url=location.origin+'/',label=btn.querySelector('span');
-    if(navigator.share){
-      try{await navigator.share({title:'زاد الخير',url});return}
-      catch(error){if(error&&error.name==='AbortError')return}
-    }
-    let copied=false;try{await navigator.clipboard.writeText(url);copied=true}catch(_){}
-    label.textContent=copied?'نُسخ الرابط':url;
-    clearTimeout(btn.resetTimer);btn.resetTimer=setTimeout(()=>{label.textContent='شارك التطبيق'},3000);
-  }));
+  /* قائمة «المزيد» بجانب زر الوضع، كالتي في الرئيسية. «شارك التطبيق» يشارك رابط التثبيت. */
+  const guideMenu=document.getElementById('guideMenu'),guideMenuBtn=document.getElementById('guideMenuBtn');
+  if(guideMenu&&guideMenuBtn){
+    const setMenu=open=>{guideMenu.hidden=!open;guideMenuBtn.setAttribute('aria-expanded',String(open))};
+    guideMenuBtn.addEventListener('click',event=>{event.stopPropagation();setMenu(guideMenu.hidden);if(!guideMenu.hidden)closeMenu(false)});
+    document.addEventListener('click',event=>{if(!event.target.closest('.guide-menu-wrap'))setMenu(false)});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!guideMenu.hidden){setMenu(false);guideMenuBtn.focus()}});
+    guideMenu.addEventListener('click',event=>{if(event.target.closest('a[href^="mailto:"]'))setMenu(false)});
+    guideMenu.querySelector('[data-share-app]')?.addEventListener('click',async event=>{
+      const btn=event.currentTarget,label=btn.querySelector('span'),url=location.origin+'/install/';
+      if(navigator.share){
+        try{await navigator.share({title:'زاد الخير',url});setMenu(false);return}
+        catch(error){if(error&&error.name==='AbortError')return}
+      }
+      let copied=false;try{await navigator.clipboard.writeText(url);copied=true}catch(_){}
+      label.textContent=copied?'نُسخ الرابط':url;
+      clearTimeout(btn.resetTimer);btn.resetTimer=setTimeout(()=>{label.textContent='شارك التطبيق'},3000);
+    });
+  }
 })();

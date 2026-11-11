@@ -5185,9 +5185,9 @@ function ztSetView(view){
 }
 
 /* ── قائمة «المزيد» ── */
-/* «شارك التطبيق»: رابط الرئيسية، وله صورة المشاركة ووصفها. */
+/* «شارك التطبيق»: رابط صفحة التثبيت، فيرى من يصله خطوات جهازه. */
 async function ztShareApp(){
-  const url=new URL("/",location.origin).href;
+  const url=new URL("/install/",location.origin).href;
   if(navigator.share){
     try{await navigator.share({title:"زاد الخير",url});return}
     catch(error){if(error&&error.name==="AbortError")return}
@@ -6253,7 +6253,17 @@ function zkCountSurface(){
 }
 if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
-zkArmRootGuard()
+zkArmRootGuard();
+/* «تعليمات» من قائمة صفحات الدليل تفتح الرئيسية بـ?help: تُعرض التعليمات ويُحذف المعامل. */
+(function zkOpenHelpFromLink(){
+  try{
+    const url=new URL(location.href);
+    if(!url.searchParams.has("help"))return;
+    url.searchParams.delete("help");
+    history.replaceState(history.state,"",url.href);
+  }catch(_){return}
+  document.body.classList.add("zk-launch-prayer");helpDialog();
+})();
 
 /* PWA shell + offline Quran/Tafsir library. The index checks status only;
    opening the Quran reader is the opt-in that starts a missing full download. */
