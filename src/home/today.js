@@ -300,6 +300,16 @@ function ztSetView(view){
 }
 
 /* ── قائمة «المزيد» ── */
+/* «شارك التطبيق»: رابط الرئيسية، وله صورة المشاركة ووصفها. */
+async function ztShareApp(){
+  const url=new URL("/",location.origin).href;
+  if(navigator.share){
+    try{await navigator.share({title:"زاد الخير",url});return}
+    catch(error){if(error&&error.name==="AbortError")return}
+  }
+  try{await navigator.clipboard.writeText(url);toast("نُسخ الرابط")}
+  catch(_){appCopyFallback("نسخ الرابط",url)}
+}
 function ztMenu(open){
   const menu=ztEl("zt-menu"),button=ztEl("zt-menu-btn");
   if(!menu||!button)return;
@@ -318,7 +328,8 @@ function ztMenu(open){
   document.addEventListener("click",event=>{if(!event.target.closest(".zt-menu-wrap"))ztMenu(false)});
   document.addEventListener("keydown",event=>{if(event.key==="Escape")ztMenu(false)});
   ztEl("zt-help")?.addEventListener("click",()=>{ztMenu(false);document.body.classList.add("zk-launch-prayer");helpDialog()});
-  /* «راسلنا» يفتح تطبيق البريد ولا يغادر الصفحة، فتُغلق القائمة بنفسها. */
+  ztEl("zt-share-app")?.addEventListener("click",()=>{ztMenu(false);ztShareApp()});
+  /* «تواصل معنا» يفتح تطبيق البريد ولا يغادر الصفحة، فتُغلق القائمة بنفسها. */
   ztEl("zt-menu")?.addEventListener("click",event=>{if(event.target.closest('a[href^="mailto:"]'))ztMenu(false)});
   ztEl("zk-tab-home")?.addEventListener("click",()=>{zkShowLaunch();ztSetView("today");zkArmRootGuard()});
   requestAnimationFrame(()=>requestAnimationFrame(()=>ztEl("zk-tabs")?.classList.add("zk-tabs-ready")));
