@@ -142,6 +142,11 @@ test("home opens on a phone without script errors and shows the bottom tabs", as
 test("usage stats count the shown sections and send them when the page is left", async () => {
   const { page, errors, context } = await appPage();
   const sent = [];
+  /* المتصفح الآلي لا يُعدّ؛ هنا يُقدَّم كهاتف عادي ليُختبر العدّ نفسه. */
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "webdriver", { get: () => false });
+    Object.defineProperty(navigator, "userAgent", { get: () => "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Mobile Safari/537.36" });
+  });
   page.on("request", r => { if (r.url().includes("/rpc/record_usage")) sent.push(JSON.parse(r.postData())); });
   await page.goto(BASE + "/", { waitUntil: "load" });
   await page.waitForTimeout(900);
@@ -160,6 +165,11 @@ test("usage stats count the shown sections and send them when the page is left",
 test("usage stats tell the recitation player from the mushaf in the reader page", async () => {
   const { page, errors, context } = await readerPage();
   const sent = [];
+  /* المتصفح الآلي لا يُعدّ؛ هنا يُقدَّم كهاتف عادي ليُختبر العدّ نفسه. */
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "webdriver", { get: () => false });
+    Object.defineProperty(navigator, "userAgent", { get: () => "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Mobile Safari/537.36" });
+  });
   page.on("request", r => { if (r.url().includes("/rpc/record_usage")) sent.push(JSON.parse(r.postData())); });
   await page.goto(BASE + "/quran-listen/?from=zad", { waitUntil: "load" });
   await page.waitForSelector(".zad-listen");

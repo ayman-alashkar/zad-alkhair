@@ -4,7 +4,7 @@ const root=path.join(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 
 /* بيئة صغيرة: مخزن محلي، ومؤقتات تُشغَّل يدويًا، وساعة يضبطها الاختبار، وfetch يسجّل الطلبات. */
-function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=200}={}){
+function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=200,userAgent="Mozilla/5.0 (Linux; Android 14)",webdriver=false}={}){
   const store=new Map(),timers=[],sent=[],listeners={};
   const clock={now};
   const RealDate=Date;
@@ -15,7 +15,7 @@ function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=
     crypto:{randomUUID:()=>"0b8f2c1e-1111-4222-8333-444455556666"},
     localStorage:{getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
     location:{search},
-    navigator:{userAgent:"Mozilla/5.0 (Linux; Android 14)",onLine:true,platform:"Linux armv8l",maxTouchPoints:5},
+    navigator:{userAgent,webdriver,onLine:true,platform:"Linux armv8l",maxTouchPoints:5},
     document:{hidden:false,addEventListener:(t,f)=>(listeners[t]=listeners[t]||[]).push(f)},
     window:{matchMedia:()=>({matches:false}),addEventListener:(t,f)=>(listeners[t]=listeners[t]||[]).push(f)},
     setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout:id=>{if(timers[id-1])timers[id-1].f=null},
@@ -87,4 +87,13 @@ test("both apps carry the usage section, sharing the install analytics identity"
   assert.match(read("src/home/install-navigation.js"),/function pwaInstallId\(\)\{return zuDeviceId\(\)\}/);
   // The analytics check must not end ما تيسّر: tayassurActive() clears the mode as a side effect.
   assert.doesNotMatch(read("src/reader/bootstrap.js"),/zuTrackAudio\(audio,tayassurActive\)/);
+});
+
+test("automated browsers are not counted",async()=>{
+  for(const opts of [{webdriver:true},{userAgent:"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0 Safari/537.36"},{userAgent:"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"}]){
+    const env=usageEnv(opts);
+    env.api.zuAdd({home:1});env.api.zuSurface("reader");env.runTimers();await env.api.zuFlush();
+    assert.deepEqual(JSON.parse(JSON.stringify(env.api.zuRead())),{});
+    assert.equal(env.sent.length,0);
+  }
 });
