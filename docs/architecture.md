@@ -71,6 +71,7 @@
 
 | الاستعلام | ما يعرضه |
 | --- | --- |
+| `select * from private.usage_summary;` | ملخص واحد: كل المقاييس لليوم وآخر ٧ أيام وآخر ٣٠ يومًا |
 | `select * from private.usage_active;` | الأجهزة النشطة يوميًا وفي ٧ أيام، ومنها المثبّت |
 | `select * from private.usage_retention;` | الأجهزة الجديدة حسب أسبوع أول ظهور، ونسبة من عاد في الأسبوع الثاني وبعد ٣٠ يومًا |
 | `select * from private.usage_reach;` | نسبة أجهزة اليوم التي فتحت كل قسم |
