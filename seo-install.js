@@ -156,4 +156,15 @@ ${id===myDevice&&embedded?'<p class="ip-note">إذا فتحت الرابط دا�
     paint();
   }
   try{window.matchMedia('(display-mode: standalone)').addEventListener('change',paint)}catch(_){}
+  /* «شارك التطبيق» في ذيل الصفحات: رابط الرئيسية، أو نسخه حيث لا توجد مشاركة. */
+  document.querySelectorAll('[data-share-app]').forEach(btn=>btn.addEventListener('click',async()=>{
+    const url=location.origin+'/',label=btn.querySelector('span');
+    if(navigator.share){
+      try{await navigator.share({title:'زاد الخير',url});return}
+      catch(error){if(error&&error.name==='AbortError')return}
+    }
+    let copied=false;try{await navigator.clipboard.writeText(url);copied=true}catch(_){}
+    label.textContent=copied?'نُسخ الرابط':url;
+    clearTimeout(btn.resetTimer);btn.resetTimer=setTimeout(()=>{label.textContent='شارك التطبيق'},3000);
+  }));
 })();
