@@ -25,6 +25,7 @@ let surahHeaderReady=false;
    الفهرس قد يظهر قبل ذلك؛ ومن يغادره إلى المصحف ينتظر هذا الوعد. */
 let readerBooted=false,readerGoPending=false,readerBootDone=()=>{};
 const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=true;resolve()}});
+/* @include ../shared/usage.js */
 /* @include tafsir.js */
 
 /* @include reciters.js */

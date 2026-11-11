@@ -114,6 +114,7 @@ function zaShow(){
     screen.hidden=false;
     document.body.classList.add("za-open");
     if(typeof zkArmRootGuard==="function")zkArmRootGuard();
+    if(typeof zkCountSurface==="function")zkCountSurface();
   }
   return true;
 }
@@ -125,6 +126,7 @@ function zaClose(){
   zaView=null;
   document.body.classList.remove("za-open");
   zaCardRender();
+  if(typeof zkCountSurface==="function")zkCountSurface();
   return true;
 }
 /* الرجوع: من ذكرٍ فُتح من الفهرس إلى الفهرس، وإلا تُغلق الصفحة. */

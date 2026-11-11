@@ -3,7 +3,6 @@
    An installed app UPSERTs its own row on each real app launch. If offline, the
    request simply fails harmlessly and the next launch / online event retries it.
    Normal browser visits are never counted. */
-const PWA_INSTALL_ID_KEY="zad:pwa-install-id";
 const PWA_APP_VERSION="v115";
 let pwaInstallReportBusy=false;
 let pwaInstallReportedThisPage=false;
@@ -37,32 +36,9 @@ pwaInstallButton?.addEventListener("click",async event=>{
   else pwaPaintInstallButton();
 });
 pwaPaintInstallButton();
-function pwaInstallPlatform(){
-  const ua=navigator.userAgent||"";
-  const uaPlatform=navigator.userAgentData&&navigator.userAgentData.platform||"";
-  if(/Android/i.test(ua)||/Android/i.test(uaPlatform)) return "android";
-  if(/iPad|iPhone|iPod/i.test(ua)||
-     /iPad|iPhone|iPod|iOS/i.test(uaPlatform)||
-     (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)) return "ios";
-  if(/Windows|Macintosh|MacIntel|Linux|CrOS/i.test(`${ua} ${uaPlatform} ${navigator.platform||""}`)) return "desktop";
-  return "other";
-}
-function pwaInstallId(){
-  try{
-    let id=localStorage.getItem(PWA_INSTALL_ID_KEY);
-    const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if(id&&valid.test(id)) return id;
-    if(crypto.randomUUID) id=crypto.randomUUID();
-    else{
-      const b=new Uint8Array(16);crypto.getRandomValues(b);
-      b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
-      const h=[...b].map(v=>v.toString(16).padStart(2,"0")).join("");
-      id=`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
-    }
-    localStorage.setItem(PWA_INSTALL_ID_KEY,id);
-    return id;
-  }catch(_){ return null; }
-}
+/* المعرّف المجهول ونوع الجهاز مشتركان مع إحصاءات الاستعمال (src/shared/usage.js). */
+function pwaInstallPlatform(){return zuPlatform()}
+function pwaInstallId(){return zuDeviceId()}
 function pwaClearLegacyAnalyticsFlags(){
   try{
     [

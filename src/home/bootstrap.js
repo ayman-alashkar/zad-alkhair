@@ -193,6 +193,7 @@ const zkSection=new URLSearchParams(location.search).get("section");
 /* العنوان يتبع الشاشة الظاهرة («?section=khatmahs» أو «prayer»، ولا شيء للرئيسية)،
    فيعيد التحديث فتح الشاشة نفسها، لا ما فُتح به التطبيق أول مرة. */
 function zkSyncSection(){
+  zkCountSurface();
   const onKhatmahs=!zkLaunchVisible();
   const section=onKhatmahs?"khatmahs":ztView==="prayer"?"prayer":"";
   try{
@@ -205,6 +206,12 @@ function zkSyncSection(){
     url.hash=hash;
     history.replaceState(history.state,"",url.href);
   }catch(_){}
+}
+/* إحصاءات الاستعمال: القسم الظاهر الآن (src/shared/usage.js يعدّه إن بقي ظاهرًا). */
+function zkCountSurface(){
+  if(typeof zaIsOpen==="function"&&zaIsOpen())zuSurface("adhkar");
+  else if(!zkLaunchVisible())zuSurface("khatmahs");
+  else zuSurface(ztView==="prayer"?"prayer":"home");
 }
 if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}

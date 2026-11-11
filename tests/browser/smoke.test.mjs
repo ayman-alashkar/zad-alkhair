@@ -138,6 +138,41 @@ test("home opens on a phone without script errors and shows the bottom tabs", as
   await context.close();
 });
 
+/* إحصاءات الاستعمال: القسم الظاهر يُعدّ مرة، ويُرسل المجموع عند مغادرة الصفحة. */
+test("usage stats count the shown sections and send them when the page is left", async () => {
+  const { page, errors, context } = await appPage();
+  const sent = [];
+  page.on("request", r => { if (r.url().includes("/rpc/record_usage")) sent.push(JSON.parse(r.postData())); });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.waitForTimeout(900);
+  await page.click("#zk-launch-prayer");
+  await page.waitForTimeout(900);
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+  await page.waitForTimeout(400);
+  assert.equal(sent.length, 1);
+  assert.deepEqual(sent[0].p_counts, { home: 1, prayer: 1 });
+  assert.match(sent[0].p_device, /^[0-9a-f-]{36}$/);
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:usage-v1")), "{}");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("usage stats tell the recitation player from the mushaf in the reader page", async () => {
+  const { page, errors, context } = await readerPage();
+  const sent = [];
+  page.on("request", r => { if (r.url().includes("/rpc/record_usage")) sent.push(JSON.parse(r.postData())); });
+  await page.goto(BASE + "/quran-listen/?from=zad", { waitUntil: "load" });
+  await page.waitForSelector(".zad-listen");
+  await page.waitForTimeout(900);
+  await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+  await page.waitForTimeout(400);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].p_counts.listen, 1);
+  assert.equal(sent[0].p_counts.reader, undefined);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 /* هواتف أندرويد كثيرة عرضها ٣٦٠، ويقلّ العرض أكثر حين يكبّر المستخدم الخط من إعدادات الهاتف.
    صف المواقيت يبقى سطرًا واحدًا لكل وقت، دون انكسار أو فيض خارج خانته. */
 test("the home prayer row keeps every time on one line down to a 320px-wide page", async () => {
