@@ -132,7 +132,7 @@ test("calendar occasions: nights sit on the evening before, ranges list once",()
 
 test("the support address is offered in the home menu, the about page and the tafsir note",()=>{
   const mail='href="mailto:support@zad-alkhair.net"';
-  assert.ok(read("index.html").includes(mail)&&read("index.html").includes("<span>راسلنا</span>"));
+  assert.ok(read("index.html").includes(mail)&&read("index.html").includes("<span>تواصل معنا</span>"));
   assert.ok(read("about/index.html").includes(mail));
   assert.ok(read("src/reader/reading-tools.js").includes("فنرجو تنبيهنا إلى ذلك على <a "+mail));
 });
