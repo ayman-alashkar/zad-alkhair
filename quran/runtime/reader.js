@@ -49,13 +49,16 @@ const ZU_REOPEN_MS=30*60*1000; /* العودة إلى التطبيق بعد نص
     else if(q.has("stats"))localStorage.removeItem(ZU_OFF);
   }catch(_){ }
 })();
-/* المتصفحات الآلية (زواحف البحث وأدوات الفحص) لا تُعدّ: تعلن عن نفسها بـ navigator.webdriver
-   أو باسمها في userAgent، وغالبًا تعمل بمنطقة UTC على حاسوب. */
+/* المتصفحات الآلية (زواحف البحث وأدوات الفحص) تُعلَّم ولا تُسقط: يُرسل سبب التعليم مع الأرقام،
+   وتستبعدها الاستعلامات (private.usage_human). فإن أخطأ الفحص في جهاز حقيقي ظهر ذلك في الجدول. */
 const ZU_BOT=(()=>{
-  try{return navigator.webdriver===true||/bot|crawl|spider|slurp|headless|lighthouse|pagespeed|inspectiontool/i.test(navigator.userAgent||"")}
-  catch(_){return false}
+  try{
+    if(navigator.webdriver===true)return "webdriver";
+    const m=/bot|crawl|spider|slurp|headless|lighthouse|pagespeed|inspectiontool/i.exec(navigator.userAgent||"");
+    return m?"ua:"+m[0].toLowerCase():null;
+  }catch(_){return null}
 })();
-function zuOff(){if(ZU_BOT)return true;try{return localStorage.getItem(ZU_OFF)==="1"}catch(_){return true}}
+function zuOff(){try{return localStorage.getItem(ZU_OFF)==="1"}catch(_){return true}}
 
 /* اليوم بتوقيت مكة (UTC+3، ولا توقيت صيفي فيه)، ليوافق أغلب المستخدمين والتقويم الهجري. */
 function zuDay(t=Date.now()){return new Date(t+3*3600*1000).toISOString().slice(0,10)}
@@ -180,7 +183,7 @@ async function zuFlush(){
       const r=await fetch(ZU_ENDPOINT,{
         method:"POST",keepalive:true,
         headers:{"Content-Type":"application/json",apikey:ZU_KEY,Authorization:"Bearer "+ZU_KEY},
-        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_tz:zuTimeZone(),p_counts:counts})
+        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_tz:zuTimeZone(),p_bot:ZU_BOT,p_counts:counts})
       });
       /* رفض الخادم (يوم أقدم من المسموح مثلًا) يُسقط هذا اليوم؛ عطل الخادم يُبقيه للمرة القادمة. */
       if(r.ok||(r.status>=400&&r.status<500))zuSubtract(day,counts);
