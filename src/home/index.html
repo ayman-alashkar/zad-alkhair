@@ -110,20 +110,28 @@
   </div>
 </section>
 
-<!-- صفحة الأذكار (adhkar.js): الفهرس ثم الأذكار واحدًا واحدًا. شاشة الورد بعدها فتظهر فوقها. -->
+<!-- صفحة الأذكار (adhkar.js): الفهرس ثم الأذكار واحدًا واحدًا. شاشة الورد بعدها فتظهر فوقها.
+     الترأس كترأس صفحات التطبيق: العنوان يمينًا، والمشاركة والرجوع يسارًا. -->
 <section class="zw-screen za-screen" id="za-screen" aria-label="الأذكار" hidden>
-  <header class="zw-head">
-    <button class="zw-back" id="za-back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>رجوع</span></button>
-    <span class="zw-head-title" id="za-title">الأذكار</span>
+  <div class="zt-pattern" aria-hidden="true"></div>
+  <header class="zp-head za-head">
+    <h2 id="za-title">الأذكار</h2>
+    <div class="zt-tools">
+      <button class="zt-icon-btn" id="za-share" type="button" aria-label="مشاركة الرابط"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg></button>
+      <button class="zt-icon-btn" id="za-back" type="button" aria-label="رجوع"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+    </div>
   </header>
   <div class="za-body" id="za-body"></div>
 </section>
 
 <!-- شاشة العدّ لـ«وردك اليوم» (friday-wird.js): تتبع الوضع النهاري والليلي، فوق الشريط السفلي. -->
 <section class="zw-screen" id="zw-screen" aria-label="وردك اليوم" hidden>
-  <header class="zw-head">
-    <button class="zw-back" id="zw-back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>رجوع</span></button>
-    <span class="zw-head-title">وردك اليوم</span>
+  <header class="zp-head za-head">
+    <h2>وردك اليوم</h2>
+    <div class="zt-tools">
+      <button class="zt-icon-btn" id="zw-share" type="button" aria-label="مشاركة الرابط"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg></button>
+      <button class="zt-icon-btn" id="zw-back" type="button" aria-label="رجوع"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+    </div>
   </header>
   <div class="zw-tabs" id="zw-tabs" role="tablist" aria-label="الأذكار"></div>
   <h2 class="zw-text" id="zw-text"></h2>
