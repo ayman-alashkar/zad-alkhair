@@ -77,7 +77,9 @@ const footerLinks=[
 ].map(([href,label,path])=>`<a href="${href}">${navIcon(path)}<span>${label}</span></a>`).join("");
 // seo-install.js hides the install link once the app is installed. /install/ itself omits it.
 const footerInstallLink=`<a class="footer-install-link" href="/install/" data-install-link>${installIcon}<span>تثبيت التطبيق</span></a>`;
-const footerHtml=withInstall=>`<footer class="discovery-footer"><nav class="footer-links" aria-label="روابط زاد الخير">${footerLinks}${withInstall?footerInstallLink:""}</nav><p class="footer-motto">كلامُ الباري يجمعُنا</p></footer>`;
+// «تواصل معنا» و«شارك التطبيق» كما في قائمة «المزيد» بالرئيسية؛ seo-install.js يشارك رابط الرئيسية.
+const footerActions=`<div class="footer-actions"><a href="mailto:support@zad-alkhair.net">${navIcon('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/>')}<span>تواصل معنا</span></a><button type="button" data-share-app>${navIcon('<path d="M12 15V3m-4 4 4-4 4 4M6 11H5v10h14V11h-1"/>')}<span>شارك التطبيق</span></button></div>`;
+const footerHtml=withInstall=>`<footer class="discovery-footer"><nav class="footer-links" aria-label="روابط زاد الخير">${footerLinks}${withInstall?footerInstallLink:""}</nav>${footerActions}<p class="footer-motto">كلامُ الباري يجمعُنا</p></footer>`;
 const footer=footerHtml(true);
 const installFooter=footerHtml(false);
 function crumbs(items){return `<nav class="breadcrumbs" aria-label="مسار الصفحة">${items.map((x,i)=>i===items.length-1?`<b>${esc(x[0])}</b>`:`<a href="${x[1]}">${esc(x[0])}</a><span>‹</span>`).join("")}</nav>`}
