@@ -1,6 +1,6 @@
 /* ═══════════ إحصاءات الاستعمال المجهولة ═══════════
    تُعدّ على الجهاز مرات فتح كل قسم وثواني الاستماع، وتُرسل مجمّعة لكل يوم إلى
-   record_usage في Supabase. لا يُرسل اسم ولا نص ولا سورة ولا قارئ؛ المعرّف عشوائي،
+   record_usage في Supabase مع المنطقة الزمنية للجهاز. لا يُرسل اسم ولا نص ولا سورة ولا قارئ؛ المعرّف عشوائي،
    وهو نفسه معرّف عدّ التثبيتات (zad:pwa-install-id)، لا معرّف الختمات.
    القياس لا يؤخر الإقلاع، ولا يعطّل شيئًا إن فشل أو انقطعت الشبكة.
    ?nostats يوقف الإرسال من هذا الجهاز نهائيًا، و?stats يعيده. */
@@ -52,6 +52,10 @@ function zuPlatform(){
      (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))return "ios";
   if(/Windows|Macintosh|MacIntel|Linux|CrOS/i.test(`${ua} ${uaPlatform} ${navigator.platform||""}`))return "desktop";
   return "other";
+}
+/* المنطقة الزمنية للجهاز (مثل Asia/Damascus) تدل على البلد في الغالب، دون عنوان IP. */
+function zuTimeZone(){
+  try{return String(Intl.DateTimeFormat().resolvedOptions().timeZone||"").slice(0,64)||null}catch(_){return null}
 }
 function zuInstalled(){
   try{return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}
@@ -143,7 +147,7 @@ async function zuFlush(){
       const r=await fetch(ZU_ENDPOINT,{
         method:"POST",keepalive:true,
         headers:{"Content-Type":"application/json",apikey:ZU_KEY,Authorization:"Bearer "+ZU_KEY},
-        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_counts:counts})
+        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_tz:zuTimeZone(),p_counts:counts})
       });
       /* رفض الخادم (يوم أقدم من المسموح مثلًا) يُسقط هذا اليوم؛ عطل الخادم يُبقيه للمرة القادمة. */
       if(r.ok||(r.status>=400&&r.status<500))zuSubtract(day,counts);
