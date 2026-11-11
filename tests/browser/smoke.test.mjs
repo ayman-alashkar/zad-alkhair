@@ -162,6 +162,26 @@ test("usage stats count the shown sections and send them when the page is left",
   await context.close();
 });
 
+/* المصحف تحت مشغّل التلاوة لا يُرسم؛ وعند «اقرأ مع التلاوة» يعود ويُضبط بالوضع الذي اختير في المشغّل. */
+test("the mushaf is not drawn under the recitation player and comes back fitted after it", async () => {
+  const { page, errors, context } = await readerPage();
+  await page.goto(BASE + "/quran-listen/?from=zad", { waitUntil: "load" });
+  await page.waitForSelector(".zad-listen .zl-theme");
+  const hidden = () => page.evaluate(() => getComputedStyle(document.getElementById("reader")).contentVisibility);
+  const supported = await hidden() !== undefined;
+  if (supported) assert.equal(await hidden(), "hidden");
+  await page.click(".zad-listen .zl-theme");
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), "dark");
+  await page.click(".zad-listen .zl-read");
+  await page.waitForFunction(() => !document.querySelector(".zad-listen"));
+  if (supported) assert.equal(await hidden(), "visible");
+  await page.waitForSelector('.page[data-loaded="1"] .line');
+  const box = await page.evaluate(() => { const r = document.querySelector('.page[data-loaded="1"]').getBoundingClientRect(); return { w: r.width, h: r.height }; });
+  assert.ok(box.w > 200 && box.h > 200, `page drawn after the player (${box.w}x${box.h})`);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 test("usage stats tell the recitation player from the mushaf in the reader page", async () => {
   const { page, errors, context } = await readerPage();
   const sent = [];

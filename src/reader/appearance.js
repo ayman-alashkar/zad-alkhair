@@ -1,4 +1,7 @@
 /* ---------- theme + tap states ---------- */
+/* ما دام مشغّل التلاوة مفتوحًا لا يُرسم المصحف تحته (body.zl-open في styles.css)،
+   فتؤجَّل إعادة رسم رؤوس السور وضبط الصفحات إلى العودة إليه (readerAfterListen). */
+let readerBannersStale=false;
 function setTheme(t){
   document.documentElement.dataset.theme=t;storageSet(STORAGE_KEYS.theme,t);
   /* أيقونة الوضع كما في الرئيسية ومشغّل التلاوة: قمر نهارًا (للانتقال إلى الليل)، وشمس ليلًا. */
@@ -7,6 +10,7 @@ function setTheme(t){
     ?'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>'
     :'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.8 8.8 0 1 0 11.6 11.6Z"/></svg>';
   btn.setAttribute("aria-label",t==="dark"?"تفعيل الوضع النهاري":"تفعيل الوضع الليلي");
+  if(document.body.classList.contains("zl-open")){readerBannersStale=true;return}
   requestAnimationFrame(()=>document.querySelectorAll("canvas.surah-banner").forEach(c=>renderSurahHeaderCanvas(c,c.dataset.glyph)));
 }
 document.getElementById("themeBtn").onclick=()=>setTheme((document.documentElement.dataset.theme||"light")==="light"?"dark":"light");
@@ -56,3 +60,15 @@ document.fonts?.addEventListener?.("loadingdone",()=>{
   resizeTimer=setTimeout(()=>{fittedSize=`${innerWidth}x${innerHeight}`;document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page)))},60);
 });
 window.visualViewport?.addEventListener("resize",()=>refitIfResized(150),{passive:true});
+/* العودة من مشغّل التلاوة: ما قيس من المصحف وهو مخفي لا يُعتمد، فتُضبط الصفحات من جديد،
+   وتُرسم رؤوس السور إن تغيّر الوضع في أثناء ذلك. */
+function readerAfterListen(){
+  requestAnimationFrame(()=>{
+    fittedSize=`${innerWidth}x${innerHeight}`;
+    document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page)));
+    if(readerBannersStale){
+      readerBannersStale=false;
+      document.querySelectorAll("canvas.surah-banner").forEach(c=>renderSurahHeaderCanvas(c,c.dataset.glyph));
+    }
+  });
+}

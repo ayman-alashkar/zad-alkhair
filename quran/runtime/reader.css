@@ -2408,6 +2408,9 @@ html[data-theme="dark"] .reader-app-tabs{border-top-color:rgba(228,201,128,.18);
 html[data-theme="dark"] .zad-listen{--zl-ink:#FFF5DC;--zl-muted:#C1BBA7;--zl-surface:#0A2B26;--zl-line:rgba(228,201,128,.18);--zl-gold:#E4C980;--zl-gold-2:#E4C980}
 html[data-theme="dark"] .zad-listen::after{background:radial-gradient(ellipse at 50% -10%,rgba(228,201,128,.08),transparent 70%)}
 body.zl-open .audio-panel,body.zl-open .audio-fab{display:none!important}
+/* المصحف تحت المشغّل لا يُرى، فلا يُرسم ولا يُعاد تلوينه مع كل تغيير (كالوضع الليلي).
+   يُضبط من جديد عند العودة إليه (readerAfterListen في appearance.js). */
+body.zl-open #reader{content-visibility:hidden}
 .zad-listen button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .zl-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:calc(14px + env(safe-area-inset-top)) 16px 28px}
 .zl-scroll>*{max-width:560px;margin-inline:auto}
