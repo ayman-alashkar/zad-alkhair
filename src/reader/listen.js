@@ -537,6 +537,7 @@ function closeListenPage({readAlong=false}={}){
   listenObserver?.disconnect();listenObserver=null;
   listenPanel?.remove();listenPanel=null;
   document.body.classList.remove("zl-open");
+  readerAfterListen();
   if(readAlong){
     listenReturnUrl=location.href;
     history.replaceState(history.state,"","/quran-read/");
