@@ -2882,7 +2882,13 @@ const ZU_REOPEN_MS=30*60*1000; /* العودة إلى التطبيق بعد نص
     else if(q.has("stats"))localStorage.removeItem(ZU_OFF);
   }catch(_){ }
 })();
-function zuOff(){try{return localStorage.getItem(ZU_OFF)==="1"}catch(_){return true}}
+/* المتصفحات الآلية (زواحف البحث وأدوات الفحص) لا تُعدّ: تعلن عن نفسها بـ navigator.webdriver
+   أو باسمها في userAgent، وغالبًا تعمل بمنطقة UTC على حاسوب. */
+const ZU_BOT=(()=>{
+  try{return navigator.webdriver===true||/bot|crawl|spider|slurp|headless|lighthouse|pagespeed|inspectiontool/i.test(navigator.userAgent||"")}
+  catch(_){return false}
+})();
+function zuOff(){if(ZU_BOT)return true;try{return localStorage.getItem(ZU_OFF)==="1"}catch(_){return true}}
 
 /* اليوم بتوقيت مكة (UTC+3، ولا توقيت صيفي فيه)، ليوافق أغلب المستخدمين والتقويم الهجري. */
 function zuDay(t=Date.now()){return new Date(t+3*3600*1000).toISOString().slice(0,10)}
