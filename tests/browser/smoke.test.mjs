@@ -876,6 +876,39 @@ test("in the morning the adhkar card opens the morning adhkar, a full count move
   await context.close();
 });
 
+/* لكل قسم رابط: يفتح الرئيسية على القسم، وزر المشاركة في الترأس ينسخ رابط ما هو مفتوح. */
+test("an adhkar link opens its section, Back leads to the adhkar page, and the header shares the open page's link", async () => {
+  const { page, errors, context } = await appPage();
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { configurable: true, value: undefined });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async text => { window.__copied = text; } } });
+  });
+  await page.goto(BASE + "/adhkar/evening/", { waitUntil: "load" });
+  await page.waitForFunction(() => document.getElementById("za-title")?.textContent === "أذكار المساء", null, { timeout: 5000 });
+  assert.equal(new URL(page.url()).search, "", "?adhkar= is removed from the address");
+  await page.click("#za-share");
+  await page.waitForFunction(() => window.__copied, null, { timeout: 2000 });
+  assert.equal(await page.evaluate(() => window.__copied), new URL("/adhkar/evening/", BASE).href);
+  await page.goBack();
+  await page.waitForSelector("#za-screen .za-tiles");
+  assert.equal(await page.textContent("#za-title"), "الأذكار");
+  assert.equal(new URL(page.url()).search, "", "Back does not return to ?adhkar=");
+  /* الضغطة الثانية على الزر نفسه خلال ٧٠٠ ملّي ثانية تُهمل عمدًا (bootstrap.js). */
+  await page.waitForTimeout(750);
+  await page.click("#za-share");
+  await page.waitForFunction(() => window.__copied?.endsWith("/adhkar/"), null, { timeout: 2000 });
+  await page.click("[data-za-wird]");
+  await page.click("#zw-share");
+  await page.waitForFunction(() => window.__copied?.endsWith("/adhkar/wird/"), null, { timeout: 2000 });
+  /* زر الرجوع في الترأس: من الورد إلى صفحة الأذكار، ثم إلى الرئيسية. */
+  await page.click("#zw-back");
+  await page.waitForFunction(() => document.getElementById("zw-screen").hidden);
+  await page.click("#za-back");
+  await page.waitForFunction(() => document.getElementById("za-screen").hidden);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 /* الصلاة القائم وقتها: «الآن» فوقها ورابط أذكارها تحتها. للفجر زيادات، والفجر ينتهي بالشروق. */
 test("the prayer card marks the current prayer and links to its adhkar, with Fajr's extras and nothing after sunrise", async () => {
   const prayer = JSON.stringify({ land: "اليابان", city: "ناها", lat: 26.2124, lng: 127.6809, tz: "Asia/Tokyo", method: "MuslimWorldLeague", madhab: "Shafi" });

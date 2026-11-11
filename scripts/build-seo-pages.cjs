@@ -127,6 +127,17 @@ function shareShell(html){
     .replace(/<script src="\/seo-(pages|install)\.js[^"]*"( defer)?><\/script>\s*/g,"")
     .replace(/<link rel="stylesheet" href="\/seo-pages\.css[^"]*">/,assetTags);
 }
+// روابط الأذكار: صفحات صغيرة تحمل صورة المشاركة ووصفها، وتفتح الرئيسية على القسم (adhkar.js).
+for(const page of require("../src/home/adhkar-pages.json")){
+  const target=`/?adhkar=${page.slug}`;
+  write(`${page.path.slice(1)}index.html`,`${head({title:`${page.title} — زاد الخير`,description:page.description,canonical:page.path,image:`/social/adhkar/${page.slug}.jpg`,
+    extra:`<meta http-equiv="refresh" content="0;url=${target}">\n<script>location.replace(${json(target)})</script>\n`})}
+<body>
+<main style="padding:24px;text-align:center"><a href="${target}">افتح ${esc(page.title)} في زاد الخير</a></main>
+</body>
+</html>
+`);
+}
 write("quran/player-guide/index.html",shareShell(fs.readFileSync(path.join(root,"quran/player-guide/index.html"),"utf8")));
 for(const relative of ["about/index.html","khatmahs/index.html"]){
   const html=shareShell(fs.readFileSync(path.join(root,"src/discovery",relative.replace("/index.html",".html")),"utf8"));

@@ -1230,11 +1230,6 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
   --zw-arc:#E4C980;--zw-done:#E4C980;--zw-done-ink:#173E35;--zw-disc:rgba(255,249,234,.03)}
 .zw-screen[hidden]{display:none}
 .zw-screen>*{width:100%;max-width:520px;margin-inline:auto}
-.zw-head{display:flex;align-items:center;justify-content:space-between;min-height:48px}
-.zw-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px 0 14px;border:1px solid var(--zw-line);border-radius:14px;background:var(--zt-surface);color:var(--zt-ink);font:inherit;font-size:13px;cursor:pointer}
-:root[data-zk-theme="dark"] .zw-back{background:transparent}
-.zw-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.zw-head-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;color:var(--zt-gold)}
 .zw-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;border-radius:18px;background:var(--zw-soft)}
 .zw-tab{min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;border:0;border-radius:14px;
   background:transparent;color:var(--zt-ink);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer}
@@ -1266,7 +1261,11 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 @media (max-height:700px){.zw-ring,.zw-ring>svg{width:210px;height:210px}.zw-live b{font-size:58px}.zw-text{font-size:27px}}
 
 /* ── صفحة الأذكار: على أساس شاشة العدّ وألوانها ── */
-.za-screen{gap:12px}
+.za-screen{gap:12px;overflow:hidden;isolation:isolate}
+.za-screen>:not(.zt-pattern){position:relative}
+.za-screen>.zt-pattern{z-index:-1;width:auto;max-width:none;margin:0}
+.za-head h2{font-size:26px}
+.za-head .zt-icon-btn svg{width:20px;height:20px;pointer-events:none}
 .za-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none}
 .za-body::-webkit-scrollbar{display:none}
 .za-index{display:flex;flex-direction:column;gap:14px;flex:1;padding-bottom:4px}

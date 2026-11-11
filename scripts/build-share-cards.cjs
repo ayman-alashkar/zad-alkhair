@@ -1,6 +1,6 @@
 // يصدّر صور المشاركة من مصادرها في social/cards إلى صور JPEG
 // (أقل من 300 كيلوبايت، حدّ معاينة واتساب). القياس 1200×675، وصورة بوت تلغرام 1024×1024.
-// الاستعمال: node scripts/build-share-cards.cjs [--only=surah|juz|app|listen-share] [--surah=114]
+// الاستعمال: node scripts/build-share-cards.cjs [--only=surah|juz|app|listen-share|adhkar] [--surah=114]
 const fs = require("fs");
 const path = require("path");
 const { chromium } = require("playwright");
@@ -9,6 +9,8 @@ const root = path.resolve(__dirname, "..");
 const fileUrl = relative => "file://" + path.join(root, relative);
 const readerCardOutput = "social/zad-alkhair-reader-share-v2.jpg";
 const bookIcon = '<path d="M12 6v15M3 4c4-1 6 0 9 2 3-2 5-3 9-2v15c-4-1-6 0-9 2-3-2-5-3-9-2Z"/>';
+// بطاقات الأذكار: بطاقة القارئ نفسها، بعنوان القسم وأيقونته (أيقونات adhkar.js). مصدر الأقسام adhkar-pages.json.
+const adhkarPages = require("../src/home/adhkar-pages.json");
 const headphonesIcon = '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.6" height="6.6" rx="2"/><rect x="16.4" y="14" width="4.6" height="6.6" rx="2"/>';
 
 // بطاقات التطبيق: لكل منها ملف HTML مستقل.
@@ -139,6 +141,26 @@ function surahShareCards(surahs) {
       document.querySelector("[data-card-address]").textContent = "zad-alkhair.net/quran-listen";
     }, headphonesIcon);
     await shoot(page, "social/zad-alkhair-listen-share-v2.jpg");
+  }
+  if (only === "adhkar") {
+    await page.goto(fileUrl("social/cards/reader.html"));
+    for (const item of adhkarPages) {
+      await page.evaluate(item => {
+        document.querySelector("[data-card-icon]").innerHTML = item.icon;
+        document.querySelector("[data-card-label]").textContent = "الأذكار في زاد الخير";
+        const title = document.querySelector("[data-card-title]");
+        title.textContent = item.title;
+        /* عنوان طويل («أذكار الاستيقاظ») يصغر حتى يتسع للبطاقة. */
+        title.style.fontSize = "124px";
+        for (let size = 124; title.scrollWidth > 760 && size > 80; size -= 4) title.style.fontSize = size + "px";
+        document.querySelector("[data-card-sub]").textContent = item.card;
+        document.querySelector("[data-card-address]").textContent = "zad-alkhair.net" + item.path.replace(/\/$/, "");
+      }, item);
+      await page.evaluate(() => document.fonts.ready);
+      await shoot(page, `social/adhkar/${item.slug}.jpg`);
+    }
+    await browser.close();
+    return;
   }
   const cards = only === "listen-share"
     ? surahShareCards(surahArg ? [surah] : Array.from({ length: 114 }, (_, i) => i + 1))

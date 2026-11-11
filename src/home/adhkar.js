@@ -253,10 +253,48 @@ function zaNext(){
   zaPos=zaDoneCount(st)>=total?total:zaFirstOpen(st);
   zaRenderReader();
 }
+/* ── الروابط: لكل قسم رابط بصورة مشاركة ووصف (adhkar-pages.json، يولّدها build-seo-pages.cjs).
+   الرابط يفتح الرئيسية بـ?adhkar=، فتُفتح الصفحة عليه، ويشارك زر الترأس رابط ما هو مفتوح. ── */
+const ZA_SLUGS={morning:"morning",evening:"evening",prayer:"after-prayer",sleep:"sleep",waking:"wake-up"};
+function zaSharePath(){
+  if(zwIsOpen())return "/adhkar/wird/";
+  return zaView==="reader"&&ZA_SLUGS[zaSection]?`/adhkar/${ZA_SLUGS[zaSection]}/`:"/adhkar/";
+}
+async function zaShare(){
+  const url=new URL(zaSharePath(),location.origin).href;
+  const title=zwIsOpen()?"وردك اليوم":zaView==="reader"?ZA_NAMES[zaSection]:"الأذكار";
+  if(navigator.share){
+    try{await navigator.share({title:`${title} — زاد الخير`,url});return}
+    catch(error){if(error&&error.name==="AbortError")return}
+  }
+  try{await navigator.clipboard.writeText(url);toast("نُسخ الرابط")}
+  catch(_){appCopyFallback("نسخ الرابط",url)}
+}
+/* يُقرأ ?adhkar= ويُحذف من العنوان فورًا، قبل أن يضيف bootstrap.js خطوة الرجوع،
+   فلا يعود إليه الرجوع ولا إعادة التحميل. */
+const zaLinkSlug=(()=>{
+  let slug=null;
+  try{slug=new URLSearchParams(location.search).get("adhkar")}catch(_){}
+  if(slug!==null)try{history.replaceState(history.state,"",location.pathname+location.hash)}catch(_){}
+  return slug;
+})();
+function zaOpenFromLink(){
+  const slug=zaLinkSlug;
+  if(slug===null)return;
+  zaOpenIndex();
+  const section=Object.keys(ZA_SLUGS).find(key=>ZA_SLUGS[key]===slug);
+  if(section)zaOpen(section,{prayer:section==="prayer"?zaCurrentPrayer():null});
+  else if(slug==="wird")zwOpen(0);
+}
+
 /* بعد إغلاق شاشة الورد فوق صفحة الأذكار */
 function zaOnWirdClose(){if(zaIsOpen()&&zaView==="index")zaOpenIndex()}
 (function zaInit(){
   ztEl("za-back")?.addEventListener("click",()=>{if(zaBack()&&typeof zkArmRootGuard==="function")zkArmRootGuard()});
+  ztEl("za-share")?.addEventListener("click",zaShare);
+  ztEl("zw-share")?.addEventListener("click",zaShare);
+  /* بعد اكتمال الإقلاع (bootstrap.js يأتي بعد هذا الملف). */
+  setTimeout(zaOpenFromLink,0);
   /* في طور الالتقاط، قبل أن تُغلق شاشة الورد نفسها، فلا يُغلق المفتاح الشاشتين معًا. */
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&zaIsOpen()&&!zwIsOpen())zaBack()},true);
 })();

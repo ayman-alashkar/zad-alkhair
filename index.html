@@ -1275,11 +1275,6 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
   --zw-arc:#E4C980;--zw-done:#E4C980;--zw-done-ink:#173E35;--zw-disc:rgba(255,249,234,.03)}
 .zw-screen[hidden]{display:none}
 .zw-screen>*{width:100%;max-width:520px;margin-inline:auto}
-.zw-head{display:flex;align-items:center;justify-content:space-between;min-height:48px}
-.zw-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px 0 14px;border:1px solid var(--zw-line);border-radius:14px;background:var(--zt-surface);color:var(--zt-ink);font:inherit;font-size:13px;cursor:pointer}
-:root[data-zk-theme="dark"] .zw-back{background:transparent}
-.zw-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.zw-head-title{font-family:"Aref Ruqaa",serif;font-weight:700;font-size:22px;color:var(--zt-gold)}
 .zw-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:5px;border-radius:18px;background:var(--zw-soft)}
 .zw-tab{min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:4px 2px;border:0;border-radius:14px;
   background:transparent;color:var(--zt-ink);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer}
@@ -1311,7 +1306,11 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 @media (max-height:700px){.zw-ring,.zw-ring>svg{width:210px;height:210px}.zw-live b{font-size:58px}.zw-text{font-size:27px}}
 
 /* ── صفحة الأذكار: على أساس شاشة العدّ وألوانها ── */
-.za-screen{gap:12px}
+.za-screen{gap:12px;overflow:hidden;isolation:isolate}
+.za-screen>:not(.zt-pattern){position:relative}
+.za-screen>.zt-pattern{z-index:-1;width:auto;max-width:none;margin:0}
+.za-head h2{font-size:26px}
+.za-head .zt-icon-btn svg{width:20px;height:20px;pointer-events:none}
 .za-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none}
 .za-body::-webkit-scrollbar{display:none}
 .za-index{display:flex;flex-direction:column;gap:14px;flex:1;padding-bottom:4px}
@@ -1761,20 +1760,28 @@ body.kh-head:not(.zk-launch-open){padding-top:max(5.4rem,calc(env(safe-area-inse
   </div>
 </section>
 
-<!-- صفحة الأذكار (adhkar.js): الفهرس ثم الأذكار واحدًا واحدًا. شاشة الورد بعدها فتظهر فوقها. -->
+<!-- صفحة الأذكار (adhkar.js): الفهرس ثم الأذكار واحدًا واحدًا. شاشة الورد بعدها فتظهر فوقها.
+     الترأس كترأس صفحات التطبيق: العنوان يمينًا، والمشاركة والرجوع يسارًا. -->
 <section class="zw-screen za-screen" id="za-screen" aria-label="الأذكار" hidden>
-  <header class="zw-head">
-    <button class="zw-back" id="za-back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>رجوع</span></button>
-    <span class="zw-head-title" id="za-title">الأذكار</span>
+  <div class="zt-pattern" aria-hidden="true"></div>
+  <header class="zp-head za-head">
+    <h2 id="za-title">الأذكار</h2>
+    <div class="zt-tools">
+      <button class="zt-icon-btn" id="za-share" type="button" aria-label="مشاركة الرابط"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg></button>
+      <button class="zt-icon-btn" id="za-back" type="button" aria-label="رجوع"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+    </div>
   </header>
   <div class="za-body" id="za-body"></div>
 </section>
 
 <!-- شاشة العدّ لـ«وردك اليوم» (friday-wird.js): تتبع الوضع النهاري والليلي، فوق الشريط السفلي. -->
 <section class="zw-screen" id="zw-screen" aria-label="وردك اليوم" hidden>
-  <header class="zw-head">
-    <button class="zw-back" id="zw-back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>رجوع</span></button>
-    <span class="zw-head-title">وردك اليوم</span>
+  <header class="zp-head za-head">
+    <h2>وردك اليوم</h2>
+    <div class="zt-tools">
+      <button class="zt-icon-btn" id="zw-share" type="button" aria-label="مشاركة الرابط"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg></button>
+      <button class="zt-icon-btn" id="zw-back" type="button" aria-label="رجوع"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+    </div>
   </header>
   <div class="zw-tabs" id="zw-tabs" role="tablist" aria-label="الأذكار"></div>
   <h2 class="zw-text" id="zw-text"></h2>
@@ -5803,10 +5810,48 @@ function zaNext(){
   zaPos=zaDoneCount(st)>=total?total:zaFirstOpen(st);
   zaRenderReader();
 }
+/* ── الروابط: لكل قسم رابط بصورة مشاركة ووصف (adhkar-pages.json، يولّدها build-seo-pages.cjs).
+   الرابط يفتح الرئيسية بـ?adhkar=، فتُفتح الصفحة عليه، ويشارك زر الترأس رابط ما هو مفتوح. ── */
+const ZA_SLUGS={morning:"morning",evening:"evening",prayer:"after-prayer",sleep:"sleep",waking:"wake-up"};
+function zaSharePath(){
+  if(zwIsOpen())return "/adhkar/wird/";
+  return zaView==="reader"&&ZA_SLUGS[zaSection]?`/adhkar/${ZA_SLUGS[zaSection]}/`:"/adhkar/";
+}
+async function zaShare(){
+  const url=new URL(zaSharePath(),location.origin).href;
+  const title=zwIsOpen()?"وردك اليوم":zaView==="reader"?ZA_NAMES[zaSection]:"الأذكار";
+  if(navigator.share){
+    try{await navigator.share({title:`${title} — زاد الخير`,url});return}
+    catch(error){if(error&&error.name==="AbortError")return}
+  }
+  try{await navigator.clipboard.writeText(url);toast("نُسخ الرابط")}
+  catch(_){appCopyFallback("نسخ الرابط",url)}
+}
+/* يُقرأ ?adhkar= ويُحذف من العنوان فورًا، قبل أن يضيف bootstrap.js خطوة الرجوع،
+   فلا يعود إليه الرجوع ولا إعادة التحميل. */
+const zaLinkSlug=(()=>{
+  let slug=null;
+  try{slug=new URLSearchParams(location.search).get("adhkar")}catch(_){}
+  if(slug!==null)try{history.replaceState(history.state,"",location.pathname+location.hash)}catch(_){}
+  return slug;
+})();
+function zaOpenFromLink(){
+  const slug=zaLinkSlug;
+  if(slug===null)return;
+  zaOpenIndex();
+  const section=Object.keys(ZA_SLUGS).find(key=>ZA_SLUGS[key]===slug);
+  if(section)zaOpen(section,{prayer:section==="prayer"?zaCurrentPrayer():null});
+  else if(slug==="wird")zwOpen(0);
+}
+
 /* بعد إغلاق شاشة الورد فوق صفحة الأذكار */
 function zaOnWirdClose(){if(zaIsOpen()&&zaView==="index")zaOpenIndex()}
 (function zaInit(){
   ztEl("za-back")?.addEventListener("click",()=>{if(zaBack()&&typeof zkArmRootGuard==="function")zkArmRootGuard()});
+  ztEl("za-share")?.addEventListener("click",zaShare);
+  ztEl("zw-share")?.addEventListener("click",zaShare);
+  /* بعد اكتمال الإقلاع (bootstrap.js يأتي بعد هذا الملف). */
+  setTimeout(zaOpenFromLink,0);
   /* في طور الالتقاط، قبل أن تُغلق شاشة الورد نفسها، فلا يُغلق المفتاح الشاشتين معًا. */
   document.addEventListener("keydown",event=>{if(event.key==="Escape"&&zaIsOpen()&&!zwIsOpen())zaBack()},true);
 })();
