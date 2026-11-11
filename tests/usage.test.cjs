@@ -65,7 +65,7 @@ test("flush sends one request per day and keeps what arrived meanwhile",async()=
   await flushing;
   assert.equal(env.sent.length,2);
   assert.match(env.sent[0].url,/\/rest\/v1\/rpc\/record_usage$/);
-  assert.deepEqual(env.sent[0].body,{p_device:"0b8f2c1e-1111-4222-8333-444455556666",p_day:"2026-11-11",p_platform:"android",p_installed:false,p_tz:"Asia/Damascus",p_bot:null,p_counts:{home:2,listen_seconds:30}});
+  assert.deepEqual(env.sent[0].body,{p_device:"0b8f2c1e-1111-4222-8333-444455556666",p_day:"2026-11-11",p_platform:"android",p_installed:false,p_tz:"Asia/Damascus",p_counts:{home:2,listen_seconds:30}});
   assert.deepEqual(JSON.parse(JSON.stringify(env.api.zuRead())),{"2026-11-12":{reader:1}});
 });
 
@@ -89,11 +89,11 @@ test("both apps carry the usage section, sharing the install analytics identity"
   assert.doesNotMatch(read("src/reader/bootstrap.js"),/zuTrackAudio\(audio,tayassurActive\)/);
 });
 
-test("automated browsers are still counted, but flagged with the reason",async()=>{
-  for(const [opts,reason] of [[{webdriver:true},"webdriver"],[{userAgent:"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0 Safari/537.36"},"ua:headless"],[{userAgent:"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"},"ua:bot"],[{},null]]){
+test("automated browsers are not counted",async()=>{
+  for(const opts of [{webdriver:true},{userAgent:"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0 Safari/537.36"},{userAgent:"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"}]){
     const env=usageEnv(opts);
-    env.api.zuAdd({home:1});await env.api.zuFlush();
-    assert.equal(env.sent.length,1);
-    assert.equal(env.sent[0].body.p_bot,reason);
+    env.api.zuAdd({home:1});env.api.zuSurface("reader");env.runTimers();await env.api.zuFlush();
+    assert.deepEqual(JSON.parse(JSON.stringify(env.api.zuRead())),{});
+    assert.equal(env.sent.length,0);
   }
 });
