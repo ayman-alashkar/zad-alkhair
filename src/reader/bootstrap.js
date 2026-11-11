@@ -103,3 +103,13 @@
     loading.querySelector(".loading-retry")?.addEventListener("click",()=>location.reload());
   }
 })();
+
+/* إحصاءات الاستعمال (src/shared/usage.js): الظاهر من الفهرس أو المشغّل أو المصحف،
+   فكلاهما يُضاف إلى body ويُزال منه، وثواني الاستماع ومنها ثواني «ما تيسّر». */
+function readerUsageSurface(){
+  return document.querySelector(".zad-listen")?"listen":document.querySelector(".quran-index")?"quran":"reader";
+}
+new MutationObserver(()=>zuSurface(readerUsageSurface())).observe(document.body,{childList:true});
+zuSurface(readerUsageSurface());
+/* فحص بلا أثر: tayassurActive() تُنهي الوضع حين تراه منتهيًا، والإحصاء لا يغيّر شيئًا. */
+zuTrackAudio(audio,()=>!!tayassur&&continuousStopRef===tayassur.stop&&!isSurahOnly());

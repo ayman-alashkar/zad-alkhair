@@ -8,6 +8,7 @@ const SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
 const BOT_USERNAME = "ZadAlkhair_Bot";
 
 
+/* @include ../shared/usage.js */
 /* @include install-navigation.js */
 
 
