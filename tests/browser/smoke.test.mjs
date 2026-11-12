@@ -974,6 +974,18 @@ test("an adhkar link opens its section, Back leads to the adhkar page, and the h
   await context.close();
 });
 
+test("the sleep adhkar link to reading and listening to as-Sajda and al-Mulk", async () => {
+  const { page, errors, context } = await appPage();
+  await page.goto(BASE + "/adhkar/sleep/", { waitUntil: "load" });
+  await page.waitForFunction(() => document.getElementById("za-title")?.textContent === "أذكار النوم");
+  await page.evaluate(() => { zaPos = zaItems("sleep").findIndex(it => it.surahs.length); zaRenderReader(); });
+  const links = await page.$$eval(".za-surahs a", list => list.map(a => [a.closest("p").textContent.split(":")[0], a.textContent, a.getAttribute("href")]));
+  assert.deepEqual(links, [["سورة السجدة", "قراءة", "/quran-read/32/?from=zad"], ["سورة السجدة", "استماع", "/quran-listen/32/"],
+    ["سورة الملك", "قراءة", "/quran-read/67/?from=zad"], ["سورة الملك", "استماع", "/quran-listen/67/"]]);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 /* الصلاة القائم وقتها: «الآن» فوقها ورابط أذكارها تحتها. للفجر زيادات، والفجر ينتهي بالشروق. */
 test("the prayer card marks the current prayer and links to its adhkar, with Fajr's extras and nothing after sunrise", async () => {
   const prayer = JSON.stringify({ land: "اليابان", city: "ناها", lat: 26.2124, lng: 127.6809, tz: "Asia/Tokyo", method: "MuslimWorldLeague", madhab: "Shafi" });

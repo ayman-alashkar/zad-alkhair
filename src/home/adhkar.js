@@ -51,7 +51,7 @@ function zaPeriod(now=Date.now()){
 function zaItems(section,prayer){
   const fm=prayer==="fajr"||prayer==="maghrib";
   return ZA_LISTS[section].filter(([,,ex])=>!ex||!ex.only||(ex.only==="f"?prayer==="fajr":fm))
-    .map(([i,n,ex])=>({text:ZA_TEXT[i],count:ex&&ex.fm&&fm?ex.fm:n,note:ex&&ex.note||""}));
+    .map(([i,n,ex])=>({text:ZA_TEXT[i],count:ex&&ex.fm&&fm?ex.fm:n,note:ex&&ex.note||"",surahs:ex&&ex.surahs||[]}));
 }
 function zaTitle(section,prayer){
   return section==="prayer"&&prayer?`أذكار بعد صلاة ${zaPrayerName(prayer)}`:ZA_NAMES[section];
@@ -201,7 +201,8 @@ function zaRenderReader(){
       <span class="zt-bar" aria-hidden="true"><i id="za-bar" style="width:${(done/total*100).toFixed(1)}%"></i></span></div>
     <div class="za-text-card"><div class="za-inner">
       ${it.note?`<p class="za-note">${esc(it.note)}</p>`:""}
-      <p class="za-text${it.text.length<40?" short":""}">${esc(it.text)}</p></div></div>
+      <p class="za-text${it.text.length<40?" short":""}">${esc(it.text)}</p>
+      ${it.surahs.length?`<div class="za-surahs">${it.surahs.map(([n,name])=>`<p>سورة ${name}: <a href="/quran-read/${n}/?from=zad">قراءة</a> | <a href="/quran-listen/${n}/">استماع</a></p>`).join("")}</div>`:""}</div></div>
     <button class="zw-tap za-tap" id="za-tap" type="button" data-rapid>
       <span class="zw-ring">
         <svg viewBox="0 0 260 260" aria-hidden="true"><circle class="disc" cx="130" cy="130" r="110"/><circle class="bg" cx="130" cy="130" r="110"/><circle class="arc" id="za-arc" cx="130" cy="130" r="110"/></svg>
