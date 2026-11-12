@@ -1298,6 +1298,9 @@ html.zk-launch-open,body.zk-launch-open{width:100%;height:100%;overflow:hidden!i
 .za-inner{margin:auto 0}
 .za-note{margin:0 0 12px;font-size:12.5px;line-height:1.8;color:var(--zt-muted);text-align:center}
 .za-text{margin:0;font-family:"Amiri",serif;font-size:22px;line-height:2.05;text-align:center;white-space:pre-line}
+.za-surahs{margin-top:16px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;color:var(--zt-muted)}
+.za-surahs p{margin:0}
+.za-surahs a{display:inline-block;padding:10px 6px;color:var(--zt-gold);font-weight:600;text-decoration:none}
 .za-text.short{font-size:30px;line-height:1.8}
 .za-tap{flex:none;min-height:0;gap:6px;padding:2px 0}
 .za-tap .zw-ring,.za-tap .zw-ring>svg{width:128px;height:128px}
