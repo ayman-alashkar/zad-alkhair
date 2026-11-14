@@ -1455,12 +1455,6 @@ html{
   text-align:left;
   direction:rtl;
 }
-.quran-offline-note{
-  margin-top:1px;
-  color:var(--ui-muted);
-  font-size:8.5px;
-  line-height:1.6;
-}
 .quran-offline-track{
   height:7px;
   margin-top:9px;
