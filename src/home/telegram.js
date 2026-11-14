@@ -87,13 +87,13 @@ function tgLoginStop(){
   clearInterval(tgLoginTimer); tgLoginTimer=null;
   document.removeEventListener("visibilitychange",tgLoginWake);
 }
-async function tgLogin(){
+async function tgLogin(wantedId){
   if(tgLoginTimer) return;
   /* فتح النافذة داخل ضغطة المستخدم، كما في تفعيل التذكير. */
   const w=window.open("about:blank","_blank");
   if(w) w.opener=null;
   let nonce=null;
-  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null}); }catch(_){ }
+  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null,p_id:typeof wantedId==="string"?wantedId:null}); }catch(_){ }
   if(typeof nonce!=="string"||!/^[0-9a-f]{32}$/.test(nonce)){
     if(w) w.close();
     return toast("تعذّر الآن، حاول بعد قليل");
@@ -129,7 +129,8 @@ async function tgLogin(){
       activeKhatmahSet(code,true);
       gateName="";
       await refresh();
-      toast("أهلًا بك");
+      /* إن أكّد حساب صاحبه اسم آخر، يُقال له باسم من دخل. */
+      toast(typeof wantedId==="string"&&viewer.id!==wantedId?`دخلت باسم «${viewer.name}»`:"أهلًا بك");
     }finally{ checking=false; }
   };
   /* العودة من تيليغرام تُظهر الصفحة، فيُسأل فورًا بدل انتظار الدورة التالية. */

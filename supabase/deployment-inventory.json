@@ -4,9 +4,9 @@
   "edge_functions": [
     {
       "slug": "telegram-webhook",
-      "version": 24,
+      "version": 25,
       "verify_jwt": false,
-      "bundle_sha256": "9f5c2bd16cfb70595a41c481d673b1da5aaea40b4aca9d9922b7cc64aaeea610"
+      "bundle_sha256": "e36180edb39a2b819fafe33d45a6ec0f90e9f7ebc6aca1df30cfbb5203f3d1c6"
     },
     {
       "slug": "send-reminders",
@@ -133,6 +133,10 @@
     {
       "version": "20261114013328",
       "name": "telegram_login"
+    },
+    {
+      "version": "20261114040520",
+      "name": "telegram_login_wanted_name"
     }
   ],
   "tables": [

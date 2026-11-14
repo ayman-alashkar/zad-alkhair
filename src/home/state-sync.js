@@ -59,7 +59,7 @@ async function doSignIn(id,name,ocode){
   catch(e){ return toast("تعذّر الاتصال"); }
   if(!r||!r.ok){
     if(r&&r.needCode){ gateName=name; screen="gate"; render(); return; }
-    if(r&&r.taken) return nameTaken(r.name,r.linked);
+    if(r&&r.taken) return nameTaken(r.name,r.linked,id);
     return toast((r&&r.error)||"تعذّر الدخول");
   }
   viewer={id:r.id,name:r.name};
@@ -82,7 +82,7 @@ async function doSignIn(id,name,ocode){
 
 /* الاسم مسجَّل من متصفح آخر. إن كان صاحبه مربوطًا بتيليغرام، يثبت أنه هو من هناك
    ويدخل فورًا؛ وإلا فالمنظّم وحده يفتحه له. */
-function nameTaken(name,linked){
+function nameTaken(name,linked,id){
   if(linked){
     modal(`<div class="display" style="font-size:1.4rem">هذا الاسم مسجَّل</div>
       <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
@@ -92,7 +92,7 @@ function nameTaken(name,linked){
       <div class="actions">
         <button class="btn gold" id="nt-tg">هذا اسمي، ادخل عبر تيليغرام</button>
         <button class="btn quiet" id="nt-ok">ليس اسمي</button></div>`);
-    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin();};
+    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin(id);};
     document.getElementById("nt-ok").onclick=closeLayer;
     return;
   }
@@ -118,7 +118,7 @@ function deviceNotRecognised(){
       <div class="actions">
         <button class="btn gold" id="nt-tg">تأكيد عبر تيليغرام</button>
         <button class="btn quiet" id="dn-ok">لاحقًا</button></div>`);
-    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin();};
+    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin(viewer&&viewer.id);};
     document.getElementById("dn-ok").onclick=closeLayer;
     return;
   }
