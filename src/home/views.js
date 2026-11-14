@@ -413,7 +413,7 @@ function viewGate(){
       <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>
       ${(state.members||[]).some(m=>m.linked)?`<div class="rule" style="margin:1.1rem 0 .8rem"><i>◆</i></div>
       <p class="hint" style="margin:0 0 .6rem">دخلت هذه الختمة من قبل؟</p>
-      <button class="btn tg-login wide" id="btn-tg-login">${TG_ICON}<span>ادخل عبر تيليغرام</span></button>`:""}`}
+      <button class="btn tg-login outline wide" id="btn-tg-login">${TG_ICON}<span>ادخل عبر تيليغرام</span></button>`:""}`}
     </div>
     ${asks?"":`<p class="hint" style="margin-top:1.1rem">
       أتريد ختمة أخرى؟

@@ -308,6 +308,9 @@ button,input,select,textarea{font-family:var(--sans)}
 .btn.tg-login{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;color:#fff;border-color:#2795C8;background:linear-gradient(135deg,#34A6DA,#1F86B9);box-shadow:0 15px 30px -18px rgba(28,122,167,.75)}
 .btn.tg-login:hover{border-color:#1F86B9;background:linear-gradient(135deg,#3BB0E4,#2390C6)}
 .btn.tg-login .tgicon{width:1.15rem;height:1.15rem}
+/* في شاشة الاسم يبقى «دخول» هو الزر الرئيسي، وزر تيليغرام ثانويًا لمن دخل من قبل. */
+.btn.tg-login.outline{color:#1F86B9;background:rgba(255,253,247,.84);box-shadow:none}
+.btn.tg-login.outline:hover{color:#176F9C;background:#fff;border-color:#1F86B9}
 .btn.quiet{color:var(--muted);background:transparent;border-color:transparent;box-shadow:none}
 .btn.quiet:hover{color:var(--ink);border-color:#DDD1BA;background:rgba(255,255,255,.46)}
 .toolbar .btn.quiet{color:rgba(255,249,234,.72)}
