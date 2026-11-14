@@ -41,9 +41,10 @@ function appRoot() {
   }
 }
 
-function appLink(code?: string) {
+function appLink(code?: string, login?: string) {
   const root = appRoot();
   if (!root) return APP_URL;
+  if (login) root.searchParams.set("login", login);
   if (code) root.hash = String(code).trim().toUpperCase();
   return root.href;
 }
@@ -53,8 +54,8 @@ function readerLink() {
   return root ? new URL("quran-read/", root).href : APP_URL;
 }
 
-function navRows(code?: string) {
-  const app = appLink(code);
+function navRows(code?: string, login = "") {
+  const app = appLink(code, login || undefined);
   const reader = readerLink();
   const row: Array<{ text: string; url: string }> = [];
   if (app) row.push({ text: "افتح زاد الخير", url: app });
@@ -98,6 +99,18 @@ async function rpc(fn: string, args: unknown = {}) {
   return raw ? JSON.parse(raw) : null;
 }
 
+/* رابط دخول شخصي في زر «افتح زاد الخير»: يضيف المتصفح الذي يُفتح منه الزر
+   إلى أجهزة صاحب الرسالة، فلا يُطلب منه اسمه من جديد. إن تعذّر إصداره يبقى
+   الزر رابطًا عاديًا كما كان. */
+async function loginToken(chat: number) {
+  try {
+    const token = await rpc("issue_login_link", { p_chat: chat });
+    return typeof token === "string" && /^[0-9a-f]{36}$/.test(token) ? token : "";
+  } catch {
+    return "";
+  }
+}
+
 async function send(chat: number, text: string, code?: string) {
   const body: Record<string, unknown> = {
     chat_id: chat,
@@ -105,7 +118,7 @@ async function send(chat: number, text: string, code?: string) {
     parse_mode: "HTML",
     disable_web_page_preview: true,
   };
-  const rows = navRows(code);
+  const rows = navRows(code, await loginToken(chat));
   if (rows.length) body.reply_markup = { inline_keyboard: rows };
   const response = await fetch(
     `https://api.telegram.org/bot${TOKEN}/sendMessage`,
