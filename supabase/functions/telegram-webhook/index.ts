@@ -204,6 +204,26 @@ const outro = (rest: number) => rest > 0
 
 const OKAY = `حسنًا، هذا مفهوم.`;
 
+/* «ادخل عبر تيليغرام»: يصل المستخدم بـ /start login_<رمز> من متصفح لا يعرفه الموقع.
+   لا يُدخَل بمجرد فتح الرابط: يُعرض عليه الاسم وزر تأكيد صريح، حتى لا يُستدرج أحد
+   إلى إدخال غيره بالضغط على رابط أُرسل إليه. */
+const LOGIN_EXPIRED = `🕌 <b>زاد الخير</b>\n\nانتهت صلاحية طلب الدخول. ارجع إلى التطبيق واضغط «ادخل عبر تيليغرام» من جديد.`;
+const LOGIN_NONE = `🕌 <b>زاد الخير</b>\n\nحساب تيليغرام هذا غير مربوط بأي اسم في ختمات زاد الخير، فلا يمكن الدخول به.\n\nإن كنت جديدًا في الختمة، فارجع إلى التطبيق وادخل باسمك.`;
+
+async function askLogin(chat: number, nonce: string) {
+  let r: { ok?: boolean; why?: string; name?: string; title?: string; inKhatmah?: boolean } | null = null;
+  try { r = await rpc("confirm_tg_login", { p_nonce: nonce, p_chat: chat, p_confirm: false }); } catch { /**/ }
+  if (!r?.ok) {
+    await send(chat, r?.why === "none" ? LOGIN_NONE : LOGIN_EXPIRED);
+    return;
+  }
+  const other = r.inKhatmah ? "" :
+    `\n\nتنبيه: حسابك ليس مربوطًا بالختمة التي فتحتها، فستدخل إلى ختماتك الأخرى فقط.`;
+  await sendKb(chat,
+`🕌 <b>زاد الخير</b>\n\nوصل طلب للدخول إلى زاد الخير باسم «${esc(r.name)}» من متصفح آخر.${other}\n\nإن كنت أنت من طلب ذلك الآن فاضغط الزر، وإلا فتجاهل هذه الرسالة.`,
+    [[{ text: "نعم، أدخلني", callback_data: `lg:${nonce}` }]]);
+}
+
 /* رابط عام يحمل رمز الختمة فقط كي تستخرج منه send وجهة زاد الخير. */
 const linkTo = (code?: string) => readerLink(code);
 
@@ -252,6 +272,16 @@ Deno.serve(async (req) => {
     await stripKb(cChat, cMsg);
 
     try {
+      if (data.startsWith("lg:")) {
+        const nonce = data.slice(3);
+        let r: { ok?: boolean; name?: string } | null = null;
+        try { r = await rpc("confirm_tg_login", { p_nonce: nonce, p_chat: cChat, p_confirm: true }); } catch { /**/ }
+        await send(cChat, r?.ok
+          ? `🕌 <b>زاد الخير</b>\n\nتم. ارجع إلى المتصفح الذي طلبت منه الدخول، وستجد نفسك فيه باسم «${esc(r.name)}».`
+          : LOGIN_EXPIRED);
+        return ok();
+      }
+
       if (data.startsWith("ask:")) {
         const [, kcode, juz] = data.split(":");
         const r = await rpc("share_open",
@@ -355,6 +385,7 @@ Deno.serve(async (req) => {
   if (text.startsWith("/start")) {
     const code = text.split(/\s+/)[1];
     if (!code) { await send(chat, WELCOME, readerLink()); return ok(); }
+    if (/^login_[0-9a-f]{32}$/.test(code)) { await askLogin(chat, code.slice(6)); return ok(); }
 
     try {
       const r = await rpc("link_telegram", { p_code: code, p_chat: chat });

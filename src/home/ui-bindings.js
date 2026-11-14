@@ -85,6 +85,8 @@ function bind(){
     $("f-name").focus();
   }
 
+  if($("btn-tg-login")) $("btn-tg-login").onclick=tgLogin;
+
   if($("btn-code")){
     const go=async()=>{
       const c=norm($("f-code").value);

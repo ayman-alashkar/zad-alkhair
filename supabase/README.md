@@ -79,3 +79,14 @@
 - الوظائف `send-reminders` و`send-completions` و`send-message` و`announce` و`telegram-webhook` تضع الرمز في زر «افتح زاد الخير». زر المصحف لا يحمله، لأن القارئ لا يستعمل هوية العضو.
 
 التفاصيل وطريقة المتابعة في `docs/architecture.md` (هوية العضو ورابط الدخول).
+
+## الدخول عبر تيليغرام (١٤ نوفمبر ٢٠٢٦)
+
+الترحيل `20261114013328_telegram_login.sql` مطبّق على الإنتاج بعد اختباره داخل معاملة أُلغيت (`tests/20261114_telegram_login.sql`).
+
+- `start_tg_login(p_device, p_code)` عامة: رمز مؤقت للمتصفح، وعشرة طلبات في الساعة على الأكثر.
+- `confirm_tg_login(p_nonce, p_chat, p_confirm)` للخادم فقط: يعرض بها البوت صاحب الحساب (`p_confirm = false`)، ثم يثبّت الطلب عند ضغط زر التأكيد. الطلب صالح عشر دقائق، ولا يغيّره حساب آخر بعد تأكيده.
+- `finish_tg_login(p_nonce, p_device)` عامة: لا يقبلها إلا المتصفح الذي طلب الرمز، مرة واحدة، فتضيفه إلى عضويات الحساب.
+- `private.attach_device` و`private.memberships_of` يشتركان فيهما مع `redeem_login_link`.
+- `sign_in` صار يعيد `linked` مع الرفض.
+- `telegram-webhook` يعالج `/start login_<رمز>` والزر `lg:<رمز>`.

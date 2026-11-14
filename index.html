@@ -2967,8 +2967,13 @@ async function redeemLoginLink(token){
     ]);
   }catch(_){ return; }
   /* رمز منتهٍ أو خاطئ: يكمل التطبيق كما لو فُتح بلا رمز. */
-  if(!r||!r.ok||!Array.isArray(r.memberships)) return;
-  for(const m of r.memberships){
+  if(!r||!r.ok) return;
+  storeMemberships(r.memberships);
+}
+/* عضويات حساب تيليغرام بعد إضافة هذا المتصفح إليها: يُحفظ لكل ختمة اسم صاحبها. */
+function storeMemberships(list){
+  if(!Array.isArray(list)) return;
+  for(const m of list){
     const c=cleanKhatmahCode(m&&m.code);
     if(!c||!m.id) continue;
     try{ localStorage.setItem("zad:viewer:"+c,JSON.stringify({id:m.id,name:m.name})); }catch(_){ }
@@ -3416,7 +3421,9 @@ function viewGate(){
     :`
       <div class="field-row"><input id="f-name" class="field" placeholder="أدخل اسمك لو سمحت" autocomplete="name"></div>
       <button class="btn gold wide" id="btn-login">دخول</button>
-      <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>`}
+      <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>
+      ${(state.members||[]).some(m=>m.linked)?`<p class="hint" style="margin-top:.6rem">دخلت هذه الختمة من قبل؟
+        <button class="btn quiet sm" id="btn-tg-login">ادخل عبر تيليغرام</button></p>`:""}`}
     </div>
     ${asks?"":`<p class="hint" style="margin-top:1.1rem">
       أتريد ختمة أخرى؟
@@ -3821,7 +3828,7 @@ async function doSignIn(id,name,ocode){
   catch(e){ return toast("تعذّر الاتصال"); }
   if(!r||!r.ok){
     if(r&&r.needCode){ gateName=name; screen="gate"; render(); return; }
-    if(r&&r.taken) return nameTaken(r.name);
+    if(r&&r.taken) return nameTaken(r.name,r.linked);
     return toast((r&&r.error)||"تعذّر الدخول");
   }
   viewer={id:r.id,name:r.name};
@@ -3842,7 +3849,22 @@ async function doSignIn(id,name,ocode){
   toast("أهلًا بك");
 }
 
-function nameTaken(name){
+/* الاسم مسجَّل من متصفح آخر. إن كان صاحبه مربوطًا بتيليغرام، يثبت أنه هو من هناك
+   ويدخل فورًا؛ وإلا فالمنظّم وحده يفتحه له. */
+function nameTaken(name,linked){
+  if(linked){
+    modal(`<div class="display" style="font-size:1.4rem">هذا الاسم مسجَّل</div>
+      <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
+        اسم «${esc(name)}» مسجَّل من جهاز أو متصفح آخر.<br>
+        إن كان اسمك، فادخل عبر تيليغرام المربوط به.<br>
+        وإلا فادخل باسم يميّزك عنه.</p>
+      <div class="actions">
+        <button class="btn gold" id="nt-tg">هذا اسمي، ادخل عبر تيليغرام</button>
+        <button class="btn quiet" id="nt-ok">ليس اسمي</button></div>`);
+    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin();};
+    document.getElementById("nt-ok").onclick=closeLayer;
+    return;
+  }
   modal(`<div class="display" style="font-size:1.4rem">هذا الاسم لصاحبه</div>
     <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
       اسم «${esc(name)}» مسجَّل من جهاز آخر، فلا يُدخل به من هنا.<br>
@@ -4095,6 +4117,66 @@ async function linkTelegram(){
       }else if(n>=20){ clearInterval(t); linkBusy=false; }
     }finally{ checking=false; }
   },3000);
+}
+
+/* «ادخل عبر تيليغرام»: لمن يفتح الختمة في متصفح لا يعرفه الموقع (رابط واتساب مثلًا).
+   يؤكد في البوت أنه صاحب الاسم، فيُضاف هذا المتصفح إلى أجهزته في كل ختماته،
+   دون أن يحتاج المشرف. الطلب صالح عشر دقائق، ولا ينهيه إلا هذا المتصفح. */
+let tgLoginTimer=null;
+let tgLoginWake=()=>{};
+function tgLoginStop(){
+  clearInterval(tgLoginTimer); tgLoginTimer=null;
+  document.removeEventListener("visibilitychange",tgLoginWake);
+}
+async function tgLogin(){
+  if(tgLoginTimer) return;
+  /* فتح النافذة داخل ضغطة المستخدم، كما في تفعيل التذكير. */
+  const w=window.open("about:blank","_blank");
+  if(w) w.opener=null;
+  let nonce=null;
+  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null}); }catch(_){ }
+  if(typeof nonce!=="string"||!/^[0-9a-f]{32}$/.test(nonce)){
+    if(w) w.close();
+    return toast("تعذّر الآن، حاول بعد قليل");
+  }
+  const url=`https://t.me/${BOT_USERNAME}?start=login_${nonce}`;
+  if(w) w.location.replace(url);
+  modal(`<div class="display" style="font-size:1.35rem">أكمل الدخول في تيليغرام</div>
+    <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
+      في محادثة بوت زاد الخير اضغط «ابدأ»، ثم «نعم، أدخلني»، وارجع إلى هنا.</p>
+    <div class="actions">
+      <a class="btn gold" id="tl-open" href="${url}" target="_blank" rel="noopener">افتح تيليغرام</a>
+      <button class="btn quiet" id="tl-cancel">إلغاء</button></div>`);
+  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();closeLayer();};
+
+  let checking=false;
+  const started=Date.now();
+  const check=async()=>{
+    if(checking) return;
+    checking=true;
+    try{
+      let r=null;
+      try{ r=await rpc("finish_tg_login",{p_nonce:nonce,p_device:deviceId()}); }catch(_){ return; }
+      if(r&&r.pending){
+        if(Date.now()-started>15*60*1000){ tgLoginStop(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
+        return;
+      }
+      tgLoginStop(); closeLayer();
+      if(!r||!r.ok) return toast("انتهت مدة الطلب، حاول من جديد");
+      storeMemberships(r.memberships);
+      if(!code){ toast("أهلًا بك"); return; }
+      loadViewer();
+      if(!viewer){ screen="gate"; render(); return toast("حساب تيليغرام هذا ليس في هذه الختمة"); }
+      activeKhatmahSet(code,true);
+      gateName="";
+      await refresh();
+      toast("أهلًا بك");
+    }finally{ checking=false; }
+  };
+  /* العودة من تيليغرام تُظهر الصفحة، فيُسأل فورًا بدل انتظار الدورة التالية. */
+  tgLoginWake=()=>{ if(document.visibilityState==="visible") check(); };
+  document.addEventListener("visibilitychange",tgLoginWake);
+  tgLoginTimer=setInterval(check,2500);
 }
 
 /* ===================== إسناد الأجزاء ===================== */
@@ -4740,6 +4822,8 @@ function bind(){
     $("f-name").onkeydown=e=>{if(e.key==="Enter")go();};
     $("f-name").focus();
   }
+
+  if($("btn-tg-login")) $("btn-tg-login").onclick=tgLogin;
 
   if($("btn-code")){
     const go=async()=>{

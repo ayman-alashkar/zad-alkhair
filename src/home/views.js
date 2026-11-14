@@ -410,7 +410,9 @@ function viewGate(){
     :`
       <div class="field-row"><input id="f-name" class="field" placeholder="أدخل اسمك لو سمحت" autocomplete="name"></div>
       <button class="btn gold wide" id="btn-login">دخول</button>
-      <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>`}
+      <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>
+      ${(state.members||[]).some(m=>m.linked)?`<p class="hint" style="margin-top:.6rem">دخلت هذه الختمة من قبل؟
+        <button class="btn quiet sm" id="btn-tg-login">ادخل عبر تيليغرام</button></p>`:""}`}
     </div>
     ${asks?"":`<p class="hint" style="margin-top:1.1rem">
       أتريد ختمة أخرى؟

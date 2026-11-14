@@ -1187,3 +1187,59 @@ test("an expired bot login link falls back to the usual name screen", async () =
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+/* «ادخل عبر تيليغرام»: عضو مربوط يفتح الختمة من متصفح جديد (رابط واتساب)، فيُرفض اسمه.
+   نافذة الرفض تعرض الدخول عبر تيليغرام، وبعد تأكيده في البوت يدخل الختمة باسمه. */
+test("a linked member whose name is taken in a new browser gets in through Telegram", async () => {
+  const nonce = "0123456789abcdef0123456789abcdef";
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "سالم", name: "سالم", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, (_, i) => ({ status: i === 4 ? "taken" : "free", ownerId: i === 4 ? "سالم" : null })) };
+  let polls = 0;
+  const started = [];
+  const { page, errors, context } = await appPage({ rpc: { get_state: state, sign_in: { ok: false, taken: true, name: "سالم", linked: true } } });
+  await context.route(/\/rpc\/start_tg_login/, route => {
+    started.push(JSON.parse(route.request().postData()));
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(nonce) });
+  });
+  await context.route(/\/rpc\/finish_tg_login/, route => {
+    const body = JSON.parse(route.request().postData());
+    assert.equal(body.p_nonce, nonce);
+    polls++;
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(polls < 2
+      ? { ok: false, pending: true }
+      : { ok: true, memberships: [{ code: "ABCD", id: "سالم", name: "سالم" }] }) });
+  });
+  await page.goto(`${BASE}/#ABCD`, { waitUntil: "load" });
+  await page.waitForSelector("#f-name");
+  assert.equal(await page.locator("#btn-tg-login").count(), 1, "the name screen offers Telegram to returning members");
+  await page.fill("#f-name", "سالم");
+  await page.click("#btn-login");
+  await page.waitForSelector("#nt-tg");
+  await page.click("#nt-tg");
+  await page.waitForSelector("#tl-open");
+  assert.match(await page.getAttribute("#tl-open", "href"), new RegExp(`^https://t\\.me/ZadAlkhair_Bot\\?start=login_${nonce}$`));
+  assert.equal(started[0].p_code, "ABCD");
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 10000 });
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:viewer:ABCD")).id), "سالم");
+  assert.equal(await page.locator("#tl-open").count(), 0, "the waiting dialog closes");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("a taken name without Telegram still points to the organizer", async () => {
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "خالد", name: "خالد", linked: false, exempt: true }, { id: "org", name: "المشرف", linked: false }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({ rpc: { get_state: state, sign_in: { ok: false, taken: true, name: "خالد", linked: false } } });
+  await page.goto(`${BASE}/#ABCD`, { waitUntil: "load" });
+  await page.waitForSelector("#f-name");
+  assert.equal(await page.locator("#btn-tg-login").count(), 0, "no Telegram link when nobody here is linked");
+  await page.fill("#f-name", "خالد");
+  await page.click("#btn-login");
+  await page.waitForSelector("#nt-ok");
+  assert.equal(await page.locator("#nt-tg").count(), 0);
+  assert.match(await page.locator("#layer .hint").innerText(), /المنظّم/);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
