@@ -24,7 +24,7 @@ async function act(a,i){
       else if(a==="free")   r=await rpc("release_juz",{p_code:code,p_id:viewer.id,p_num:num,p_org_code:orgCode(),p_device:deviceId()});
       else if(a==="done")   r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:true,p_org_code:orgCode(),p_device:deviceId()});
       else if(a==="undone") r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:false,p_org_code:orgCode(),p_device:deviceId()});
-      if(r&&!r.ok){ await refresh(); return toast(r.error||"تعذّر التنفيذ"); }
+      if(r&&!r.ok){ await refresh(); return r.handled?undefined:toast(r.error||"تعذّر التنفيذ"); }
       if(r&&r.ownerId) ownerId=r.ownerId;
     }catch(e){ return toast("تعذّر الاتصال"); }
 

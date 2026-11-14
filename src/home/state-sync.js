@@ -105,6 +105,30 @@ function nameTaken(name,linked){
   document.getElementById("nt-ok").onclick=closeLayer;
 }
 
+/* القارئ داخل الختمة باسمه، لكن هذا المتصفح غير مسجّل لهذا الاسم (فُتح الاسم ثم
+   أُقفل، أو مُسح تخزين المتصفح جزئيًا). المربوط بتيليغرام يؤكد من هناك ثم يعيد
+   ما كان يفعله؛ وغيره يحتاج المنظّم. */
+function deviceNotRecognised(){
+  if(tgLoginTimer||document.getElementById("nt-tg")||document.getElementById("dn-ok")) return;
+  const me=viewer?memberOf(viewer.id):null;
+  if(me&&me.linked){
+    modal(`<div class="display" style="font-size:1.35rem">هذا المتصفح غير مسجَّل باسمك</div>
+      <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
+        لتكمل باسم «${esc(me.name)}» من هنا، أكّد عبر تيليغرام المربوط به، ثم أعد ما كنت تفعله.</p>
+      <div class="actions">
+        <button class="btn gold" id="nt-tg">تأكيد عبر تيليغرام</button>
+        <button class="btn quiet" id="dn-ok">لاحقًا</button></div>`);
+    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin();};
+    document.getElementById("dn-ok").onclick=closeLayer;
+    return;
+  }
+  modal(`<div class="display" style="font-size:1.35rem">هذا المتصفح غير مسجَّل باسمك</div>
+    <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
+      اسمك مسجَّل من جهاز آخر، فلا يُعدَّل من هنا. اطلب من المنظّم فتحه لك.</p>
+    <div class="actions"><button class="btn gold" id="dn-ok">حسنًا</button></div>`);
+  document.getElementById("dn-ok").onclick=closeLayer;
+}
+
 function askSimilar(list,typed){
   const rows=list.map(m=>{
     const n=state.juz.filter(j=>j.ownerId===m.id).length;
