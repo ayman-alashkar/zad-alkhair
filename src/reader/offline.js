@@ -29,7 +29,7 @@ if("serviceWorker" in navigator){
     if(offlineSetupFill)offlineSetupFill.style.width=`${pct}%`;
     if(offlineSetupPercent)offlineSetupPercent.textContent=`${ar(pct)}٪`;
     if(offlineSetupTrack)offlineSetupTrack.setAttribute("aria-valuenow",String(pct));
-    if(offlineSetupTitle)offlineSetupTitle.textContent="جارٍ تجهيز القرآن والتفسير للعمل دون اتصال";
+    if(offlineSetupTitle)offlineSetupTitle.textContent="جارٍ إتمام ملفات القرآن الكريم والتفسير اللازمة للعمل دون اتصال";
     offlineSetup?.classList.add("show");
   }
   function hideOfflineProgress(delay=0){

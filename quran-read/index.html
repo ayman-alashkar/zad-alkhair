@@ -1497,12 +1497,6 @@ html{
   text-align:left;
   direction:rtl;
 }
-.quran-offline-note{
-  margin-top:1px;
-  color:var(--ui-muted);
-  font-size:8.5px;
-  line-height:1.6;
-}
 .quran-offline-track{
   height:7px;
   margin-top:9px;
@@ -2728,10 +2722,9 @@ html[data-theme="dark"] .zl-upnext{color:#6B6350}
 <div class="quran-offline-setup" id="offlineSetup" aria-live="polite" aria-atomic="true">
   <div class="quran-offline-card">
     <div class="quran-offline-head">
-      <div class="quran-offline-title" id="offlineSetupTitle">جارٍ تجهيز القرآن والتفسير للعمل دون اتصال</div>
+      <div class="quran-offline-title" id="offlineSetupTitle">جارٍ إتمام ملفات القرآن الكريم والتفسير اللازمة للعمل دون اتصال</div>
       <div class="quran-offline-percent" id="offlineSetupPercent">٠٪</div>
     </div>
-    <div class="quran-offline-note">يتم هذا مرة واحدة فقط</div>
     <div class="quran-offline-track" role="progressbar" aria-label="تقدم تنزيل القرآن والتفسير" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="offlineSetupTrack">
       <i class="quran-offline-fill" id="offlineSetupFill"></i>
     </div>
@@ -6948,7 +6941,7 @@ if("serviceWorker" in navigator){
     if(offlineSetupFill)offlineSetupFill.style.width=`${pct}%`;
     if(offlineSetupPercent)offlineSetupPercent.textContent=`${ar(pct)}٪`;
     if(offlineSetupTrack)offlineSetupTrack.setAttribute("aria-valuenow",String(pct));
-    if(offlineSetupTitle)offlineSetupTitle.textContent="جارٍ تجهيز القرآن والتفسير للعمل دون اتصال";
+    if(offlineSetupTitle)offlineSetupTitle.textContent="جارٍ إتمام ملفات القرآن الكريم والتفسير اللازمة للعمل دون اتصال";
     offlineSetup?.classList.add("show");
   }
   function hideOfflineProgress(delay=0){
