@@ -211,10 +211,18 @@ const LOGIN_EXPIRED = `🕌 <b>زاد الخير</b>\n\nانتهت صلاحية 
 const LOGIN_NONE = `🕌 <b>زاد الخير</b>\n\nحساب تيليغرام هذا غير مربوط بأي اسم في ختمات زاد الخير، فلا يمكن الدخول به.\n\nإن كنت جديدًا في الختمة، فارجع إلى التطبيق وادخل باسمك.`;
 
 async function askLogin(chat: number, nonce: string) {
-  let r: { ok?: boolean; why?: string; name?: string; title?: string; inKhatmah?: boolean } | null = null;
+  let r: { ok?: boolean; why?: string; name?: string; title?: string; wanted?: string | null; inKhatmah?: boolean } | null = null;
   try { r = await rpc("confirm_tg_login", { p_nonce: nonce, p_chat: chat, p_confirm: false }); } catch { /**/ }
   if (!r?.ok) {
     await send(chat, r?.why === "none" ? LOGIN_NONE : LOGIN_EXPIRED);
+    return;
+  }
+  /* طُلب الدخول باسم غير مربوط بهذا الحساب: يُقال ذلك صراحة، فالدخول يكون باسم
+     صاحب الحساب لا بالاسم المطلوب. */
+  if (r.wanted) {
+    await sendKb(chat,
+`🕌 <b>زاد الخير</b>\n\nطُلب الدخول باسم «${esc(r.wanted)}»، لكن حساب تيليغرام هذا مربوط باسم «${esc(r.name)}»، فلا يمكن الدخول باسم «${esc(r.wanted)}» به.\n\nإن أردت الدخول باسمك «${esc(r.name)}» من ذلك المتصفح فاضغط الزر، وإلا فتجاهل هذه الرسالة.`,
+      [[{ text: `ادخل باسم «${r.name}»`, callback_data: `lg:${nonce}` }]]);
     return;
   }
   const other = r.inKhatmah ? "" :

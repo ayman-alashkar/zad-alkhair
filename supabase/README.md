@@ -90,3 +90,5 @@
 - `private.attach_device` و`private.memberships_of` يشتركان فيهما مع `redeem_login_link`.
 - `sign_in` صار يعيد `linked` مع الرفض.
 - `telegram-webhook` يعالج `/start login_<رمز>` والزر `lg:<رمز>`.
+
+الترحيل `20261114040520_telegram_login_wanted_name.sql` (اختباره `tests/20261114_telegram_login_wanted_name.sql`): `start_tg_login` تقبل `p_id` اختياريًا (الاسم المطلوب)، و`confirm_tg_login` تعيد `wanted` حين يختلف عن صاحب الحساب. حُذفت النسخة ذات المعاملين؛ الاستدعاء القديم بمعاملين مسمّيين ما زال يطابق الجديدة.

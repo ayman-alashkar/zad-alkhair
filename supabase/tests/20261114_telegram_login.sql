@@ -106,7 +106,7 @@ begin
      or has_table_privilege('anon', 'private.tg_login_requests', 'select') then
     raise exception 'FAIL: exposed to anon';
   end if;
-  if not has_function_privilege('anon', 'public.start_tg_login(text,text)', 'execute')
+  if not has_function_privilege('anon', 'public.start_tg_login(text,text,text)', 'execute')
      or not has_function_privilege('anon', 'public.finish_tg_login(text,text)', 'execute') then
     raise exception 'FAIL: app cannot call start/finish';
   end if;

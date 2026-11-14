@@ -1220,6 +1220,7 @@ test("a linked member whose name is taken in a new browser gets in through Teleg
   await page.waitForSelector("#tl-open");
   assert.match(await page.getAttribute("#tl-open", "href"), new RegExp(`^https://t\\.me/ZadAlkhair_Bot\\?start=login_${nonce}$`));
   assert.equal(started[0].p_code, "ABCD");
+  assert.equal(started[0].p_id, "سالم", "the requested name is sent with the request");
   await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 10000 });
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:viewer:ABCD")).id), "سالم");
   assert.equal(await page.locator("#tl-open").count(), 0, "the waiting dialog closes");

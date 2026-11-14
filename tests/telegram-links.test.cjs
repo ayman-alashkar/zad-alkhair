@@ -56,3 +56,11 @@ test("the bot asks for an explicit confirmation before a Telegram login",()=>{
   assert.match(src,/callback_data: `lg:\$\{nonce\}`/,"an explicit confirm button");
   assert.match(src,/data\.startsWith\("lg:"\)[\s\S]*?p_confirm: true/,"the button confirms");
 });
+
+/* طُلب اسم غير مربوط بالحساب الذي فُتح: البوت يذكر الاسمين، والزر يُدخل باسم صاحب الحساب. */
+test("the bot names both the requested name and the account's own name when they differ",()=>{
+  const src=read("telegram-webhook");
+  assert.match(src,/if \(r\.wanted\)/);
+  assert.match(src,/طُلب الدخول باسم «\$\{esc\(r\.wanted\)\}»، لكن حساب تيليغرام هذا مربوط باسم «\$\{esc\(r\.name\)\}»/);
+  assert.match(src,/text: `ادخل باسم «\$\{r\.name\}»`/);
+});
