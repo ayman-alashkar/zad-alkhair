@@ -77,3 +77,63 @@ async function linkTelegram(){
     }finally{ checking=false; }
   },3000);
 }
+
+/* «ادخل عبر تيليغرام»: لمن يفتح الختمة في متصفح لا يعرفه الموقع (رابط واتساب مثلًا).
+   يؤكد في البوت أنه صاحب الاسم، فيُضاف هذا المتصفح إلى أجهزته في كل ختماته،
+   دون أن يحتاج المشرف. الطلب صالح عشر دقائق، ولا ينهيه إلا هذا المتصفح. */
+let tgLoginTimer=null;
+let tgLoginWake=()=>{};
+function tgLoginStop(){
+  clearInterval(tgLoginTimer); tgLoginTimer=null;
+  document.removeEventListener("visibilitychange",tgLoginWake);
+}
+async function tgLogin(){
+  if(tgLoginTimer) return;
+  /* فتح النافذة داخل ضغطة المستخدم، كما في تفعيل التذكير. */
+  const w=window.open("about:blank","_blank");
+  if(w) w.opener=null;
+  let nonce=null;
+  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null}); }catch(_){ }
+  if(typeof nonce!=="string"||!/^[0-9a-f]{32}$/.test(nonce)){
+    if(w) w.close();
+    return toast("تعذّر الآن، حاول بعد قليل");
+  }
+  const url=`https://t.me/${BOT_USERNAME}?start=login_${nonce}`;
+  if(w) w.location.replace(url);
+  modal(`<div class="display" style="font-size:1.35rem">أكمل الدخول في تيليغرام</div>
+    <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
+      في محادثة بوت زاد الخير اضغط «ابدأ»، ثم «نعم، أدخلني»، وارجع إلى هنا.</p>
+    <div class="actions">
+      <a class="btn gold" id="tl-open" href="${url}" target="_blank" rel="noopener">افتح تيليغرام</a>
+      <button class="btn quiet" id="tl-cancel">إلغاء</button></div>`);
+  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();closeLayer();};
+
+  let checking=false;
+  const started=Date.now();
+  const check=async()=>{
+    if(checking) return;
+    checking=true;
+    try{
+      let r=null;
+      try{ r=await rpc("finish_tg_login",{p_nonce:nonce,p_device:deviceId()}); }catch(_){ return; }
+      if(r&&r.pending){
+        if(Date.now()-started>15*60*1000){ tgLoginStop(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
+        return;
+      }
+      tgLoginStop(); closeLayer();
+      if(!r||!r.ok) return toast("انتهت مدة الطلب، حاول من جديد");
+      storeMemberships(r.memberships);
+      if(!code){ toast("أهلًا بك"); return; }
+      loadViewer();
+      if(!viewer){ screen="gate"; render(); return toast("حساب تيليغرام هذا ليس في هذه الختمة"); }
+      activeKhatmahSet(code,true);
+      gateName="";
+      await refresh();
+      toast("أهلًا بك");
+    }finally{ checking=false; }
+  };
+  /* العودة من تيليغرام تُظهر الصفحة، فيُسأل فورًا بدل انتظار الدورة التالية. */
+  tgLoginWake=()=>{ if(document.visibilityState==="visible") check(); };
+  document.addEventListener("visibilitychange",tgLoginWake);
+  tgLoginTimer=setInterval(check,2500);
+}

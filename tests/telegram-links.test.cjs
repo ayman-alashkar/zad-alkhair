@@ -47,3 +47,12 @@ test("the app redeems ?login before opening the khatmah and removes it from the 
   assert.ok(boot.indexOf("takeLoginToken()")<boot.indexOf("zkCaptureIncomingKhatmah();\n"),"token is taken before the hash is captured");
   assert.match(boot,/zkLoginReady\.finally\(boot\)/);
 });
+
+/* «ادخل عبر تيليغرام»: البوت لا يُدخل أحدًا بمجرد فتح الرابط، بل يعرض الاسم وزر تأكيد. */
+test("the bot asks for an explicit confirmation before a Telegram login",()=>{
+  const src=read("telegram-webhook");
+  assert.match(src,/\/\^login_\[0-9a-f\]\{32\}\$\/\.test\(code\)/,"/start login_<nonce> is recognised");
+  assert.match(src,/p_confirm: false/,"opening the link only previews");
+  assert.match(src,/callback_data: `lg:\$\{nonce\}`/,"an explicit confirm button");
+  assert.match(src,/data\.startsWith\("lg:"\)[\s\S]*?p_confirm: true/,"the button confirms");
+});

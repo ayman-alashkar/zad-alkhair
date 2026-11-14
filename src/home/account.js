@@ -33,8 +33,13 @@ async function redeemLoginLink(token){
     ]);
   }catch(_){ return; }
   /* رمز منتهٍ أو خاطئ: يكمل التطبيق كما لو فُتح بلا رمز. */
-  if(!r||!r.ok||!Array.isArray(r.memberships)) return;
-  for(const m of r.memberships){
+  if(!r||!r.ok) return;
+  storeMemberships(r.memberships);
+}
+/* عضويات حساب تيليغرام بعد إضافة هذا المتصفح إليها: يُحفظ لكل ختمة اسم صاحبها. */
+function storeMemberships(list){
+  if(!Array.isArray(list)) return;
+  for(const m of list){
     const c=cleanKhatmahCode(m&&m.code);
     if(!c||!m.id) continue;
     try{ localStorage.setItem("zad:viewer:"+c,JSON.stringify({id:m.id,name:m.name})); }catch(_){ }
