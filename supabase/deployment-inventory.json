@@ -1,18 +1,18 @@
 {
-  "captured_at": "2026-11-10",
+  "captured_at": "2026-11-14",
   "project_ref": "webqpbcijjbawatykoxe",
   "edge_functions": [
     {
       "slug": "telegram-webhook",
-      "version": 22,
+      "version": 23,
       "verify_jwt": false,
-      "bundle_sha256": "e80e731fd2c85c995ccb6c54e013e730b5888884861b29cef0de66bb78775afb"
+      "bundle_sha256": "ee96ffdfde465bda51274d07be0d6c55537c1d80f908e62e001ab299cdadc557"
     },
     {
       "slug": "send-reminders",
-      "version": 26,
+      "version": 27,
       "verify_jwt": false,
-      "bundle_sha256": "1c87448b8d2df882d126e18b521a85b2cf61ea743f80da3edd776568459c0c90"
+      "bundle_sha256": "1a22ed35b00f46d67203b336a472f3d21aee835048178cdcb443121cc1fafea7"
     },
     {
       "slug": "notify-done",
@@ -28,15 +28,15 @@
     },
     {
       "slug": "send-message",
-      "version": 10,
+      "version": 11,
       "verify_jwt": false,
-      "bundle_sha256": "3e23c89c87988b9e15e66abd8fb12439b9c9beafbbbe0b9b5a82123dd3c9ee79"
+      "bundle_sha256": "d4e7c9f142422777cd7c7843f80635af9e4a618ddb23b12888af1e2afc965a6e"
     },
     {
       "slug": "announce",
-      "version": 11,
+      "version": 12,
       "verify_jwt": false,
-      "bundle_sha256": "3681954d600b4778730a4454186788300d9c8176a19d5037c8ffa8e5a3c66e75"
+      "bundle_sha256": "efb9bf07e07a9829168e57553e06bd19a566c454eafb6a8454a5906f8fa50b52"
     },
     {
       "slug": "migration-handoff",
@@ -52,9 +52,9 @@
     },
     {
       "slug": "send-completions",
-      "version": 2,
+      "version": 3,
       "verify_jwt": false,
-      "bundle_sha256": "d54727642de060badd7f8e0768237d1d04a4124400df8dfb9cdd436f091beb0c"
+      "bundle_sha256": "34d5d185d33d197003bc19aa83f3b7d780155277637db4dc2c30e502f796167c"
     }
   ],
   "migrations": [
@@ -93,6 +93,42 @@
     {
       "version": "20261101062026",
       "name": "instant_durable_khatmah_completion_notifications"
+    },
+    {
+      "version": "20261104013904",
+      "name": "harden_organizer_codes_and_inputs"
+    },
+    {
+      "version": "20261104021703",
+      "name": "drop_20261104_rollback_copies"
+    },
+    {
+      "version": "20261105050759",
+      "name": "broadcast_khatmah_changes"
+    },
+    {
+      "version": "20261111131139",
+      "name": "usage_daily_analytics"
+    },
+    {
+      "version": "20261111133938",
+      "name": "usage_daily_timezone"
+    },
+    {
+      "version": "20261111145325",
+      "name": "usage_summary_view"
+    },
+    {
+      "version": "20261111175345",
+      "name": "usage_bot_flag"
+    },
+    {
+      "version": "20261113055416",
+      "name": "usage_exclude_crawler"
+    },
+    {
+      "version": "20261114004156",
+      "name": "login_links_from_bot_messages"
     }
   ],
   "tables": [
@@ -177,6 +213,12 @@
     {
       "schema": "public",
       "name": "share_wait",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "private",
+      "name": "login_links",
       "rls_enabled": true,
       "policies": 0
     }
