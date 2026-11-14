@@ -188,6 +188,9 @@ window.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("resize",zkFitLaunch,{passive:true});
 window.visualViewport?.addEventListener("scroll",zkFitLaunch,{passive:true});
 window.addEventListener("online",outboxWake);
+/* رمز الدخول يُقرأ ويُحذف من العنوان قبل أي شيء، ثم تنتظره الختمة عند الإقلاع. */
+const zkLoginToken=takeLoginToken();
+const zkLoginReady=zkLoginToken?redeemLoginLink(zkLoginToken):null;
 const zkIncomingKhatmah=zkCaptureIncomingKhatmah();
 const zkSection=new URLSearchParams(location.search).get("section");
 /* العنوان يتبع الشاشة الظاهرة («?section=khatmahs» أو «prayer»، ولا شيء للرئيسية)،
@@ -213,7 +216,11 @@ function zkCountSurface(){
   else if(!zkLaunchVisible())zuSurface("khatmahs");
   else zuSurface(ztView==="prayer"?"prayer":"home");
 }
-if(zkIncomingKhatmah||zkSection==="khatmahs"){zkHideLaunch();boot()}
+if(zkIncomingKhatmah||zkSection==="khatmahs"){
+  zkHideLaunch();
+  if(zkLoginReady){screen="boot";render();zkLoginReady.finally(boot);}
+  else boot();
+}
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard();
 /* «تعليمات» من قائمة صفحات الدليل تفتح الرئيسية بـ?help: تُعرض التعليمات ويُحذف المعامل. */

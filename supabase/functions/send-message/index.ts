@@ -44,7 +44,7 @@ function readerLink(code?: string, juz?: number) {
   }
 }
 
-function navigationRows(sourceUrl: string) {
+function navigationRows(sourceUrl: string, login = "") {
   try {
     const source = new URL(sourceUrl);
     const code = (source.searchParams.get("code") ?? "").trim().toUpperCase();
@@ -58,6 +58,7 @@ function navigationRows(sourceUrl: string) {
         : root.pathname + "/";
     }
     const app = new URL(root.href);
+    if (login) app.searchParams.set("login", login);
     if (code) app.hash = code;
     const reader = new URL("quran-read/", root);
     return [[
@@ -84,6 +85,18 @@ async function rpc(fn: string, args: unknown = {}) {
   return raw ? JSON.parse(raw) : null;
 }
 
+/* رابط دخول شخصي في زر «افتح زاد الخير»: يضيف المتصفح الذي يُفتح منه الزر
+   إلى أجهزة صاحب الرسالة، فلا يُطلب منه اسمه من جديد. إن تعذّر إصداره يبقى
+   الزر رابطًا عاديًا كما كان. */
+async function loginToken(chat: number) {
+  try {
+    const token = await rpc("issue_login_link", { p_chat: chat });
+    return typeof token === "string" && /^[0-9a-f]{36}$/.test(token) ? token : "";
+  } catch {
+    return "";
+  }
+}
+
 async function send(chat: number, text: string, url?: string) {
   const body: Record<string, unknown> = {
     chat_id: chat,
@@ -92,7 +105,7 @@ async function send(chat: number, text: string, url?: string) {
     disable_web_page_preview: true,
   };
   if (url) {
-    body.reply_markup = { inline_keyboard: navigationRows(url) };
+    body.reply_markup = { inline_keyboard: navigationRows(url, await loginToken(chat)) };
   }
   const response = await fetch(
     `https://api.telegram.org/bot${TOKEN}/sendMessage`,

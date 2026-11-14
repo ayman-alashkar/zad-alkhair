@@ -43,9 +43,10 @@ function appRoot() {
   }
 }
 
-function appLink(code?: string) {
+function appLink(code?: string, login?: string) {
   const root = appRoot();
   if (!root) return APP_URL;
+  if (login) root.searchParams.set("login", login);
   if (code) root.hash = String(code).trim().toUpperCase();
   return root.href;
 }
@@ -76,14 +77,26 @@ function codeFromUrl(url?: string) {
   }
 }
 
-function navigationRows(url?: string) {
+function navigationRows(url?: string, login = "") {
   const code = codeFromUrl(url);
-  const app = appLink(code || undefined);
+  const app = appLink(code || undefined, login || undefined);
   const reader = generalReaderLink();
   const row: Array<{ text: string; url: string }> = [];
   if (app) row.push({ text: "افتح زاد الخير", url: app });
   if (reader) row.push({ text: "افتح المصحف", url: reader });
   return row.length ? [row] : [];
+}
+
+/* رابط دخول شخصي في زر «افتح زاد الخير»: يضيف المتصفح الذي يُفتح منه الزر
+   إلى أجهزة صاحب الرسالة، فلا يُطلب منه اسمه من جديد. إن تعذّر إصداره يبقى
+   الزر رابطًا عاديًا كما كان. */
+async function loginToken(chat: number) {
+  try {
+    const token = await rpc("issue_login_link", { p_chat: chat });
+    return typeof token === "string" && /^[0-9a-f]{36}$/.test(token) ? token : "";
+  } catch {
+    return "";
+  }
 }
 
 /* إرسال رسالة. يعيد blocked إذا حظر المستخدم البوت */
@@ -95,7 +108,7 @@ async function send(chat: number, text: string, url?: string) {
     disable_web_page_preview: true,
   };
   if (url) {
-    body.reply_markup = { inline_keyboard: navigationRows(url) };
+    body.reply_markup = { inline_keyboard: navigationRows(url, await loginToken(chat)) };
   }
   const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
     method: "POST",

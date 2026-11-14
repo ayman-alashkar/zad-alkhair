@@ -1147,3 +1147,43 @@ test("switching surah with a timed reciter starts the new surah from its first a
     await context.close();
   }
 });
+
+/* رابط الدخول من رسائل البوت: متصفح جديد تمامًا (كمتصفح تيليغرام الداخلي على الآيفون)
+   يفتح الزر، فيدخل الختمة باسم صاحب الرسالة دون أن يُسأل عن اسمه، ويُحذف الرمز من العنوان. */
+test("a bot login link opens the khatmah as its owner in a new browser, and leaves no token in the address", async () => {
+  const token = "0123456789abcdef0123456789abcdef0123";
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, (_, i) => ({ status: i === 9 ? "taken" : "free", ownerId: i === 9 ? "me" : null })) };
+  const redeemed = [];
+  const { page, errors, context } = await appPage({ rpc: { get_state: state } });
+  await context.route(/\/rpc\/redeem_login_link/, async route => {
+    redeemed.push(JSON.parse(route.request().postData()));
+    await new Promise(r => setTimeout(r, 300));
+    route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify({ ok: true, memberships: [{ code: "ABCD", id: "me", name: "أنا" }] }) });
+  });
+  await page.goto(`${BASE}/?login=${token}#ABCD`, { waitUntil: "load" });
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 5000 });
+  assert.equal(redeemed.length, 1);
+  assert.equal(redeemed[0].p_token, token);
+  assert.ok(redeemed[0].p_device, "the browser's device id is sent");
+  assert.doesNotMatch(page.url(), /login=/, "the token is removed from the address");
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:viewer:ABCD")).id), "me");
+  assert.equal(await page.locator("#app .gate input").count(), 0, "no name prompt");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+test("an expired bot login link falls back to the usual name screen", async () => {
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({ rpc: { get_state: state, redeem_login_link: { ok: false } } });
+  await page.goto(`${BASE}/?login=${"f".repeat(36)}#ABCD`, { waitUntil: "load" });
+  await page.waitForFunction(() => document.querySelector("#app .gate input"), null, { timeout: 5000 });
+  assert.doesNotMatch(page.url(), /login=/);
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:viewer:ABCD")), null);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
