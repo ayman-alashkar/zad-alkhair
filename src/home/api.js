@@ -77,7 +77,13 @@ async function rpc(fn, args){
   const r=await call();
   const locked=r&&r.ok===false&&typeof r.error==="string"
     &&DEVICE_LOCK_ERRS.some(m=>r.error.indexOf(m)!==-1);
-  if(locked&&fn!=="sign_in"&&viewer&&code&&await rebindDevice()) return call();
+  if(locked&&fn!=="sign_in"&&viewer&&code){
+    if(await rebindDevice()) return call();
+    /* الاسم مقفول على أجهزة أخرى وهذا المتصفح ليس منها: يُعرض طريق الدخول
+       بدل رسالة خطأ لا يعرف القارئ ما يفعل بعدها. */
+    deviceNotRecognised();
+    r.handled=true;
+  }
   return r;
 }
 

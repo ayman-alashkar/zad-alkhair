@@ -1243,3 +1243,24 @@ test("a taken name without Telegram still points to the organizer", async () => 
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+/* اسم أُقفل وصاحبه داخل الختمة من متصفح غير مسجّل: الفعل يُرفض، فتظهر نافذة
+   التأكيد عبر تيليغرام بدل رسالة خطأ. */
+test("an action refused on an unregistered browser offers the Telegram confirmation", async () => {
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "سالم", name: "سالم", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "سالم", name: "سالم" }) },
+    rpc: { get_state: state, claim_juz: { ok: false, error: "هذا الحساب مقفول على جهاز صاحبه" },
+           sign_in: { ok: false, taken: true, name: "سالم", linked: true } } });
+  await page.goto(`${BASE}/#ABCD`, { waitUntil: "load" });
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 5000 });
+  await page.click("#app .cell");
+  await page.click('[data-act="take"]');
+  await page.waitForSelector("#nt-tg");
+  assert.match(await page.locator("#layer .display").innerText(), /غير مسجَّل باسمك/);
+  assert.equal(await page.evaluate(() => document.getElementById("toast").classList.contains("show")), false, "no bare error toast");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
