@@ -221,7 +221,7 @@ async function askLogin(chat: number, nonce: string) {
      صاحب الحساب لا بالاسم المطلوب. */
   if (r.wanted) {
     await sendKb(chat,
-`🕌 <b>زاد الخير</b>\n\nطُلب الدخول باسم «${esc(r.wanted)}»، لكن حساب تيليغرام هذا مربوط باسم «${esc(r.name)}»، فلا يمكن الدخول باسم «${esc(r.wanted)}» به.\n\nإن أردت الدخول باسمك «${esc(r.name)}» من ذلك المتصفح فاضغط الزر، وإلا فتجاهل هذه الرسالة.`,
+`🕌 <b>زاد الخير</b>\n\nطُلب الدخول باسم «${esc(r.wanted)}»، لكن حساب تيليغرام هذا مربوط باسم «${esc(r.name)}»، فلا يمكن الدخول باسم «${esc(r.wanted)}» به.\n\nإن أردت الدخول باسمك «${esc(r.name)}» إلى ختمة «${esc(r.title)}» فاضغط الزر، وإلا فتجاهل هذه الرسالة.`,
       [[{ text: `ادخل باسم «${r.name}»`, callback_data: `lg:${nonce}` }]]);
     return;
   }
@@ -285,7 +285,7 @@ Deno.serve(async (req) => {
         let r: { ok?: boolean; name?: string } | null = null;
         try { r = await rpc("confirm_tg_login", { p_nonce: nonce, p_chat: cChat, p_confirm: true }); } catch { /**/ }
         await send(cChat, r?.ok
-          ? `🕌 <b>زاد الخير</b>\n\nتم. ارجع إلى المتصفح الذي طلبت منه الدخول، وستجد نفسك فيه باسم «${esc(r.name)}».`
+          ? `🕌 <b>زاد الخير</b>\n\nتم. ارجع إلى المتصفح الذي طلبت منه الدخول، وستجد نفسك في صفحة الختمات باسم «${esc(r.name)}».`
           : LOGIN_EXPIRED);
         return ok();
       }

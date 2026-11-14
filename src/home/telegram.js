@@ -104,7 +104,7 @@ async function tgLogin(wantedId){
     <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
       في محادثة بوت زاد الخير اضغط «ابدأ»، ثم «نعم، أدخلني»، وارجع إلى هنا.</p>
     <div class="actions">
-      <a class="btn gold" id="tl-open" href="${url}" target="_blank" rel="noopener">افتح تيليغرام</a>
+      <a class="btn tg-login" id="tl-open" href="${url}" target="_blank" rel="noopener">${TG_ICON}<span>افتح تيليغرام</span></a>
       <button class="btn quiet" id="tl-cancel">إلغاء</button></div>`);
   document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();closeLayer();};
 
