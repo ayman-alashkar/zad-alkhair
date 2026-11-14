@@ -90,7 +90,7 @@ function nameTaken(name,linked,id){
         إن كان اسمك، فادخل عبر تيليغرام المربوط به.<br>
         وإلا فادخل باسم يميّزك عنه.</p>
       <div class="actions">
-        <button class="btn gold" id="nt-tg">هذا اسمي، ادخل عبر تيليغرام</button>
+        <button class="btn tg-login" id="nt-tg">${TG_ICON}<span>هذا اسمي، ادخل عبر تيليغرام</span></button>
         <button class="btn quiet" id="nt-ok">ليس اسمي</button></div>`);
     document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin(id);};
     document.getElementById("nt-ok").onclick=closeLayer;
@@ -116,7 +116,7 @@ function deviceNotRecognised(){
       <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
         لتكمل باسم «${esc(me.name)}» من هنا، أكّد عبر تيليغرام المربوط به، ثم أعد ما كنت تفعله.</p>
       <div class="actions">
-        <button class="btn gold" id="nt-tg">تأكيد عبر تيليغرام</button>
+        <button class="btn tg-login" id="nt-tg">${TG_ICON}<span>تأكيد عبر تيليغرام</span></button>
         <button class="btn quiet" id="dn-ok">لاحقًا</button></div>`);
     document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin(viewer&&viewer.id);};
     document.getElementById("dn-ok").onclick=closeLayer;

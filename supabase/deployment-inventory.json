@@ -4,9 +4,9 @@
   "edge_functions": [
     {
       "slug": "telegram-webhook",
-      "version": 25,
+      "version": 26,
       "verify_jwt": false,
-      "bundle_sha256": "e36180edb39a2b819fafe33d45a6ec0f90e9f7ebc6aca1df30cfbb5203f3d1c6"
+      "bundle_sha256": "d78ea8a70dd2537123c152860235655901e137e0728591d354d3b3ff7a8740ed"
     },
     {
       "slug": "send-reminders",
