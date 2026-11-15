@@ -103,19 +103,28 @@ async function getMaherQulTiming(s){
 function isTimedProvider(r=reciter){
   return r.provider==="mp3quran-timed"||r.provider==="qul-maher";
 }
-async function resolveGaplessForCurrentSurah(){
-  if(!isTimedProvider())return null;
-
+/* ملف السورة وتوقيتها للقارئ الحالي، دون لمس حالة التشغيل. */
+async function resolveTimedSource(s){
   let src="",rows=[];
   if(reciter.provider==="mp3quran-timed"){
-    const timed=await getMp3Timing(play.surah);
-    src=(timed.read.folder_url.endsWith("/")?timed.read.folder_url:timed.read.folder_url+"/")+pad3(play.surah)+".mp3";
+    const timed=await getMp3Timing(s);
+    src=(timed.read.folder_url.endsWith("/")?timed.read.folder_url:timed.read.folder_url+"/")+pad3(s)+".mp3";
     rows=normalizeTimedRows(timed.rows);
   }else if(reciter.provider==="qul-maher"){
-    const timed=await getMaherQulTiming(play.surah);
+    const timed=await getMaherQulTiming(s);
     src=timed.src;rows=timed.rows;
   }
-
+  return {src,rows};
+}
+/* هل توقيت السورة في الذاكرة، فيبدأ تشغيلها دون انتظار الشبكة؟ */
+function timedSourceReady(s,r=reciter){
+  if(r.provider==="mp3quran-timed"){const read=timedReadCache.get(r.id);return !!read&&mp3TimingCache.has(`${read.id}:${s}`)}
+  if(r.provider==="qul-maher")return maherQulTimingCache.has(s);
+  return true;
+}
+async function resolveGaplessForCurrentSurah(){
+  if(!isTimedProvider())return null;
+  const {src,rows}=await resolveTimedSource(play.surah);
   const t=rows.find(x=>Number(x.ayah)===Number(play.current));
   if(!src||!t)throw new Error("timed ayah missing");
   return {src,rows,t};

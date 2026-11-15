@@ -96,7 +96,10 @@ audio.ontimeupdate=()=>{
       if(advanceTimedSegmentWithoutPause()){
         segmentAdvancing=false;
       }else{
-        audio.pause();
+        /* حدّ مقطع «ما تيسّر»: لا يُوقَف الملف هنا. إيقافه والشاشة مقفلة على أندرويد ينهي
+           جلسة الصوت فتتجمّد الصفحة قبل تشغيل المقطع التالي. الانتقال يبدّل الملف مباشرة إن
+           كان المقطع التالي جاهزًا، ويوقفه بنفسه إن احتاج انتظار الشبكة. */
+        if(!tayassurAtBoundary())audio.pause();
         Promise.resolve(finishCurrentAyah()).finally(()=>{segmentAdvancing=false});
       }
     }

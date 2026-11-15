@@ -5,7 +5,8 @@
    عند التفعيل يُخلط ترتيب المواضع مرة واحدة ويُختار قارئ يتتبع الآيات؛ ثم تُتلى
    المقاطع بهذا الترتيب: لا يتكرر مقطع حتى تنتهي كلها، والسابق والتالي معروفان.
    القارئ يُغيَّر متى شاء المستخدم ولا يتغيّر الترتيب. الوضع يعيش في المحرّك نفسه:
-   continuousStopRef هو نهاية المقطع، وعندها يبدأ المقطع التالي بدل التوقف. */
+   continuousStopRef هو نهاية المقطع، وعندها يبدأ المقطع التالي بدل التوقف، دون إيقاف
+   الملف (انظر tayassurPlay). */
 const TAYASSUR_MIN_REMAINING=11;
 /* يبقى الوضع محفوظًا حين يُغادَر مشغّل التلاوة إلى صفحة أخرى (الرئيسية، الختمات،
    المواقيت) فيتوقف الصوت؛ عند العودة يظهر مفعّلًا متوقفًا عند موضعه، والتشغيل يكمل منه. */
@@ -13,6 +14,8 @@ const TAYASSUR_KEY="zad:listen:tayassur-v1";
 /* سحب القوس إلى آخره (آخر ٢٪) ينقل إلى المقطع التالي. */
 const TAYASSUR_NEXT_AT=.98;
 let tayassur=null;
+/* مقطع تعذّر جلب توقيته عند الانتقال إليه: يُعاد عند العودة إلى التطبيق أو عود الاتصال أو بزر التشغيل. */
+let tayassurRetryIndex=null,tayassurMoveId=0;
 
 function tayassurPositions(){
   const out=[];
@@ -36,7 +39,7 @@ function tayassurShuffle(list){
 function tayassurActive(){
   if(!tayassur)return false;
   if(continuousStopRef===tayassur.stop&&!isSurahOnly())return true;
-  tayassur=null;tayassurForget();return false;
+  tayassur=null;tayassurRetryIndex=null;tayassurForget();return false;
 }
 function tayassurSave(){
   if(!tayassur||!tayassur.stop)return;
@@ -52,7 +55,10 @@ function tayassurRestore(){
   if(order.length<2||!Number.isInteger(i)||i<0||i>=order.length||!r||isSurahOnly(r)){tayassurForget();return false}
   listenQuietReciter(r);
   const p=order[i];
-  tayassur={order,i,stop:{s:p.s,a:tayassurEnd(p)}};
+  tayassur={order,i,stop:{s:p.s,a:tayassurEnd(p)}};tayassurRetryIndex=null;
+  /* قد يبقى في المشغّل ملف من تلاوة سابقة بالقارئ نفسه: يُفصل توقيته فلا يُستأنف، ويبدأ
+     التشغيل من الموضع المحفوظ. */
+  activeSegment=null;activeTimingRows=null;
   const a=Number(v.a)>=p.a&&Number(v.a)<=tayassur.stop.a?Number(v.a):p.a;
   detachQueue();repeatMode="off";
   continuousMode=true;continuousStopRef=tayassur.stop;
@@ -65,26 +71,59 @@ function tayassurRestore(){
 /* الموضع داخل المقطع يُحفظ عند مغادرة الصفحة أو إخفائها (الاختبارات تحمّل الملف دون نافذة). */
 if(typeof addEventListener==="function"&&typeof document!=="undefined"){
   addEventListener("pagehide",()=>{if(tayassurActive())tayassurSave()});
-  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"&&tayassurActive())tayassurSave()});
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="hidden"&&tayassurActive())tayassurSave();
+    if(document.visibilityState==="visible")tayassurRetryPending();
+  });
+  addEventListener("online",()=>tayassurRetryPending());
 }
 function tayassurSegment(){
   if(!tayassurActive())return null;
   const p=tayassur.order[tayassur.i];
   return {s:p.s,from:p.a,to:tayassur.stop.a};
 }
+/* زر التشغيل، والعودة إلى التطبيق، وعود الاتصال: تُكمل انتقالًا تعذّر. */
+async function tayassurRetryPending(){
+  if(tayassurRetryIndex===null||!tayassurActive())return false;
+  await tayassurPlay(tayassurRetryIndex);
+  return true;
+}
 function tayassurNext(){
   if(!tayassurActive())return null;
   return tayassur.order[(tayassur.i+1)%tayassur.order.length];
 }
+/* هل تقف التلاوة الآن عند آخر آية من مقطع «ما تيسّر»؟ */
+function tayassurAtBoundary(){
+  return tayassurActive()&&Number(play.surah)===Number(tayassur.stop.s)&&Number(play.current)===Number(tayassur.stop.a);
+}
+/* الانتقال إلى مقطع: لا تتغيّر الحالة (وما تعرضه الشاشة) إلا وتوقيت المقطع الجديد في اليد،
+   ثم يُبدَّل الملف مباشرة دون إيقاف، كما يحدث بين السور. التوقيت يُجلب مسبقًا أثناء المقطع
+   السابق (primeNextTimedSurah)؛ فإن لم يكن جاهزًا يُسكت الملف الحالي عند حدّه وتبقى الحالة على
+   مقطعه حتى يصل، وإن تعذّر جلبه بقيت كما هي وأُعيدت المحاولة لاحقًا. فلا تشير الشاشة أبدًا
+   إلى مقطع والملف المحمَّل إلى غيره. */
 async function tayassurPlay(i){
   const n=tayassur.order.length;i=((i%n)+n)%n;
-  const p=tayassur.order[i];
+  const p=tayassur.order[i],move=++tayassurMoveId;
+  tayassurRetryIndex=null;
+  if(isTimedProvider()&&!timedSourceReady(p.s)){
+    if(!audio.paused)audio.pause();
+  }
+  /* عند التفعيل لا مقطع سابق تبقى عليه الشاشة: يبدأ الأول مباشرة، وفشل تحميله يعالجه
+     التشغيل نفسه (handleAudioFailure) كأي سورة. */
+  if(tayassur.stop&&isTimedProvider()&&!timedSourceReady(p.s)){
+    try{await resolveTimedSource(p.s)}
+    catch(_){
+      if(move!==tayassurMoveId||!tayassurActive())return;
+      tayassurRetryIndex=i;syncPlay();
+      showToast(navigator.onLine?"تعذّر تحميل المقطع التالي. اضغط تشغيل للمحاولة مجددًا":"انقطع الاتصال؛ يكمل «ما تيسّر» حين يعود");
+      return;
+    }
+    if(move!==tayassurMoveId||!tayassurActive())return;
+  }
   tayassur.i=i;tayassur.stop={s:p.s,a:tayassurEnd(p)};
-  /* القارئ الموقّت يحتاج وقتًا ليجلب توقيت السورة الجديدة، والملف القديم ما زال يُسمع.
-     لو بقي توقيته فعّالًا لنقل play.current إلى آيته، فيبدأ المقطع الجديد من آية خاطئة
-     أو يقفز مقطعًا. لذلك يُسكت الملف القديم ويُفصل توقيته قبل الانتقال. */
+  /* توقيت السورة القديمة يُفصل قبل الانتقال: لو بقي فعّالًا لنقل play.current إلى آية من
+     الملف القديم، فيبدأ المقطع الجديد من آية خاطئة أو يقفز مقطعًا. */
   activeSegment=null;activeTimingRows=null;
-  if(!audio.paused)audio.pause();
   detachQueue();repeatMode="off";
   continuousMode=true;continuousStopRef=tayassur.stop;
   listenPending=null;listenSeekAfterLoad=null;
@@ -107,7 +146,7 @@ async function tayassurStart(){
 function tayassurStop(){
   if(!tayassur)return;
   const wasActive=continuousStopRef===tayassur.stop;
-  tayassur=null;tayassurForget();
+  tayassur=null;tayassurRetryIndex=null;tayassurForget();
   if(wasActive){continuousMode=true;continuousStopRef=null;releaseAudioPreload();primeNextEveryAyah();primeNextTimedSurah()}
 }
 async function tayassurToggle(){
