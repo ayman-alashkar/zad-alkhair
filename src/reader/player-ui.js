@@ -190,7 +190,7 @@ function updateMediaSessionState(){
 function installMediaSession(){
   if(!("mediaSession" in navigator))return;
   const set=(name,fn)=>{try{navigator.mediaSession.setActionHandler(name,fn)}catch(_){ }};
-  set("play",async()=>{try{playbackWanted=true;audioRetryCount=0;if(queueActive&&audio.ended&&atSurahEnd()&&!nextSurahRef()){await playQueueEntry(0);return}if(audio.src&&!audio.ended)await audio.play();else await playCurrent(false)}catch(_){ }});
+  set("play",async()=>{try{await resumePlayback()}catch(_){ }});
   set("pause",()=>{playbackWanted=false;playbackRequestId++;clearTimeout(audioRetryTimer);audioRetryTimer=null;audio.pause()});
   set("previoustrack",()=>stepPlayer(-1));
   set("nexttrack",()=>stepPlayer(1));

@@ -4,10 +4,17 @@ function nextPlaybackRefForPriming(){
   if(play.repeatGroupLeft>1)return {s:play.surah,a:play.from};
   if(continuousMode){
     if(play.current>=maxAyah(play.surah)&&(play.repeatSurah||1)>1&&(play.repeatSurahLeft||1)>1)return {s:play.surah,a:1};
-    if(continuousStopRef&&play.surah===continuousStopRef.s&&play.current===continuousStopRef.a)return null;
+    if(continuousStopRef&&play.surah===continuousStopRef.s&&play.current===continuousStopRef.a)return tayassurActive()?tayassurNext():null;
     return atSurahEnd()?nextSurahRef():nextAyahRef(play.surah,play.current);
   }
   return null;
+}
+/* الملف الذي يُجهَّز مسبقًا للقارئ الموقّت: المقطع التالي في «ما تيسّر»، وإلا السورة التالية. */
+function nextTimedSourceRef(){
+  if(tayassurActive())return tayassurNext();
+  if(continuousStopRef&&Number(play.surah)===Number(continuousStopRef.s)&&Number(play.current)>=Number(continuousStopRef.a))return null;
+  if((play.repeatSurah||1)>1&&(play.repeatSurahLeft||1)>1)return null;
+  return nextSurahRef();
 }
 function releaseAudioPreload(){
   primedEveryAyahSrc="";primedTimedSurahSrc="";
@@ -35,9 +42,7 @@ function primeNextEveryAyah(){
 }
 async function primeNextTimedSurah(){
   if(!continuousMode||(!isTimedProvider()&&!isSurahOnly())||!["gapless","surah"].includes(audio.dataset.playMode)||!document.body.classList.contains("player-on"))return;
-  if(continuousStopRef&&Number(play.surah)===Number(continuousStopRef.s)&&Number(play.current)>=Number(continuousStopRef.a))return;
-  if((play.repeatSurah||1)>1&&(play.repeatSurahLeft||1)>1)return;
-  const next=nextSurahRef();if(!next||sleepAfterSurah)return;
+  const next=nextTimedSourceRef();if(!next||sleepAfterSurah)return;
   const nextSurah=next.s;
   const guard=`${reciter.id}:${play.surah}`;
   try{
@@ -48,11 +53,33 @@ async function primeNextTimedSurah(){
     }else if(reciter.provider==="qul-maher"){
       src=(await getMaherQulTiming(nextSurah)).src;
     }else if(isSurahOnly()){src=wholeSurahAudioUrl(nextSurah)}
-    if(!src||guard!==`${reciter.id}:${play.surah}`||!continuousMode||nextSurahRef()?.s!==nextSurah||!document.body.classList.contains("player-on"))return;
+    if(!src||guard!==`${reciter.id}:${play.surah}`||!continuousMode||nextTimedSourceRef()?.s!==nextSurah||!document.body.classList.contains("player-on"))return;
     if(src===primedTimedSurahSrc)return;
     primedTimedSurahSrc=src;primedEveryAyahSrc="";
     audioPreload.pause();audioPreload.src=src;audioPreload.preload="auto";audioPreload.load();
   }catch(_){ }
+}
+/* هوية الملف المحمَّل: القارئ والسورة، والآية حين يكون الملف آية واحدة (أو البسملة قبلها).
+   تُكتب مع كل ملف يُحمَّل، ولا يُستأنف ملف إلا إذا طابقت هويتُه ما تعرضه الشاشة؛ فإن
+   تغيّرت الحالة دون الملف (انتقال انقطع في منتصفه) يُحمَّل الموضع الصحيح بدل إكمال القديم. */
+function playbackSourceRef(mode=audio.dataset.playMode){
+  return mode==="gapless"||mode==="surah"?`${reciter.id}:${play.surah}`:`${reciter.id}:${play.surah}:${play.current}`;
+}
+function loadedAudioMatchesPlay(){
+  const mode=audio.dataset.playMode;
+  if(!audio.src||!audio.dataset.source||!mode||audio.dataset.ref!==playbackSourceRef(mode))return false;
+  /* الملف الموقّت لا يُستأنف دون توقيته، وإلا لم يتحرك رقم الآية ولم يُعرف حدّ المقطع. */
+  if(mode==="gapless")return Array.isArray(activeTimingRows)&&Number(activeTimingSurah)===Number(play.surah);
+  return true;
+}
+/* التشغيل بعد إيقاف: زر المشغّل وزر الإشعار. */
+async function resumePlayback(){
+  playbackWanted=true;audioRetryCount=0;
+  if(await tayassurRetryPending())return;
+  if(queueActive&&audio.ended&&atSurahEnd()&&!nextSurahRef()){await playQueueEntry(0);return}
+  if(activeSegment&&audio.currentTime>=activeSegment.end-.08)await playCurrent(false);
+  else if(loadedAudioMatchesPlay()&&!audio.ended)await audio.play();
+  else await playCurrent(false);
 }
 function syncPlaybackSelectionInBackground(requestId){
   Promise.resolve(syncPlaybackSelection(requestId)).catch(err=>console.error("selection sync",err));
@@ -72,7 +99,7 @@ async function playEveryAyahBasmalaPrelude(requestId,keepExpanded){
   basmalaFallbackTarget=target;
   const src=`https://everyayah.com/data/${reciter.everyAyahId}/001001.mp3`;
   activeSegment=null;activeTimingRows=null;
-  audio.dataset.playMode="basmala";
+  audio.dataset.playMode="basmala";audio.dataset.ref=playbackSourceRef();
   audio.title="البسملة قبل بداية السورة";
   if(audio.dataset.source!==src){
     audio.pause();
@@ -151,7 +178,7 @@ async function playCurrent(expand=false){
   try{
     if(isSurahOnly()){
       const src=wholeSurahAudioUrl(play.surah);
-      activeSegment=null;activeTimingRows=null;audio.dataset.playMode="surah";
+      activeSegment=null;activeTimingRows=null;audio.dataset.playMode="surah";audio.dataset.ref=playbackSourceRef();
       if(audio.dataset.source!==src){
         audio.src=src;audio.dataset.source=src;audio.preload="auto";audio.load();
         await mediaReady();if(requestId!==playbackRequestId)return;
@@ -170,7 +197,7 @@ async function playCurrent(expand=false){
       }
 
       activeSegment=null;activeTimingRows=null;
-      audio.dataset.playMode="ayah";
+      audio.dataset.playMode="ayah";audio.dataset.ref=playbackSourceRef();
       const src=audioUrl(play.surah,play.current);
 
       if(audio.dataset.source!==src){
@@ -203,7 +230,7 @@ async function playCurrent(expand=false){
 
       activeTimingRows=rows;activeTimingSurah=play.surah;
       activeSegment={start:Number(t.start_time)/1000,end:Number(t.end_time)/1000};
-      audio.dataset.playMode="gapless";
+      audio.dataset.playMode="gapless";audio.dataset.ref=playbackSourceRef();
 
       if(audio.dataset.source!==src){
         audio.src=src;
@@ -255,13 +282,8 @@ installAudioFabDrag();
 document.getElementById("collapsePlayer").onclick=collapsePlayer;
 document.getElementById("stopPlayer").onclick=stopPlayer;
 document.getElementById("panelPlay").onclick=async()=>{
-  if(audio.paused){
-    playbackWanted=true;audioRetryCount=0;
-    if(queueActive&&audio.ended&&atSurahEnd()&&!nextSurahRef()){await playQueueEntry(0);return}
-    if(activeSegment&&audio.currentTime>=activeSegment.end-.08)await playCurrent(false);
-    else if(audio.src&&!audio.ended)await audio.play();
-    else await playCurrent(false);
-  }else{playbackWanted=false;playbackRequestId++;clearTimeout(audioRetryTimer);audioRetryTimer=null;audio.pause()}
+  if(audio.paused)await resumePlayback();
+  else{playbackWanted=false;playbackRequestId++;clearTimeout(audioRetryTimer);audioRetryTimer=null;audio.pause()}
   syncPlay();
 };
 function previousAyahRef(s,a){

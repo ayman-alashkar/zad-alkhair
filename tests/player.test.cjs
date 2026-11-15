@@ -226,7 +226,9 @@ function tayassurFixture(){
   Object.assign(f.ctx,{LOCAL_HIZB_QUARTERS:quarters,maxAyah:s=>verses[s],listenActive:()=>true,listenPaint(){},
     listenQuietReciter(r){f.ctx.reciter=r},listenSurahName:s=>String(s),listenReciterName:()=>'',ar:String,
     setIndexPlaybackBoundary(){},listenTarget:null,listenPending:null,listenSeekAfterLoad:null,detachQueue(){},
-    saved:{},storageJsonSet(k,v){f.ctx.saved[k]=JSON.parse(JSON.stringify(v))},storageJsonGet(k,d){return k in f.ctx.saved?f.ctx.saved[k]:d},localStorage:{removeItem(k){delete f.ctx.saved[k]}}});
+    saved:{},storageJsonSet(k,v){f.ctx.saved[k]=JSON.parse(JSON.stringify(v))},storageJsonGet(k,d){return k in f.ctx.saved?f.ctx.saved[k]:d},localStorage:{removeItem(k){delete f.ctx.saved[k]}},
+    isTimedProvider:()=>true,ready:new Set(),timedSourceReady(s){return f.ctx.ready.size===0||f.ctx.ready.has(s)},
+    fetched:[],async resolveTimedSource(s){f.ctx.fetched.push(s);if(f.ctx.offline)throw new Error('network');f.ctx.ready.add(s);return {src:'x',rows:[]}}});
   f.ctx.reciter={id:'husary',provider:'mp3quran-timed'};
   return {f,quarters,verses};
 }
@@ -272,15 +274,88 @@ test('choosing another start ends «ما تيسّر» by itself',async()=>{
   assert.equal(f.run('tayassurActive()'),false);
   assert.equal(f.run('tayassur'),null);
 });
-test('moving to another «ما تيسّر» segment silences the old file and drops its timing first',async()=>{
+test('a prepared «ما تيسّر» segment swaps the file without pausing and drops the old timing',async()=>{
   const {f}=tayassurFixture();
   await f.run('tayassurStart()');
   f.run('tayassur.order=[{s:2,a:26},{s:36,a:13}]');
   f.ctx.audio.paused=false;f.ctx.activeTimingRows=[{ayah:30,start_time:0,end_time:1}];f.ctx.activeSegment={start:0,end:1};
   await f.run('stepPlayer(1)');
-  assert.equal(f.ctx.audio.paused,true);
+  assert.equal(f.ctx.audio.paused,false,'a pause here ends the media session on a locked Android phone');
   assert.equal(f.ctx.activeTimingRows,null,'the old surah timing cannot move play.current');
   assert.deepEqual([...f.ctx.played.at(-1)],[36,13]);
+});
+test('an unprepared «ما تيسّر» segment keeps the screen on the current one until its timing arrives',async()=>{
+  const {f}=tayassurFixture();
+  await f.run('tayassurStart()');
+  f.run('tayassur.order=[{s:40,a:21},{s:110,a:1},{s:18,a:32}]');
+  await f.run('tayassurPlay(0)');
+  f.ctx.ready=new Set([40]);f.ctx.fetched.length=0;f.ctx.played.length=0;
+  f.ctx.audio.paused=false;f.ctx.play.current=40;
+  let release;f.ctx.resolveTimedSource=s=>{f.ctx.fetched.push(s);return new Promise(r=>{release=()=>{f.ctx.ready.add(s);r({src:'x',rows:[]})}})};
+  const moving=f.run('finishCurrentAyah()');
+  await null;
+  assert.deepEqual([...f.ctx.fetched],[110]);
+  assert.equal(f.ctx.audio.paused,true,'nothing to play yet: the old file stops at its own boundary');
+  assert.deepEqual([f.ctx.play.surah,f.ctx.play.current],[40,40],'the screen still shows the segment the file belongs to');
+  assert.equal(f.ctx.played.length,0);
+  release();await moving;
+  assert.deepEqual([...f.ctx.played.at(-1)],[110,1]);
+  assert.equal(f.run('tayassur.i'),1);
+});
+test('a failed «ما تيسّر» move changes nothing, and play retries it instead of resuming the old file',async()=>{
+  const {f}=tayassurFixture();
+  await f.run('tayassurStart()');
+  f.run('tayassur.order=[{s:40,a:21},{s:110,a:1}]');
+  await f.run('tayassurPlay(0)');
+  f.ctx.ready=new Set([40]);f.ctx.offline=true;f.ctx.played.length=0;
+  f.ctx.audio.paused=false;f.ctx.play.current=40;
+  await f.run('finishCurrentAyah()');
+  assert.deepEqual([f.ctx.play.surah,f.ctx.play.current,f.run('tayassur.i')],[40,40,0]);
+  assert.equal(f.run('tayassurActive()'),true);
+  assert.equal(f.run('tayassurRetryIndex'),1);
+  f.ctx.offline=false;f.ctx.audio.play=async()=>{throw Error('the old file must not resume')};
+  await f.run('resumePlayback()');
+  assert.deepEqual([...f.ctx.played.at(-1)],[110,1]);
+  assert.equal(f.run('tayassurRetryIndex'),null);
+});
+test('turning «ما تيسّر» on starts its first segment at once even before its timing is cached',async()=>{
+  const {f}=tayassurFixture();
+  f.ctx.ready=new Set([999]);f.ctx.audio.paused=false;
+  await f.run('tayassurStart()');
+  assert.equal(f.ctx.fetched.length,0,'the first segment loads through playCurrent');
+  assert.equal(f.ctx.audio.paused,true,'the recitation the user left is silenced');
+  assert.equal(f.run('tayassurActive()'),true);
+  assert.ok(f.run('tayassurSegment()'),'the card has a segment to show');
+  assert.equal(f.ctx.played.length,1);
+});
+test('the segment boundary in timeupdate leaves the file playing for «ما تيسّر» only',async()=>{
+  const {f}=tayassurFixture();
+  await f.run('tayassurStart()');
+  f.run('tayassur.order=[{s:2,a:26},{s:36,a:13}]');
+  await f.run('tayassurPlay(0)');
+  f.ctx.checkSleepTimer=()=>false;f.ctx.paintAudioProgress=()=>{};f.ctx.updateMediaSessionPosition=()=>{};
+  f.ctx.activeTimingRows=[{ayah:43,start_time:0,end_time:1000}];f.ctx.activeSegment={start:0,end:1};
+  f.ctx.play.current=43;f.ctx.audio.currentTime=1.2;f.ctx.audio.paused=false;
+  let paused=0;f.ctx.audio.pause=()=>{paused++};
+  f.ctx.audio.ontimeupdate();await new Promise(r=>setImmediate(r));
+  assert.equal(paused,0);assert.deepEqual([...f.ctx.played.at(-1)],[36,13]);
+  // Without «ما تيسّر» the same boundary pauses as before.
+  const g=fixture();g.ctx.checkSleepTimer=()=>false;g.ctx.paintAudioProgress=()=>{};g.ctx.updateMediaSessionPosition=()=>{};g.ctx.tayassurAtBoundary=()=>false;
+  g.ctx.continuousStopRef={s:112,a:2};g.ctx.activeTimingRows=[{ayah:2,start_time:0,end_time:1000}];g.ctx.activeSegment={start:0,end:1};
+  g.ctx.play.current=2;g.ctx.audio.currentTime=1.2;
+  g.ctx.audio.ontimeupdate();await new Promise(r=>setImmediate(r));
+  assert.equal(g.ctx.audio.paused,true);
+});
+test('during a «ما تيسّر» segment the next segment is what gets prepared',async()=>{
+  const {f}=tayassurFixture();
+  await f.run('tayassurStart()');
+  f.run('tayassur.order=[{s:40,a:21},{s:110,a:1}]');
+  await f.run('tayassurPlay(0)');
+  assert.deepEqual(JSON.parse(f.run('JSON.stringify(nextTimedSourceRef())')),{s:110,a:1},'not al-Fussilat after Ghafir');
+  f.ctx.play.current=40;
+  assert.deepEqual(JSON.parse(f.run('JSON.stringify(nextPlaybackRefForPriming())')),{s:110,a:1});
+  f.run('tayassurStop()');
+  assert.equal(f.run('nextTimedSourceRef().s'),41,'after turning it off the surah simply continues');
 });
 test('«ما تيسّر» survives leaving the page: it comes back on, paused at its saved place',async()=>{
   const a=tayassurFixture();
@@ -301,4 +376,26 @@ test('«ما تيسّر» survives leaving the page: it comes back on, paused at
   // Turning it off forgets it.
   b.f.run('tayassurStop()');
   assert.equal(Object.keys(saved).length,0);
+});
+
+/* الملف المحمَّل لا يُستأنف إلا إذا كان لما تعرضه الشاشة. */
+test('play resumes the loaded file only when it belongs to the shown surah and reciter',async()=>{
+  const f=fixture();
+  Object.assign(f.ctx,{reciter:{id:'ghamdi',provider:'mp3quran-timed'},activeTimingSurah:112,activeTimingRows:[{ayah:1,start_time:0,end_time:1000}],activeSegment:{start:0,end:9}});
+  let resumed=0;Object.assign(f.ctx.audio,{src:'112.mp3',paused:true,ended:false,currentTime:0.5,play:async()=>{resumed++}});
+  f.ctx.audio.dataset={source:'112.mp3',playMode:'gapless',ref:'ghamdi:112'};
+  await f.run('resumePlayback()');assert.equal(resumed,1);assert.equal(f.ctx.played.length,0);
+  // The screen moved to another surah while Ghafir is still loaded: load the shown one.
+  f.ctx.audio.dataset.ref='ghamdi:40';f.ctx.activeTimingSurah=40;
+  await f.run('resumePlayback()');assert.equal(resumed,1);assert.deepEqual([...f.ctx.played.at(-1)],[112,1]);
+  // Same surah but its timing was dropped: never resume an untracked timed file.
+  f.ctx.audio.dataset.ref='ghamdi:112';f.ctx.activeTimingSurah=112;f.ctx.activeTimingRows=null;
+  await f.run('resumePlayback()');assert.equal(resumed,1);assert.equal(f.ctx.played.length,2);
+  // Another reciter's file.
+  f.ctx.activeTimingRows=[{ayah:1,start_time:0,end_time:1000}];f.ctx.audio.dataset.ref='husary:112';
+  await f.run('resumePlayback()');assert.equal(resumed,1);assert.equal(f.ctx.played.length,3);
+  // Per-ayah files carry their ayah.
+  Object.assign(f.ctx,{reciter:{id:'husary',provider:'ayah'}});f.ctx.audio.dataset={source:'x',playMode:'ayah',ref:'husary:112:1'};
+  await f.run('resumePlayback()');assert.equal(resumed,2);
+  f.ctx.play.current=2;await f.run('resumePlayback()');assert.equal(resumed,2);assert.deepEqual([...f.ctx.played.at(-1)],[112,2]);
 });
