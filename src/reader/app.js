@@ -36,6 +36,7 @@ const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=tru
 /* @include page-fit.js */
 
 /* @include uthmani.js */
+/* @include search-text.js */
 /* @include reading-tools.js */
 
 /* @include library.js */
