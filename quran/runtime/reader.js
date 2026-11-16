@@ -1125,6 +1125,37 @@ async function uthmaniVerse(k){
 function cleanSimpleQuranText(text){
   return String(text||"").replace(/&#(\d+);/g,(_,code)=>String.fromCodePoint(Number(code))).replace(/\s*#1969\b/g," ۩").replace(/\s{2,}/g," ").trim();
 }
+/* ---------- مطابقة البحث في القرآن ----------
+   النص المرافق لخطوط المصحف مكتوب برسم قريب من رسم المصحف: «الصَّلَواةَ»، «ءَامَنُوا»، «يَٰٓأَيُّهَا»،
+   والمستخدم يكتب بالإملاء المعتاد: «الصلاة»، «آمنوا»، «يا أيها». فيُوحَّد الطرفان (searchNormalize):
+   تُحذف الحركات وعلامات الضبط والوقف، والألف الخنجرية ألف، و«أ إ آ ٱ» ألف، و«ؤ ئ» همزة، و«ى» ياء،
+   و«واة» «اة» (الصلواة، الزكواة، الحيواة). ثم يُسمح في النص بألف أو همزة زائدة بين حروف ما كُتب
+   («الرحمن» تجد «الرحمان»، و«القران» تجد «القرءان»)، وبمسافة اختيارية مكان المسافة («يأيها» و«يا أيها»).
+   والهاء في آخر الكلمة المكتوبة تقبل التاء المربوطة («الصلاه»). */
+function searchNormalize(s){
+  return String(s||"")
+    .replace(/&#(\d+);/g,(_,code)=>String.fromCodePoint(Number(code)))
+    .replace(/#\d+/g,"")
+    .replace(/[يو]ٕ/g,"ء")
+    .replace(/ٰ/g,"ا")
+    .replace(/[ً-ٟۖ-ۭـ‍]/g,"")
+    .replace(/[أإآٱ]/g,"ا")
+    .replace(/[ؤئ]/g,"ء")
+    .replace(/ى/g,"ي")
+    .replace(/واة/g,"اة")
+    .replace(/\s+/g," ")
+    .trim();
+}
+function searchMatcher(query){
+  const q=searchNormalize(query);
+  if(!q)return null;
+  const parts=[...q].map((c,i)=>{
+    if(c===" ")return " ?";
+    if(c==="ه"&&(i===q.length-1||q[i+1]===" "))return "[هة]";
+    return c.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  });
+  return new RegExp(parts.join("[اء]*"));
+}
 function clearVerseContext(){
   const context=document.getElementById("readerContext");if(!context)return;
   clearTimeout(context._t);context.classList.remove("show");context.replaceChildren();context.removeAttribute("title");
@@ -1910,6 +1941,13 @@ function bindSurahDownloadButton(btn,s){
 let quranSearchIndex=storageJsonGet(STORAGE_KEYS.searchIndex,null);
 if(!Array.isArray(quranSearchIndex))quranSearchIndex=null;
 let quranSearchBuildPromise=null;
+/* النص الموحّد لكل آية (search-text.js)، يُحسب مرة في الجلسة. */
+const quranSearchNormalized=new Map();
+function searchTextOf(item){
+  let text=quranSearchNormalized.get(item.key);
+  if(text===undefined){text=searchNormalize(item.text);quranSearchNormalized.set(item.key,text)}
+  return text;
+}
 async function buildQuranSearchIndex(onProgress=()=>{}){
   if(quranSearchIndex)return quranSearchIndex;
   if(quranSearchBuildPromise)return quranSearchBuildPromise;
@@ -1940,7 +1978,7 @@ async function openQuranSearch(){
   const input=b.querySelector("#quranSearchInput"),status=b.querySelector("#quranSearchStatus"),results=b.querySelector("#quranSearchResults");
   let token=0;
   async function run(){
-    const mine=++token,q=normalizeArabic(input.value.trim());results.replaceChildren();
+    const mine=++token,q=normalizeArabic(input.value.trim()),matcher=searchMatcher(input.value);results.replaceChildren();
     if(q.length<2){status.textContent="اكتب حرفين على الأقل.";return}
     if(!quranSearchIndex){status.textContent="جاري تجهيز البحث لأول مرة…"}
     let index;
@@ -1949,7 +1987,7 @@ async function openQuranSearch(){
     if(mine!==token)return;
     const matches=[];
     for(const item of index){
-      if(normalizeArabic(item.text).includes(q)){matches.push(item);if(matches.length>=80)break}
+      if(matcher.test(searchTextOf(item))){matches.push(item);if(matches.length>=80)break}
     }
     status.textContent=matches.length?`${ar(matches.length)} نتيجة${matches.length>=80?" أولى":""}`:"لا توجد نتائج.";
     const frag=document.createDocumentFragment();

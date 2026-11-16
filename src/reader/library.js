@@ -231,6 +231,13 @@ function bindSurahDownloadButton(btn,s){
 let quranSearchIndex=storageJsonGet(STORAGE_KEYS.searchIndex,null);
 if(!Array.isArray(quranSearchIndex))quranSearchIndex=null;
 let quranSearchBuildPromise=null;
+/* النص الموحّد لكل آية (search-text.js)، يُحسب مرة في الجلسة. */
+const quranSearchNormalized=new Map();
+function searchTextOf(item){
+  let text=quranSearchNormalized.get(item.key);
+  if(text===undefined){text=searchNormalize(item.text);quranSearchNormalized.set(item.key,text)}
+  return text;
+}
 async function buildQuranSearchIndex(onProgress=()=>{}){
   if(quranSearchIndex)return quranSearchIndex;
   if(quranSearchBuildPromise)return quranSearchBuildPromise;
@@ -261,7 +268,7 @@ async function openQuranSearch(){
   const input=b.querySelector("#quranSearchInput"),status=b.querySelector("#quranSearchStatus"),results=b.querySelector("#quranSearchResults");
   let token=0;
   async function run(){
-    const mine=++token,q=normalizeArabic(input.value.trim());results.replaceChildren();
+    const mine=++token,q=normalizeArabic(input.value.trim()),matcher=searchMatcher(input.value);results.replaceChildren();
     if(q.length<2){status.textContent="اكتب حرفين على الأقل.";return}
     if(!quranSearchIndex){status.textContent="جاري تجهيز البحث لأول مرة…"}
     let index;
@@ -270,7 +277,7 @@ async function openQuranSearch(){
     if(mine!==token)return;
     const matches=[];
     for(const item of index){
-      if(normalizeArabic(item.text).includes(q)){matches.push(item);if(matches.length>=80)break}
+      if(matcher.test(searchTextOf(item))){matches.push(item);if(matches.length>=80)break}
     }
     status.textContent=matches.length?`${ar(matches.length)} نتيجة${matches.length>=80?" أولى":""}`:"لا توجد نتائج.";
     const frag=document.createDocumentFragment();
