@@ -232,14 +232,13 @@ html[data-tajweed="on"] .dk-svg .tj6,.tj-swatch.tj6{fill:var(--tj-madd246);strok
 html[data-tajweed="on"] .dk-svg .tj7,.tj-swatch.tj7{fill:var(--tj-madd45);stroke:var(--tj-madd45);background:var(--tj-madd45)}
 html[data-tajweed="on"] .dk-svg .tj8,.tj-swatch.tj8{fill:var(--tj-madd6);stroke:var(--tj-madd6);background:var(--tj-madd6)}
 html[data-tajweed="on"] .dk-svg .dk-allah:not([class*="tj"]){fill:var(--quran);stroke:var(--quran)}
-#tajweedBtn.active{color:var(--tj-ghunna)}
-.tj-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line);font-weight:700}
-.tj-switch input{width:22px;height:22px;accent-color:var(--tj-ghunna)}
-.tj-legend{list-style:none;margin:10px 0 6px;padding:0;display:grid;gap:9px}
-.tj-legend li{display:flex;align-items:center;gap:10px}
-.tj-legend small{margin-inline-start:auto;color:var(--muted)}
-.tj-swatch{width:14px;height:14px;border-radius:50%;flex:none}
-.tj-note{color:var(--muted);font-size:13px;margin:10px 0 0}
+.iconbtn.tj-btn{width:48px;padding:0;font:700 14px/1 "Aref Ruqaa",serif;letter-spacing:0}
+.iconbtn.tj-btn.active{color:var(--tj-ghunna);border-color:color-mix(in srgb,var(--tj-ghunna) 55%,transparent);background:color-mix(in srgb,var(--tj-ghunna) 12%,transparent)}
+.tj-strip{display:none;grid-column:1/-1;padding:2px 4px 3px;flex-wrap:wrap;justify-content:center;gap:5px 12px;
+  font:600 11px/1.3 Alexandria,system-ui,sans-serif;color:var(--chrome-text);direction:rtl}
+html[data-tajweed="on"] .tj-strip{display:flex}
+.tj-strip span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tj-swatch{width:10px;height:10px;border-radius:50%;flex:none}
 .dk-svg .dk-end{fill:var(--ayah-number);stroke:var(--ayah-number)}
 .word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
@@ -2761,7 +2760,7 @@ html[data-theme="dark"] .zl-upnext{color:#6B6350}
   <button class="brand brand-home quran-home-link" id="quranHomeBtn" type="button" aria-label="فتح فهرس القرآن">الفهرس</button>
   <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="top-actions">
-    <button type="button" class="iconbtn" id="tajweedBtn" aria-label="ألوان التجويد" title="ألوان التجويد" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c3.6 4.2 5.5 7.3 5.5 9.9a5.5 5.5 0 0 1-11 0c0-2.6 1.9-5.7 5.5-9.9Z"/><path d="M9.6 14.2a2.6 2.6 0 0 0 2.4 2.3"/></svg></button>
+    <button type="button" class="iconbtn tj-btn" id="tajweedBtn" aria-label="ألوان التجويد" aria-pressed="false" hidden>تجويد</button>
     <button type="button" class="iconbtn" id="themeBtn" aria-label="تفعيل الوضع الليلي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.8 8.8 0 1 0 11.6 11.6Z"/></svg></button>
     <button type="button" class="iconbtn" id="readerSearchBtn" aria-label="البحث" title="البحث"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></button>
     <button type="button" class="iconbtn zad-return-btn" id="backBtn" aria-label="الصفحة الرئيسية" title="الصفحة الرئيسية"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M11 6h4.5a4.5 4.5 0 1 1 0 9H4"/><path d="M7 12s-3 2.21-3 3s3 3 3 3"/></g></svg></button>
@@ -2777,6 +2776,7 @@ html[data-theme="dark"] .zl-upnext{color:#6B6350}
     <button type="button" class="tool" id="bookmarkBtn" aria-label="أضف علامة" title="أضف علامة" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg><span class="bookmark-label">أضف علامة</span></button>
     <button type="button" class="tool" id="jumpBookmarkBtn" title="الانتقال إلى العلامة المحفوظة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg><span>الانتقال إلى العلامة</span></button>
   </div>
+  <div class="tj-strip" id="tajweedStrip" aria-label="دليل ألوان التجويد"></div>
 </footer>
 
 <nav class="desktop-page-nav" aria-label="التنقل بين صفحات المصحف">
@@ -3883,31 +3883,23 @@ function dkRenderBismillah(inner,data,l){
    الإظهار صنف على <html> فقط: لا إعادة رسم ولا تحميل. الألوان ألوان مصاحف التجويد المعروفة
    بدرجات تناسب ورق زاد الخير ووضعه الليلي (styles.css). */
 const TAJWEED_KEY="zad:mushaf-tajweed";
+/* شريط الأحكام: يظهر مع أدوات القراءة (عند النقر على الصفحة) ما دامت الألوان ظاهرة. */
 const TAJWEED_LEGEND=[
-  ["tj8","مدّ لازم","٦ حركات"],
-  ["tj7","مدّ واجب","٤ أو ٥ حركات"],
-  ["tj6","مدّ جائز","٢ أو ٤ أو ٦"],
-  ["tj5","مدّ طبيعي","حركتان"],
-  ["tj1","غنّة وإخفاء وإدغام وإقلاب",""],
-  ["tj4","قلقلة",""],
-  ["tj2","تفخيم",""],
-  ["tj3","ما لا يُلفظ",""]
+  ["tj8","مدّ لازم ٦"],["tj7","مدّ واجب ٤–٥"],["tj6","مدّ جائز ٢–٦"],["tj5","مدّ طبيعي ٢"],
+  ["tj1","غنّة"],["tj4","قلقلة"],["tj2","تفخيم"],["tj3","لا يُلفظ"]
 ];
-function setTajweed(on){
+function setTajweed(on,announce=false){
   document.documentElement.dataset.tajweed=on?"on":"off";
   storageSet(TAJWEED_KEY,on?"1":"0");
   const btn=document.getElementById("tajweedBtn");
   if(btn){btn.setAttribute("aria-pressed",String(on));btn.classList.toggle("active",on)}
-}
-function openTajweedSheet(){
-  const on=document.documentElement.dataset.tajweed==="on";
-  const rows=TAJWEED_LEGEND.map(([c,name,note])=>`<li><i class="tj-swatch ${c}"></i><b>${name}</b>${note?`<small>${note}</small>`:""}</li>`).join("");
-  const b=sheet("ألوان التجويد",`<label class="tj-switch"><span>إظهار ألوان التجويد في المصحف</span><input type="checkbox" id="tajweedToggle"${on?" checked":""}></label><ul class="tj-legend">${rows}</ul><p class="tj-note">الأحكام على رواية حفص، وفق «التجويد الميسر» للشيخ علي الحذيفي.</p>`);
-  b.querySelector("#tajweedToggle").onchange=e=>setTajweed(e.target.checked);
+  if(announce)showToast(on?"ظهرت ألوان التجويد":"أُخفيت ألوان التجويد");
 }
 if(MUSHAF_DK){
   const btn=document.getElementById("tajweedBtn");
-  if(btn){btn.hidden=false;btn.onclick=openTajweedSheet}
+  const strip=document.getElementById("tajweedStrip");
+  if(strip)strip.innerHTML=TAJWEED_LEGEND.map(([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("");
+  if(btn){btn.hidden=false;btn.onclick=()=>setTajweed(document.documentElement.dataset.tajweed!=="on",true)}
   setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
 

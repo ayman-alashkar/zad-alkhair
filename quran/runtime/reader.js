@@ -1026,31 +1026,23 @@ function dkRenderBismillah(inner,data,l){
    الإظهار صنف على <html> فقط: لا إعادة رسم ولا تحميل. الألوان ألوان مصاحف التجويد المعروفة
    بدرجات تناسب ورق زاد الخير ووضعه الليلي (styles.css). */
 const TAJWEED_KEY="zad:mushaf-tajweed";
+/* شريط الأحكام: يظهر مع أدوات القراءة (عند النقر على الصفحة) ما دامت الألوان ظاهرة. */
 const TAJWEED_LEGEND=[
-  ["tj8","مدّ لازم","٦ حركات"],
-  ["tj7","مدّ واجب","٤ أو ٥ حركات"],
-  ["tj6","مدّ جائز","٢ أو ٤ أو ٦"],
-  ["tj5","مدّ طبيعي","حركتان"],
-  ["tj1","غنّة وإخفاء وإدغام وإقلاب",""],
-  ["tj4","قلقلة",""],
-  ["tj2","تفخيم",""],
-  ["tj3","ما لا يُلفظ",""]
+  ["tj8","مدّ لازم ٦"],["tj7","مدّ واجب ٤–٥"],["tj6","مدّ جائز ٢–٦"],["tj5","مدّ طبيعي ٢"],
+  ["tj1","غنّة"],["tj4","قلقلة"],["tj2","تفخيم"],["tj3","لا يُلفظ"]
 ];
-function setTajweed(on){
+function setTajweed(on,announce=false){
   document.documentElement.dataset.tajweed=on?"on":"off";
   storageSet(TAJWEED_KEY,on?"1":"0");
   const btn=document.getElementById("tajweedBtn");
   if(btn){btn.setAttribute("aria-pressed",String(on));btn.classList.toggle("active",on)}
-}
-function openTajweedSheet(){
-  const on=document.documentElement.dataset.tajweed==="on";
-  const rows=TAJWEED_LEGEND.map(([c,name,note])=>`<li><i class="tj-swatch ${c}"></i><b>${name}</b>${note?`<small>${note}</small>`:""}</li>`).join("");
-  const b=sheet("ألوان التجويد",`<label class="tj-switch"><span>إظهار ألوان التجويد في المصحف</span><input type="checkbox" id="tajweedToggle"${on?" checked":""}></label><ul class="tj-legend">${rows}</ul><p class="tj-note">الأحكام على رواية حفص، وفق «التجويد الميسر» للشيخ علي الحذيفي.</p>`);
-  b.querySelector("#tajweedToggle").onchange=e=>setTajweed(e.target.checked);
+  if(announce)showToast(on?"ظهرت ألوان التجويد":"أُخفيت ألوان التجويد");
 }
 if(MUSHAF_DK){
   const btn=document.getElementById("tajweedBtn");
-  if(btn){btn.hidden=false;btn.onclick=openTajweedSheet}
+  const strip=document.getElementById("tajweedStrip");
+  if(strip)strip.innerHTML=TAJWEED_LEGEND.map(([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("");
+  if(btn){btn.hidden=false;btn.onclick=()=>setTajweed(document.documentElement.dataset.tajweed!=="on",true)}
   setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
 

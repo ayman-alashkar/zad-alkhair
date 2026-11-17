@@ -190,14 +190,13 @@ html[data-tajweed="on"] .dk-svg .tj6,.tj-swatch.tj6{fill:var(--tj-madd246);strok
 html[data-tajweed="on"] .dk-svg .tj7,.tj-swatch.tj7{fill:var(--tj-madd45);stroke:var(--tj-madd45);background:var(--tj-madd45)}
 html[data-tajweed="on"] .dk-svg .tj8,.tj-swatch.tj8{fill:var(--tj-madd6);stroke:var(--tj-madd6);background:var(--tj-madd6)}
 html[data-tajweed="on"] .dk-svg .dk-allah:not([class*="tj"]){fill:var(--quran);stroke:var(--quran)}
-#tajweedBtn.active{color:var(--tj-ghunna)}
-.tj-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line);font-weight:700}
-.tj-switch input{width:22px;height:22px;accent-color:var(--tj-ghunna)}
-.tj-legend{list-style:none;margin:10px 0 6px;padding:0;display:grid;gap:9px}
-.tj-legend li{display:flex;align-items:center;gap:10px}
-.tj-legend small{margin-inline-start:auto;color:var(--muted)}
-.tj-swatch{width:14px;height:14px;border-radius:50%;flex:none}
-.tj-note{color:var(--muted);font-size:13px;margin:10px 0 0}
+.iconbtn.tj-btn{width:48px;padding:0;font:700 14px/1 "Aref Ruqaa",serif;letter-spacing:0}
+.iconbtn.tj-btn.active{color:var(--tj-ghunna);border-color:color-mix(in srgb,var(--tj-ghunna) 55%,transparent);background:color-mix(in srgb,var(--tj-ghunna) 12%,transparent)}
+.tj-strip{display:none;grid-column:1/-1;padding:2px 4px 3px;flex-wrap:wrap;justify-content:center;gap:5px 12px;
+  font:600 11px/1.3 Alexandria,system-ui,sans-serif;color:var(--chrome-text);direction:rtl}
+html[data-tajweed="on"] .tj-strip{display:flex}
+.tj-strip span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tj-swatch{width:10px;height:10px;border-radius:50%;flex:none}
 .dk-svg .dk-end{fill:var(--ayah-number);stroke:var(--ayah-number)}
 .word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
