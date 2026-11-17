@@ -980,8 +980,10 @@ function dkUses(svg,l,tokens,from,to){
     const t=l.t[i];if(t<from||t>to)continue;
     const u=document.createElementNS(SVG_NS,"use");
     u.setAttribute("href","#dkg"+l.g[i*3]);u.setAttribute("x",l.g[i*3+1]);u.setAttribute("y",l.g[i*3+2]);
-    const tok=tokens[t];
-    if(tok){if(tok[0]<0)u.setAttribute("class","dk-end");else if(tok[3])u.setAttribute("class","dk-allah")}
+    const tok=tokens[t],cls=[];
+    if(tok){if(tok[0]<0)cls.push("dk-end");else if(tok[3])cls.push("dk-allah")}
+    if(l.j&&l.j[i])cls.push("tj"+l.j[i]);
+    if(cls.length)u.setAttribute("class",cls.join(" "));
     g.appendChild(u);
   }
   svg.appendChild(g);
@@ -1017,6 +1019,39 @@ function dkRenderBismillah(inner,data,l){
   const svg=dkSvg(-l.n,0,DK_BASELINE_EM/unitEm,DK_LINE_EM/unitEm,l.n*unitEm,DK_LINE_EM);
   dkUses(svg,{...l,t:l.t.map(()=>-1)},[],-1,-1);
   inner.appendChild(svg);
+}
+
+/* ---------- ألوان التجويد ----------
+   حكم كل حرف محسوب عند البناء (محرك DigitalKhatt على «التجويد الميسر» للحذيفي)، ومحفوظ في الصفحة.
+   الإظهار صنف على <html> فقط: لا إعادة رسم ولا تحميل. الألوان ألوان مصاحف التجويد المعروفة
+   بدرجات تناسب ورق زاد الخير ووضعه الليلي (styles.css). */
+const TAJWEED_KEY="zad:mushaf-tajweed";
+const TAJWEED_LEGEND=[
+  ["tj8","مدّ لازم","٦ حركات"],
+  ["tj7","مدّ واجب","٤ أو ٥ حركات"],
+  ["tj6","مدّ جائز","٢ أو ٤ أو ٦"],
+  ["tj5","مدّ طبيعي","حركتان"],
+  ["tj1","غنّة وإخفاء وإدغام وإقلاب",""],
+  ["tj4","قلقلة",""],
+  ["tj2","تفخيم",""],
+  ["tj3","ما لا يُلفظ",""]
+];
+function setTajweed(on){
+  document.documentElement.dataset.tajweed=on?"on":"off";
+  storageSet(TAJWEED_KEY,on?"1":"0");
+  const btn=document.getElementById("tajweedBtn");
+  if(btn){btn.setAttribute("aria-pressed",String(on));btn.classList.toggle("active",on)}
+}
+function openTajweedSheet(){
+  const on=document.documentElement.dataset.tajweed==="on";
+  const rows=TAJWEED_LEGEND.map(([c,name,note])=>`<li><i class="tj-swatch ${c}"></i><b>${name}</b>${note?`<small>${note}</small>`:""}</li>`).join("");
+  const b=sheet("ألوان التجويد",`<label class="tj-switch"><span>إظهار ألوان التجويد في المصحف</span><input type="checkbox" id="tajweedToggle"${on?" checked":""}></label><ul class="tj-legend">${rows}</ul><p class="tj-note">الأحكام على رواية حفص، وفق «التجويد الميسر» للشيخ علي الحذيفي.</p>`);
+  b.querySelector("#tajweedToggle").onchange=e=>setTajweed(e.target.checked);
+}
+if(MUSHAF_DK){
+  const btn=document.getElementById("tajweedBtn");
+  if(btn){btn.hidden=false;btn.onclick=openTajweedSheet}
+  setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
 
 /* حبر QCF4 يتجاوز صندوق سطره صعودًا ونزولًا: الشدّة والمدّة تعلوان الصندوق،

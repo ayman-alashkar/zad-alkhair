@@ -220,6 +220,26 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 .dk-svg{display:block;overflow:visible;fill:var(--quran);stroke:var(--quran);stroke-width:var(--dk-ink,15);stroke-linejoin:round}
 .dk-svg .dk-allah{fill:var(--red);stroke:var(--red)}
 .dk-svg .dk-sajda{stroke:none}
+/* ألوان التجويد (mushaf-dk.js): تظهر فقط حين data-tajweed="on"، وتغلب لون لفظ الجلالة. */
+:root{--tj-ghunna:#1E8A57;--tj-tafkhim:#1F6AA0;--tj-silent:#A9A49A;--tj-qalqala:#1C9CCB;--tj-madd2:#B58312;--tj-madd246:#DB6A17;--tj-madd45:#C4166F;--tj-madd6:#8E1E22}
+html[data-theme="dark"]{--tj-ghunna:#5DC994;--tj-tafkhim:#73B4EA;--tj-silent:rgba(255,249,234,.40);--tj-qalqala:#73D3F5;--tj-madd2:#E6C46A;--tj-madd246:#F3A35F;--tj-madd45:#F27BBB;--tj-madd6:#F07A73}
+html[data-tajweed="on"] .dk-svg .tj1,.tj-swatch.tj1{fill:var(--tj-ghunna);stroke:var(--tj-ghunna);background:var(--tj-ghunna)}
+html[data-tajweed="on"] .dk-svg .tj2,.tj-swatch.tj2{fill:var(--tj-tafkhim);stroke:var(--tj-tafkhim);background:var(--tj-tafkhim)}
+html[data-tajweed="on"] .dk-svg .tj3,.tj-swatch.tj3{fill:var(--tj-silent);stroke:var(--tj-silent);background:var(--tj-silent)}
+html[data-tajweed="on"] .dk-svg .tj4,.tj-swatch.tj4{fill:var(--tj-qalqala);stroke:var(--tj-qalqala);background:var(--tj-qalqala)}
+html[data-tajweed="on"] .dk-svg .tj5,.tj-swatch.tj5{fill:var(--tj-madd2);stroke:var(--tj-madd2);background:var(--tj-madd2)}
+html[data-tajweed="on"] .dk-svg .tj6,.tj-swatch.tj6{fill:var(--tj-madd246);stroke:var(--tj-madd246);background:var(--tj-madd246)}
+html[data-tajweed="on"] .dk-svg .tj7,.tj-swatch.tj7{fill:var(--tj-madd45);stroke:var(--tj-madd45);background:var(--tj-madd45)}
+html[data-tajweed="on"] .dk-svg .tj8,.tj-swatch.tj8{fill:var(--tj-madd6);stroke:var(--tj-madd6);background:var(--tj-madd6)}
+html[data-tajweed="on"] .dk-svg .dk-allah:not([class*="tj"]){fill:var(--quran);stroke:var(--quran)}
+#tajweedBtn.active{color:var(--tj-ghunna)}
+.tj-switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line);font-weight:700}
+.tj-switch input{width:22px;height:22px;accent-color:var(--tj-ghunna)}
+.tj-legend{list-style:none;margin:10px 0 6px;padding:0;display:grid;gap:9px}
+.tj-legend li{display:flex;align-items:center;gap:10px}
+.tj-legend small{margin-inline-start:auto;color:var(--muted)}
+.tj-swatch{width:14px;height:14px;border-radius:50%;flex:none}
+.tj-note{color:var(--muted);font-size:13px;margin:10px 0 0}
 .dk-svg .dk-end{fill:var(--ayah-number);stroke:var(--ayah-number)}
 .word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
@@ -2741,6 +2761,7 @@ html[data-theme="dark"] .zl-upnext{color:#6B6350}
   <button class="brand brand-home quran-home-link" id="quranHomeBtn" type="button" aria-label="فتح فهرس القرآن">الفهرس</button>
   <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="top-actions">
+    <button type="button" class="iconbtn" id="tajweedBtn" aria-label="ألوان التجويد" title="ألوان التجويد" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5c3.6 4.2 5.5 7.3 5.5 9.9a5.5 5.5 0 0 1-11 0c0-2.6 1.9-5.7 5.5-9.9Z"/><path d="M9.6 14.2a2.6 2.6 0 0 0 2.4 2.3"/></svg></button>
     <button type="button" class="iconbtn" id="themeBtn" aria-label="تفعيل الوضع الليلي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.8 8.8 0 1 0 11.6 11.6Z"/></svg></button>
     <button type="button" class="iconbtn" id="readerSearchBtn" aria-label="البحث" title="البحث"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></button>
     <button type="button" class="iconbtn zad-return-btn" id="backBtn" aria-label="الصفحة الرئيسية" title="الصفحة الرئيسية"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M11 6h4.5a4.5 4.5 0 1 1 0 9H4"/><path d="M7 12s-3 2.21-3 3s3 3 3 3"/></g></svg></button>
@@ -3816,8 +3837,10 @@ function dkUses(svg,l,tokens,from,to){
     const t=l.t[i];if(t<from||t>to)continue;
     const u=document.createElementNS(SVG_NS,"use");
     u.setAttribute("href","#dkg"+l.g[i*3]);u.setAttribute("x",l.g[i*3+1]);u.setAttribute("y",l.g[i*3+2]);
-    const tok=tokens[t];
-    if(tok){if(tok[0]<0)u.setAttribute("class","dk-end");else if(tok[3])u.setAttribute("class","dk-allah")}
+    const tok=tokens[t],cls=[];
+    if(tok){if(tok[0]<0)cls.push("dk-end");else if(tok[3])cls.push("dk-allah")}
+    if(l.j&&l.j[i])cls.push("tj"+l.j[i]);
+    if(cls.length)u.setAttribute("class",cls.join(" "));
     g.appendChild(u);
   }
   svg.appendChild(g);
@@ -3853,6 +3876,39 @@ function dkRenderBismillah(inner,data,l){
   const svg=dkSvg(-l.n,0,DK_BASELINE_EM/unitEm,DK_LINE_EM/unitEm,l.n*unitEm,DK_LINE_EM);
   dkUses(svg,{...l,t:l.t.map(()=>-1)},[],-1,-1);
   inner.appendChild(svg);
+}
+
+/* ---------- ألوان التجويد ----------
+   حكم كل حرف محسوب عند البناء (محرك DigitalKhatt على «التجويد الميسر» للحذيفي)، ومحفوظ في الصفحة.
+   الإظهار صنف على <html> فقط: لا إعادة رسم ولا تحميل. الألوان ألوان مصاحف التجويد المعروفة
+   بدرجات تناسب ورق زاد الخير ووضعه الليلي (styles.css). */
+const TAJWEED_KEY="zad:mushaf-tajweed";
+const TAJWEED_LEGEND=[
+  ["tj8","مدّ لازم","٦ حركات"],
+  ["tj7","مدّ واجب","٤ أو ٥ حركات"],
+  ["tj6","مدّ جائز","٢ أو ٤ أو ٦"],
+  ["tj5","مدّ طبيعي","حركتان"],
+  ["tj1","غنّة وإخفاء وإدغام وإقلاب",""],
+  ["tj4","قلقلة",""],
+  ["tj2","تفخيم",""],
+  ["tj3","ما لا يُلفظ",""]
+];
+function setTajweed(on){
+  document.documentElement.dataset.tajweed=on?"on":"off";
+  storageSet(TAJWEED_KEY,on?"1":"0");
+  const btn=document.getElementById("tajweedBtn");
+  if(btn){btn.setAttribute("aria-pressed",String(on));btn.classList.toggle("active",on)}
+}
+function openTajweedSheet(){
+  const on=document.documentElement.dataset.tajweed==="on";
+  const rows=TAJWEED_LEGEND.map(([c,name,note])=>`<li><i class="tj-swatch ${c}"></i><b>${name}</b>${note?`<small>${note}</small>`:""}</li>`).join("");
+  const b=sheet("ألوان التجويد",`<label class="tj-switch"><span>إظهار ألوان التجويد في المصحف</span><input type="checkbox" id="tajweedToggle"${on?" checked":""}></label><ul class="tj-legend">${rows}</ul><p class="tj-note">الأحكام على رواية حفص، وفق «التجويد الميسر» للشيخ علي الحذيفي.</p>`);
+  b.querySelector("#tajweedToggle").onchange=e=>setTajweed(e.target.checked);
+}
+if(MUSHAF_DK){
+  const btn=document.getElementById("tajweedBtn");
+  if(btn){btn.hidden=false;btn.onclick=openTajweedSheet}
+  setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
 
 /* حبر QCF4 يتجاوز صندوق سطره صعودًا ونزولًا: الشدّة والمدّة تعلوان الصندوق،

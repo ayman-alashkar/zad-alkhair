@@ -22,6 +22,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { initHb, HarfBuzzBlob, HarfBuzzFace, HarfBuzzFont, HarfBuzzBuffer, getWidth, hb } from "./mushaf/digitalkhatt/harfbuzz.mjs";
 import { analyzeLineForJust, justifyLine, FONTSIZE, SpaceType, JustStyle } from "./mushaf/digitalkhatt/just.mjs";
+import { TajweedService } from "./mushaf/digitalkhatt/tajweed.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const check = process.argv.includes("--check");
@@ -43,6 +44,32 @@ const AR = d => String(d).replace(/\d/g, c => "٠١٢٣٤٥٦٧٨٩"[c]);
    وعلامة الحرف الزائد عند المجمع U+0652 وعند الخط U+06DF. الشكل المرسوم واحد. */
 const toFont = w => w.replace(/ْ/g, "۟").replace(/ۡ/g, "ْ");
 const BASMALA = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+/* أحكام التجويد لكل حرف (محرك DigitalKhatt على «التجويد الميسر» للحذيفي). رقم الحكم في الصفحات
+   موضعه في هذه القائمة، و0 لما لا حكم له. الأسماء أسماء DigitalKhatt، وألوانها في القارئ. */
+const TAJWEED = ["", "green", "tafkim", "lgray", "lkalkala", "red1", "red2", "red3", "red4"];
+const tajweed = new TajweedService();
+/* المحرك مكتوب لترميز DigitalKhatt، وفيه الهمزة على الألف والواو والياء حرفان بينهما U+034F.
+   فيُفكّ ما ركّبه المجمع منها لتحليل الأحكام فقط، وتعود المواضع إلى نص السطر. */
+const CGJ = "\u034F", HAMZA = "\u0654";
+const DECOMPOSE = { "أ": "ا", "ؤ": "و", "ئ": "ي" };
+function tajweedOfPage(lineTexts) {
+  let a = ""; const back = []; const lineStart = [];
+  lineTexts.forEach((t, li) => {
+    lineStart.push(back.length);
+    for (let i = 0; i < t.length; i++) {
+      const c = t[i], base = DECOMPOSE[c];
+      const out = base ? base + CGJ + HAMZA + CGJ : c;
+      for (const ch of out) { a += ch; back.push([li, i]); }
+    }
+    a += " "; back.push([li, -1]);
+  });
+  const cls = lineTexts.map(t => new Uint8Array(t.length));
+  tajweed.applyTajweedForText(a, (pos, name) => {
+    const [li, i] = back[pos] || []; if (i === undefined || i < 0) return;
+    const k = TAJWEED.indexOf(name); if (k > 0) cls[li][i] = k;
+  }, () => {}, false);
+  return cls;
+}
 
 function readJson(p) { return JSON.parse(fs.readFileSync(p, "utf8")); }
 
@@ -104,6 +131,8 @@ async function main() {
       return { text, owner, sajda };
     });
 
+    const tj = tajweedOfPage(built.map(b => b.text));
+
     // حجم الخط في الصفحة: واحد للمصحف كله، ويصغُر قليلًا في صفحة فيها سطر يتجاوز حدّ التضييق.
     let pageScale = 1;
     let ti = 0;
@@ -120,6 +149,7 @@ async function main() {
     for (const k of kinds) {
       if (k.k === "sura") { linesOut.push({ k: "s", s: k.s }); continue; }
       const isBism = k.k === "bism";
+      const lineTj = isBism ? null : tj[ti];
       const { text, owner, sajda } = isBism ? { text: BASMALA, owner: [], sajda: new Set() } : built[ti++];
       const desired = LINE_UNITS * (k.w || 1) / pageScale;
       const key = p * 100 + linesOut.length; // مفتاح فريد لذاكرة analyzeLineForJust
@@ -148,7 +178,7 @@ async function main() {
       buf.setDirection("rtl"); buf.setLanguage(hb.arabLanguage); buf.setScript(hb.arabScript); buf.setClusterLevel(1);
       buf.addText(text); buf.shape(font, features);
       const res = buf.json(); buf.destroy();
-      const g = [], tok = [], edges = [];
+      const g = [], tok = [], edges = [], jw = [];
       let x = 0, lastTok = -2, sjRight = null, sjLeft = null;
       for (let i = res.length - 1; i >= 0; i--) {
         const gl = res[i], sp = info.spaces.get(gl.Cluster);
@@ -160,6 +190,7 @@ async function main() {
         if (!glyphPaths.get(gl.GlyphId)) continue;
         g.push(gl.GlyphId, Math.round(x + gl.XOffset), Math.round(gl.YOffset));
         tok.push(t);
+        jw.push(lineTj ? lineTj[gl.Cluster] || 0 : 0);
         if (sajda.has(t)) { sjRight ??= Math.round(x + gl.XAdvance); sjLeft = Math.min(sjLeft ?? 0, Math.round(x + gl.XOffset)); }
       }
       const width = Math.round(-x);
@@ -167,6 +198,7 @@ async function main() {
       // e: لكل كلمة في السطر رقمها في الصفحة وحافتها اليمنى، ليُقسَّم السطر إلى أجزاء الآيات.
       const line = { k: isBism ? "b" : "t", x: +jr.xScale.toFixed(4), n: width, g, t: tok, e: edges };
       if (k.w) line.w = k.w;
+      if (jw.some(Boolean)) line.j = jw; // حكم التجويد لكل شكل (رقمه في TAJWEED)
       if (sjRight !== null) line.sj = [sjRight, sjLeft]; // خط السجدة فوق كلماتها: من الحافة اليمنى إلى اليسرى
       linesOut.push(line);
     }
@@ -185,7 +217,7 @@ async function main() {
   // بشكل index.json وverses.json في حزمة QCF4 نفسه، فيقرؤهما القارئ دون تغيير.
   const lastPageOf = id => { let last = 0; for (const [k, pg] of Object.entries(verseToPage)) if (+k.split(":")[0] === id) last = Math.max(last, pg); return last; };
   const meta = {
-    meta: { format: FORMAT, total_pages: 604, total_chapters: 114, total_verses: 6236, line_units: LINE_UNITS, upem: font.unitsPerEM },
+    meta: { format: FORMAT, tajweed: TAJWEED, total_pages: 604, total_chapters: 114, total_verses: 6236, line_units: LINE_UNITS, upem: font.unitsPerEM },
     chapters: H.surahs.map((s, i) => ({
       id: i + 1, name_arabic: plainName(s.name_ar), verses_count: s.ayah_count,
       pages: [verseToPage[`${i + 1}:1`], lastPageOf(i + 1)], bismillah_pre: s.has_basmalah && i !== 0,
