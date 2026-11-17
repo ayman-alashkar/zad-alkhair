@@ -105,15 +105,13 @@ function dkRenderBismillah(inner,data,l){
 
 /* ---------- ألوان التجويد ----------
    حكم كل حرف محسوب عند البناء (محرك DigitalKhatt على «التجويد الميسر» للحذيفي)، ومحفوظ في الصفحة.
-   الإظهار صنف على <html> فقط: لا إعادة رسم ولا تحميل. الألوان ألوان مصحف التجويد (دار المعرفة)
-   نفسها، وفي الوضع الليلي درجاتها الفاتحة (styles.css). */
+   الإظهار صنف على <html> فقط: لا إعادة رسم ولا تحميل. الألوان ألوان مصاحف التجويد المعروفة
+   بدرجات تناسب ورق زاد الخير ووضعه الليلي (styles.css). */
 const TAJWEED_KEY="zad:mushaf-tajweed";
 /* شريط الأحكام: يظهر مع أدوات القراءة (عند النقر على الصفحة) ما دامت الألوان ظاهرة. */
-/* المسمّيات والألوان كما في دليل مصحف التجويد (دار المعرفة)، مقسومة عمودين في بطاقة بأسلوب زاد:
-   المدود، ثم أحكام الحروف. */
 const TAJWEED_LEGEND=[
-  ["المدود",[["tj8","مدّ ٦ حركات لزوماً"],["tj7","مدّ واجب ٤ أو ٥ حركات"],["tj6","مدّ ٢ أو ٤ أو ٦ جوازاً"],["tj5","مدّ حركتان"]]],
-  ["أحكام الحروف",[["tj1","إخفاء، ومواقع الغنّة (حركتان)"],["tj3","إدغام، وما لا يُلفظ"],["tj2","تفخيم"],["tj4","قلقلة"]]]
+  ["tj8","مدّ لازم ٦"],["tj7","مدّ واجب ٤–٥"],["tj6","مدّ جائز ٢–٦"],["tj5","مدّ طبيعي ٢"],
+  ["tj1","غنّة"],["tj4","قلقلة"],["tj2","تفخيم"],["tj3","لا يُلفظ"]
 ];
 function setTajweed(on,announce=false){
   document.documentElement.dataset.tajweed=on?"on":"off";
@@ -125,7 +123,7 @@ function setTajweed(on,announce=false){
 {
   const btn=document.getElementById("tajweedBtn");
   const strip=document.getElementById("tajweedStrip");
-if(strip)strip.innerHTML=TAJWEED_LEGEND.map(([title,items])=>`<div class="tj-col"><b>${title}</b>${items.map(([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("")}</div>`).join("");
+  if(strip)strip.innerHTML=TAJWEED_LEGEND.map(([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("");
   if(btn){btn.hidden=false;btn.onclick=()=>setTajweed(document.documentElement.dataset.tajweed!=="on",true)}
   setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
