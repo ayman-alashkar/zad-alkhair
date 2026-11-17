@@ -153,8 +153,7 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 .verse-segment.selected{background:var(--select);box-shadow:0 0 0 1px var(--select-line) inset}
 /* المصحف المرسوم مسبقًا (mushaf-dk.js): أشكال جاهزة في svg بحجم em، تلوّنها متغيرات الألوان نفسها. */
 .dk-glyphs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
-.dk-box{display:block;flex:none}
-.dk-svg{display:block;width:100%;height:100%;overflow:visible;fill:var(--quran);stroke:var(--quran);stroke-width:var(--dk-ink,15);stroke-linejoin:round}
+.dk-svg{display:block;overflow:visible;fill:var(--quran);stroke:var(--quran);stroke-width:var(--dk-ink,15);stroke-linejoin:round}
 .dk-svg .dk-allah{fill:var(--red);stroke:var(--red)}
 .dk-svg .dk-sajda{stroke:none}
 /* صندوق سطر عنوان السورة بارتفاعه الأصلي (line-height 1.08، وارتفاع 1.12em). */
