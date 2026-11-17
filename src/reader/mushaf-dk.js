@@ -109,13 +109,11 @@ function dkRenderBismillah(inner,data,l){
    نفسها، وفي الوضع الليلي درجاتها الفاتحة (styles.css). */
 const TAJWEED_KEY="zad:mushaf-tajweed";
 /* شريط الأحكام: يظهر مع أدوات القراءة (عند النقر على الصفحة) ما دامت الألوان ظاهرة. */
-/* المسمّيات والترتيب كما في دليل مصحف التجويد (دار المعرفة): عمودان للمدود، ثم الغنّة والإدغام،
-   ثم التفخيم والقلقلة. كل حكمين متجاورين مجموعة واحدة (عمود من سطرين) لا تنكسر. */
+/* المسمّيات والألوان كما في دليل مصحف التجويد (دار المعرفة)، مقسومة عمودين في بطاقة بأسلوب زاد:
+   المدود، ثم أحكام الحروف. */
 const TAJWEED_LEGEND=[
-  ["tj8","مدّ ٦ حركات لزوماً"],["tj7","مدّ واجب ٤ أو ٥ حركات"],
-  ["tj6","مدّ ٢ أو ٤ أو ٦ جوازاً"],["tj5","مدّ حركتان"],
-  ["tj1","إخفاء، ومواقع الغنّة (حركتان)"],["tj3","إدغام، وما لا يُلفظ"],
-  ["tj2","تفخيم"],["tj4","قلقلة"]
+  ["المدود",[["tj8","مدّ ٦ حركات لزوماً"],["tj7","مدّ واجب ٤ أو ٥ حركات"],["tj6","مدّ ٢ أو ٤ أو ٦ جوازاً"],["tj5","مدّ حركتان"]]],
+  ["أحكام الحروف",[["tj1","إخفاء، ومواقع الغنّة (حركتان)"],["tj3","إدغام، وما لا يُلفظ"],["tj2","تفخيم"],["tj4","قلقلة"]]]
 ];
 function setTajweed(on,announce=false){
   document.documentElement.dataset.tajweed=on?"on":"off";
@@ -127,12 +125,7 @@ function setTajweed(on,announce=false){
 {
   const btn=document.getElementById("tajweedBtn");
   const strip=document.getElementById("tajweedStrip");
-  if(strip){
-    const item=([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`;
-    let html="";
-    for(let i=0;i<TAJWEED_LEGEND.length;i+=2)html+=`<div class="tj-group">${item(TAJWEED_LEGEND[i])}${item(TAJWEED_LEGEND[i+1])}</div>`;
-    strip.innerHTML=html;
-  }
+if(strip)strip.innerHTML=TAJWEED_LEGEND.map(([title,items])=>`<div class="tj-col"><b>${title}</b>${items.map(([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("")}</div>`).join("");
   if(btn){btn.hidden=false;btn.onclick=()=>setTajweed(document.documentElement.dataset.tajweed!=="on",true)}
   setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
