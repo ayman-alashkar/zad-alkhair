@@ -98,6 +98,26 @@ function updateReciterMarquee(){
   });
 }
 window.addEventListener("resize",updateReciterMarquee);
+/* اختيار القارئ في المشغّل الداخلي: نافذة القرّاء نفسها في صفحة الاستماع، بدل قائمة الجهاز.
+   الاختيار يمرّ بالقائمة المخفية (change)، فيبقى منطق التبديل في audio-playback.js كما هو. */
+function openPanelReciters(){
+  const offline=audioOfflinePackages(),count=id=>Object.keys(offline).filter(k=>k.startsWith(id+":")).length;
+  const ty=tayassurActive();
+  const rows=RECITERS.map(r=>{
+    const whole=isSurahOnly(r),n=count(r.id),on=r.id===reciter.id,off=ty&&whole;
+    const meta=[whole?"السورة كاملة":"تتبع الآيات"];if(n)meta.push(n===1?"سورة منزّلة":`${ar(n)} سور منزّلة`);
+    if(off)meta.splice(0,meta.length,"غير متاح في «ما تيسّر»");
+    return `<button type="button" class="zl-qrow${on?" on":""}" data-qari="${escapeHtml(r.id)}" aria-pressed="${on}"${off?" disabled":""}><span class="zl-qmono">${escapeHtml(listenMonogram(r))}</span><span class="zl-qcopy"><b>${escapeHtml(listenReciterName(r))}</b><small><i class="zl-dot${whole?" whole":""}"></i>${meta.join("، ")}</small></span>${on?`<span class="zl-qcheck">${LISTEN_ICONS.check}</span>`:""}</button>`;
+  }).join("");
+  const b=sheet("اختر القارئ",`<div class="zl-legend"><span><i class="zl-dot"></i>تتبع الآيات في المصحف</span><span><i class="zl-dot whole"></i>السورة كاملة</span></div><div class="zl-qlist">${rows}</div>`);
+  b.classList.add("player-backdrop","zl-sheet");
+  b.querySelectorAll("[data-qari]").forEach(btn=>btn.onclick=()=>{
+    b.remove();
+    if(btn.dataset.qari===reciter.id)return;
+    const q=document.getElementById("panelQari");q.value=btn.dataset.qari;q.dispatchEvent(new Event("change"));
+  });
+}
+document.getElementById("panelQariBtn").onclick=e=>{e.currentTarget.blur();openPanelReciters()};
 function showPlayer(expand=true){
   document.body.classList.add("player-on");
   document.body.classList.toggle("player-expanded",!!expand);
