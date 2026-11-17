@@ -48,7 +48,7 @@ const QURAN_REQUIRED=[...QURAN_CORE,...QURAN_FONTS,...QURAN_PAGES];
 const MUSHAF_VERSION="9372ecd86fa7";
 const MUSHAF_CACHE="zad-mushaf-"+MUSHAF_VERSION;
 const MUSHAF_Q="?v="+MUSHAF_VERSION;
-const MUSHAF_REQUIRED=["index.json","verses.json","glyphs.json","titles.json",...Array.from({length:604},(_,i)=>`pages/${String(i+1).padStart(3,"0")}.json`)].map(f=>"./data/mushaf/"+f+MUSHAF_Q);
+const MUSHAF_REQUIRED=["index.json","verses.json","glyphs.json","titles.json",...Array.from({length:604},(_,i)=>`pages/${String(i+1).padStart(3,"0")}.json`)].map(f=>"./data/mushaf/"+f+MUSHAF_Q).concat(QUL_HEADER);
 const MUSHAF_MARKER="./__zad_mushaf_ready__";
 function quranPack(mushaf){
   return mushaf==="dk"

@@ -291,9 +291,17 @@ function renderPage(data){
     const first=line.words[0];
     inner.style.fontFamily=`"${data.font||"QCF4_Hafs_01"}"`;
     if(first?.type==="surah_header"&&MUSHAF_DK){
-      const sid=surahIdForHeader(data,lineIndex);
+      /* عنوان QUL نفسه كما في QCF4. صندوق السطر يحجزه عنصر بارتفاع صندوق QCF4، بدل محرف QBSML،
+         ومن غير خط العنوان (دون اتصال قبل حفظه) يُكتب «سورة كذا» بخط المصحف. */
+      const sid=surahIdForHeader(data,lineIndex),glyph=SURAH_HEADER_GLYPHS[sid];
       inner.classList.add("surah-line","dk-title-line");
-      if(!dkRenderSurahTitle(inner,sid))inner.textContent=`سورة ${chapterMap.get(sid)?.name_arabic||""}`;
+      if(surahHeaderReady&&glyph){
+        inner.classList.add("banner-ready");
+        const metric=document.createElement("span");metric.className="surah-metric dk-metric";
+        const banner=document.createElement("canvas");banner.className="surah-banner";banner.dataset.glyph=glyph;
+        inner.append(metric,banner);
+      }else if(!dkRenderSurahTitle(inner,sid))inner.textContent=`سورة ${chapterMap.get(sid)?.name_arabic||""}`;
+      inner.setAttribute("aria-label",`سورة ${chapterMap.get(sid)?.name_arabic||""}`);
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
     if(first?.type==="surah_header"){

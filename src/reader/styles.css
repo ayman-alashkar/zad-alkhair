@@ -178,14 +178,9 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 .dk-svg{display:block;overflow:visible;fill:var(--quran);stroke:var(--quran);stroke-width:var(--dk-ink,15);stroke-linejoin:round}
 .dk-svg .dk-allah{fill:var(--red);stroke:var(--red)}
 .dk-svg .dk-sajda{stroke:none}
-/* عنوان السورة في المصحف المرسوم: إطار بلون العنوان، وزخارف ذهبية، والاسم بخط المصحف. */
-.dk-title-line{font-family:inherit;min-height:0;margin-bottom:.06em}
-.dk-title{display:block;overflow:visible}
-.dk-title-band{fill:none;stroke:var(--surah-banner);stroke-width:26;opacity:.55}
-.dk-title-gem{fill:var(--gold);stroke:none}
-.dk-title-medal{fill:var(--paper);stroke:var(--surah-banner);stroke-width:58}
-.dk-title-inner{fill:none;stroke:var(--gold);stroke-width:24}
-.dk-title-text{fill:var(--surah-banner);stroke:var(--surah-banner);stroke-width:12}
+/* عنوان السورة في المصحف المرسوم: صندوق سطر QCF4 نفسه (line-height 1.08، وارتفاع 1.12em). */
+.dk-metric{display:inline-block;width:3.4em;height:1.12em;visibility:hidden}
+.dk-title{fill:var(--surah-banner);stroke:var(--surah-banner);stroke-width:12}
 /* ألوان التجويد (mushaf-dk.js): تظهر فقط حين data-tajweed="on"، وتغلب لون لفظ الجلالة. */
 :root{--tj-ghunna:#1E8A57;--tj-tafkhim:#1F6AA0;--tj-silent:#A9A49A;--tj-qalqala:#1C9CCB;--tj-madd2:#B58312;--tj-madd246:#DB6A17;--tj-madd45:#C4166F;--tj-madd6:#8E1E22}
 html[data-theme="dark"]{--tj-ghunna:#5DC994;--tj-tafkhim:#73B4EA;--tj-silent:rgba(255,249,234,.40);--tj-qalqala:#73D3F5;--tj-madd2:#E6C46A;--tj-madd246:#F3A35F;--tj-madd45:#F27BBB;--tj-madd6:#F07A73}

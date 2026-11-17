@@ -128,11 +128,10 @@ if(MUSHAF_DK){
   setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
 
-/* ---------- عنوان السورة ----------
-   «سورة كذا» بخط المصحف نفسه (titles.json)، في إطار مرسوم بخطوط زاد الخير ولونيه، لا خط
-   خارجي ولا صورة. الإطار بوحدات الخط فيتحجّم مع السطر، وارتفاعه ثابت فلا يغيّر الملاءمة. */
+/* ---------- عنوان السورة: البديل ----------
+   العنوان عنوان QUL نفسه كما في QCF4 (mushaf.js). وحين لا يتوفر خطه (دون اتصال قبل حفظه)
+   يُكتب «سورة كذا» بخط المصحف (titles.json)، فلا يبقى سطر العنوان فارغًا. */
 const DK_TITLES_URL=MUSHAF_BASE+"titles.json"+MUSHAF_Q;
-const DK_TITLE_W=17600,DK_TITLE_H=2300;
 let dkTitlesJob=null,dkTitles=null;
 function dkEnsureTitles(){
   if(dkTitles)return Promise.resolve(dkTitles);
@@ -141,23 +140,9 @@ function dkEnsureTitles(){
 }
 function dkRenderSurahTitle(inner,sid){
   const t=dkTitles?.[sid-1];if(!t)return false;
-  const W=DK_TITLE_W,H=DK_TITLE_H,cx=W/2,cy=H/2,unitEm=DK_FULL_LINE_EM/W;
-  const a=t.n/2+760,b=720,tip=520,band=430;
-  const medal=(a,b,tip)=>`M${cx-a-tip} ${cy}Q${cx-a-tip*.35} ${cy-b} ${cx-a} ${cy-b}H${cx+a}Q${cx+a+tip*.35} ${cy-b} ${cx+a+tip} ${cy}Q${cx+a+tip*.35} ${cy+b} ${cx+a} ${cy+b}H${cx-a}Q${cx-a-tip*.35} ${cy+b} ${cx-a-tip} ${cy}Z`;
-  const diamond=(x,r)=>`M${x-r} ${cy}L${x} ${cy-r}L${x+r} ${cy}L${x} ${cy+r}Z`;
-  const svg=document.createElementNS(SVG_NS,"svg");
-  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);svg.setAttribute("class","dk-title");
-  svg.setAttribute("role","img");svg.setAttribute("aria-label",`سورة ${chapterMap.get(sid)?.name_arabic||""}`);
-  svg.style.width=W*unitEm+"em";svg.style.height=H*unitEm+"em";
-  const edge=320,inL=cx-a-tip,inR=cx+a+tip;
-  svg.innerHTML=
-    `<path class="dk-title-band" d="M${edge} ${cy-band}H${inL+120}M${inR-120} ${cy-band}H${W-edge}M${edge} ${cy+band}H${inL+120}M${inR-120} ${cy+band}H${W-edge}"/>`+
-    `<path class="dk-title-gem" d="${diamond(edge,170)}${diamond(W-edge,170)}"/>`+
-    `<circle class="dk-title-gem" cx="${inL-260}" cy="${cy}" r="85"/><circle class="dk-title-gem" cx="${inR+260}" cy="${cy}" r="85"/>`+
-    `<path class="dk-title-medal" d="${medal(a,b,tip)}"/>`+
-    `<path class="dk-title-inner" d="${medal(a-130,b-130,tip-90)}"/>`;
-  const g=document.createElementNS(SVG_NS,"g");
-  g.setAttribute("transform",`translate(${cx+t.n/2} ${cy+330}) scale(1,-1)`);g.setAttribute("class","dk-title-text");
+  const unitEm=DK_FULL_LINE_EM/17600,H=1600;
+  const svg=dkSvg(-t.n,0,1150,H,t.n*unitEm,H*unitEm);svg.classList.add("dk-title");
+  const g=document.createElementNS(SVG_NS,"g");g.setAttribute("transform","scale(1,-1)");
   for(let i=0;i<t.g.length;i+=3){const u=document.createElementNS(SVG_NS,"use");u.setAttribute("href","#dkg"+t.g[i]);u.setAttribute("x",t.g[i+1]);u.setAttribute("y",t.g[i+2]);g.appendChild(u)}
   svg.appendChild(g);inner.appendChild(svg);
   return true;
