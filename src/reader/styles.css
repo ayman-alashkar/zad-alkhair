@@ -12,17 +12,17 @@
 
 @font-face{
   font-family:"QCF4_Hafs_01";
-  src:url("https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/fonts-woff2/QCF4_Hafs_01_W.woff2") format("woff2");
+  src:url("/fonts/qcf4/QCF4_Hafs_01_W.woff2") format("woff2");
   font-display:block;
 }
 @font-face{
   font-family:"QCF4_QBSML";
-  src:url("https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/fonts-woff2/QCF4_QBSML.woff2") format("woff2");
+  src:url("/fonts/qcf4/QCF4_QBSML.woff2") format("woff2");
   font-display:block;
 }
 @font-face{
   font-family:"QUL_SurahHeader";
-  src:url("https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf") format("truetype");
+  src:url("/fonts/qul/QCF_SurahHeader_COLOR-Regular.ttf") format("truetype");
   font-display:block;
 }
 :root{
@@ -174,6 +174,26 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 }
 .word.allah{color:var(--red)}
 .word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
+/* زر التجويد ودليل الأحكام (qcf-palettes.js). ألوان الحروف نفسها في مجموعات ألوان الخط، وهذه للدليل. */
+:root{--tj-ghunna:#05A54C;--tj-tafkhim:#046D9C;--tj-silent:#9C9EA4;--tj-qalqala:#03ADF1;--tj-madd2:#FEB609;--tj-madd246:#FD8014;--tj-madd45:#E8038C;--tj-madd6:#B2016B}
+html[data-theme="dark"]{--tj-ghunna:#46D97F;--tj-tafkhim:#6D9BFF;--tj-silent:rgba(255,249,234,.38);--tj-qalqala:#5CE6F2;--tj-madd2:#FFE45C;--tj-madd246:#FF8838;--tj-madd45:#FF7AB8;--tj-madd6:#C08CFF}
+.tj-swatch.tj1{background:var(--tj-ghunna)}.tj-swatch.tj2{background:var(--tj-tafkhim)}.tj-swatch.tj3{background:var(--tj-silent)}.tj-swatch.tj4{background:var(--tj-qalqala)}
+.tj-swatch.tj5{background:var(--tj-madd2)}.tj-swatch.tj6{background:var(--tj-madd246)}.tj-swatch.tj7{background:var(--tj-madd45)}.tj-swatch.tj8{background:var(--tj-madd6)}
+.iconbtn.tj-btn{width:48px;padding:0;font:700 14px/1 "Aref Ruqaa",serif;letter-spacing:0}
+.iconbtn.tj-btn.active{color:var(--tj-ghunna);border-color:color-mix(in srgb,var(--tj-ghunna) 55%,transparent);background:color-mix(in srgb,var(--tj-ghunna) 12%,transparent)}
+/* دليل التجويد: بطاقة بحدود أزرار القارئ نفسها، عمودان يفصلهما خط ذهبي، وعنوان كل عمود بخط الرقعة. */
+.tj-strip{display:none;grid-column:1/-1;grid-template-columns:auto 1px auto;justify-content:center;gap:0 12px;
+  padding:7px 12px 8px;border:1px solid var(--border);border-radius:12px;
+  background:color-mix(in srgb,var(--chrome-text) 6%,transparent);
+  font:500 10.5px/1.25 Alexandria,system-ui,sans-serif;color:var(--chrome-text);direction:rtl}
+html[data-tajweed="on"] .tj-strip{display:grid}
+.tj-strip:before{content:"";grid-column:2;grid-row:1;background:color-mix(in srgb,var(--gold) 45%,transparent)}
+.tj-col{display:grid;align-content:start;gap:4px}
+.tj-col:first-child{grid-column:1;grid-row:1}
+.tj-col:last-child{grid-column:3;grid-row:1}
+.tj-col b{font:400 14px/1.1 "Aref Ruqaa",serif;color:var(--gold);margin-bottom:1px}
+.tj-strip span{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tj-swatch{width:14px;height:7px;border-radius:99px;flex:none}
 .page-no{
   position:absolute;left:22px;bottom:calc(8px + env(safe-area-inset-bottom));
   color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,24px);line-height:1
