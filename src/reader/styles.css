@@ -2034,12 +2034,16 @@ html[data-theme="dark"] .quran-index-head-action{color:var(--ivory)}
 
 /* Player transport and readable reciter name. Native select stays accessible. */
 .audio-qari-wrap{position:relative;flex:1;min-width:0;overflow:hidden;height:38px;border-radius:10px;background:var(--brand-soft,rgba(15,92,80,.08))}
-.audio-qari-wrap .audio-qari{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.audio-qari-wrap .audio-qari{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
+/* اختيار القارئ بنافذة زاد الخير نفسها (openPanelReciters)، لا بقائمة الجهاز؛ والقائمة الأصلية
+   مخفية تحفظ الاختيار لبقية الكود. */
+.audio-qari-btn{position:absolute;inset:0;width:100%;height:100%;border:0;margin:0;padding:0;background:transparent;border-radius:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.audio-qari-btn:focus{outline:none}
 .qari-marquee{position:absolute;inset:0 10px;overflow:hidden;display:flex;align-items:center;direction:rtl;pointer-events:none}
 .qari-marquee span{display:block;flex-shrink:0;white-space:nowrap;font-size:12px}
 .qari-marquee.moving span{animation:qari-scroll var(--qari-duration,14s) ease-in-out infinite}
 @keyframes qari-scroll{0%,15%{transform:translateX(0)}75%,90%{transform:translateX(var(--qari-distance))}100%{transform:translateX(0)}}
-.audio-qari-wrap:focus-within{outline:2px solid var(--brand);outline-offset:2px}
+.audio-qari-wrap:has(.audio-qari-btn:focus-visible){outline:2px solid var(--brand);outline-offset:2px}
 .audio-repeat{position:relative}.audio-repeat small{position:absolute;bottom:1px;inset-inline-end:2px;font-size:10px;line-height:1}
 .audio-panel{--player-accent:#082D29;--player-on-accent:#FFF9EA}
 html[data-theme="dark"] .audio-panel{--player-accent:#E4C980;--player-on-accent:#19332C}
@@ -2051,7 +2055,7 @@ html[data-theme="dark"] .audio-panel #continuousBtn.active{
 }
 .audio-panel #continuousBtn{font-weight:600}
 .audio-panel #continuousBtn.active{outline:1px solid var(--player-accent);outline-offset:3px}
-.audio-qari-wrap:focus-within{outline-color:var(--player-accent)}
+.audio-qari-wrap:has(.audio-qari-btn:focus-visible){outline-color:var(--player-accent)}
 .audio-now-row{display:flex;align-items:center;gap:12px;margin:9px 2px 3px;min-width:0}
 .audio-now-row .audio-now{flex:1;min-width:0;margin:0}
 .audio-queue-link{position:relative;flex:0 0 34px;display:grid;place-items:center;width:34px;height:32px;border:0;border-radius:10px;background:transparent;color:var(--ui-muted);cursor:pointer;padding:5px}
@@ -2163,7 +2167,8 @@ html #audioPanel #continuousBtn,html #audioPanel #continuousBtn.active{
   outline:none;box-shadow:none;font-size:9px;font-weight:500;position:absolute;inset-inline-start:0;top:50%;transform:translateY(-50%);width:58px;height:30px;
 }
 html #audioPanel #continuousBtn.active,html #audioPanel #repeatBtn.active{background:var(--reader-selected)!important;color:var(--reader-gold)!important;border-color:var(--reader-gold)!important;box-shadow:none}
-#audioPanel button:focus-visible,#audioPanel .audio-qari-wrap:focus-within{outline:2px solid var(--reader-gold);outline-offset:3px}
+#audioPanel button:focus-visible,#audioPanel .audio-qari-wrap:has(.audio-qari-btn:focus-visible){outline:2px solid var(--reader-gold);outline-offset:3px}
+#audioPanel .audio-qari-btn:focus-visible{outline:none}
 #audioPanel .audio-round:hover,#audioPanel .audio-control:not(.audio-main):hover,#audioPanel .audio-pill:hover{border-color:var(--reader-gold);background:var(--reader-selected)!important}
 #audioPanel #stopPlayer{border-color:transparent;background:transparent!important;color:var(--reader-muted)!important}
 .backdrop{background:rgba(3,22,18,.42);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
