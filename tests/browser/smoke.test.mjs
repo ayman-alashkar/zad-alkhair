@@ -530,9 +530,13 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(portrait.labelContrast >= 7, "surah, juz and page labels have strong contrast");
         assert.ok(portrait.labelsStayInMargins, "larger labels stay inside the existing page margins");
         assert.ok(portrait.columnWidth > width * .9, "portrait reading uses the available width");
+        await page.evaluate(() => { if (typeof fitPage === "function") { const f = fitPage; window.__fits = []; fitPage = p => { __fits.push([p, innerWidth, performance.now() | 0]); try { return f(p); } catch (e) { __fits.push(String(e)); throw e; } }; } else window.__fits = "nofit"; });
         await page.setViewportSize({ width: height, height: width });
         await page.waitForTimeout(300);
-        const landscape = await measure();
+        const t0 = await page.evaluate(() => [performance.now() | 0, window.__fits, getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize]);
+        await page.waitForTimeout(1500);
+        const t1 = await page.evaluate(() => [performance.now() | 0, window.__fits, getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize]);
+        const landscape = { ...(await measure()), t0, t1 };
         assert.ok(landscape.widthFit, "touch landscape activates width fitting");
         assert.ok(landscape.columnWidth >= height - 33, "landscape uses the screen width with small side margins");
         assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, `the longest Quran line fills its column (${JSON.stringify(landscape)})`);
