@@ -180,7 +180,9 @@ html[data-theme="dark"]{--tj-ghunna:#46D97F;--tj-tafkhim:#6D9BFF;--tj-silent:rgb
 .tj-swatch.tj1{background:var(--tj-ghunna)}.tj-swatch.tj2{background:var(--tj-tafkhim)}.tj-swatch.tj3{background:var(--tj-silent)}.tj-swatch.tj4{background:var(--tj-qalqala)}
 .tj-swatch.tj5{background:var(--tj-madd2)}.tj-swatch.tj6{background:var(--tj-madd246)}.tj-swatch.tj7{background:var(--tj-madd45)}.tj-swatch.tj8{background:var(--tj-madd6)}
 .iconbtn.tj-btn{width:48px;padding:0;font:700 14px/1 "Aref Ruqaa",serif;letter-spacing:0}
-.iconbtn.tj-btn.active{color:var(--tj-ghunna);border-color:color-mix(in srgb,var(--tj-ghunna) 55%,transparent);background:color-mix(in srgb,var(--tj-ghunna) 12%,transparent)}
+/* الزر مفعّلًا بلون زر «استماع» نفسه: أخضر زاد نهارًا، وذهبي ليلًا. */
+html .topbar .iconbtn.tj-btn.active{background:#082D29!important;border-color:#082D29;color:#FFF9EA;box-shadow:0 10px 22px -16px rgba(8,45,41,.50)}
+html[data-theme="dark"] .topbar .iconbtn.tj-btn.active{background:#E4C980!important;border-color:#E4C980;color:#19332C;box-shadow:0 10px 22px -16px rgba(228,201,128,.40)}
 /* دليل التجويد: بطاقة بحدود أزرار القارئ نفسها، عمودان يفصلهما خط ذهبي، وعنوان كل عمود بخط الرقعة. */
 .tj-strip{display:none;grid-column:1/-1;grid-template-columns:auto 1px auto;justify-content:center;gap:0 12px;
   padding:7px 12px 8px;border:1px solid var(--border);border-radius:12px;
