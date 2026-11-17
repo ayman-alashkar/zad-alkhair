@@ -488,7 +488,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         const background = getComputedStyle(root).backgroundColor;
         return {
           fontSize: parseFloat(getComputedStyle(lines[0]).fontSize),
-          columnWidth, ev: window.__ev, iw: innerWidth,
+          columnWidth,
           widthFit: getComputedStyle(host).getPropertyValue("--mushaf-fit-width").trim() === "1",
           widthUsed: Math.max(...lines.map(line => line.getBoundingClientRect().width)) / columnWidth,
           gap: parseFloat(getComputedStyle(host).rowGap),
@@ -515,9 +515,6 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
           })
         };
       });
-      // WebKit بلا واجهة يقول إن الصفحة بلا تركيز، والقارئ لا يعيد الضبط عند تغيّر المقاس إلا
-      // والصفحة في التركيز (appearance.js). على الجهاز الصفحة في التركيز حين تُدار الشاشة.
-      await page.addInitScript(() => { Document.prototype.hasFocus = () => true; window.__ev = []; for (const n of ["resize", "orientationchange"]) addEventListener(n, () => __ev.push([n, innerWidth, document.hidden, document.hasFocus()])); visualViewport?.addEventListener("resize", () => __ev.push(["vv", innerWidth])); });
       try {
         await page.goto(BASE + "/quran-read/?page=9");
         await page.locator('.page[data-page="9"] .dk-end').first().waitFor({ state: "attached" });
@@ -530,13 +527,11 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(portrait.labelContrast >= 7, "surah, juz and page labels have strong contrast");
         assert.ok(portrait.labelsStayInMargins, "larger labels stay inside the existing page margins");
         assert.ok(portrait.columnWidth > width * .9, "portrait reading uses the available width");
-        await page.evaluate(() => { if (typeof fitPage === "function") { const f = fitPage; window.__fits = []; fitPage = p => { __fits.push([p, innerWidth, performance.now() | 0]); try { return f(p); } catch (e) { __fits.push(String(e)); throw e; } }; } else window.__fits = "nofit"; });
         await page.setViewportSize({ width: height, height: width });
+        // ينتظر إعادة الضبط نفسها لا مدة ثابتة: WebKit يعيد الضبط بعد Chromium بقليل.
+        await page.waitForFunction(size => parseFloat(getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize) > size * 1.3, portrait.fontSize, { timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
-        const t0 = await page.evaluate(() => [performance.now() | 0, window.__fits, getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize]);
-        await page.waitForTimeout(1500);
-        const t1 = await page.evaluate(() => [performance.now() | 0, window.__fits, getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize]);
-        const landscape = { ...(await measure()), t0, t1 };
+        const landscape = await measure();
         assert.ok(landscape.widthFit, "touch landscape activates width fitting");
         assert.ok(landscape.columnWidth >= height - 33, "landscape uses the screen width with small side margins");
         assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, `the longest Quran line fills its column (${JSON.stringify(landscape)})`);
