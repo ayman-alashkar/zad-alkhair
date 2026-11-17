@@ -59,15 +59,30 @@ async function appPage({ profile = PHONE, rpc = {}, storage = {}, realtime = () 
   return { page, errors, context };
 }
 
-/* القارئ الحقيقي بصفحات المصحف المرسومة من data/mushaf (محلية كلها)، دون صوت أو بيانات خارجية. */
+/* Real reader layout with neutral Arabic text and local fonts, without CDN audio/data. */
 async function readerPage({ profile = PHONE, theme = "light" } = {}) {
-  return appPage({ profile, storage: { "zad:qcf4:theme": theme } });
-}
-/* مفتاح أول آية في السطر الأخير من صفحة، من بيانات الصفحة نفسها. */
-function lastLineVerse(p) {
-  const data = JSON.parse(readFileSync(path.join(root, `data/mushaf/pages/${String(p).padStart(3, "0")}.json`), "utf8"));
-  const line = data.lines.filter(l => l.k === "t").at(-1), token = data.tokens[line.e[0]];
-  return { surah: token[1], ayah: token[2], key: `${token[1]}:${token[2]}` };
+  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
+  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
+  const fixture = await appPage({
+    profile,
+    storage: { "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme }
+  });
+  await fixture.context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+    path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+    headers: { "Access-Control-Allow-Origin": "*" }
+  }));
+  await fixture.context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+    headers: { "Access-Control-Allow-Origin": "*" },
+    json: {
+      page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
+      font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+      lines: Array.from({ length: 15 }, (_, i) => ({ words: [
+        ...Array.from({ length: 6 + i % 3 }, () => ({ type: "word", text: "نص تجريبي", char: "نَصٌّ تَجْرِيبِيٌّ", verse_key: `2:${60 + i}` })),
+        { type: "end", text: `V${60 + i}`, char: "١٢٣", verse_key: `2:${60 + i}` }
+      ] }))
+    }
+  }));
+  return fixture;
 }
 
 /* «نسخ» يأخذ الآية بالرسم العثماني من نص تنزيل، لا الإملاء المبسّط المرافق لخطوط الصفحة. */
@@ -360,7 +375,7 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
       try {
         await page.goto(BASE + "/quran-read/?page=9");
         const root = page.locator('.page[data-page="9"]'), stage = root.locator(".page-stage");
-        await root.locator(".dk-end").first().waitFor({ state: "attached" });
+        await root.locator(".word.end").first().waitFor();
         await page.waitForTimeout(300);
         await stage.evaluate(el => { el.scrollTop = el.scrollHeight; });
         const last = root.locator(".line:last-child .verse-segment").first();
@@ -409,7 +424,7 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
         const toolsBox = await toolbar.boundingBox(), headerBox = await page.locator(".topbar").boundingBox();
         assert.ok(toolsBox.y >= headerBox.y + headerBox.height + 3, "tools clear the header");
         assert.ok(toolsBox.y + toolsBox.height < point.y - 8, "tools clear the selecting finger and text");
-        assert.ok(await root.locator(`.verse-segment.selected[data-key="${lastLineVerse(9).key}"]`).count());
+        assert.ok(await root.locator('.verse-segment.selected[data-key="2:74"]').count());
         assert.equal(await page.locator(".backdrop").count(), 0, "selecting does not open tafsir");
         assert.equal(await page.locator("body.player-on").count(), 0, "selecting does not open the player");
         assert.equal(await root.locator(".page-bookmark").count(), 0, "selecting does not add a bookmark");
@@ -439,9 +454,11 @@ test("a linked verse is scrolled into view on a rotated phone, with the four too
       profile: { viewport: { width, height }, isMobile: true, hasTouch: true }
     });
     try {
-      // The verse that opens the last line of page 9.
-      const target = lastLineVerse(9);
-      await page.goto(BASE + `/quran-read/${target.surah}/?ayah=${target.ayah}`);
+      // The fixture's page 9 ends with verse 2:74, the last of its 15 lines.
+      await context.route(/quran-qcf4@[^/]+\/verses\.json/, route => route.fulfill({
+        headers: { "Access-Control-Allow-Origin": "*" }, json: { "2:74": { page: 9 } }
+      }));
+      await page.goto(BASE + "/quran-read/2/?ayah=74");
       const verse = page.locator('.page[data-page="9"] .verse-segment.selected').first();
       await verse.waitFor();
       await page.waitForTimeout(600);
@@ -506,8 +523,8 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
             const r = line.getBoundingClientRect();
             return r.left >= bounds.left - 1 && r.right <= bounds.right + 1 && r.top >= bounds.top - 1 && r.bottom <= bounds.bottom + 1;
           }),
-          textContrast: contrast(getComputedStyle(root.querySelector(".dk-svg use:not([class])")).fill, background),
-          numberContrast: contrast(getComputedStyle(root.querySelector(".dk-svg .dk-end")).fill, background),
+          textContrast: contrast(getComputedStyle(root.querySelector(".word:not(.end)")).color, background),
+          numberContrast: contrast(getComputedStyle(root.querySelector(".word.end")).color, background),
           labelContrast: Math.min(...[...root.querySelectorAll(".page-meta-link,.page-no")].map(el => contrast(getComputedStyle(el).color, background))),
           labelsStayInMargins: [...root.querySelectorAll(".page-meta-link,.page-no")].every(el => {
             const r = el.getBoundingClientRect(), margin = el.closest(".page-meta,.page-footer").getBoundingClientRect();
@@ -517,7 +534,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
       });
       try {
         await page.goto(BASE + "/quran-read/?page=9");
-        await page.locator('.page[data-page="9"] .dk-end').first().waitFor({ state: "attached" });
+        await page.locator('.page[data-page="9"] .word.end').first().waitFor();
         await page.waitForTimeout(300);
         const portrait = await measure();
         assert.ok(!portrait.widthFit, "portrait retains the complete-page fitting mode");
@@ -528,13 +545,11 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(portrait.labelsStayInMargins, "larger labels stay inside the existing page margins");
         assert.ok(portrait.columnWidth > width * .9, "portrait reading uses the available width");
         await page.setViewportSize({ width: height, height: width });
-        // ينتظر إعادة الضبط نفسها لا مدة ثابتة (هنا وعند العودة إلى العمودي): WebKit يعيد الضبط بعد Chromium بقليل.
-        await page.waitForFunction(size => parseFloat(getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize) > size * 1.3, portrait.fontSize, { timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
         const landscape = await measure();
         assert.ok(landscape.widthFit, "touch landscape activates width fitting");
         assert.ok(landscape.columnWidth >= height - 33, "landscape uses the screen width with small side margins");
-        assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, `the longest Quran line fills its column (${JSON.stringify(landscape)})`);
+        assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, "the longest Quran line fills its column");
         assert.ok(landscape.fontSize > portrait.fontSize * 1.3, "landscape makes the text noticeably larger");
         assert.ok(landscape.scrolls, "the enlarged landscape page scrolls vertically");
         assert.ok(landscape.stageHeight >= width - 1, "scrolling uses the full screen height");
@@ -556,7 +571,6 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
           }), "the last row and page number are reachable together at the end of scrolling");
         } else assert.ok(landscape.fits, "the complete page fits when the height permits it");
         await page.setViewportSize({ width, height });
-        await page.waitForFunction(() => !document.querySelector('.page[data-page="9"] .mushaf').style.paddingTop, null, { timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
         const restored = await measure();
         assert.ok(!restored.widthFit, "portrait leaves width fitting");
@@ -582,6 +596,14 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
       "zad:qcf4:last-surface-v1": JSON.stringify({ surface: "reader", page: 45 })
     }
   });
+  await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+    path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+    headers: { "Access-Control-Allow-Origin": "*" }
+  }));
+  await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+    headers: { "Access-Control-Allow-Origin": "*" },
+    json: { page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]), lines: [], surahs: [{ id: 1 }] }
+  }));
   try {
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "share", {
@@ -684,6 +706,20 @@ test("one reading mark moves between pages and the index keeps five recent visit
       localStorage.setItem("zad:qcf4:bookmarks", oldAyahs);
       sessionStorage.setItem("bookmark-test-seeded", "1");
     }, { chapters, theme, oldAyahs });
+    await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
+      path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
+      headers: { "Access-Control-Allow-Origin": "*" }
+    }));
+    await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
+      headers: { "Access-Control-Allow-Origin": "*" },
+      json: {
+        page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
+        font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
+        lines: Array.from({ length: 15 }, (_, i) => ({
+          words: [{ type: "word", text: "آية للقراءة", char: "آية للقراءة", verse_key: `2:${60 + i}` }]
+        }))
+      }
+    }));
     const currentVerse = n => page.locator(`.page[data-page="${n}"] .verse-segment`).first();
     const ribbon = n => page.locator(`.page[data-page="${n}"] .page-bookmark`);
     const storedPages = () => page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:page-bookmarks")).map(x => x.page));

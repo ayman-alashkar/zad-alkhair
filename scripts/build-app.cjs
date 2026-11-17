@@ -26,7 +26,7 @@ function write(output, content) {
 
 function appSources(dir) {
   const css = fs.readFileSync(path.join(dir, "styles.css"), "utf8");
-  const js = readAppScript(dir).replace(/^const MUSHAF_VERSION=.*;$/m, () => `const MUSHAF_VERSION=${JSON.stringify(mushafVersion())};`);
+  const js = readAppScript(dir);
   if (/<\/script[\s>]/i.test(js) || /<\/style[\s>]/i.test(css)) throw Error(`Unsafe inline closing tag in ${dir}`);
   return { css, js };
 }
@@ -87,18 +87,8 @@ for (const name of ["home", "reader"]) {
   }
 }
 
-/* بصمة data/mushaf: تتغيّر مع أي صفحة، فيأخذ القارئ وعامل الخدمة الملفات الجديدة. */
-function mushafVersion() {
-  const dir = path.join(root, "data/mushaf"), hash = createHash("sha256");
-  const files = fs.readdirSync(dir, { recursive: true }).filter(f => f.endsWith(".json")).sort();
-  for (const f of files) hash.update(f).update(fs.readFileSync(path.join(dir, f)));
-  return hash.digest("hex").slice(0, 12);
-}
-const MUSHAF_VERSION_RE = /^const MUSHAF_VERSION=.*;$/m;
 const worker = fs.readFileSync(path.join(root, "sw.js"), "utf8");
 const directPaths = /^const DIRECT_QURAN_PATHS=.*;$/m;
 if (!directPaths.test(worker)) throw Error("Missing direct Quran paths in sw.js");
-if (!MUSHAF_VERSION_RE.test(worker)) throw Error("Missing MUSHAF_VERSION in sw.js");
-write("sw.js", worker.replace(directPaths, `const DIRECT_QURAN_PATHS=new Set(${JSON.stringify(readerRoutes.map(route => route.path))});`)
-  .replace(MUSHAF_VERSION_RE, `const MUSHAF_VERSION=${JSON.stringify(mushafVersion())};`));
+write("sw.js", worker.replace(directPaths, `const DIRECT_QURAN_PATHS=new Set(${JSON.stringify(readerRoutes.map(route => route.path))});`));
 if (stale) process.exitCode = 1;
