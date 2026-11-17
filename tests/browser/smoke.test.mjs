@@ -532,7 +532,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         const landscape = await measure();
         assert.ok(landscape.widthFit, "touch landscape activates width fitting");
         assert.ok(landscape.columnWidth >= height - 33, "landscape uses the screen width with small side margins");
-        assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, "the longest Quran line fills its column");
+        assert.ok(landscape.widthUsed >= .97 && landscape.widthUsed <= 1.01, `the longest Quran line fills its column (${JSON.stringify(landscape)})`);
         assert.ok(landscape.fontSize > portrait.fontSize * 1.3, "landscape makes the text noticeably larger");
         assert.ok(landscape.scrolls, "the enlarged landscape page scrolls vertically");
         assert.ok(landscape.stageHeight >= width - 1, "scrolling uses the full screen height");
