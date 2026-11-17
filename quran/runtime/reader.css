@@ -160,8 +160,8 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
 .dk-metric{display:inline-block;width:3.4em;height:1.12em;visibility:hidden}
 .dk-title{fill:var(--surah-banner);stroke:var(--surah-banner);stroke-width:12}
 /* ألوان التجويد (mushaf-dk.js): تظهر فقط حين data-tajweed="on"، وتغلب لون لفظ الجلالة. */
-:root{--tj-ghunna:#1E8A57;--tj-tafkhim:#1F6AA0;--tj-silent:#A9A49A;--tj-qalqala:#1C9CCB;--tj-madd2:#B58312;--tj-madd246:#DB6A17;--tj-madd45:#C4166F;--tj-madd6:#8E1E22}
-html[data-theme="dark"]{--tj-ghunna:#5DC994;--tj-tafkhim:#73B4EA;--tj-silent:rgba(255,249,234,.40);--tj-qalqala:#73D3F5;--tj-madd2:#E6C46A;--tj-madd246:#F3A35F;--tj-madd45:#F27BBB;--tj-madd6:#F07A73}
+:root{--tj-ghunna:#05A54C;--tj-tafkhim:#046D9C;--tj-silent:#9C9EA4;--tj-qalqala:#03ADF1;--tj-madd2:#FEB609;--tj-madd246:#FD8014;--tj-madd45:#E8038C;--tj-madd6:#B2016B}
+html[data-theme="dark"]{--tj-ghunna:#3FCB7E;--tj-tafkhim:#4FA9DA;--tj-silent:rgba(255,249,234,.40);--tj-qalqala:#4CC9FA;--tj-madd2:#FFC93D;--tj-madd246:#FF9A45;--tj-madd45:#FF6FC1;--tj-madd6:#C8479C}
 html[data-tajweed="on"] .dk-svg .tj1,.tj-swatch.tj1{fill:var(--tj-ghunna);stroke:var(--tj-ghunna);background:var(--tj-ghunna)}
 html[data-tajweed="on"] .dk-svg .tj2,.tj-swatch.tj2{fill:var(--tj-tafkhim);stroke:var(--tj-tafkhim);background:var(--tj-tafkhim)}
 html[data-tajweed="on"] .dk-svg .tj3,.tj-swatch.tj3{fill:var(--tj-silent);stroke:var(--tj-silent);background:var(--tj-silent)}
@@ -173,9 +173,10 @@ html[data-tajweed="on"] .dk-svg .tj8,.tj-swatch.tj8{fill:var(--tj-madd6);stroke:
 html[data-tajweed="on"] .dk-svg .dk-allah:not([class*="tj"]){fill:var(--quran);stroke:var(--quran)}
 .iconbtn.tj-btn{width:48px;padding:0;font:700 14px/1 "Aref Ruqaa",serif;letter-spacing:0}
 .iconbtn.tj-btn.active{color:var(--tj-ghunna);border-color:color-mix(in srgb,var(--tj-ghunna) 55%,transparent);background:color-mix(in srgb,var(--tj-ghunna) 12%,transparent)}
-.tj-strip{display:none;grid-column:1/-1;padding:2px 4px 3px;flex-wrap:wrap;justify-content:center;gap:5px 12px;
+.tj-strip{display:none;grid-column:1/-1;padding:2px 4px 3px;flex-wrap:wrap;justify-content:center;gap:5px 14px;
   font:600 11px/1.3 Alexandria,system-ui,sans-serif;color:var(--chrome-text);direction:rtl}
 html[data-tajweed="on"] .tj-strip{display:flex}
+.tj-group{display:grid;gap:3px}
 .tj-strip span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .tj-swatch{width:10px;height:10px;border-radius:50%;flex:none}
 .dk-svg .dk-end{fill:var(--ayah-number);stroke:var(--ayah-number)}
