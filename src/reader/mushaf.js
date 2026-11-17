@@ -157,7 +157,7 @@ async function fetchPage(p){
   if(!r.ok)throw new Error("page "+p);
   const data=await r.json();
   if(Number(data?.page)!==Number(p)||!Array.isArray(data?.lines))throw new Error("invalid page "+p);
-  return data;
+  return MUSHAF_DK?dkAdaptPage(data):data;
 }
 function touchPageData(p,data){
   pages.delete(p);pages.set(p,data);
@@ -207,7 +207,7 @@ async function ensurePage(p){
   if(pageLoads.has(p))return pageLoads.get(p);
   const job=(async()=>{
     const data=await getPageData(p);
-    await ensureQcfFont(data.font);renderPage(data);return data;
+    await (MUSHAF_DK?dkEnsureGlyphs():ensureQcfFont(data.font));renderPage(data);return data;
   })().finally(()=>pageLoads.delete(p));
   pageLoads.set(p,job);return job;
 }
@@ -308,6 +308,11 @@ function renderPage(data){
       inner.setAttribute("aria-label",`سورة ${chapterMap.get(sid)?.name_arabic||""}`);
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
+    if(first?.type==="bismillah"&&MUSHAF_DK){
+      inner.classList.add("bismillah-line","dk-line");
+      dkRenderBismillah(inner,data,line.dk);
+      lineEl.appendChild(inner);host.appendChild(lineEl);continue;
+    }
     if(first?.type==="bismillah"){
       inner.classList.add("bismillah-line");
       // QCF4 encodes the Bismillah with the dedicated Hafs_01 glyph font.
@@ -329,7 +334,8 @@ function renderPage(data){
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
 
-    for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group));
+    if(MUSHAF_DK){inner.classList.add("dk-line");dkRenderTextLine(inner,data,line.dk)}
+    else for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group));
     lineEl.appendChild(inner);host.appendChild(lineEl);
   }
 

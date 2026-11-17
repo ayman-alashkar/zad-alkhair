@@ -14,9 +14,17 @@
    - QCF4 data/fonts are pinned to npm quran-qcf4@1.0.3; QUL decorative title remains optional with QCF fallback.
 */
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
-const PAGE_BASE=QCF_BASE+"pages/";
-const INDEX_URL=QCF_BASE+"index.json";
-const VERSE_INDEX_URL=QCF_BASE+"verses.json";
+/* محرك المصحف: QCF4 للجميع، والصفحات المرسومة مسبقًا (mushaf-dk.js) للتجربة فقط.
+   ?mushaf=dk يفعّلها على هذا الجهاز، و?mushaf=qcf يعيده. */
+const MUSHAF_DK=(()=>{try{
+  const q=new URLSearchParams(location.search).get("mushaf");
+  if(q==="dk"||q==="qcf")localStorage.setItem("zad:mushaf-engine",q);
+  return localStorage.getItem("zad:mushaf-engine")==="dk";
+}catch(_){return false}})();
+const MUSHAF_BASE="/data/mushaf/";
+const PAGE_BASE=MUSHAF_DK?MUSHAF_BASE+"pages/":QCF_BASE+"pages/";
+const INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"index.json":QCF_BASE+"index.json";
+const VERSE_INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"verses.json":QCF_BASE+"verses.json";
 const QCF_FONT_BASE=QCF_BASE+"fonts-woff2/";
 const TOTAL_PAGES=604;
 const SURAH_HEADER_GLYPHS=[null,"ﱅ","ﱆ","ﱇ","ﱊ","ﱋ","ﱎ","ﱏ","ﱑ","ﱒ","ﱓ","ﱕ","ﱖ","ﱘ","ﱚ","ﱛ","ﱜ","ﱝ","ﱞ","ﱡ","ﱢ","ﱤ","ﭑ","ﭒ","ﭔ","ﭕ","ﭗ","ﭘ","ﭚ","ﭛ","ﭝ","ﭞ","ﭠ","ﭡ","ﭣ","ﭤ","ﭦ","ﭧ","ﭩ","ﭪ","ﭬ","ﭭ","ﭯ","ﭰ","ﭲ","ﭳ","ﭵ","ﭶ","ﭸ","ﭹ","ﭻ","ﭼ","ﭾ","ﭿ","ﮁ","ﮂ","ﮄ","ﮅ","ﮇ","ﮈ","ﮊ","ﮋ","ﮍ","ﮎ","ﮐ","ﮑ","ﮓ","ﮔ","ﮖ","ﮗ","ﮙ","ﮚ","ﮜ","ﮝ","ﮟ","ﮠ","ﮢ","ﮣ","ﮥ","ﮦ","ﮨ","ﮩ","ﮫ","ﮬ","ﮮ","ﮯ","ﮱ","﮲","﮴","﮵","﮷","﮸","﮺","﮻","﮽","﮾","﯀","﯁","ﯓ","ﯔ","ﯖ","ﯗ","ﯙ","ﯚ","ﯜ","ﯝ","ﯟ","ﯠ","ﯢ","ﯣ","ﯥ","ﯦ","ﯨ","ﯩ","ﯫ"];
@@ -32,6 +40,7 @@ const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=tru
 
 /* @include state.js */
 /* @include mushaf.js */
+/* @include mushaf-dk.js */
 
 /* @include page-fit.js */
 

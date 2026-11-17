@@ -173,6 +173,12 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   -webkit-text-stroke:var(--quran-stroke) currentColor;
 }
 .word.allah{color:var(--red)}
+/* المصحف المرسوم مسبقًا (mushaf-dk.js): أشكال جاهزة في svg بحجم em، تلوّنها متغيرات الألوان نفسها. */
+.dk-glyphs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.dk-svg{display:block;overflow:visible;fill:var(--quran);stroke:var(--quran);stroke-width:var(--dk-ink,9);stroke-linejoin:round}
+.dk-svg .dk-allah{fill:var(--red);stroke:var(--red)}
+.dk-svg .dk-sajda{stroke:none}
+.dk-svg .dk-end{fill:var(--ayah-number);stroke:var(--ayah-number)}
 .word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
   position:absolute;left:22px;bottom:calc(8px + env(safe-area-inset-bottom));

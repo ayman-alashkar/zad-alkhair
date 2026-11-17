@@ -14,9 +14,17 @@
    - QCF4 data/fonts are pinned to npm quran-qcf4@1.0.3; QUL decorative title remains optional with QCF fallback.
 */
 const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
-const PAGE_BASE=QCF_BASE+"pages/";
-const INDEX_URL=QCF_BASE+"index.json";
-const VERSE_INDEX_URL=QCF_BASE+"verses.json";
+/* محرك المصحف: QCF4 للجميع، والصفحات المرسومة مسبقًا (mushaf-dk.js) للتجربة فقط.
+   ?mushaf=dk يفعّلها على هذا الجهاز، و?mushaf=qcf يعيده. */
+const MUSHAF_DK=(()=>{try{
+  const q=new URLSearchParams(location.search).get("mushaf");
+  if(q==="dk"||q==="qcf")localStorage.setItem("zad:mushaf-engine",q);
+  return localStorage.getItem("zad:mushaf-engine")==="dk";
+}catch(_){return false}})();
+const MUSHAF_BASE="/data/mushaf/";
+const PAGE_BASE=MUSHAF_DK?MUSHAF_BASE+"pages/":QCF_BASE+"pages/";
+const INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"index.json":QCF_BASE+"index.json";
+const VERSE_INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"verses.json":QCF_BASE+"verses.json";
 const QCF_FONT_BASE=QCF_BASE+"fonts-woff2/";
 const TOTAL_PAGES=604;
 const SURAH_HEADER_GLYPHS=[null,"ﱅ","ﱆ","ﱇ","ﱊ","ﱋ","ﱎ","ﱏ","ﱑ","ﱒ","ﱓ","ﱕ","ﱖ","ﱘ","ﱚ","ﱛ","ﱜ","ﱝ","ﱞ","ﱡ","ﱢ","ﱤ","ﭑ","ﭒ","ﭔ","ﭕ","ﭗ","ﭘ","ﭚ","ﭛ","ﭝ","ﭞ","ﭠ","ﭡ","ﭣ","ﭤ","ﭦ","ﭧ","ﭩ","ﭪ","ﭬ","ﭭ","ﭯ","ﭰ","ﭲ","ﭳ","ﭵ","ﭶ","ﭸ","ﭹ","ﭻ","ﭼ","ﭾ","ﭿ","ﮁ","ﮂ","ﮄ","ﮅ","ﮇ","ﮈ","ﮊ","ﮋ","ﮍ","ﮎ","ﮐ","ﮑ","ﮓ","ﮔ","ﮖ","ﮗ","ﮙ","ﮚ","ﮜ","ﮝ","ﮟ","ﮠ","ﮢ","ﮣ","ﮥ","ﮦ","ﮨ","ﮩ","ﮫ","ﮬ","ﮮ","ﮯ","ﮱ","﮲","﮴","﮵","﮷","﮸","﮺","﮻","﮽","﮾","﯀","﯁","ﯓ","ﯔ","ﯖ","ﯗ","ﯙ","ﯚ","ﯜ","ﯝ","ﯟ","ﯠ","ﯢ","ﯣ","ﯥ","ﯦ","ﯨ","ﯩ","ﯫ"];
@@ -666,7 +674,7 @@ async function fetchPage(p){
   if(!r.ok)throw new Error("page "+p);
   const data=await r.json();
   if(Number(data?.page)!==Number(p)||!Array.isArray(data?.lines))throw new Error("invalid page "+p);
-  return data;
+  return MUSHAF_DK?dkAdaptPage(data):data;
 }
 function touchPageData(p,data){
   pages.delete(p);pages.set(p,data);
@@ -716,7 +724,7 @@ async function ensurePage(p){
   if(pageLoads.has(p))return pageLoads.get(p);
   const job=(async()=>{
     const data=await getPageData(p);
-    await ensureQcfFont(data.font);renderPage(data);return data;
+    await (MUSHAF_DK?dkEnsureGlyphs():ensureQcfFont(data.font));renderPage(data);return data;
   })().finally(()=>pageLoads.delete(p));
   pageLoads.set(p,job);return job;
 }
@@ -817,6 +825,11 @@ function renderPage(data){
       inner.setAttribute("aria-label",`سورة ${chapterMap.get(sid)?.name_arabic||""}`);
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
+    if(first?.type==="bismillah"&&MUSHAF_DK){
+      inner.classList.add("bismillah-line","dk-line");
+      dkRenderBismillah(inner,data,line.dk);
+      lineEl.appendChild(inner);host.appendChild(lineEl);continue;
+    }
     if(first?.type==="bismillah"){
       inner.classList.add("bismillah-line");
       // QCF4 encodes the Bismillah with the dedicated Hafs_01 glyph font.
@@ -838,7 +851,8 @@ function renderPage(data){
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
 
-    for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group));
+    if(MUSHAF_DK){inner.classList.add("dk-line");dkRenderTextLine(inner,data,line.dk)}
+    else for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group));
     lineEl.appendChild(inner);host.appendChild(lineEl);
   }
 
@@ -901,6 +915,108 @@ function surahGlyphAspect(glyph){
   try{if(ready&&document.fonts)ready=document.fonts.check(`${sample}px "QUL_SurahHeader"`,glyph)}catch(e){}
   if(ready&&aspect>0)surahAspectCache.set(glyph,aspect);
   return aspect;
+}
+/* ---------- المصحف المرسوم مسبقًا (DigitalKhatt) ----------
+   تجريبي خلف ?mushaf=dk، والمصحف المنشور على QCF4 كما هو. يبني scripts/build-mushaf.mjs
+   صفحات data/mushaf/: لكل حرف رقم شكله وموضعه بوحدات الخط، ولكل كلمة آيتها. فلا يرسم
+   المتصفح خطًّا، بل يضع أشكالًا جاهزة، والصفحة واحدة على كل جهاز.
+
+   العقد مع بقية القارئ كما في QCF4: سطر .line فيه .line-inner، وفيه .verse-segment[data-key]
+   لكل جزء من آية، وحجمه بوحدة em، فتحجّمه fitPage كما تحجّم سطر QCF4 بحجم الخط.
+   وتُشتق من الصفحة lines[].words[] بشكل QCF4 (verse_key وtype وtext)، فيقرؤها البحث
+   والمقتطفات ونص الآية دون تغيير. */
+const DK_GLYPHS_URL=MUSHAF_BASE+"glyphs.json";
+/* عرض السطر الكامل في QCF4 بوحدة em (مجموع أطوال حروفه 40215 من 2500)، فيأخذ السطر الجديد
+   العرض نفسه وتعطيه fitPage الحجم نفسه على الشاشة. */
+const DK_FULL_LINE_EM=40215/2500;
+/* موضع السطر الأساسي ومجموع ارتفاع السطر بوحدة em، كما يقعان في صندوق سطر QCF4 (line-height 1.33). */
+const DK_BASELINE_EM=1.0,DK_LINE_EM=1.33;
+const SVG_NS="http://www.w3.org/2000/svg";
+let dkGlyphsJob=null;
+
+function dkEnsureGlyphs(){
+  if(dkGlyphsJob)return dkGlyphsJob;
+  dkGlyphsJob=(async()=>{
+    const r=await fetch(DK_GLYPHS_URL,{cache:"force-cache"});if(!r.ok)throw new Error("mushaf glyphs");
+    const glyphs=await r.json();
+    const holder=document.createElementNS(SVG_NS,"svg");
+    holder.setAttribute("aria-hidden","true");holder.setAttribute("class","dk-glyphs");
+    const defs=document.createElementNS(SVG_NS,"defs");
+    for(const [id,d] of Object.entries(glyphs)){const p=document.createElementNS(SVG_NS,"path");p.id="dkg"+id;p.setAttribute("d",d);defs.appendChild(p)}
+    holder.appendChild(defs);document.body.appendChild(holder);
+  })().catch(err=>{dkGlyphsJob=null;throw err});
+  return dkGlyphsJob;
+}
+
+/* صفحة data/mushaf بالشكل الذي يقرؤه القارئ: lines[].words[] كما في QCF4، والسطر المرسوم في dk. */
+function dkAdaptPage(raw){
+  const tokens=raw.tokens||[];
+  const lines=raw.lines.map((l,i)=>{
+    if(l.k==="s")return {line:i+1,words:[{type:"surah_header",sura:l.s,char:String.fromCharCode(0xF100+l.s-1),font:"QCF4_QBSML"}]};
+    if(l.k==="b")return {line:i+1,words:[{type:"bismillah",char:""}],dk:l};
+    const seen=new Set(),words=[];
+    for(let j=0;j<l.e.length;j+=2){
+      const t=l.e[j];if(t<0||seen.has(t))continue;seen.add(t);
+      const [w,s,a,,text]=tokens[t];
+      words.push({type:w<0?"end":"word",verse_key:`${s}:${a}`,text:text||""});
+    }
+    return {line:i+1,words,dk:l};
+  });
+  return {page:raw.page,surahs:raw.surahs,lines,dk:raw};
+}
+
+function dkSvg(x0,x1,base,height,widthEm,heightEm){
+  const svg=document.createElementNS(SVG_NS,"svg");
+  svg.setAttribute("viewBox",`${x0} ${-base} ${x1-x0} ${height}`);
+  svg.setAttribute("preserveAspectRatio","none");
+  svg.setAttribute("aria-hidden","true");
+  svg.style.width=widthEm+"em";svg.style.height=heightEm+"em";
+  svg.classList.add("dk-svg");
+  return svg;
+}
+function dkUses(svg,l,tokens,from,to){
+  const g=document.createElementNS(SVG_NS,"g");g.setAttribute("transform","scale(1,-1)");
+  for(let i=0;i<l.t.length;i++){
+    const t=l.t[i];if(t<from||t>to)continue;
+    const u=document.createElementNS(SVG_NS,"use");
+    u.setAttribute("href","#dkg"+l.g[i*3]);u.setAttribute("x",l.g[i*3+1]);u.setAttribute("y",l.g[i*3+2]);
+    const tok=tokens[t];
+    if(tok){if(tok[0]<0)u.setAttribute("class","dk-end");else if(tok[3])u.setAttribute("class","dk-allah")}
+    g.appendChild(u);
+  }
+  svg.appendChild(g);
+}
+
+/* سطر نص: يُقسَّم عند حدود الآيات، ولكل جزء span.verse-segment فيه svg بعرضه. */
+function dkRenderTextLine(inner,data,l){
+  const raw=data.dk,tokens=raw.tokens,unitEm=raw.scale/(raw.lineUnits/DK_FULL_LINE_EM);
+  const base=DK_BASELINE_EM/unitEm,height=DK_LINE_EM/unitEm;
+  // حدود الأجزاء: الحافة اليمنى لأول كلمة في كل آية، ونهاية السطر.
+  const parts=[];
+  for(let j=0;j<l.e.length;j+=2){
+    const t=l.e[j],x=l.e[j+1],tok=tokens[t];if(!tok)continue;
+    const key=`${tok[1]}:${tok[2]}`,last=parts[parts.length-1];
+    if(last&&last.key===key){last.to=t;continue}
+    parts.push({key,from:t,to:t,right:x});
+  }
+  parts.forEach((p,i)=>{
+    const left=i+1<parts.length?parts[i+1].right:-l.n;
+    const seg=document.createElement("span");seg.className="verse-segment";seg.dataset.key=p.key;
+    const svg=dkSvg(left,p.right,base,height,(p.right-left)*unitEm*l.x,DK_LINE_EM);
+    dkUses(svg,l,tokens,p.from,p.to);
+    // خط السجدة فوق كلماتها، كما في المصحف المطبوع.
+    if(l.sj){
+      const x0=Math.max(left,l.sj[1]),x1=Math.min(p.right,l.sj[0]);
+      if(x1>x0){const r=document.createElementNS(SVG_NS,"rect");r.setAttribute("class","dk-sajda");r.setAttribute("x",x0);r.setAttribute("y",-1260);r.setAttribute("width",x1-x0);r.setAttribute("height",60);svg.appendChild(r)}
+    }
+    seg.appendChild(svg);inner.appendChild(seg);bindSegment(seg);
+  });
+}
+function dkRenderBismillah(inner,data,l){
+  const raw=data.dk,unitEm=raw.scale/(raw.lineUnits/DK_FULL_LINE_EM);
+  const svg=dkSvg(-l.n,0,DK_BASELINE_EM/unitEm,DK_LINE_EM/unitEm,l.n*unitEm,DK_LINE_EM);
+  dkUses(svg,{...l,t:l.t.map(()=>-1)},[],-1,-1);
+  inner.appendChild(svg);
 }
 
 /* حبر QCF4 يتجاوز صندوق سطره صعودًا ونزولًا: الشدّة والمدّة تعلوان الصندوق،

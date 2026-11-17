@@ -10,7 +10,8 @@
 
   المخرجات (data/mushaf/):
     glyphs.json   شكل كل حرف مستعمل، مسارًا بوحدات الخط (المحور الصادي إلى أعلى).
-    meta.json     إصدار البيانات، والآية ← الصفحة، وبيانات السور.
+    index.json    بيانات السور (بشكل index.json في حزمة QCF4).
+    verses.json   الآية ← الصفحة (بشكل verses.json في حزمة QCF4).
     pages/NNN.json  سطور الصفحة: لكل حرف رقم شكله وموضعه ورقم كلمته في الصفحة.
 
   node scripts/build-mushaf.mjs           يكتب المخرجات
@@ -47,6 +48,9 @@ async function main() {
   const font = new HarfBuzzFont(new HarfBuzzFace(new HarfBuzzBlob(new Uint8Array(fontBytes)), 0));
   const H = readJson(path.join(SRC, "hafs.json"));
   const print = readJson(path.join(SRC, "print-1441-lines.json")).pages;
+  const names = readJson(path.join(SRC, "surah-names.json")).names;
+  if (names.length !== 114) throw Error("surah names");
+  const plainName = n => names[H.surahs.findIndex(x => x.name_ar === n)];
   const W = H.words, starts = H.line_starts, pageStarts = H.page_starts, ayahStarts = H.ayah_starts;
   if (W.length !== 77432 || starts.length !== 8820 || pageStarts.length !== 604 || ayahStarts.length !== 6236) throw Error("hafs source shape");
 
@@ -79,11 +83,11 @@ async function main() {
       const e = li + 1 < lineStarts.length ? lineStarts[li + 1] : last;
       let text = ""; const owner = []; // owner[charIndex] = token index on page
       const add = (str, tok) => { if (text) { text += " "; owner.push(-1); } for (let i = 0; i < str.length; i++) owner.push(tok); text += str; };
-      let sajda = null;
+      const sajda = new Set(); // كلمات خط السجدة في السطر (رقمها في الصفحة)
       for (let w = s; w < e; w++) {
         let str = toFont(W[w]), before = "";
         for (const t of marks.get(w) || []) {
-          if (t.kind === "sajdah_line") { sajda = sajda || { from: tokens.length }; continue; }
+          if (t.kind === "sajdah_line") { sajda.add(tokens.length); continue; }
           if (t.side === "before") before += t.sign; else str += t.sign;
         }
         const tok = tokens.push({ w, a: ayahOfWord[w] }) - 1;
@@ -91,7 +95,7 @@ async function main() {
         const endsAyah = w + 1 === W.length || ayahStarts[ayahOfWord[w] + 1] === w + 1;
         if (endsAyah) { const t2 = tokens.push({ w: -1, a: ayahOfWord[w] }) - 1; add("۝" + AR(numOfAyah[ayahOfWord[w]]), t2); }
       }
-      return { text, owner };
+      return { text, owner, sajda };
     });
 
     // حجم الخط في الصفحة: واحد للمصحف كله، ويصغُر قليلًا في صفحة فيها سطر يتجاوز حدّ التضييق.
@@ -110,7 +114,7 @@ async function main() {
     for (const k of kinds) {
       if (k.k === "sura") { linesOut.push({ k: "s", s: k.s }); continue; }
       const isBism = k.k === "bism";
-      const { text, owner } = isBism ? { text: BASMALA, owner: [] } : built[ti++];
+      const { text, owner, sajda } = isBism ? { text: BASMALA, owner: [], sajda: new Set() } : built[ti++];
       const desired = LINE_UNITS * (k.w || 1) / pageScale;
       const key = p * 100 + linesOut.length; // مفتاح فريد لذاكرة analyzeLineForJust
       const info = analyzeLineForJust({ quranText: { [key]: [text] } }, key, 0);
@@ -127,42 +131,56 @@ async function main() {
       buf.setDirection("rtl"); buf.setLanguage(hb.arabLanguage); buf.setScript(hb.arabScript); buf.setClusterLevel(1);
       buf.addText(text); buf.shape(font, features);
       const res = buf.json(); buf.destroy();
-      const g = [], tok = [];
-      let x = 0;
+      const g = [], tok = [], edges = [];
+      let x = 0, lastTok = -2, sjRight = null, sjLeft = null;
       for (let i = res.length - 1; i >= 0; i--) {
         const gl = res[i], sp = info.spaces.get(gl.Cluster);
+        const t = isBism ? -1 : owner[gl.Cluster];
+        if (!sp && t !== lastTok) { edges.push(t, Math.round(x)); lastTok = t; }
         x -= sp === SpaceType.Aya ? jr.ayaSpacing : sp === SpaceType.Simple ? jr.simpleSpacing : gl.XAdvance;
         if (sp) continue;
         if (!glyphPaths.has(gl.GlyphId)) glyphPaths.set(gl.GlyphId, font.glyphToSvgPath(gl.GlyphId));
         if (!glyphPaths.get(gl.GlyphId)) continue;
         g.push(gl.GlyphId, Math.round(x + gl.XOffset), Math.round(gl.YOffset));
-        tok.push(isBism ? -1 : owner[gl.Cluster]);
+        tok.push(t);
+        if (sajda.has(t)) { sjRight ??= Math.round(x + gl.XAdvance); sjLeft = Math.min(sjLeft ?? 0, Math.round(x + gl.XOffset)); }
       }
       const width = Math.round(-x);
       if (jr.xScale < 0.999) squeezed++;
-      const line = { k: isBism ? "b" : "t", x: +jr.xScale.toFixed(4), n: width, g, t: tok };
+      // e: لكل كلمة في السطر رقمها في الصفحة وحافتها اليمنى، ليُقسَّم السطر إلى أجزاء الآيات.
+      const line = { k: isBism ? "b" : "t", x: +jr.xScale.toFixed(4), n: width, g, t: tok, e: edges };
       if (k.w) line.w = k.w;
+      if (sjRight !== null) line.sj = [sjRight, sjLeft]; // خط السجدة فوق كلماتها: من الحافة اليمنى إلى اليسرى
       linesOut.push(line);
     }
     for (const t of tokens) { const key = `${surahOfAyah[t.a]}:${numOfAyah[t.a]}`; verseToPage[key] ??= p; }
     pagesOut.push({
       format: FORMAT, page: p, scale: +pageScale.toFixed(4), lineUnits: LINE_UNITS,
-      tokens: tokens.map(t => [t.w, surahOfAyah[t.a], numOfAyah[t.a], t.w >= 0 && isAllah(t.w) ? 1 : 0]),
+      surahs: [...new Set(tokens.map(t => surahOfAyah[t.a]))].map(id => ({ id, name_arabic: plainName(H.surahs[id - 1].name_ar) })),
+      // لكل كلمة: رقمها العام (-1 لرقم الآية)، والسورة، والآية، ولفظ الجلالة، ونصها للبحث والمقتطفات.
+      tokens: tokens.map(t => [t.w, surahOfAyah[t.a], numOfAyah[t.a], t.w >= 0 && isAllah(t.w) ? 1 : 0, t.w >= 0 ? plainText(W[t.w]) : ""]),
       lines: linesOut
     });
   }
 
   const glyphs = {};
   [...glyphPaths.keys()].sort((a, b) => a - b).forEach(id => { const d = glyphPaths.get(id); if (d) glyphs[id] = roundPath(d); });
+  // بشكل index.json وverses.json في حزمة QCF4 نفسه، فيقرؤهما القارئ دون تغيير.
+  const lastPageOf = id => { let last = 0; for (const [k, pg] of Object.entries(verseToPage)) if (+k.split(":")[0] === id) last = Math.max(last, pg); return last; };
   const meta = {
-    format: FORMAT, pages: 604, lineUnits: LINE_UNITS, upem: font.unitsPerEM,
-    surahs: H.surahs.map((s, i) => ({ id: i + 1, name: s.name_ar, verses: s.ayah_count, page: verseToPage[`${i + 1}:1`] })),
-    verses: verseToPage
+    meta: { format: FORMAT, total_pages: 604, total_chapters: 114, total_verses: 6236, line_units: LINE_UNITS, upem: font.unitsPerEM },
+    chapters: H.surahs.map((s, i) => ({
+      id: i + 1, name_arabic: plainName(s.name_ar), verses_count: s.ayah_count,
+      pages: [verseToPage[`${i + 1}:1`], lastPageOf(i + 1)], bismillah_pre: s.has_basmalah && i !== 0,
+      revelation_place: s.revelation === "madani" ? "madinah" : "makkah"
+    }))
   };
+  const verses = Object.fromEntries(Object.entries(verseToPage).map(([k, pg]) => [k, { page: pg }]));
 
   const files = new Map();
   files.set("glyphs.json", JSON.stringify(glyphs));
-  files.set("meta.json", JSON.stringify(meta));
+  files.set("index.json", JSON.stringify(meta));
+  files.set("verses.json", JSON.stringify(verses));
   pagesOut.forEach(pg => files.set(`pages/${String(pg.page).padStart(3, "0")}.json`, JSON.stringify(pg)));
 
   let stale = 0, bytes = 0;
@@ -175,6 +193,9 @@ async function main() {
   if (check && stale) { console.error(`${stale} mushaf files differ from their sources; run node scripts/build-mushaf.mjs`); process.exit(1); }
   console.log(`${check ? "Checked" : "Built"} 604 mushaf pages, ${Object.keys(glyphs).length} glyphs, ${(bytes / 1048576).toFixed(1)} MB; ${squeezed} lines squeezed, ${scaledPages} pages scaled down.`);
 }
+
+/* نص الكلمة للبحث والمقتطفات: نص المجمع، والتنوين المفتوح بصورته المعتادة ليقرأه أي خط. */
+function plainText(w) { return w.replace(/\u08F0/g, "\u064B").replace(/\u08F1/g, "\u064C").replace(/\u08F2/g, "\u064D"); }
 
 /* المسار بأعداد صحيحة: يختصر الحجم دون فرق يُرى، فوحدة الخط جزء من ألف من حجمه. */
 function roundPath(d) { return d.replace(/-?\d+\.\d+/g, n => String(Math.round(+n))); }
