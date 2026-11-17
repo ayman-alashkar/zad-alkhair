@@ -13,7 +13,7 @@ async function requestPersistentStorage(){
   try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(_){ }
 }
 function postOfflineLibrary(type){
-  navigator.serviceWorker?.ready?.then(reg=>(reg.active||reg.waiting||reg.installing)?.postMessage({type,mushaf:MUSHAF_DK?"dk":"qcf"})).catch(()=>{});
+  navigator.serviceWorker?.ready?.then(reg=>(reg.active||reg.waiting||reg.installing)?.postMessage({type})).catch(()=>{});
 }
 if("serviceWorker" in navigator){
   const offlineSetup=document.getElementById("offlineSetup");
@@ -68,7 +68,7 @@ if("serviceWorker" in navigator){
   const prepareReaderServiceWorker=()=>navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>reg.update().catch(()=>reg)).then(()=>navigator.serviceWorker.ready).then(reg=>{
     const worker=reg.active||reg.waiting||reg.installing;
     if(navigator.onLine)worker?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
-    worker?.postMessage({type:navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY",mushaf:MUSHAF_DK?"dk":"qcf"});
+    worker?.postMessage({type:navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY"});
   }).catch(()=>{});
   /* Opening the Quran is the opt-in for the offline download; a reader the home
      screen merely prepared in the background has not been opened yet. */

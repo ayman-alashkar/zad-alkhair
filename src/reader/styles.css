@@ -11,16 +11,6 @@
 @font-face{font-family:"Aref Ruqaa";src:url("/fonts/aref-ruqaa-arabic-700.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
 
 @font-face{
-  font-family:"QCF4_Hafs_01";
-  src:url("https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/fonts-woff2/QCF4_Hafs_01_W.woff2") format("woff2");
-  font-display:block;
-}
-@font-face{
-  font-family:"QCF4_QBSML";
-  src:url("https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/fonts-woff2/QCF4_QBSML.woff2") format("woff2");
-  font-display:block;
-}
-@font-face{
   font-family:"QUL_SurahHeader";
   src:url("/fonts/qul/QCF_SurahHeader_COLOR-Regular.ttf") format("truetype");
   font-display:block;
@@ -127,20 +117,18 @@ button{cursor:pointer}
   display:inline-flex;align-items:center;justify-content:center;
   user-select:none;-webkit-user-select:none;
   direction:rtl;white-space:nowrap;line-height:1.33;
-  font-family:"QCF4_Hafs_01";font-weight:400;font-synthesis:none;
+  font-weight:400;font-synthesis:none;
 }
 .surah-line{
-  font-family:"QCF4_QBSML";color:var(--green);
+  color:var(--green);
   line-height:1.08;min-height:1.12em;margin-bottom:.12em;
   position:relative;overflow:visible;
 }
-/* QUL surah header is rendered to a cropped canvas overlay. The hidden
-   QCF4 title underneath preserves the original Mushaf line box, so the
-   decorative header can never change ayah size, spacing, or page fitting. */
+/* QUL surah header is rendered to a cropped canvas overlay. A hidden metric
+   element keeps the original line box, so the decorative header can never
+   change ayah size, spacing, or page fitting. */
 .surah-line.banner-ready{width:100%;}
-.surah-metric{
-  font-family:"QCF4_QBSML";visibility:hidden;white-space:nowrap;
-}
+.surah-metric{visibility:hidden;white-space:nowrap}
 .surah-banner{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   display:block;width:min(94vw,735px);max-width:96%;height:auto;
@@ -154,10 +142,8 @@ button{cursor:pointer}
 html[data-theme="dark"] .surah-banner{opacity:.88}
 html[data-theme="dark"] .surah-line{color:#57b7a0}
 /* Visual nudge only: move the Bismillah a little lower without changing
-   the QCF line metrics used by fitPage(). */
-.bismillah-line{font-family:"QCF4_Hafs_01";line-height:1.25;margin:.04em 0 .12em;position:relative;color:var(--quran);transform:translateY(3px)}
-.bismillah-original{display:inline}.bismillah-desktop{display:none}
-.bismillah-original,.bismillah-desktop{-webkit-text-stroke:var(--quran-stroke) currentColor}
+   the line metrics used by fitPage(). */
+.bismillah-line{line-height:1.25;margin:.04em 0 .12em;position:relative;color:var(--quran);transform:translateY(3px)}
 .verse-segment{
   display:inline-flex;direction:rtl;align-items:center;
   user-select:none;-webkit-user-select:none;touch-action:pan-y;
@@ -165,20 +151,12 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   transition:background .13s,box-shadow .13s;
 }
 .verse-segment.selected{background:var(--select);box-shadow:0 0 0 1px var(--select-line) inset}
-.word{
-  display:inline-block;direction:rtl;color:var(--quran);
-  line-height:1.33;position:relative;
-  /* A small ink increase also reaches the diacritics and pause signs inside
-     each source glyph, without changing its advance width or page fitting. */
-  -webkit-text-stroke:var(--quran-stroke) currentColor;
-}
-.word.allah{color:var(--red)}
 /* المصحف المرسوم مسبقًا (mushaf-dk.js): أشكال جاهزة في svg بحجم em، تلوّنها متغيرات الألوان نفسها. */
 .dk-glyphs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 .dk-svg{display:block;overflow:visible;fill:var(--quran);stroke:var(--quran);stroke-width:var(--dk-ink,15);stroke-linejoin:round}
 .dk-svg .dk-allah{fill:var(--red);stroke:var(--red)}
 .dk-svg .dk-sajda{stroke:none}
-/* عنوان السورة في المصحف المرسوم: صندوق سطر QCF4 نفسه (line-height 1.08، وارتفاع 1.12em). */
+/* صندوق سطر عنوان السورة بارتفاعه الأصلي (line-height 1.08، وارتفاع 1.12em). */
 .dk-metric{display:inline-block;width:3.4em;height:1.12em;visibility:hidden}
 .dk-title{fill:var(--surah-banner);stroke:var(--surah-banner);stroke-width:12}
 /* ألوان التجويد (mushaf-dk.js): تظهر فقط حين data-tajweed="on"، وتغلب لون لفظ الجلالة. */
@@ -201,7 +179,6 @@ html[data-tajweed="on"] .tj-strip{display:flex}
 .tj-strip span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .tj-swatch{width:10px;height:10px;border-radius:50%;flex:none}
 .dk-svg .dk-end{fill:var(--ayah-number);stroke:var(--ayah-number)}
-.word.end{color:var(--ayah-number);-webkit-text-stroke-width:var(--ayah-stroke)}
 .page-no{
   position:absolute;left:22px;bottom:calc(8px + env(safe-area-inset-bottom));
   color:var(--page-label);font-family:"Aref Ruqaa",serif;font-size:var(--page-label-size,24px);line-height:1
@@ -1312,8 +1289,6 @@ html[data-theme="dark"] .tafsir-fadl-text{border-top-color:rgba(228,201,128,.10)
     margin:0 0 5px;
   }
   .surah-line{margin-bottom:.04em}
-  .bismillah-original{display:none}
-  .bismillah-desktop{display:inline}
 }
 
 /* ---------- v80 · Quran home ---------- */

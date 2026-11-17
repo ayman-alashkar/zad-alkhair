@@ -1,9 +1,9 @@
 /* ---------- المصحف المرسوم مسبقًا (DigitalKhatt) ----------
-   تجريبي خلف ?mushaf=dk، والمصحف المنشور على QCF4 كما هو. يبني scripts/build-mushaf.mjs
+   يبني scripts/build-mushaf.mjs
    صفحات data/mushaf/: لكل حرف رقم شكله وموضعه بوحدات الخط، ولكل كلمة آيتها. فلا يرسم
    المتصفح خطًّا، بل يضع أشكالًا جاهزة، والصفحة واحدة على كل جهاز.
 
-   العقد مع بقية القارئ كما في QCF4: سطر .line فيه .line-inner، وفيه .verse-segment[data-key]
+   العقد مع بقية القارئ كما كان مع QCF4: سطر .line فيه .line-inner، وفيه .verse-segment[data-key]
    لكل جزء من آية، وحجمه بوحدة em، فتحجّمه fitPage كما تحجّم سطر QCF4 بحجم الخط.
    وتُشتق من الصفحة lines[].words[] بشكل QCF4 (verse_key وtype وtext)، فيقرؤها البحث
    والمقتطفات ونص الآية دون تغيير. */
@@ -34,7 +34,7 @@ function dkEnsureGlyphs(){
 function dkAdaptPage(raw){
   const tokens=raw.tokens||[];
   const lines=raw.lines.map((l,i)=>{
-    if(l.k==="s")return {line:i+1,words:[{type:"surah_header",sura:l.s,char:String.fromCharCode(0xF100+l.s-1),font:"QCF4_QBSML"}]};
+    if(l.k==="s")return {line:i+1,words:[{type:"surah_header",sura:l.s}]};
     if(l.k==="b")return {line:i+1,words:[{type:"bismillah",char:""}],dk:l};
     const seen=new Set(),words=[];
     for(let j=0;j<l.e.length;j+=2){
@@ -120,7 +120,7 @@ function setTajweed(on,announce=false){
   if(btn){btn.setAttribute("aria-pressed",String(on));btn.classList.toggle("active",on)}
   if(announce)showToast(on?"تم تفعيل وضع التجويد":"تم إيقاف وضع التجويد");
 }
-if(MUSHAF_DK){
+{
   const btn=document.getElementById("tajweedBtn");
   const strip=document.getElementById("tajweedStrip");
   if(strip)strip.innerHTML=TAJWEED_LEGEND.map(([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("");
