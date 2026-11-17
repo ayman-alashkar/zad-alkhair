@@ -488,7 +488,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         const background = getComputedStyle(root).backgroundColor;
         return {
           fontSize: parseFloat(getComputedStyle(lines[0]).fontSize),
-          columnWidth,
+          columnWidth, ev: window.__ev, iw: innerWidth,
           widthFit: getComputedStyle(host).getPropertyValue("--mushaf-fit-width").trim() === "1",
           widthUsed: Math.max(...lines.map(line => line.getBoundingClientRect().width)) / columnWidth,
           gap: parseFloat(getComputedStyle(host).rowGap),
@@ -517,7 +517,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
       });
       // WebKit بلا واجهة يقول إن الصفحة بلا تركيز، والقارئ لا يعيد الضبط عند تغيّر المقاس إلا
       // والصفحة في التركيز (appearance.js). على الجهاز الصفحة في التركيز حين تُدار الشاشة.
-      await page.addInitScript(() => { Document.prototype.hasFocus = () => true; });
+      await page.addInitScript(() => { Document.prototype.hasFocus = () => true; window.__ev = []; for (const n of ["resize", "orientationchange"]) addEventListener(n, () => __ev.push([n, innerWidth, document.hidden, document.hasFocus()])); visualViewport?.addEventListener("resize", () => __ev.push(["vv", innerWidth])); });
       try {
         await page.goto(BASE + "/quran-read/?page=9");
         await page.locator('.page[data-page="9"] .dk-end').first().waitFor({ state: "attached" });
