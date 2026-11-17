@@ -309,10 +309,6 @@ const RECITERS=[
     timedPrefer:["حفص","عاصم"],timedRequireAny:["حفص","عاصم"]
   },
   {
-    id:"MaherAlMuaiqly128kbps",name:"فضيلة الشيخ ماهر المعيقلي",
-    provider:"qul-maher"
-  },
-  {
     id:"MahmoudAlHamoud_Surah",name:"فضيلة الشيخ محمود الحمود — السور كاملة",
     provider:"surah",audioBase:"https://media.way2quran.com/mahmoud-fayyad-al-hamoud/hafs-an-asim/"
   },
@@ -361,7 +357,7 @@ function defaultReciter(){
   return RECITERS.find(r=>r.id===DEFAULT_RECITER_ID)||RECITERS[0];
 }
 function validateReciterConfig(){
-  const allowed=new Set(["ayah","mp3quran-timed","qul-maher","surah"]);
+  const allowed=new Set(["ayah","mp3quran-timed","surah"]);
   const ids=new Set(),names=new Set();
   for(const r of RECITERS){
     if(!r?.id||!r?.name||!allowed.has(r.provider))throw new Error("reciter config shape");
@@ -456,7 +452,7 @@ const savedQueue=storageJsonGet("zad:player:queue:v1",{})||{};
 let playbackQueue=Array.isArray(savedQueue.items)?savedQueue.items.filter(x=>x&&Number.isInteger(x.s)&&x.s>=1&&x.s<=114&&typeof x.id==="string").slice(0,300):[];
 let queueActive=false,queueIndex=-1;
 let mp3ReadsPromise=null;
-const timedReadCache=new Map(),mp3TimingCache=new Map(),maherQulTimingCache=new Map();
+const timedReadCache=new Map(),mp3TimingCache=new Map();
 const PAGE_DATA_CACHE_LIMIT=12;
 const pageDataLoads=new Map(),pageLoads=new Map(),qcfFontLoads=new Map();
 let qcfMeta=null,chapterMap=new Map(),verseIndex=null,navigationBusy=false;
@@ -1740,7 +1736,6 @@ const HUB_CHECK_ICON='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/>
 const AUDIO_CACHE_NAME="zad-audio-v1";
 const AUDIO_OFFLINE_UNAVAILABLE="هذه السورة غير متاحة للتشغيل دون اتصال";
 const MP3QURAN_READS_URL="https://mp3quran.net/api/v3/ayat_timing/reads";
-const MAHER_TIMING_REV="2c71289821ff17158dfead0eb0404263c2bd0879";
 const audioDownloadJobs=new Map();
 let audioDownloadPreparing=false;
 function audioPackageKey(s,r=reciter){return `${r.id}:${Number(s)||1}`}
@@ -1788,9 +1783,6 @@ async function buildSurahAudioPackage(s,r=reciter){
     const timingUrl=`https://mp3quran.net/api/v3/ayat_timing?surah=${s}&read=${read.id}`;
     const src=(read.folder_url.endsWith("/")?read.folder_url:read.folder_url+"/")+pad3(s)+".mp3";
     add(MP3QURAN_READS_URL,"support",false);add(timingUrl,"support",true);add(src,"audio",true);
-  }else if(r.provider==="qul-maher"){
-    const timingUrl=`https://cdn.jsdelivr.net/gh/facilitator999/quranforyunus@${MAHER_TIMING_REV}/audio/maher/timestamps/${s}.json`;
-    const timed=await getMaherQulTiming(s);add(timingUrl,"support",true);add(timed.src,"audio",true);
   }else if(isSurahOnly(r)){
     add(wholeSurahAudioUrl(s,r),"audio",true);
   }else throw new Error("offline audio provider");
@@ -1858,6 +1850,21 @@ async function ensureOfflinePlaybackReciter(s,{chooseWhenMultiple=false,confirmD
 async function refreshAudioDownloadButton(btn,s){
   const rows=await downloadedAudioPackagesForSurah(s,true);
   setAudioDownloadButton(btn,rows.length?"downloaded":"available");
+}
+/* تنزيلات قارئ أُزيل من التطبيق لا يمكن تشغيلها ولا حذفها من الواجهة، فتُحذف هنا مع ملفاتها
+   التي لا تشاركها تنزيلات أخرى. */
+async function pruneRetiredAudioPackages(){
+  const all=audioOfflinePackages(),known=new Set(RECITERS.map(r=>r.id));
+  const retired=Object.keys(all).filter(key=>!known.has(key.split(":")[0]));
+  if(!retired.length)return;
+  const remainingRefs=new Set();
+  for(const [key,pkg] of Object.entries(all))if(!retired.includes(key))for(const url of pkg?.urls||[])remainingRefs.add(url);
+  try{
+    const cache=await caches.open(AUDIO_CACHE_NAME);
+    for(const key of retired)for(const url of all[key]?.ownedUrls||[])if(!remainingRefs.has(url))await cache.delete(url,{ignoreVary:true});
+  }catch(_){}
+  for(const key of retired)delete all[key];
+  storageJsonSet(STORAGE_KEYS.audioOffline,all);
 }
 async function deleteSurahAudioPackages(s,reciterIds,btn){
   const ids=new Set((reciterIds||[]).map(String));if(!ids.size)return;
@@ -2249,28 +2256,8 @@ function normalizeTimedRows(raw){
     return {ayah,start_time:start,end_time:end};
   }).filter(x=>x.ayah>0&&Number.isFinite(x.start_time)&&Number.isFinite(x.end_time));
 }
-async function getMaherQulTiming(s){
-  if(maherQulTimingCache.has(s))return maherQulTimingCache.get(s);
-
-  // This is the already-extracted QUL /562 timestamp file used by an
-  // existing open-source Quran implementation. We intentionally consume
-  // the exported data as-is; no local alignment or offset correction.
-  const MAHER_TIMING_REV="2c71289821ff17158dfead0eb0404263c2bd0879";
-  const url=`https://cdn.jsdelivr.net/gh/facilitator999/quranforyunus@${MAHER_TIMING_REV}/audio/maher/timestamps/${s}.json`;
-  const r=await fetch(url,{cache:"force-cache"});
-  if(!r.ok)throw new Error(`Maher QUL timing ${r.status}`);
-  const data=await r.json();
-  const af=data?.audio_file||data?.audioFile||data;
-  const rows=normalizeTimedRows(af?.timestamps||data?.timestamps);
-  if(!rows.length)throw new Error("invalid Maher QUL timing");
-
-  const src=`https://audio-cdn.tarteel.ai/quran/surah/maherAlMuaiqly/murattal/mp3/${pad3(s)}.mp3`;
-  const out={src,rows};
-  maherQulTimingCache.set(s,out);
-  return out;
-}
 function isTimedProvider(r=reciter){
-  return r.provider==="mp3quran-timed"||r.provider==="qul-maher";
+  return r.provider==="mp3quran-timed";
 }
 /* ملف السورة وتوقيتها للقارئ الحالي، دون لمس حالة التشغيل. */
 async function resolveTimedSource(s){
@@ -2279,16 +2266,12 @@ async function resolveTimedSource(s){
     const timed=await getMp3Timing(s);
     src=(timed.read.folder_url.endsWith("/")?timed.read.folder_url:timed.read.folder_url+"/")+pad3(s)+".mp3";
     rows=normalizeTimedRows(timed.rows);
-  }else if(reciter.provider==="qul-maher"){
-    const timed=await getMaherQulTiming(s);
-    src=timed.src;rows=timed.rows;
   }
   return {src,rows};
 }
 /* هل توقيت السورة في الذاكرة، فيبدأ تشغيلها دون انتظار الشبكة؟ */
 function timedSourceReady(s,r=reciter){
   if(r.provider==="mp3quran-timed"){const read=timedReadCache.get(r.id);return !!read&&mp3TimingCache.has(`${read.id}:${s}`)}
-  if(r.provider==="qul-maher")return maherQulTimingCache.has(s);
   return true;
 }
 async function resolveGaplessForCurrentSurah(){
@@ -2615,8 +2598,6 @@ async function primeNextTimedSurah(){
     if(reciter.provider==="mp3quran-timed"){
       const timed=await getMp3Timing(nextSurah);
       src=(timed.read.folder_url.endsWith("/")?timed.read.folder_url:timed.read.folder_url+"/")+pad3(nextSurah)+".mp3";
-    }else if(reciter.provider==="qul-maher"){
-      src=(await getMaherQulTiming(nextSurah)).src;
     }else if(isSurahOnly()){src=wholeSurahAudioUrl(nextSurah)}
     if(!src||guard!==`${reciter.id}:${play.surah}`||!continuousMode||nextTimedSourceRef()?.s!==nextSurah||!document.body.classList.contains("player-on"))return;
     if(src===primedTimedSurahSrc)return;
@@ -4362,6 +4343,7 @@ if("serviceWorker" in navigator){
     if(!entry.direct&&entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
     prefetchAround(currentPage).then(()=>trimPageDom(currentPage));
     loadTafsirIndex().catch(err=>console.warn("tafsir index unavailable",err));
+    pruneRetiredAudioPackages().catch(err=>console.warn("retired audio cleanup failed",err));
     readerBootDone();
     if(wantsHome&&!earlyIndexOpened){
       const restoredTab=storedSurface?.surface==="quran-home"&&["s","j","m"].includes(storedSurface?.tab)?storedSurface.tab:"s";

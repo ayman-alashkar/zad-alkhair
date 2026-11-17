@@ -79,7 +79,7 @@ const savedQueue=storageJsonGet("zad:player:queue:v1",{})||{};
 let playbackQueue=Array.isArray(savedQueue.items)?savedQueue.items.filter(x=>x&&Number.isInteger(x.s)&&x.s>=1&&x.s<=114&&typeof x.id==="string").slice(0,300):[];
 let queueActive=false,queueIndex=-1;
 let mp3ReadsPromise=null;
-const timedReadCache=new Map(),mp3TimingCache=new Map(),maherQulTimingCache=new Map();
+const timedReadCache=new Map(),mp3TimingCache=new Map();
 const PAGE_DATA_CACHE_LIMIT=12;
 const pageDataLoads=new Map(),pageLoads=new Map(),qcfFontLoads=new Map();
 let qcfMeta=null,chapterMap=new Map(),verseIndex=null,navigationBusy=false;

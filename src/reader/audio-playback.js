@@ -50,8 +50,6 @@ async function primeNextTimedSurah(){
     if(reciter.provider==="mp3quran-timed"){
       const timed=await getMp3Timing(nextSurah);
       src=(timed.read.folder_url.endsWith("/")?timed.read.folder_url:timed.read.folder_url+"/")+pad3(nextSurah)+".mp3";
-    }else if(reciter.provider==="qul-maher"){
-      src=(await getMaherQulTiming(nextSurah)).src;
     }else if(isSurahOnly()){src=wholeSurahAudioUrl(nextSurah)}
     if(!src||guard!==`${reciter.id}:${play.surah}`||!continuousMode||nextTimedSourceRef()?.s!==nextSurah||!document.body.classList.contains("player-on"))return;
     if(src===primedTimedSurahSrc)return;

@@ -396,8 +396,7 @@ function isAudioUrl(url,request){
   return request.destination==="audio"||/\.(?:mp3|m4a|ogg|aac)(?:$|\?)/i.test(url.pathname);
 }
 function isAudioSupportUrl(url){
-  return (url.hostname==="mp3quran.net"&&/^\/api\/v3\/ayat_timing(?:\/reads)?$/.test(url.pathname))||
-    (url.hostname==="cdn.jsdelivr.net"&&/\/audio\/maher\/timestamps\/\d+\.json$/i.test(url.pathname));
+  return url.hostname==="mp3quran.net"&&/^\/api\/v3\/ayat_timing(?:\/reads)?$/.test(url.pathname);
 }
 function fullAudioRequest(request){
   return new Request(request.url,{method:"GET",mode:request.mode,credentials:request.credentials,redirect:"follow"});
@@ -470,7 +469,7 @@ self.addEventListener("fetch",event=>{
     event.respondWith(cacheFirst(request,RUNTIME_CACHE));
     return;
   }
-  if(/mp3quran\.net|facilitator999|tarteel\.ai|jsdelivr\.net/.test(url.hostname)){
+  if(/mp3quran\.net|tarteel\.ai|jsdelivr\.net/.test(url.hostname)){
     event.respondWith(cacheFirst(request,RUNTIME_CACHE));
   }
 });
