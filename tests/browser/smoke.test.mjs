@@ -528,7 +528,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(portrait.labelsStayInMargins, "larger labels stay inside the existing page margins");
         assert.ok(portrait.columnWidth > width * .9, "portrait reading uses the available width");
         await page.setViewportSize({ width: height, height: width });
-        // ينتظر إعادة الضبط نفسها لا مدة ثابتة: WebKit يعيد الضبط بعد Chromium بقليل.
+        // ينتظر إعادة الضبط نفسها لا مدة ثابتة (هنا وعند العودة إلى العمودي): WebKit يعيد الضبط بعد Chromium بقليل.
         await page.waitForFunction(size => parseFloat(getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize) > size * 1.3, portrait.fontSize, { timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
         const landscape = await measure();
@@ -556,6 +556,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
           }), "the last row and page number are reachable together at the end of scrolling");
         } else assert.ok(landscape.fits, "the complete page fits when the height permits it");
         await page.setViewportSize({ width, height });
+        await page.waitForFunction(() => !document.querySelector('.page[data-page="9"] .mushaf').style.paddingTop, null, { timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
         const restored = await measure();
         assert.ok(!restored.widthFit, "portrait leaves width fitting");
