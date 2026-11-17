@@ -232,7 +232,8 @@ async function cleanupOldCaches(){
   const keep=new Set([SHELL_CACHE,SHELL_BACKUP_CACHE,QURAN_CACHE,TAFSIR_CACHE,AUDIO_CACHE,RUNTIME_CACHE]);
   for(const key of await caches.keys()){
     if(keep.has(key))continue;
-    if(key===LEGACY_QURAN_CACHE||key.startsWith("zad-shell-v")||key.startsWith("zad-shell-stage-")||key.startsWith("zad-runtime-v")){
+    // zad-mushaf-*: حزمة المصحف المرسوم التي نُشرت مدة قصيرة (#136) ثم أُرجعت. تُحذف من الأجهزة التي نزّلتها.
+    if(key===LEGACY_QURAN_CACHE||key.startsWith("zad-shell-v")||key.startsWith("zad-shell-stage-")||key.startsWith("zad-runtime-v")||key.startsWith("zad-mushaf-")){
       await caches.delete(key);
     }
   }
