@@ -153,7 +153,7 @@ function normalizeArabic(s){return (s||"").replace(/[\u064B-\u065F\u0670\u06D6-\
 function isAllah(t){const n=normalizeArabic(t);return n.includes("الله")||n.includes("لله")}
 
 async function fetchPage(p){
-  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+".json",{cache:"force-cache"});
+  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+PAGE_SUFFIX,{cache:"force-cache"});
   if(!r.ok)throw new Error("page "+p);
   const data=await r.json();
   if(Number(data?.page)!==Number(p)||!Array.isArray(data?.lines))throw new Error("invalid page "+p);

@@ -7,7 +7,7 @@
    لكل جزء من آية، وحجمه بوحدة em، فتحجّمه fitPage كما تحجّم سطر QCF4 بحجم الخط.
    وتُشتق من الصفحة lines[].words[] بشكل QCF4 (verse_key وtype وtext)، فيقرؤها البحث
    والمقتطفات ونص الآية دون تغيير. */
-const DK_GLYPHS_URL=MUSHAF_BASE+"glyphs.json";
+const DK_GLYPHS_URL=MUSHAF_BASE+"glyphs.json"+MUSHAF_Q;
 /* عرض السطر الكامل في QCF4 بوحدة em (مجموع أطوال حروفه 40215 من 2500)، فيأخذ السطر الجديد
    العرض نفسه وتعطيه fitPage الحجم نفسه على الشاشة. */
 const DK_FULL_LINE_EM=40215/2500;
@@ -131,7 +131,7 @@ if(MUSHAF_DK){
 /* ---------- عنوان السورة ----------
    «سورة كذا» بخط المصحف نفسه (titles.json)، في إطار مرسوم بخطوط زاد الخير ولونيه، لا خط
    خارجي ولا صورة. الإطار بوحدات الخط فيتحجّم مع السطر، وارتفاعه ثابت فلا يغيّر الملاءمة. */
-const DK_TITLES_URL=MUSHAF_BASE+"titles.json";
+const DK_TITLES_URL=MUSHAF_BASE+"titles.json"+MUSHAF_Q;
 const DK_TITLE_W=17600,DK_TITLE_H=2300;
 let dkTitlesJob=null,dkTitles=null;
 function dkEnsureTitles(){

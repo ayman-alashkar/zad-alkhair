@@ -2887,9 +2887,13 @@ const MUSHAF_DK=(()=>{try{
   return localStorage.getItem("zad:mushaf-engine")==="dk";
 }catch(_){return false}})();
 const MUSHAF_BASE="/data/mushaf/";
+/* بصمة بيانات data/mushaf (يكتبها scripts/build-app.cjs): تُلحق بعناوين ملفاتها فلا يُقدَّم قديمها. */
+const MUSHAF_VERSION="9372ecd86fa7";
+const MUSHAF_Q="?v="+MUSHAF_VERSION;
 const PAGE_BASE=MUSHAF_DK?MUSHAF_BASE+"pages/":QCF_BASE+"pages/";
-const INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"index.json":QCF_BASE+"index.json";
-const VERSE_INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"verses.json":QCF_BASE+"verses.json";
+const PAGE_SUFFIX=MUSHAF_DK?".json"+MUSHAF_Q:".json";
+const INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"index.json"+MUSHAF_Q:QCF_BASE+"index.json";
+const VERSE_INDEX_URL=MUSHAF_DK?MUSHAF_BASE+"verses.json"+MUSHAF_Q:QCF_BASE+"verses.json";
 const QCF_FONT_BASE=QCF_BASE+"fonts-woff2/";
 const TOTAL_PAGES=604;
 const SURAH_HEADER_GLYPHS=[null,"ﱅ","ﱆ","ﱇ","ﱊ","ﱋ","ﱎ","ﱏ","ﱑ","ﱒ","ﱓ","ﱕ","ﱖ","ﱘ","ﱚ","ﱛ","ﱜ","ﱝ","ﱞ","ﱡ","ﱢ","ﱤ","ﭑ","ﭒ","ﭔ","ﭕ","ﭗ","ﭘ","ﭚ","ﭛ","ﭝ","ﭞ","ﭠ","ﭡ","ﭣ","ﭤ","ﭦ","ﭧ","ﭩ","ﭪ","ﭬ","ﭭ","ﭯ","ﭰ","ﭲ","ﭳ","ﭵ","ﭶ","ﭸ","ﭹ","ﭻ","ﭼ","ﭾ","ﭿ","ﮁ","ﮂ","ﮄ","ﮅ","ﮇ","ﮈ","ﮊ","ﮋ","ﮍ","ﮎ","ﮐ","ﮑ","ﮓ","ﮔ","ﮖ","ﮗ","ﮙ","ﮚ","ﮜ","ﮝ","ﮟ","ﮠ","ﮢ","ﮣ","ﮥ","ﮦ","ﮨ","ﮩ","ﮫ","ﮬ","ﮮ","ﮯ","ﮱ","﮲","﮴","﮵","﮷","﮸","﮺","﮻","﮽","﮾","﯀","﯁","ﯓ","ﯔ","ﯖ","ﯗ","ﯙ","ﯚ","ﯜ","ﯝ","ﯟ","ﯠ","ﯢ","ﯣ","ﯥ","ﯦ","ﯨ","ﯩ","ﯫ"];
@@ -3535,7 +3539,7 @@ function normalizeArabic(s){return (s||"").replace(/[\u064B-\u065F\u0670\u06D6-\
 function isAllah(t){const n=normalizeArabic(t);return n.includes("الله")||n.includes("لله")}
 
 async function fetchPage(p){
-  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+".json",{cache:"force-cache"});
+  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+PAGE_SUFFIX,{cache:"force-cache"});
   if(!r.ok)throw new Error("page "+p);
   const data=await r.json();
   if(Number(data?.page)!==Number(p)||!Array.isArray(data?.lines))throw new Error("invalid page "+p);
@@ -3796,7 +3800,7 @@ function surahGlyphAspect(glyph){
    لكل جزء من آية، وحجمه بوحدة em، فتحجّمه fitPage كما تحجّم سطر QCF4 بحجم الخط.
    وتُشتق من الصفحة lines[].words[] بشكل QCF4 (verse_key وtype وtext)، فيقرؤها البحث
    والمقتطفات ونص الآية دون تغيير. */
-const DK_GLYPHS_URL=MUSHAF_BASE+"glyphs.json";
+const DK_GLYPHS_URL=MUSHAF_BASE+"glyphs.json"+MUSHAF_Q;
 /* عرض السطر الكامل في QCF4 بوحدة em (مجموع أطوال حروفه 40215 من 2500)، فيأخذ السطر الجديد
    العرض نفسه وتعطيه fitPage الحجم نفسه على الشاشة. */
 const DK_FULL_LINE_EM=40215/2500;
@@ -3920,7 +3924,7 @@ if(MUSHAF_DK){
 /* ---------- عنوان السورة ----------
    «سورة كذا» بخط المصحف نفسه (titles.json)، في إطار مرسوم بخطوط زاد الخير ولونيه، لا خط
    خارجي ولا صورة. الإطار بوحدات الخط فيتحجّم مع السطر، وارتفاعه ثابت فلا يغيّر الملاءمة. */
-const DK_TITLES_URL=MUSHAF_BASE+"titles.json";
+const DK_TITLES_URL=MUSHAF_BASE+"titles.json"+MUSHAF_Q;
 const DK_TITLE_W=17600,DK_TITLE_H=2300;
 let dkTitlesJob=null,dkTitles=null;
 function dkEnsureTitles(){
@@ -7236,7 +7240,7 @@ async function requestPersistentStorage(){
   try{if(navigator.storage?.persist)await navigator.storage.persist()}catch(_){ }
 }
 function postOfflineLibrary(type){
-  navigator.serviceWorker?.ready?.then(reg=>(reg.active||reg.waiting||reg.installing)?.postMessage({type})).catch(()=>{});
+  navigator.serviceWorker?.ready?.then(reg=>(reg.active||reg.waiting||reg.installing)?.postMessage({type,mushaf:MUSHAF_DK?"dk":"qcf"})).catch(()=>{});
 }
 if("serviceWorker" in navigator){
   const offlineSetup=document.getElementById("offlineSetup");
@@ -7291,7 +7295,7 @@ if("serviceWorker" in navigator){
   const prepareReaderServiceWorker=()=>navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(reg=>reg.update().catch(()=>reg)).then(()=>navigator.serviceWorker.ready).then(reg=>{
     const worker=reg.active||reg.waiting||reg.installing;
     if(navigator.onLine)worker?.postMessage({type:"ENSURE_OFFLINE_SHELL"});
-    worker?.postMessage({type:navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY"});
+    worker?.postMessage({type:navigator.onLine?"ENSURE_OFFLINE_LIBRARY":"CHECK_OFFLINE_LIBRARY",mushaf:MUSHAF_DK?"dk":"qcf"});
   }).catch(()=>{});
   /* Opening the Quran is the opt-in for the offline download; a reader the home
      screen merely prepared in the background has not been opened yet. */
@@ -7334,11 +7338,12 @@ if("serviceWorker" in navigator){
         earlyIndexOpened=true;
       }
     }
-    await Promise.all([
+    /* المصحف المرسوم لا يحتاج خطوط QCF4 ولا عنوان QUL: أشكاله وعناوينه من data/mushaf. */
+    if(!MUSHAF_DK)await Promise.all([
       document.fonts.load('48px "QCF4_QBSML"'),
       document.fonts.load('48px "QCF4_Hafs_01"')
     ]);
-    try{
+    if(!MUSHAF_DK)try{
       await document.fonts.load('64px "QUL_SurahHeader"',SURAH_HEADER_GLYPHS[1]);
       surahHeaderReady=true;
     }catch(_){surahHeaderReady=false}

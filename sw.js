@@ -43,6 +43,18 @@ const QURAN_CORE=[QCF_BASE+"index.json",QCF_BASE+"verses.json",QCF_BASE+"fonts-w
 const QURAN_FONTS=Array.from({length:47},(_,i)=>QCF_BASE+`fonts-woff2/QCF4_Hafs_${String(i+1).padStart(2,"0")}_W.woff2`);
 const QURAN_PAGES=Array.from({length:604},(_,i)=>QCF_BASE+`pages/${String(i+1).padStart(3,"0")}.json`);
 const QURAN_REQUIRED=[...QURAN_CORE,...QURAN_FONTS,...QURAN_PAGES];
+/* المصحف المرسوم مسبقًا (data/mushaf، المحرك التجريبي ?mushaf=dk): حزمة مستقلة عن QCF4، باسم
+   مخزن يحمل بصمة البيانات (يكتبها scripts/build-app.cjs)، فيُنزَّل الجديد كاملًا إذا تغيّرت. */
+const MUSHAF_VERSION="9372ecd86fa7";
+const MUSHAF_CACHE="zad-mushaf-"+MUSHAF_VERSION;
+const MUSHAF_Q="?v="+MUSHAF_VERSION;
+const MUSHAF_REQUIRED=["index.json","verses.json","glyphs.json","titles.json",...Array.from({length:604},(_,i)=>`pages/${String(i+1).padStart(3,"0")}.json`)].map(f=>"./data/mushaf/"+f+MUSHAF_Q);
+const MUSHAF_MARKER="./__zad_mushaf_ready__";
+function quranPack(mushaf){
+  return mushaf==="dk"
+    ?{name:MUSHAF_CACHE,required:MUSHAF_REQUIRED,marker:MUSHAF_MARKER,label:"mushaf-"+MUSHAF_VERSION}
+    :{name:QURAN_CACHE,required:QURAN_REQUIRED,marker:QURAN_MARKER,label:"quran-core-v1"};
+}
 /* حزمة التفسير تحمل معها نص المصحف العثماني (للنسخ ونتائج البحث). من اكتملت حزمته قبل إضافته
    تنقصه هذه الملفات وحدها، فتُنزَّل في التجهيز التالي دون إعادة التفسير. */
 const UTHMANI_REQUIRED=Array.from({length:114},(_,i)=>`./data/quran-uthmani/${String(i+1).padStart(3,"0")}.json`);
@@ -229,10 +241,10 @@ async function migrateLegacyOfflinePack(){
 }
 
 async function cleanupOldCaches(){
-  const keep=new Set([SHELL_CACHE,SHELL_BACKUP_CACHE,QURAN_CACHE,TAFSIR_CACHE,AUDIO_CACHE,RUNTIME_CACHE]);
+  const keep=new Set([SHELL_CACHE,SHELL_BACKUP_CACHE,QURAN_CACHE,MUSHAF_CACHE,TAFSIR_CACHE,AUDIO_CACHE,RUNTIME_CACHE]);
   for(const key of await caches.keys()){
     if(keep.has(key))continue;
-    if(key===LEGACY_QURAN_CACHE||key.startsWith("zad-shell-v")||key.startsWith("zad-shell-stage-")||key.startsWith("zad-runtime-v")){
+    if(key===LEGACY_QURAN_CACHE||key.startsWith("zad-shell-v")||key.startsWith("zad-shell-stage-")||key.startsWith("zad-runtime-v")||key.startsWith("zad-mushaf-")){
       await caches.delete(key);
     }
   }
@@ -451,6 +463,10 @@ self.addEventListener("fetch",event=>{
     event.respondWith(shellFirstDocument(request,event));
     return;
   }
+  if(url.origin===self.location.origin&&url.pathname.startsWith("/data/mushaf/")){
+    event.respondWith(cacheFirst(request,MUSHAF_CACHE));
+    return;
+  }
   if(url.href.startsWith(QCF_BASE)||url.href===QUL_HEADER){
     event.respondWith(cacheFirst(request,QURAN_CACHE));
     return;
@@ -474,17 +490,18 @@ self.addEventListener("fetch",event=>{
   }
 });
 
-async function packState(){
-  const [quran,tafsir]=await Promise.all([caches.open(QURAN_CACHE),caches.open(TAFSIR_CACHE)]);
-  const [qm,tm]=await Promise.all([quran.match(requestFor(QURAN_MARKER)),tafsir.match(requestFor(TAFSIR_MARKER))]);
-  const quranReady=!!qm&&await allPresent(quran,QURAN_REQUIRED);
+async function packState(mushaf){
+  const pack=quranPack(mushaf);
+  const [quran,tafsir]=await Promise.all([caches.open(pack.name),caches.open(TAFSIR_CACHE)]);
+  const [qm,tm]=await Promise.all([quran.match(requestFor(pack.marker)),tafsir.match(requestFor(TAFSIR_MARKER))]);
+  const quranReady=!!qm&&await allPresent(quran,pack.required);
   const tafsirReady=!!tm&&await allPresent(tafsir,TAFSIR_REQUIRED);
-  if(!quranReady&&qm)await quran.delete(requestFor(QURAN_MARKER));
+  if(!quranReady&&qm)await quran.delete(requestFor(pack.marker));
   if(!tafsirReady&&tm)await tafsir.delete(requestFor(TAFSIR_MARKER));
   return {quranReady,tafsirReady,ready:quranReady&&tafsirReady};
 }
 
-let libraryPromise=null;
+const libraryPromises=new Map();
 async function missingUrls(cache,urls){
   const missing=[];
   for(let i=0;i<urls.length;i+=32){
@@ -506,17 +523,19 @@ async function cacheSet(cache,urls,kind,offset,total){
   }
   return {cache,failed};
 }
-async function ensureOfflineLibrary(){
-  if(libraryPromise)return libraryPromise;
-  libraryPromise=(async()=>{
-    const initial=await packState();
+async function ensureOfflineLibrary(mushaf){
+  const key=mushaf==="dk"?"dk":"qcf";
+  if(libraryPromises.has(key))return libraryPromises.get(key);
+  const job=(async()=>{
+    const pack=quranPack(key);
+    const initial=await packState(key);
     if(initial.ready){
       await notifyAll({type:"OFFLINE_LIBRARY_READY",quran:true,tafsir:true});
       return initial;
     }
-    const [quran,tafsir]=await Promise.all([caches.open(QURAN_CACHE),caches.open(TAFSIR_CACHE)]);
+    const [quran,tafsir]=await Promise.all([caches.open(pack.name),caches.open(TAFSIR_CACHE)]);
     const [missingQuran,missingTafsir]=await Promise.all([
-      initial.quranReady?[]:missingUrls(quran,QURAN_REQUIRED),
+      initial.quranReady?[]:missingUrls(quran,pack.required),
       initial.tafsirReady?[]:missingUrls(tafsir,TAFSIR_REQUIRED)
     ]);
     const total=missingQuran.length+missingTafsir.length;
@@ -525,22 +544,23 @@ async function ensureOfflineLibrary(){
     if(!initial.quranReady){
       const result=await cacheSet(quran,missingQuran,"quran",offset,total);
       failed+=result.failed;offset+=missingQuran.length-result.failed;
-      if(result.failed===0&&await allPresent(result.cache,QURAN_REQUIRED))await markReady(result.cache,QURAN_MARKER,"quran-core-v1");
+      if(result.failed===0&&await allPresent(result.cache,pack.required))await markReady(result.cache,pack.marker,pack.label);
     }
     if(!initial.tafsirReady){
       const result=await cacheSet(tafsir,missingTafsir,"tafsir",offset,total);
       failed+=result.failed;offset+=missingTafsir.length-result.failed;
       if(result.failed===0&&await allPresent(result.cache,TAFSIR_REQUIRED))await markReady(result.cache,TAFSIR_MARKER,"tafsir-alwajeez-v1");
     }
-    const final=await packState();
+    const final=await packState(key);
     if(final.ready)await notifyAll({type:"OFFLINE_LIBRARY_READY",quran:true,tafsir:true});
     else await notifyAll({type:"OFFLINE_LIBRARY_INCOMPLETE",...final,failed});
     return final;
-  })().finally(()=>{libraryPromise=null});
-  return libraryPromise;
+  })().finally(()=>libraryPromises.delete(key));
+  libraryPromises.set(key,job);
+  return job;
 }
-async function checkOfflineLibrary(){
-  const state=await packState();
+async function checkOfflineLibrary(mushaf){
+  const state=await packState(mushaf);
   await notifyAll(state.ready
     ?{type:"OFFLINE_LIBRARY_READY",quran:true,tafsir:true}
     :{type:"OFFLINE_LIBRARY_INCOMPLETE",...state,failed:0});
@@ -601,8 +621,8 @@ async function cacheAudioResources(resources,tag=""){
 self.addEventListener("message",event=>{
   const data=event.data||{};
   if(data.type==="ENSURE_OFFLINE_SHELL")event.waitUntil(ensureOfflineShell());
-  if(data.type==="CHECK_OFFLINE_LIBRARY"||data.type==="CHECK_QURAN_OFFLINE")event.waitUntil(checkOfflineLibrary());
-  if(data.type==="ENSURE_OFFLINE_LIBRARY"||data.type==="CACHE_QURAN_OFFLINE")event.waitUntil(ensureOfflineLibrary());
+  if(data.type==="CHECK_OFFLINE_LIBRARY"||data.type==="CHECK_QURAN_OFFLINE")event.waitUntil(checkOfflineLibrary(data.mushaf));
+  if(data.type==="ENSURE_OFFLINE_LIBRARY"||data.type==="CACHE_QURAN_OFFLINE")event.waitUntil(ensureOfflineLibrary(data.mushaf));
   if(data.type==="CACHE_AUDIO_PACKAGE")event.waitUntil(cacheAudioResources(data.resources,data.tag));
   if(data.type==="CACHE_AUDIO_URLS")event.waitUntil(cacheAudioResources((data.urls||[]).map(url=>({url,kind:"audio"})),data.tag));
 });
