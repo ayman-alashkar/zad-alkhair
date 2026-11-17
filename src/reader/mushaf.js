@@ -207,7 +207,7 @@ async function ensurePage(p){
   if(pageLoads.has(p))return pageLoads.get(p);
   const job=(async()=>{
     const data=await getPageData(p);
-    await (MUSHAF_DK?dkEnsureGlyphs():ensureQcfFont(data.font));renderPage(data);return data;
+    await (MUSHAF_DK?Promise.all([dkEnsureGlyphs(),dkEnsureTitles()]):ensureQcfFont(data.font));renderPage(data);return data;
   })().finally(()=>pageLoads.delete(p));
   pageLoads.set(p,job);return job;
 }
@@ -290,6 +290,12 @@ function renderPage(data){
 
     const first=line.words[0];
     inner.style.fontFamily=`"${data.font||"QCF4_Hafs_01"}"`;
+    if(first?.type==="surah_header"&&MUSHAF_DK){
+      const sid=surahIdForHeader(data,lineIndex);
+      inner.classList.add("surah-line","dk-title-line");
+      if(!dkRenderSurahTitle(inner,sid))inner.textContent=`سورة ${chapterMap.get(sid)?.name_arabic||""}`;
+      lineEl.appendChild(inner);host.appendChild(lineEl);continue;
+    }
     if(first?.type==="surah_header"){
       const sid=surahIdForHeader(data,lineIndex);
       inner.classList.add("surah-line");

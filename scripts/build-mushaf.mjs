@@ -12,6 +12,7 @@
     glyphs.json   شكل كل حرف مستعمل، مسارًا بوحدات الخط (المحور الصادي إلى أعلى).
     index.json    بيانات السور (بشكل index.json في حزمة QCF4).
     verses.json   الآية ← الصفحة (بشكل verses.json في حزمة QCF4).
+    titles.json   «سورة كذا» لكل سورة، أشكالًا ومواضع بخط المصحف.
     pages/NNN.json  سطور الصفحة: لكل حرف رقم شكله وموضعه ورقم كلمته في الصفحة.
 
   node scripts/build-mushaf.mjs           يكتب المخرجات
@@ -212,8 +213,6 @@ async function main() {
     });
   }
 
-  const glyphs = {};
-  [...glyphPaths.keys()].sort((a, b) => a - b).forEach(id => { const d = glyphPaths.get(id); if (d) glyphs[id] = roundPath(d); });
   // بشكل index.json وverses.json في حزمة QCF4 نفسه، فيقرؤهما القارئ دون تغيير.
   const lastPageOf = id => { let last = 0; for (const [k, pg] of Object.entries(verseToPage)) if (+k.split(":")[0] === id) last = Math.max(last, pg); return last; };
   const meta = {
@@ -226,7 +225,26 @@ async function main() {
   };
   const verses = Object.fromEntries(Object.entries(verseToPage).map(([k, pg]) => [k, { page: pg }]));
 
+  // عناوين السور: «سورة كذا» بخط المصحف نفسه، تُرسم داخل إطار زاد الخير (mushaf-dk.js).
+  const titleSrc = readJson(path.join(SRC, "surah-titles.json")).titles;
+  if (titleSrc.length !== 114) throw Error("surah titles");
+  const titles = titleSrc.map(text => {
+    const buf = new HarfBuzzBuffer();
+    buf.setDirection("rtl"); buf.setLanguage(hb.arabLanguage); buf.setScript(hb.arabScript); buf.setClusterLevel(1);
+    buf.addText(text); buf.shape(font, []); const res = buf.json(); buf.destroy();
+    const g = []; let x = 0;
+    for (let i = res.length - 1; i >= 0; i--) {
+      const gl = res[i]; x -= gl.XAdvance;
+      if (!glyphPaths.has(gl.GlyphId)) glyphPaths.set(gl.GlyphId, font.glyphToSvgPath(gl.GlyphId));
+      if (glyphPaths.get(gl.GlyphId)) g.push(gl.GlyphId, Math.round(x + gl.XOffset), Math.round(gl.YOffset));
+    }
+    return { n: Math.round(-x), g };
+  });
+
+  const glyphs = {};
+  [...glyphPaths.keys()].sort((a, b) => a - b).forEach(id => { const d = glyphPaths.get(id); if (d) glyphs[id] = roundPath(d); });
   const files = new Map();
+  files.set("titles.json", JSON.stringify(titles));
   files.set("glyphs.json", JSON.stringify(glyphs));
   files.set("index.json", JSON.stringify(meta));
   files.set("verses.json", JSON.stringify(verses));
