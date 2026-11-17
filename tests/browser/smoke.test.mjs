@@ -488,6 +488,8 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         const background = getComputedStyle(root).backgroundColor;
         return {
           fontSize: parseFloat(getComputedStyle(lines[0]).fontSize),
+          debug: lines.map(l => [parseFloat(getComputedStyle(l).fontSize), Math.round(l.getBoundingClientRect().width), l.className, l.children.length, Math.round(l.firstElementChild?.getBoundingClientRect().width), l.firstElementChild?.firstElementChild?.style.width]).slice(0, 4),
+          base: getComputedStyle(host).fontSize, stageW: stage.clientWidth, hostW: host.clientWidth,
           columnWidth,
           widthFit: getComputedStyle(host).getPropertyValue("--mushaf-fit-width").trim() === "1",
           widthUsed: Math.max(...lines.map(line => line.getBoundingClientRect().width)) / columnWidth,
