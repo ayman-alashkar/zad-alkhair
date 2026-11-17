@@ -893,13 +893,16 @@ function dkAdaptPage(raw){
   return {page:raw.page,surahs:raw.surahs,lines,dk:raw};
 }
 
+/* المقاس بالـem على غلاف span لا على svg نفسه: Safari لا يعيد حساب em في svg حين يتغيّر
+   حجم الخط بعد الرسم (تدوير الشاشة)، فيبقى السطر بمقاسه القديم. svg يملأ غلافه فقط.
+   الغلاف في svg.dkBox، وهو ما يُضاف إلى الصفحة. */
 function dkSvg(x0,x1,base,height,widthEm,heightEm){
-  const svg=document.createElementNS(SVG_NS,"svg");
+  const svg=document.createElementNS(SVG_NS,"svg"),box=document.createElement("span");
   svg.setAttribute("viewBox",`${x0} ${-base} ${x1-x0} ${height}`);
   svg.setAttribute("preserveAspectRatio","none");
   svg.setAttribute("aria-hidden","true");
-  svg.style.width=widthEm+"em";svg.style.height=heightEm+"em";
-  svg.classList.add("dk-svg");
+  box.className="dk-box";box.style.width=widthEm+"em";box.style.height=heightEm+"em";
+  svg.classList.add("dk-svg");box.appendChild(svg);svg.dkBox=box;
   return svg;
 }
 function dkUses(svg,l,tokens,from,to){
@@ -939,14 +942,14 @@ function dkRenderTextLine(inner,data,l){
       const x0=Math.max(left,l.sj[1]),x1=Math.min(p.right,l.sj[0]);
       if(x1>x0){const r=document.createElementNS(SVG_NS,"rect");r.setAttribute("class","dk-sajda");r.setAttribute("x",x0);r.setAttribute("y",-1260);r.setAttribute("width",x1-x0);r.setAttribute("height",60);svg.appendChild(r)}
     }
-    seg.appendChild(svg);inner.appendChild(seg);bindSegment(seg);
+    seg.appendChild(svg.dkBox);inner.appendChild(seg);bindSegment(seg);
   });
 }
 function dkRenderBismillah(inner,data,l){
   const raw=data.dk,unitEm=raw.scale/(raw.lineUnits/DK_FULL_LINE_EM);
   const svg=dkSvg(-l.n,0,DK_BASELINE_EM/unitEm,DK_LINE_EM/unitEm,l.n*unitEm,DK_LINE_EM);
   dkUses(svg,{...l,t:l.t.map(()=>-1)},[],-1,-1);
-  inner.appendChild(svg);
+  inner.appendChild(svg.dkBox);
 }
 
 /* ---------- ألوان التجويد ----------
@@ -990,7 +993,7 @@ function dkRenderSurahTitle(inner,sid){
   const svg=dkSvg(-t.n,0,1150,H,t.n*unitEm,H*unitEm);svg.classList.add("dk-title");
   const g=document.createElementNS(SVG_NS,"g");g.setAttribute("transform","scale(1,-1)");
   for(let i=0;i<t.g.length;i+=3){const u=document.createElementNS(SVG_NS,"use");u.setAttribute("href","#dkg"+t.g[i]);u.setAttribute("x",t.g[i+1]);u.setAttribute("y",t.g[i+2]);g.appendChild(u)}
-  svg.appendChild(g);inner.appendChild(svg);
+  svg.appendChild(g);inner.appendChild(svg.dkBox);
   return true;
 }
 
