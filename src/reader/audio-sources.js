@@ -80,28 +80,8 @@ function normalizeTimedRows(raw){
     return {ayah,start_time:start,end_time:end};
   }).filter(x=>x.ayah>0&&Number.isFinite(x.start_time)&&Number.isFinite(x.end_time));
 }
-async function getMaherQulTiming(s){
-  if(maherQulTimingCache.has(s))return maherQulTimingCache.get(s);
-
-  // This is the already-extracted QUL /562 timestamp file used by an
-  // existing open-source Quran implementation. We intentionally consume
-  // the exported data as-is; no local alignment or offset correction.
-  const MAHER_TIMING_REV="2c71289821ff17158dfead0eb0404263c2bd0879";
-  const url=`https://cdn.jsdelivr.net/gh/facilitator999/quranforyunus@${MAHER_TIMING_REV}/audio/maher/timestamps/${s}.json`;
-  const r=await fetch(url,{cache:"force-cache"});
-  if(!r.ok)throw new Error(`Maher QUL timing ${r.status}`);
-  const data=await r.json();
-  const af=data?.audio_file||data?.audioFile||data;
-  const rows=normalizeTimedRows(af?.timestamps||data?.timestamps);
-  if(!rows.length)throw new Error("invalid Maher QUL timing");
-
-  const src=`https://audio-cdn.tarteel.ai/quran/surah/maherAlMuaiqly/murattal/mp3/${pad3(s)}.mp3`;
-  const out={src,rows};
-  maherQulTimingCache.set(s,out);
-  return out;
-}
 function isTimedProvider(r=reciter){
-  return r.provider==="mp3quran-timed"||r.provider==="qul-maher";
+  return r.provider==="mp3quran-timed";
 }
 /* ملف السورة وتوقيتها للقارئ الحالي، دون لمس حالة التشغيل. */
 async function resolveTimedSource(s){
@@ -110,16 +90,12 @@ async function resolveTimedSource(s){
     const timed=await getMp3Timing(s);
     src=(timed.read.folder_url.endsWith("/")?timed.read.folder_url:timed.read.folder_url+"/")+pad3(s)+".mp3";
     rows=normalizeTimedRows(timed.rows);
-  }else if(reciter.provider==="qul-maher"){
-    const timed=await getMaherQulTiming(s);
-    src=timed.src;rows=timed.rows;
   }
   return {src,rows};
 }
 /* هل توقيت السورة في الذاكرة، فيبدأ تشغيلها دون انتظار الشبكة؟ */
 function timedSourceReady(s,r=reciter){
   if(r.provider==="mp3quran-timed"){const read=timedReadCache.get(r.id);return !!read&&mp3TimingCache.has(`${read.id}:${s}`)}
-  if(r.provider==="qul-maher")return maherQulTimingCache.has(s);
   return true;
 }
 async function resolveGaplessForCurrentSurah(){

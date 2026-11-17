@@ -30,7 +30,6 @@ const HUB_CHECK_ICON='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/>
 const AUDIO_CACHE_NAME="zad-audio-v1";
 const AUDIO_OFFLINE_UNAVAILABLE="هذه السورة غير متاحة للتشغيل دون اتصال";
 const MP3QURAN_READS_URL="https://mp3quran.net/api/v3/ayat_timing/reads";
-const MAHER_TIMING_REV="2c71289821ff17158dfead0eb0404263c2bd0879";
 const audioDownloadJobs=new Map();
 let audioDownloadPreparing=false;
 function audioPackageKey(s,r=reciter){return `${r.id}:${Number(s)||1}`}
@@ -78,9 +77,6 @@ async function buildSurahAudioPackage(s,r=reciter){
     const timingUrl=`https://mp3quran.net/api/v3/ayat_timing?surah=${s}&read=${read.id}`;
     const src=(read.folder_url.endsWith("/")?read.folder_url:read.folder_url+"/")+pad3(s)+".mp3";
     add(MP3QURAN_READS_URL,"support",false);add(timingUrl,"support",true);add(src,"audio",true);
-  }else if(r.provider==="qul-maher"){
-    const timingUrl=`https://cdn.jsdelivr.net/gh/facilitator999/quranforyunus@${MAHER_TIMING_REV}/audio/maher/timestamps/${s}.json`;
-    const timed=await getMaherQulTiming(s);add(timingUrl,"support",true);add(timed.src,"audio",true);
   }else if(isSurahOnly(r)){
     add(wholeSurahAudioUrl(s,r),"audio",true);
   }else throw new Error("offline audio provider");
@@ -148,6 +144,21 @@ async function ensureOfflinePlaybackReciter(s,{chooseWhenMultiple=false,confirmD
 async function refreshAudioDownloadButton(btn,s){
   const rows=await downloadedAudioPackagesForSurah(s,true);
   setAudioDownloadButton(btn,rows.length?"downloaded":"available");
+}
+/* تنزيلات قارئ أُزيل من التطبيق لا يمكن تشغيلها ولا حذفها من الواجهة، فتُحذف هنا مع ملفاتها
+   التي لا تشاركها تنزيلات أخرى. */
+async function pruneRetiredAudioPackages(){
+  const all=audioOfflinePackages(),known=new Set(RECITERS.map(r=>r.id));
+  const retired=Object.keys(all).filter(key=>!known.has(key.split(":")[0]));
+  if(!retired.length)return;
+  const remainingRefs=new Set();
+  for(const [key,pkg] of Object.entries(all))if(!retired.includes(key))for(const url of pkg?.urls||[])remainingRefs.add(url);
+  try{
+    const cache=await caches.open(AUDIO_CACHE_NAME);
+    for(const key of retired)for(const url of all[key]?.ownedUrls||[])if(!remainingRefs.has(url))await cache.delete(url,{ignoreVary:true});
+  }catch(_){}
+  for(const key of retired)delete all[key];
+  storageJsonSet(STORAGE_KEYS.audioOffline,all);
 }
 async function deleteSurahAudioPackages(s,reciterIds,btn){
   const ids=new Set((reciterIds||[]).map(String));if(!ids.size)return;

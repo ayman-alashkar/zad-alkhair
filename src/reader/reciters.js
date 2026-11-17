@@ -21,10 +21,6 @@ const RECITERS=[
     timedPrefer:["حفص","عاصم"],timedRequireAny:["حفص","عاصم"]
   },
   {
-    id:"MaherAlMuaiqly128kbps",name:"فضيلة الشيخ ماهر المعيقلي",
-    provider:"qul-maher"
-  },
-  {
     id:"MahmoudAlHamoud_Surah",name:"فضيلة الشيخ محمود الحمود — السور كاملة",
     provider:"surah",audioBase:"https://media.way2quran.com/mahmoud-fayyad-al-hamoud/hafs-an-asim/"
   },
@@ -73,7 +69,7 @@ function defaultReciter(){
   return RECITERS.find(r=>r.id===DEFAULT_RECITER_ID)||RECITERS[0];
 }
 function validateReciterConfig(){
-  const allowed=new Set(["ayah","mp3quran-timed","qul-maher","surah"]);
+  const allowed=new Set(["ayah","mp3quran-timed","surah"]);
   const ids=new Set(),names=new Set();
   for(const r of RECITERS){
     if(!r?.id||!r?.name||!allowed.has(r.provider))throw new Error("reciter config shape");
