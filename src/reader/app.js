@@ -11,13 +11,19 @@
    - Verified tafsir is loaded lazily from the local audited static repository.
    - Audio behavior is provider-specific; no hidden provider switching.
    - UI ordering never determines the default reciter.
-   - QCF4 data/fonts are pinned to npm quran-qcf4@1.0.3; QUL decorative title remains optional with QCF fallback.
+   - The Mushaf is QCF V4 (Madinah 1441, KFGQPC and Dar al-Maarifah, as published by QUL), self-hosted:
+     one colour font per page (fonts/qcf-v4), page data built by scripts/build-qcf-v4.mjs.
+     Reading uses the single-colour palette, so pages look as QCF4 did; tajweed switches the palette.
+   - QUL decorative title remains optional with QCF fallback.
 */
-const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
+const MUSHAF_VERSION="dev";
+const MUSHAF_Q="?v="+MUSHAF_VERSION;
+const QCF_BASE="/data/qcf-v4/";
 const PAGE_BASE=QCF_BASE+"pages/";
-const INDEX_URL=QCF_BASE+"index.json";
-const VERSE_INDEX_URL=QCF_BASE+"verses.json";
-const QCF_FONT_BASE=QCF_BASE+"fonts-woff2/";
+const PAGE_SUFFIX=".json"+MUSHAF_Q;
+const INDEX_URL=QCF_BASE+"index.json"+MUSHAF_Q;
+const VERSE_INDEX_URL=QCF_BASE+"verses.json"+MUSHAF_Q;
+const QCF_FONT_BASE="/fonts/qcf-v4/";
 const TOTAL_PAGES=604;
 const SURAH_HEADER_GLYPHS=[null,"ﱅ","ﱆ","ﱇ","ﱊ","ﱋ","ﱎ","ﱏ","ﱑ","ﱒ","ﱓ","ﱕ","ﱖ","ﱘ","ﱚ","ﱛ","ﱜ","ﱝ","ﱞ","ﱡ","ﱢ","ﱤ","ﭑ","ﭒ","ﭔ","ﭕ","ﭗ","ﭘ","ﭚ","ﭛ","ﭝ","ﭞ","ﭠ","ﭡ","ﭣ","ﭤ","ﭦ","ﭧ","ﭩ","ﭪ","ﭬ","ﭭ","ﭯ","ﭰ","ﭲ","ﭳ","ﭵ","ﭶ","ﭸ","ﭹ","ﭻ","ﭼ","ﭾ","ﭿ","ﮁ","ﮂ","ﮄ","ﮅ","ﮇ","ﮈ","ﮊ","ﮋ","ﮍ","ﮎ","ﮐ","ﮑ","ﮓ","ﮔ","ﮖ","ﮗ","ﮙ","ﮚ","ﮜ","ﮝ","ﮟ","ﮠ","ﮢ","ﮣ","ﮥ","ﮦ","ﮨ","ﮩ","ﮫ","ﮬ","ﮮ","ﮯ","ﮱ","﮲","﮴","﮵","﮷","﮸","﮺","﮻","﮽","﮾","﯀","﯁","ﯓ","ﯔ","ﯖ","ﯗ","ﯙ","ﯚ","ﯜ","ﯝ","ﯟ","ﯠ","ﯢ","ﯣ","ﯥ","ﯦ","ﯨ","ﯩ","ﯫ"];
 let surahHeaderReady=false;
@@ -32,6 +38,7 @@ const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=tru
 
 /* @include state.js */
 /* @include mushaf.js */
+/* @include qcf-palettes.js */
 
 /* @include page-fit.js */
 
