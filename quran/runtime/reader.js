@@ -1036,7 +1036,7 @@ function setTajweed(on,announce=false){
   storageSet(TAJWEED_KEY,on?"1":"0");
   const btn=document.getElementById("tajweedBtn");
   if(btn){btn.setAttribute("aria-pressed",String(on));btn.classList.toggle("active",on)}
-  if(announce)showToast(on?"ظهرت ألوان التجويد":"أُخفيت ألوان التجويد");
+  if(announce)showToast(on?"تم تفعيل وضع التجويد":"تم إيقاف وضع التجويد");
 }
 if(MUSHAF_DK){
   const btn=document.getElementById("tajweedBtn");
