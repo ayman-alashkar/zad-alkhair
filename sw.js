@@ -12,15 +12,17 @@
 const SHELL_CACHE="zad-shell-stable-v1";
 const SHELL_BACKUP_CACHE="zad-shell-backup-v1";
 const SHELL_STAGE_CACHE="zad-shell-stage-v191";
-const QURAN_CACHE="zad-quran-core-v1";
+/* حزمة QCF4 القديمة على الأجهزة: تبقى حتى تكتمل حزمة المصحف، ثم تُحذف (dropRetiredQuranPack). */
+const RETIRED_QURAN_CACHE="zad-quran-core-v1";
 const TAFSIR_CACHE="zad-tafsir-alwajeez-v1";
 const AUDIO_CACHE="zad-audio-v1";
 const RUNTIME_CACHE="zad-runtime-v146";
 const LEGACY_QURAN_CACHE="zad-quran-v80";
 const DIRECT_QURAN_PATHS=new Set(["/quran-read/","/quran-read/1/","/quran-read/2/","/quran-read/3/","/quran-read/4/","/quran-read/5/","/quran-read/6/","/quran-read/7/","/quran-read/8/","/quran-read/9/","/quran-read/10/","/quran-read/11/","/quran-read/12/","/quran-read/13/","/quran-read/14/","/quran-read/15/","/quran-read/16/","/quran-read/17/","/quran-read/18/","/quran-read/19/","/quran-read/20/","/quran-read/21/","/quran-read/22/","/quran-read/23/","/quran-read/24/","/quran-read/25/","/quran-read/26/","/quran-read/27/","/quran-read/28/","/quran-read/29/","/quran-read/30/","/quran-read/31/","/quran-read/32/","/quran-read/33/","/quran-read/34/","/quran-read/35/","/quran-read/36/","/quran-read/37/","/quran-read/38/","/quran-read/39/","/quran-read/40/","/quran-read/41/","/quran-read/42/","/quran-read/43/","/quran-read/44/","/quran-read/45/","/quran-read/46/","/quran-read/47/","/quran-read/48/","/quran-read/49/","/quran-read/50/","/quran-read/51/","/quran-read/52/","/quran-read/53/","/quran-read/54/","/quran-read/55/","/quran-read/56/","/quran-read/57/","/quran-read/58/","/quran-read/59/","/quran-read/60/","/quran-read/61/","/quran-read/62/","/quran-read/63/","/quran-read/64/","/quran-read/65/","/quran-read/66/","/quran-read/67/","/quran-read/68/","/quran-read/69/","/quran-read/70/","/quran-read/71/","/quran-read/72/","/quran-read/73/","/quran-read/74/","/quran-read/75/","/quran-read/76/","/quran-read/77/","/quran-read/78/","/quran-read/79/","/quran-read/80/","/quran-read/81/","/quran-read/82/","/quran-read/83/","/quran-read/84/","/quran-read/85/","/quran-read/86/","/quran-read/87/","/quran-read/88/","/quran-read/89/","/quran-read/90/","/quran-read/91/","/quran-read/92/","/quran-read/93/","/quran-read/94/","/quran-read/95/","/quran-read/96/","/quran-read/97/","/quran-read/98/","/quran-read/99/","/quran-read/100/","/quran-read/101/","/quran-read/102/","/quran-read/103/","/quran-read/104/","/quran-read/105/","/quran-read/106/","/quran-read/107/","/quran-read/108/","/quran-read/109/","/quran-read/110/","/quran-read/111/","/quran-read/112/","/quran-read/113/","/quran-read/114/","/quran-listen/","/quran-listen/1/","/quran-listen/2/","/quran-listen/3/","/quran-listen/4/","/quran-listen/5/","/quran-listen/6/","/quran-listen/7/","/quran-listen/8/","/quran-listen/9/","/quran-listen/10/","/quran-listen/11/","/quran-listen/12/","/quran-listen/13/","/quran-listen/14/","/quran-listen/15/","/quran-listen/16/","/quran-listen/17/","/quran-listen/18/","/quran-listen/19/","/quran-listen/20/","/quran-listen/21/","/quran-listen/22/","/quran-listen/23/","/quran-listen/24/","/quran-listen/25/","/quran-listen/26/","/quran-listen/27/","/quran-listen/28/","/quran-listen/29/","/quran-listen/30/","/quran-listen/31/","/quran-listen/32/","/quran-listen/33/","/quran-listen/34/","/quran-listen/35/","/quran-listen/36/","/quran-listen/37/","/quran-listen/38/","/quran-listen/39/","/quran-listen/40/","/quran-listen/41/","/quran-listen/42/","/quran-listen/43/","/quran-listen/44/","/quran-listen/45/","/quran-listen/46/","/quran-listen/47/","/quran-listen/48/","/quran-listen/49/","/quran-listen/50/","/quran-listen/51/","/quran-listen/52/","/quran-listen/53/","/quran-listen/54/","/quran-listen/55/","/quran-listen/56/","/quran-listen/57/","/quran-listen/58/","/quran-listen/59/","/quran-listen/60/","/quran-listen/61/","/quran-listen/62/","/quran-listen/63/","/quran-listen/64/","/quran-listen/65/","/quran-listen/66/","/quran-listen/67/","/quran-listen/68/","/quran-listen/69/","/quran-listen/70/","/quran-listen/71/","/quran-listen/72/","/quran-listen/73/","/quran-listen/74/","/quran-listen/75/","/quran-listen/76/","/quran-listen/77/","/quran-listen/78/","/quran-listen/79/","/quran-listen/80/","/quran-listen/81/","/quran-listen/82/","/quran-listen/83/","/quran-listen/84/","/quran-listen/85/","/quran-listen/86/","/quran-listen/87/","/quran-listen/88/","/quran-listen/89/","/quran-listen/90/","/quran-listen/91/","/quran-listen/92/","/quran-listen/93/","/quran-listen/94/","/quran-listen/95/","/quran-listen/96/","/quran-listen/97/","/quran-listen/98/","/quran-listen/99/","/quran-listen/100/","/quran-listen/101/","/quran-listen/102/","/quran-listen/103/","/quran-listen/104/","/quran-listen/105/","/quran-listen/106/","/quran-listen/107/","/quran-listen/108/","/quran-listen/109/","/quran-listen/110/","/quran-listen/111/","/quran-listen/112/","/quran-listen/113/","/quran-listen/114/"]);
 
-const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
-const QUL_HEADER="https://static-cdn.tarteel.ai/qul/fonts/surah-names/surah-header/QCF_SurahHeader_COLOR-Regular.ttf";
+const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/"; // القارئ السابق فقط، حتى يُستبدل
+/* خط عناوين السور من زاد الخير نفسه (fonts/qul/README.md). */
+const QUL_HEADER="./fonts/qul/QCF_SurahHeader_COLOR-Regular.ttf";
 
 const READER_SHELL="./quran-read/";
 const REQUIRED_SHELL=["./index.html",READER_SHELL];
@@ -39,15 +41,18 @@ const OPTIONAL_SHELL=[
   "./icons/icon-32.png","./icons/icon-180.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-512-maskable.png","./icons/zad-mark.svg","./icons/zad-mark-reverse.svg","./icons/zad-rosette.svg","./icons/migration-ready-v115.svg"
 ];
 
-const QURAN_CORE=[QCF_BASE+"index.json",QCF_BASE+"verses.json",QCF_BASE+"fonts-woff2/QCF4_QBSML.woff2",QUL_HEADER];
-const QURAN_FONTS=Array.from({length:47},(_,i)=>QCF_BASE+`fonts-woff2/QCF4_Hafs_${String(i+1).padStart(2,"0")}_W.woff2`);
-const QURAN_PAGES=Array.from({length:604},(_,i)=>QCF_BASE+`pages/${String(i+1).padStart(3,"0")}.json`);
-const QURAN_REQUIRED=[...QURAN_CORE,...QURAN_FONTS,...QURAN_PAGES];
+/* المصحف المرسوم مسبقًا (data/mushaf) وخط عناوين السور: حزمة باسم مخزن يحمل بصمة البيانات
+   (يكتبها scripts/build-app.cjs)، فيُنزَّل الجديد كاملًا إذا تغيّرت ويُحذف القديم. */
+const MUSHAF_VERSION="9372ecd86fa7";
+const MUSHAF_CACHE="zad-mushaf-"+MUSHAF_VERSION;
+const MUSHAF_Q="?v="+MUSHAF_VERSION;
+const MUSHAF_REQUIRED=["index.json","verses.json","glyphs.json","titles.json",...Array.from({length:604},(_,i)=>`pages/${String(i+1).padStart(3,"0")}.json`)].map(f=>"./data/mushaf/"+f+MUSHAF_Q).concat(QUL_HEADER);
+const MUSHAF_MARKER="./__zad_mushaf_ready__";
+const QURAN_CACHE=MUSHAF_CACHE,QURAN_REQUIRED=MUSHAF_REQUIRED,QURAN_MARKER=MUSHAF_MARKER,QURAN_LABEL="mushaf-"+MUSHAF_VERSION;
 /* حزمة التفسير تحمل معها نص المصحف العثماني (للنسخ ونتائج البحث). من اكتملت حزمته قبل إضافته
    تنقصه هذه الملفات وحدها، فتُنزَّل في التجهيز التالي دون إعادة التفسير. */
 const UTHMANI_REQUIRED=Array.from({length:114},(_,i)=>`./data/quran-uthmani/${String(i+1).padStart(3,"0")}.json`);
 const TAFSIR_REQUIRED=["./data/tafsir/al-wajeez/index.json","./data/tafsir/al-wajeez/fadl.json",...Array.from({length:114},(_,i)=>`./data/tafsir/al-wajeez/${String(i+1).padStart(3,"0")}.json`),...UTHMANI_REQUIRED];
-const QURAN_MARKER="./__zad_quran_core_v1_ready__";
 const TAFSIR_MARKER="./__zad_tafsir_alwajeez_v1_ready__";
 
 function absoluteUrl(url){return new URL(url,self.registration.scope).href}
@@ -156,6 +161,12 @@ async function refreshRequiredShellAtomically(){
     }));
     staged=results.every(Boolean)&&await allPresent(stage,REQUIRED_SHELL);
     if(!staged)return false;
+    /* القارئ الجديد لا يحلّ محلّ المحفوظ إلا وحزمة مصحفه كاملة على الجهاز، وإلا لفتحه المستخدم
+       دون اتصال فوجده فارغًا. فإن تعذّر تنزيلها بقي القارئ السابق حتى المحاولة التالية. */
+    if(!(await packState()).quranReady){
+      try{await ensureOfflineLibrary()}catch(_){}
+      if(!(await packState()).quranReady)return false;
+    }
 
     const stable=await caches.open(SHELL_CACHE);
     if(await allPresent(stable,REQUIRED_SHELL)){
@@ -208,31 +219,27 @@ async function ensureOfflineShell(){
   try{return await shellPromise}finally{shellPromise=null}
 }
 
+/* مخزن الإصدار 80 كان لخطوط QCF4 وتفسيره: يُنقل منه التفسير فقط، ولا يُحتاج شيء من مصحفه. */
 async function migrateLegacyOfflinePack(){
   const names=await caches.keys();
   if(!names.includes(LEGACY_QURAN_CACHE))return;
-  const legacy=await caches.open(LEGACY_QURAN_CACHE);
-  const quran=await caches.open(QURAN_CACHE),tafsir=await caches.open(TAFSIR_CACHE);
-  async function copySet(urls,target){
-    for(let i=0;i<urls.length;i+=32){
-      await Promise.all(urls.slice(i,i+32).map(async url=>{
-        const req=requestFor(url);
-        if(await target.match(req))return;
-        const hit=await legacy.match(req);
-        if(hit)await target.put(req,hit.clone());
-      }));
-    }
+  const legacy=await caches.open(LEGACY_QURAN_CACHE),tafsir=await caches.open(TAFSIR_CACHE);
+  for(let i=0;i<TAFSIR_REQUIRED.length;i+=32){
+    await Promise.all(TAFSIR_REQUIRED.slice(i,i+32).map(async url=>{
+      const req=requestFor(url);
+      if(await tafsir.match(req))return;
+      const hit=await legacy.match(req);
+      if(hit)await tafsir.put(req,hit.clone());
+    }));
   }
-  await Promise.all([copySet(QURAN_REQUIRED,quran),copySet(TAFSIR_REQUIRED,tafsir)]);
-  if(await allPresent(quran,QURAN_REQUIRED))await markReady(quran,QURAN_MARKER,"quran-core-v1");
   if(await allPresent(tafsir,TAFSIR_REQUIRED))await markReady(tafsir,TAFSIR_MARKER,"tafsir-alwajeez-v1");
 }
 
 async function cleanupOldCaches(){
-  const keep=new Set([SHELL_CACHE,SHELL_BACKUP_CACHE,QURAN_CACHE,TAFSIR_CACHE,AUDIO_CACHE,RUNTIME_CACHE]);
+  const keep=new Set([SHELL_CACHE,SHELL_BACKUP_CACHE,QURAN_CACHE,RETIRED_QURAN_CACHE,TAFSIR_CACHE,AUDIO_CACHE,RUNTIME_CACHE]);
   for(const key of await caches.keys()){
     if(keep.has(key))continue;
-    if(key===LEGACY_QURAN_CACHE||key.startsWith("zad-shell-v")||key.startsWith("zad-shell-stage-")||key.startsWith("zad-runtime-v")){
+    if(key===LEGACY_QURAN_CACHE||key.startsWith("zad-shell-v")||key.startsWith("zad-shell-stage-")||key.startsWith("zad-runtime-v")||key.startsWith("zad-mushaf-")){
       await caches.delete(key);
     }
   }
@@ -451,8 +458,13 @@ self.addEventListener("fetch",event=>{
     event.respondWith(shellFirstDocument(request,event));
     return;
   }
-  if(url.href.startsWith(QCF_BASE)||url.href===QUL_HEADER){
-    event.respondWith(cacheFirst(request,QURAN_CACHE));
+  if(url.origin===self.location.origin&&url.pathname.startsWith("/data/mushaf/")){
+    event.respondWith(cacheFirst(request,MUSHAF_CACHE));
+    return;
+  }
+  /* القارئ السابق (QCF4) يبقى صالحًا من حزمته المحفوظة حتى يحلّ محلّه الجديد. */
+  if(url.href.startsWith(QCF_BASE)){
+    event.respondWith(cacheFirst(request,RETIRED_QURAN_CACHE));
     return;
   }
   if(isAudioSupportUrl(url)){
@@ -525,7 +537,7 @@ async function ensureOfflineLibrary(){
     if(!initial.quranReady){
       const result=await cacheSet(quran,missingQuran,"quran",offset,total);
       failed+=result.failed;offset+=missingQuran.length-result.failed;
-      if(result.failed===0&&await allPresent(result.cache,QURAN_REQUIRED))await markReady(result.cache,QURAN_MARKER,"quran-core-v1");
+      if(result.failed===0&&await allPresent(result.cache,QURAN_REQUIRED))await markReady(result.cache,QURAN_MARKER,QURAN_LABEL);
     }
     if(!initial.tafsirReady){
       const result=await cacheSet(tafsir,missingTafsir,"tafsir",offset,total);
@@ -533,11 +545,16 @@ async function ensureOfflineLibrary(){
       if(result.failed===0&&await allPresent(result.cache,TAFSIR_REQUIRED))await markReady(result.cache,TAFSIR_MARKER,"tafsir-alwajeez-v1");
     }
     const final=await packState();
+    if(final.quranReady)await dropRetiredQuranPack();
     if(final.ready)await notifyAll({type:"OFFLINE_LIBRARY_READY",quran:true,tafsir:true});
     else await notifyAll({type:"OFFLINE_LIBRARY_INCOMPLETE",...final,failed});
     return final;
   })().finally(()=>{libraryPromise=null});
   return libraryPromise;
+}
+/* حزمة QCF4 لا تُحذف إلا بعد اكتمال حزمة المصحف، فلا يبقى جهاز بلا مصحف دون اتصال. */
+async function dropRetiredQuranPack(){
+  if((await caches.keys()).includes(RETIRED_QURAN_CACHE))await caches.delete(RETIRED_QURAN_CACHE);
 }
 async function checkOfflineLibrary(){
   const state=await packState();

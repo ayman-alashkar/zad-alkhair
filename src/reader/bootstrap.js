@@ -31,10 +31,7 @@
         earlyIndexOpened=true;
       }
     }
-    await Promise.all([
-      document.fonts.load('48px "QCF4_QBSML"'),
-      document.fonts.load('48px "QCF4_Hafs_01"')
-    ]);
+    /* خطوط المصحف لا تُحمَّل: أشكاله في data/mushaf. يُنتظر خط عناوين السور فقط. */
     try{
       await document.fonts.load('64px "QUL_SurahHeader"',SURAH_HEADER_GLYPHS[1]);
       surahHeaderReady=true;
