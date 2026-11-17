@@ -33,6 +33,10 @@ const LINE_UNITS = 17600;
 /* أقصى تضييق أفقي يُقبل في سطر أطول من غيره قبل أن يصغُر خط الصفحة كلها قليلًا. */
 const MAX_SQUEEZE = 0.92;
 const MIN_PAGE_SCALE = 0.86;
+/* السطر الأطول من مكانه يُضيَّق أولًا كما يضيّقه الخطاط: بأشكال الحروف الأضيق في الخط (ميزة shr1،
+   نحو 5٪)، ثم بتقليل المسافات بين الكلمات حتى MIN_SPACE من عرضها، ولا يُضغط أفقيًّا إلا ما بقي. */
+const SHRINK_FEATURE = "shr1";
+const MIN_SPACE = 0.6;
 
 const AR = d => String(d).replace(/\d/g, c => "٠١٢٣٤٥٦٧٨٩"[c]);
 /* ترميز نص المجمع إلى ترميز خط DigitalKhatt: السكون عند المجمع U+06E1 وعند الخط U+0652،
@@ -65,6 +69,8 @@ async function main() {
   const isAllah = w => { const n = H.rasm_imlai[w] || ""; return n.includes("الله") || n.includes("لله"); };
 
   const spaceWidth = getWidth(" ", font, FONTSIZE, null);
+  /* أضيق عرض يبلغه السطر دون ضغط أفقي: بالأشكال الأضيق وأقل المسافات. */
+  const tightWidth = text => getWidth(text, font, FONTSIZE, [{ tag: SHRINK_FEATURE, value: 1, start: 0, end: -1 }]) - (text.split(" ").length - 1) * spaceWidth * (1 - MIN_SPACE);
   const glyphPaths = new Map();
   const pagesOut = [];
   const verseToPage = {};
@@ -103,8 +109,8 @@ async function main() {
     let ti = 0;
     for (const k of kinds) {
       if (k.k !== "text") continue;
-      const want = LINE_UNITS * (k.w || 1), nat = getWidth(built[ti++].text, font, FONTSIZE, null);
-      if (nat * MAX_SQUEEZE > want) pageScale = Math.min(pageScale, want / (nat * MAX_SQUEEZE));
+      const want = LINE_UNITS * (k.w || 1), tight = tightWidth(built[ti++].text);
+      if (tight * MAX_SQUEEZE > want) pageScale = Math.min(pageScale, want / (tight * MAX_SQUEEZE));
     }
     pageScale = Math.max(MIN_PAGE_SCALE, pageScale);
     if (pageScale < 1) scaledPages++;
@@ -125,6 +131,17 @@ async function main() {
         jr = { fontFeatures: new Map(), simpleSpacing: spaceWidth, ayaSpacing: spaceWidth, xScale: 1 };
       } else {
         jr = justifyLine(info, font, FONTSIZE / desired, spaceWidth, 1, JustStyle.XScale);
+        if (jr.xScale < 1) {
+          // أطول من مكانه: أشكال أضيق، ثم مسافات أقل، ثم ضغط أفقي لما بقي.
+          const shrunk = getWidth(text, font, FONTSIZE, [{ tag: SHRINK_FEATURE, value: 1, start: 0, end: -1 }]);
+          const n = info.spaces.size, room = n * spaceWidth * (1 - MIN_SPACE);
+          let space = spaceWidth, xScale = 1;
+          if (shrunk - room <= desired) space = spaceWidth - (shrunk - desired) / Math.max(1, n);
+          else { space = spaceWidth * MIN_SPACE; xScale = desired / (shrunk - room); }
+          space = Math.min(space, spaceWidth);
+          jr = { fontFeatures: new Map(), simpleSpacing: space, ayaSpacing: space, xScale };
+          features.push({ tag: SHRINK_FEATURE, value: 1, start: 0, end: -1 });
+        }
       }
       jr.fontFeatures.forEach((fs_, i) => fs_.forEach(f => features.push({ tag: f.name, value: f.value, start: i, end: i + 1 })));
       const buf = new HarfBuzzBuffer();
