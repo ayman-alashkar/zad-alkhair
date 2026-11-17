@@ -60,6 +60,20 @@ async function loadVerseIndex(){
   verseIndex=fresh;storageJsonSet(STORAGE_KEYS.verseIndex,verseIndex);
   return verseIndex;
 }
+async function ensureQcfFont(name){
+  if(!name||name==="QCF4_QBSML")return;
+  if(qcfFontLoads.has(name))return qcfFontLoads.get(name);
+  // Do not use document.fonts.check() for undeclared QCF families:
+  // browsers may report fallback availability as true and skip the real font.
+  const job=(async()=>{
+    const face=new FontFace(name,`url("${QCF_FONT_BASE}${name}_W.woff2") format("woff2")`);
+    const loaded=await face.load();
+    document.fonts.add(loaded);
+    return loaded;
+  })().catch(err=>{qcfFontLoads.delete(name);throw err});
+  qcfFontLoads.set(name,job);
+  return job;
+}
 function showToast(m){toast.textContent=m;toast.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>toast.classList.remove("show"),1450)}
 
 /* Android/PWA back policy. The first Back at the real app boundary removes
@@ -136,13 +150,14 @@ function showToolsFor(ms=2800){
   },ms);
 }
 function normalizeArabic(s){return (s||"").replace(/[\u064B-\u065F\u0670\u06D6-\u06EDـ]/g,"")}
+function isAllah(t){const n=normalizeArabic(t);return n.includes("الله")||n.includes("لله")}
 
 async function fetchPage(p){
-  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+PAGE_SUFFIX,{cache:"force-cache"});
+  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+".json",{cache:"force-cache"});
   if(!r.ok)throw new Error("page "+p);
   const data=await r.json();
   if(Number(data?.page)!==Number(p)||!Array.isArray(data?.lines))throw new Error("invalid page "+p);
-  return dkAdaptPage(data);
+  return data;
 }
 function touchPageData(p,data){
   pages.delete(p);pages.set(p,data);
@@ -192,7 +207,7 @@ async function ensurePage(p){
   if(pageLoads.has(p))return pageLoads.get(p);
   const job=(async()=>{
     const data=await getPageData(p);
-    await Promise.all([dkEnsureGlyphs(),dkEnsureTitles()]);renderPage(data);return data;
+    await ensureQcfFont(data.font);renderPage(data);return data;
   })().finally(()=>pageLoads.delete(p));
   pageLoads.set(p,job);return job;
 }
@@ -212,6 +227,33 @@ async function getVersePage(k){
     const idx=await loadVerseIndex(),p=Number(idx?.[k]?.page);
     return p>=1&&p<=TOTAL_PAGES?p:null;
   }catch(_){return null}
+}
+
+function groupLineWords(words){
+  const groups=[];let g=null;
+  for(const w of words){
+    const key=w.verse_key||null;
+    if(key && g && g.key===key){g.words.push(w)}
+    else {g={key,words:[w]};groups.push(g)}
+  }
+  return groups;
+}
+
+function makeWord(w){
+  const s=document.createElement("span");
+  s.className="word"+(w.type==="end"?" end":"")+(isAllah(w.text)?" allah":"");
+  s.textContent=w.char;
+  s.dataset.text=w.text||"";
+  return s;
+}
+
+function makeVerseSegment(group){
+  const seg=document.createElement("span");
+  seg.className="verse-segment";
+  if(group.key)seg.dataset.key=group.key;
+  for(const w of group.words)seg.appendChild(makeWord(w));
+  if(group.key)bindSegment(seg);
+  return seg;
 }
 
 function surahIdForHeader(data,lineIndex){
@@ -247,26 +289,47 @@ function renderPage(data){
     inner.className="line-inner";
 
     const first=line.words[0];
+    inner.style.fontFamily=`"${data.font||"QCF4_Hafs_01"}"`;
     if(first?.type==="surah_header"){
-      /* عنوان السورة بخط QUL الملوّن، في صندوق سطر بارتفاعه الأصلي. ومن غير الخط (دون اتصال
-         قبل حفظه) يُكتب «سورة كذا» بخط المصحف. */
-      const sid=surahIdForHeader(data,lineIndex),glyph=SURAH_HEADER_GLYPHS[sid];
-      inner.classList.add("surah-line","dk-title-line");
+      const sid=surahIdForHeader(data,lineIndex);
+      inner.classList.add("surah-line");
+      inner.style.fontFamily='"QCF4_QBSML"';
+      const glyph=SURAH_HEADER_GLYPHS[sid];
       if(surahHeaderReady&&glyph){
         inner.classList.add("banner-ready");
-        const metric=document.createElement("span");metric.className="surah-metric dk-metric";
-        const banner=document.createElement("canvas");banner.className="surah-banner";banner.dataset.glyph=glyph;
+        const metric=document.createElement("span");
+        metric.className="surah-metric";metric.textContent=first.char;
+        const banner=document.createElement("canvas");
+        banner.className="surah-banner";banner.dataset.glyph=glyph;
         inner.append(metric,banner);
-      }else if(!dkRenderSurahTitle(inner,sid))inner.textContent=`سورة ${chapterMap.get(sid)?.name_arabic||""}`;
+      }else{
+        inner.textContent=first.char;
+      }
       inner.setAttribute("aria-label",`سورة ${chapterMap.get(sid)?.name_arabic||""}`);
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
     if(first?.type==="bismillah"){
-      inner.classList.add("bismillah-line","dk-line");
-      dkRenderBismillah(inner,data,line.dk);
+      inner.classList.add("bismillah-line");
+      // QCF4 encodes the Bismillah with the dedicated Hafs_01 glyph font.
+      // Do not inherit the current page font (e.g. Hafs_47), otherwise the
+      // glyph becomes blank on later pages. The source data itself omits the
+      // Bismillah before At-Tawbah, so the Mushaf convention is preserved.
+      inner.style.fontFamily=`"${first.font||"QCF4_Hafs_01"}"`;
+      const originalBasm=document.createElement("span");
+      originalBasm.className="bismillah-original";
+      originalBasm.textContent=first.char;
+      const desktopBasm=document.createElement("span");
+      desktopBasm.className="bismillah-desktop";
+      /* محرف مثبّت من منطقة الاستعمال الخاص، فيلزمه خطّه صراحةً. لو ورث خط
+         الصفحة (Hafs_47 مثلًا) لخرج فارغًا، وهي العلّة التي عولجت أعلاه
+         للبسملة الأصلية ولم تُعالَج لهذه. */
+      desktopBasm.style.fontFamily='"QCF4_Hafs_01"';
+      desktopBasm.textContent="";
+      inner.append(originalBasm,desktopBasm);
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
-    inner.classList.add("dk-line");dkRenderTextLine(inner,data,line.dk);
+
+    for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group));
     lineEl.appendChild(inner);host.appendChild(lineEl);
   }
 

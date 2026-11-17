@@ -62,8 +62,8 @@ test('failed shell refresh retains last good pages',async()=>{
 test('offline library resumes only missing files and restores readiness markers',async()=>{
   const e=setup();await e.run('ensureOfflineLibrary()');
   assert.equal((await e.run('packState()')).ready,true);
-  const q=e.stores.get(await e.run('MUSHAF_CACHE')), t=e.stores.get('zad-tafsir-alwajeez-v1');
-  const page='https://example.test/data/mushaf/pages/003.json'+await e.run('MUSHAF_Q');
+  const q=e.stores.get('zad-quran-core-v1'), t=e.stores.get('zad-tafsir-alwajeez-v1');
+  const page='https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/pages/003.json';
   await q.delete(page); await t.delete('https://example.test/__zad_tafsir_alwajeez_v1_ready__');
   e.calls.length=0;e.messages.length=0;
   await e.run('ensureOfflineLibrary()');
@@ -74,7 +74,7 @@ test('offline library resumes only missing files and restores readiness markers'
 });
 
 test('failed download remains incomplete and can resume',async()=>{
-  const e=setup();const missing='https://example.test/data/mushaf/pages/001.json'+await e.run('MUSHAF_Q');
+  const e=setup();const missing='https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/pages/001.json';
   e.setFetch(async r=>r.url===missing?new Response('fail',{status:503}):new Response('ok'));
   assert.equal((await e.run('ensureOfflineLibrary()')).ready,false);
   const progress=e.messages.filter(m=>m.type==='OFFLINE_LIBRARY_PROGRESS');
