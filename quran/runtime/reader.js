@@ -16,7 +16,7 @@
      Reading uses the single-colour palette, so pages look as QCF4 did; tajweed switches the palette.
    - QUL decorative title remains optional with QCF fallback.
 */
-const MUSHAF_VERSION="2e8521b60909";
+const MUSHAF_VERSION="a20f2fb07973";
 const MUSHAF_Q="?v="+MUSHAF_VERSION;
 const QCF_BASE="/data/qcf-v4/";
 const PAGE_BASE=QCF_BASE+"pages/";

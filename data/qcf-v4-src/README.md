@@ -5,7 +5,7 @@
 | الملف | المصدر | الترخيص |
 |---|---|---|
 | `qpc-v4-glyphs.json` | محارف كلمات «QPC V4 tajweed» من QUL (`qpc-v4.json`، 83,668 كلمة مع علامات الآيات)، بترتيب أرقامها. نسخة QUL المثبّتة في المستودع tlawat/remotion-mushaf-line-renderer تحت `example/public/data/qpc-v4/` (نُشرت في 28 مايو 2025). | بيانات QUL المفتوحة |
-| `layout-15-lines.json` | توزيع السطور «QPC v4 tajweed 15 lines» من QUL (`qpc-v4-tajweed-15-lines.db`)، الجدول `pages` كما هو. | بيانات QUL المفتوحة |
+| `layout-15-lines.json` | توزيع السطور «QPC v4 tajweed 15 lines» من QUL (`qpc-v4-tajweed-15-lines.db`)، الجدول `pages` كما هو. يُستعمل للتحقق من نوع كل سطر فقط: كلمات السطور من QCF4، لأن توزيع QUL يخالف طبعة ١٤٤١ في موضعين (الصفحة 92 السطر 12، والصفحة 254 السطر 6). | بيانات QUL المفتوحة |
 | `qcf4-text.json` | من حزمة npm `quran-qcf4@1.0.3`: نص كل كلمة ومفتاح آيتها، ومحارف عناوين السور والبسملة بخطَّي QCF4_QBSML وQCF4_Hafs_01. | MIT (ملفات البيانات) |
 
 `data/qcf-v4/index.json` منسوخ كما هو من `quran-qcf4@1.0.3` (MIT).

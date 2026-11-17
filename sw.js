@@ -44,7 +44,7 @@ const OPTIONAL_SHELL=[
 /* مصحف QCF V4 من زاد الخير نفسه: صفحاته (data/qcf-v4) وخط كل صفحة (fonts/qcf-v4) وخطّا العناوين
    والبسملة (fonts/qcf4) وخط عناوين السور. اسم المخزن يحمل بصمة الملفات (يكتبها scripts/build-app.cjs)،
    فيُنزَّل الجديد كاملًا إذا تغيّرت ويُحذف القديم. */
-const MUSHAF_VERSION="2e8521b60909";
+const MUSHAF_VERSION="a20f2fb07973";
 const MUSHAF_Q="?v="+MUSHAF_VERSION;
 const QURAN_CACHE="zad-qcfv4-"+MUSHAF_VERSION;
 const QURAN_REQUIRED=[
