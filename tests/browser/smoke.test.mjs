@@ -1091,6 +1091,56 @@ test("live sync: joins the khatmah's channel, and a «changed» signal refreshes
   await context.close();
 });
 
+/* منظّم دخل دون رمزه (برابط تيليغرام أو بعد مسح التخزين): أول فعل إشرافي يطلب الرمز فوق النافذة
+   المفتوحة، والرمز الخاطئ لا يُحفظ، والصحيح يُحفظ ويُرسل مع الرسالة. */
+test("an organizer without a saved code is asked for it once, over the open message dialog", async () => {
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({
+    rpc: { get_state: state, list_active_khatmahs: [] },
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "org", name: "المشرف" }) }
+  });
+  const signIns = [], sends = [];
+  await context.route(/\/rpc\/sign_in/, route => {
+    const body = JSON.parse(route.request().postData());
+    signIns.push(body);
+    const ok = body.p_org_code === "SECRET1";
+    return route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify(ok ? { ok: true, id: "org", name: "المشرف", isOrganizer: true } : { ok: false, needCode: true }) });
+  });
+  await context.route(/\/functions\/v1\/send-message/, route => {
+    sends.push(JSON.parse(route.request().postData()));
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sent: 2 }) });
+  });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.click("#zk-launch-zad");
+  await page.waitForSelector("#btn-broadcast");
+  await page.click("#btn-broadcast");
+  await page.fill("#msg-text", "السلام عليكم");
+  await page.click("#msg-go");
+  await page.waitForSelector("#org-code-input");
+  await page.fill("#org-code-input", "WRONG1");
+  await page.click("[data-code-ok]");
+  await page.waitForFunction(() => document.getElementById("toast")?.textContent.includes("الرمز غير صحيح"), null, { timeout: 3000 });
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:orgcode:ABCD")), null);
+  assert.equal(await page.locator("#org-code-input").count(), 1, "the prompt stays after a wrong code");
+  await page.fill("#org-code-input", "SECRET1");
+  /* البيت يمنع الضغطة الثانية على الزر نفسه خلال ٧٠٠ ملّي ثانية (الضغطة المزدوجة العرضية). */
+  await page.waitForTimeout(800);
+  await page.click("[data-code-ok]");
+  await page.waitForSelector("#org-code-input", { state: "detached" });
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:orgcode:ABCD")), "SECRET1");
+  assert.equal(await page.inputValue("#msg-text"), "السلام عليكم", "the typed message is kept");
+  await page.click("[data-confirm-ok]");
+  for (let i = 0; i < 30 && !sends.length; i++) await page.waitForTimeout(100);
+  assert.equal(sends.length, 1);
+  assert.equal(sends[0].orgCode, "SECRET1");
+  assert.equal(signIns.length, 2);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 /* «ما تيسّر»: الزر يفعّل الوضع (الوسم وسطر «التالي»)، والضغطة الثانية تطفئه.
    الصوت هنا ممنوع، فالمطلوب حالة الواجهة لا التلاوة نفسها. */
 test("«ما تيسّر» turns on with its tag and up-next line, and a second press turns it off", async () => {

@@ -88,6 +88,58 @@ function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغ
   });
 }
 
+/* رمز المنظّم لمن دخل دونه (برابط تيليغرام، أو بعد مسح تخزين المتصفح): يُطلب مرة واحدة
+   فوق النافذة المفتوحة، فلا يضيع ما كتبه المنظّم فيها، ويُحفظ بعد أن تقبله القاعدة. */
+function askOrganizerCode(){
+  return new Promise(resolve=>{
+    const host=document.createElement("div");
+    host.className="modal app-confirm-overlay";
+    host.setAttribute("role","presentation");
+    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="org-code-title">
+      <div class="display" id="org-code-title" style="font-size:1.4rem">رمز المنظّم</div>
+      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">دخلت من هذا الجهاز دون رمز المنظّم. اكتبه مرة واحدة ليُحفظ هنا.</p>
+      <div class="field-row"><input id="org-code-input" class="field" type="password" autocomplete="off" placeholder="الرمز الذي اخترته"></div>
+      <div class="actions">
+        <button class="btn gold" data-code-ok>متابعة</button>
+        <button class="btn quiet" data-code-cancel>إلغاء</button>
+      </div>
+    </div>`;
+    document.body.appendChild(host);
+    const input=host.querySelector("#org-code-input");
+    const okBtn=host.querySelector("[data-code-ok]");
+    let settled=false,busy=false;
+    const done=value=>{
+      if(settled) return;
+      settled=true;
+      document.removeEventListener("keydown",onKey,true);
+      host.remove();
+      resolve(value);
+    };
+    const submit=async()=>{
+      if(busy) return;
+      const oc=norm(input.value);
+      if(!oc) return toast("أدخل الرمز");
+      busy=true;okBtn.disabled=true;
+      try{
+        const r=await rpc("sign_in",{p_code:code,p_id:viewer.id,p_name:viewer.name,
+          p_device:deviceId(),p_org_code:oc});
+        if(r&&r.ok){ localStorage.setItem(cKey(),oc); return done(oc); }
+        toast(r&&r.needCode?"الرمز غير صحيح":(r&&r.error)||"تعذّر التحقق");
+      }catch(e){ toast("تعذّر الاتصال"); }
+      finally{ busy=false;okBtn.disabled=false; }
+    };
+    const onKey=e=>{
+      if(e.key==="Escape"){e.preventDefault();done(null);}
+      else if(e.key==="Enter"&&e.target===input){e.preventDefault();submit();}
+    };
+    okBtn.onclick=submit;
+    host.querySelector("[data-code-cancel]").onclick=()=>done(null);
+    host.onclick=e=>{if(e.target===host)done(null);};
+    document.addEventListener("keydown",onKey,true);
+    requestAnimationFrame(()=>input.focus({preventScroll:true}));
+  });
+}
+
 /* بديل داخلي لـ prompt، بنفس نافذة التطبيق القياسية. */
 function appCopyFallback(title,value){
   return new Promise(resolve=>{

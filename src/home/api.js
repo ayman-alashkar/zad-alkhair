@@ -45,6 +45,8 @@ async function postJSON(url,payload,options={}){
 }
 
 const RPC_HEADERS={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY};
+/* القاعدة ترفض بهذا كل فعل للمنظّم إن كان رمزه المحفوظ قديمًا (غيّره من جهاز آخر). */
+const ORG_CODE_REJECTED="الرمز أو الجهاز غير صحيح";
 const DEVICE_LOCK_ERRS=["مقفول على جهاز صاحبه","هذا السجل لصاحب الحساب فقط"];
 let rebinding=null;
 
@@ -77,6 +79,8 @@ async function rpc(fn, args){
   const r=await call();
   const locked=r&&r.ok===false&&typeof r.error==="string"
     &&DEVICE_LOCK_ERRS.some(m=>r.error.indexOf(m)!==-1);
+  /* رمز قديم يُنسى، فيُطلب من جديد في المحاولة التالية بدل أن يُرفض كل فعل. */
+  if(r&&r.ok===false&&r.error===ORG_CODE_REJECTED&&isOrganizer()) localStorage.removeItem(cKey());
   if(locked&&fn!=="sign_in"&&viewer&&code){
     if(await rebindDevice()) return call();
     /* الاسم مقفول على أجهزة أخرى وهذا المتصفح ليس منها: يُعرض طريق الدخول
@@ -90,3 +94,19 @@ async function rpc(fn, args){
 const edge=(fn,body,options={})=>postJSON(
   `${SUPABASE_URL}/functions/v1/${fn}`,body,
   {...options,key:options.key||`edge:${fn}:${JSON.stringify(body||{})}`});
+
+/* رمز المنظّم لأفعال الإشراف: المحفوظ في هذا المتصفح، وإلا يُطلب مرة واحدة.
+   null حين يلغي المنظّم، فيتوقف الفعل دون رسالة خطأ. */
+async function organizerCode(){
+  return orgCode()||await askOrganizerCode();
+}
+
+/* رسالة الخطأ للمستخدم: ما قاله الخادم إن ردّ برفض واضح، و«تعذّر الاتصال» إن لم يصل الطلب
+   أو تعطل الخادم. */
+function requestError(e){
+  if(e&&e.status>=400&&e.status<500&&e.message){
+    if(e.message===ORG_CODE_REJECTED&&isOrganizer()) localStorage.removeItem(cKey());
+    return e.message;
+  }
+  return "تعذّر الاتصال";
+}
