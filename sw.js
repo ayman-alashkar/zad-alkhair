@@ -521,7 +521,9 @@ async function ensureOfflineLibrary(){
       initial.tafsirReady?[]:missingUrls(tafsir,TAFSIR_REQUIRED)
     ]);
     const total=missingQuran.length+missingTafsir.length;
-    if(total)await notifyAll({type:"OFFLINE_LIBRARY_PROGRESS",kind:"library",done:0,total});
+    /* fresh: حزمة المصحف غائبة كلها، فهذا تنزيل من الصفر لا استكمال (للإحصاءات). */
+    const fresh=missingQuran.length===QURAN_REQUIRED.length;
+    if(total)await notifyAll({type:"OFFLINE_LIBRARY_PROGRESS",kind:"library",done:0,total,fresh});
     let offset=0,failed=0;
     if(!initial.quranReady){
       const result=await cacheSet(quran,missingQuran,"quran",offset,total);

@@ -137,6 +137,10 @@
     {
       "version": "20261114040520",
       "name": "telegram_login_wanted_name"
+    },
+    {
+      "version": "20261120092415",
+      "name": "usage_storage_diagnostics"
     }
   ],
   "tables": [
