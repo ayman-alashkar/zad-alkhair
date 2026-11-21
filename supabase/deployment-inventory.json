@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-14",
+  "captured_at": "2026-11-21",
   "project_ref": "webqpbcijjbawatykoxe",
   "edge_functions": [
     {
@@ -141,6 +141,10 @@
     {
       "version": "20261120092415",
       "name": "usage_storage_diagnostics"
+    },
+    {
+      "version": "20261121005330",
+      "name": "retire_permanent_name_open"
     }
   ],
   "tables": [

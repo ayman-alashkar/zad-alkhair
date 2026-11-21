@@ -1315,3 +1315,21 @@ test("an action refused on an unregistered browser offers the Telegram confirmat
   assert.deepEqual(errors, []);
   await context.close();
 });
+
+/* على الآيفون قد تُعاد الصفحة عند الرجوع من تيليغرام: الطلب المعلّق يُستأنف بعد التحميل،
+   فيدخل المستخدم دون أن يضغط الزر من جديد. */
+test("a pending Telegram login resumes after the page reloads", async () => {
+  const nonce = "fedcba9876543210fedcba9876543210";
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "سالم", name: "سالم", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({
+    storage: { "zad:tglogin": JSON.stringify({ nonce, code: "ABCD", wanted: null, at: Date.now() - 60000 }) },
+    rpc: { get_state: state, finish_tg_login: { ok: true, memberships: [{ code: "ABCD", id: "سالم", name: "سالم" }] } } });
+  await page.goto(`${BASE}/#ABCD`, { waitUntil: "load" });
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 8000 });
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:viewer:ABCD")).id), "سالم");
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:tglogin")), null, "the pending request is cleared");
+  assert.deepEqual(errors, []);
+  await context.close();
+});

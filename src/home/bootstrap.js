@@ -218,8 +218,9 @@ function zkCountSurface(){
 }
 if(zkIncomingKhatmah||zkSection==="khatmahs"){
   zkHideLaunch();
-  if(zkLoginReady){screen="boot";render();zkLoginReady.finally(boot);}
-  else boot();
+  const booted=zkLoginReady?(screen="boot",render(),zkLoginReady.finally(boot)):boot();
+  /* طلب دخول عبر تيليغرام بدأ قبل إعادة تحميل الصفحة يُستأنف بعد الإقلاع. */
+  Promise.resolve(booted).finally(resumeTgLogin);
 }
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard();

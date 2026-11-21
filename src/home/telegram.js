@@ -83,33 +83,61 @@ async function linkTelegram(){
    دون أن يحتاج المشرف. الطلب صالح عشر دقائق، ولا ينهيه إلا هذا المتصفح. */
 let tgLoginTimer=null;
 let tgLoginWake=()=>{};
+/* الطلب المعلّق يُحفظ في التخزين: على الآيفون قد يُعاد تحميل الصفحة عند الرجوع من
+   تيليغرام فيضيع الانتظار، فيُستأنف عند فتح الصفحة بدل أن يبدأ المستخدم من جديد. */
+const TG_PENDING_KEY="zad:tglogin";
+const TG_PENDING_MS=15*60*1000;
+function tgPendingSave(p){ try{ localStorage.setItem(TG_PENDING_KEY,JSON.stringify(p)); }catch(_){ } }
+function tgPendingClear(){ try{ localStorage.removeItem(TG_PENDING_KEY); }catch(_){ } }
+function tgPendingGet(){
+  try{
+    const p=JSON.parse(localStorage.getItem(TG_PENDING_KEY)||"null");
+    if(p&&/^[0-9a-f]{32}$/.test(p.nonce)&&Date.now()-p.at<TG_PENDING_MS) return p;
+  }catch(_){ }
+  tgPendingClear();
+  return null;
+}
 function tgLoginStop(){
   clearInterval(tgLoginTimer); tgLoginTimer=null;
   document.removeEventListener("visibilitychange",tgLoginWake);
+  window.removeEventListener("pageshow",tgLoginWake);
+  window.removeEventListener("focus",tgLoginWake);
 }
 async function tgLogin(wantedId){
   if(tgLoginTimer) return;
   /* فتح النافذة داخل ضغطة المستخدم، كما في تفعيل التذكير. */
   const w=window.open("about:blank","_blank");
   if(w) w.opener=null;
+  const wanted=typeof wantedId==="string"?wantedId:null;
   let nonce=null;
-  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null,p_id:typeof wantedId==="string"?wantedId:null}); }catch(_){ }
+  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null,p_id:wanted}); }catch(_){ }
   if(typeof nonce!=="string"||!/^[0-9a-f]{32}$/.test(nonce)){
     if(w) w.close();
     return toast("تعذّر الآن، حاول بعد قليل");
   }
-  const url=`https://t.me/${BOT_USERNAME}?start=login_${nonce}`;
-  if(w) w.location.replace(url);
+  const pending={nonce,code:code||null,wanted,at:Date.now()};
+  tgPendingSave(pending);
+  if(w) w.location.replace(tgLoginUrl(nonce));
+  tgLoginWait(pending);
+}
+function tgLoginUrl(nonce){ return `https://t.me/${BOT_USERNAME}?start=login_${nonce}`; }
+/* عند فتح الصفحة: إن كان طلب دخول عبر تيليغرام معلّقًا من هذا المتصفح، يُكمَل. */
+function resumeTgLogin(){
+  if(tgLoginTimer) return;
+  const p=tgPendingGet();
+  if(p) tgLoginWait(p);
+}
+function tgLoginWait(p){
+  const nonce=p.nonce, wantedId=p.wanted;
   modal(`<div class="display" style="font-size:1.35rem">أكمل الدخول في تيليغرام</div>
     <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
       في محادثة بوت زاد الخير اضغط «ابدأ»، ثم «نعم، أدخلني»، وارجع إلى هنا.</p>
     <div class="actions">
-      <a class="btn tg-login" id="tl-open" href="${url}" target="_blank" rel="noopener">${TG_ICON}<span>افتح تيليغرام</span></a>
+      <a class="btn tg-login" id="tl-open" href="${tgLoginUrl(nonce)}" target="_blank" rel="noopener">${TG_ICON}<span>افتح تيليغرام</span></a>
       <button class="btn quiet" id="tl-cancel">إلغاء</button></div>`);
-  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();closeLayer();};
+  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();tgPendingClear();closeLayer();};
 
   let checking=false;
-  const started=Date.now();
   const check=async()=>{
     if(checking) return;
     checking=true;
@@ -117,10 +145,10 @@ async function tgLogin(wantedId){
       let r=null;
       try{ r=await rpc("finish_tg_login",{p_nonce:nonce,p_device:deviceId()}); }catch(_){ return; }
       if(r&&r.pending){
-        if(Date.now()-started>15*60*1000){ tgLoginStop(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
+        if(Date.now()-p.at>TG_PENDING_MS){ tgLoginStop(); tgPendingClear(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
         return;
       }
-      tgLoginStop(); closeLayer();
+      tgLoginStop(); tgPendingClear(); closeLayer();
       if(!r||!r.ok) return toast("انتهت مدة الطلب، حاول من جديد");
       storeMemberships(r.memberships);
       if(!code){ toast("أهلًا بك"); return; }
@@ -136,5 +164,8 @@ async function tgLogin(wantedId){
   /* العودة من تيليغرام تُظهر الصفحة، فيُسأل فورًا بدل انتظار الدورة التالية. */
   tgLoginWake=()=>{ if(document.visibilityState==="visible") check(); };
   document.addEventListener("visibilitychange",tgLoginWake);
+  window.addEventListener("pageshow",tgLoginWake);
+  window.addEventListener("focus",tgLoginWake);
   tgLoginTimer=setInterval(check,2500);
+  check();
 }

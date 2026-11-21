@@ -92,3 +92,7 @@
 - `telegram-webhook` يعالج `/start login_<رمز>` والزر `lg:<رمز>`.
 
 الترحيل `20261114040520_telegram_login_wanted_name.sql` (اختباره `tests/20261114_telegram_login_wanted_name.sql`): `start_tg_login` تقبل `p_id` اختياريًا (الاسم المطلوب)، و`confirm_tg_login` تعيد `wanted` حين يختلف عن صاحب الحساب. حُذفت النسخة ذات المعاملين؛ الاستدعاء القديم بمعاملين مسمّيين ما زال يطابق الجديدة.
+
+## إيقاف الفتح الدائم للأسماء (٢١ نوفمبر ٢٠٢٦)
+
+الترحيل `20261121005330_retire_permanent_name_open.sql` (اختباره `tests/20261121_retire_permanent_name_open.sql`). جاء بعد أسبوع من المراقبة لم يُرفض فيه اسم أي عضو غير مربوط بتيليغرام، وكل رفض لمربوط انتهى بدخوله عبر تيليغرام. `set_name_access` ترفض `open` وتبقي `once` و`lock`. `_member_device_ok` و`sign_in` لا تقبلان `name_open_permanently`، والعمود باقٍ مؤقتًا.
