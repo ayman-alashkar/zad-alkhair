@@ -84,6 +84,21 @@ function fmtDate(iso: string) {
   return hijri ? `${gregorian}، ${hijri}` : gregorian;
 }
 
+const SEND_LANES = 4;
+
+/* ينفّذ work لكل عنصر، وفي كل لحظة lanes عناصر على الأكثر. */
+async function eachConcurrently<T>(items: T[], lanes: number,
+  work: (item: T) => Promise<void>) {
+  let next = 0;
+  const lane = async () => {
+    while (next < items.length) {
+      const item = items[next++];
+      await work(item);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(lanes, items.length) }, lane));
+}
+
 async function rpc(fn: string, args: unknown = {}) {
   const response = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
     method: "POST",
@@ -235,7 +250,9 @@ Deno.serve(async (req) => {
   let blocked = 0;
   let failed = 0;
 
-  for (const chat of result.chats ?? []) {
+  /* كل مشارك يكلف نحو ثانية (رابط الدخول ثم تيليغرام ثم تسجيل التسليم)، والواجهة تنتظر
+     الرد عند بدء ختمة جديدة، فيُرسل إلى عدة مشاركين معًا. أربعة مسارات تبقى بعيدة عن حدود تيليغرام. */
+  await eachConcurrently(result.chats ?? [], SEND_LANES, async (chat) => {
     const text = body.kind === "done"
       ? doneText(result)
       : roundText(result, chat.name);
@@ -256,7 +273,7 @@ Deno.serve(async (req) => {
       failed++;
     }
     await new Promise((resolve) => setTimeout(resolve, 60));
-  }
+  });
 
   if (body.kind === "done" && failed > 0) {
     return Response.json({ ok: false, sent, blocked, failed },

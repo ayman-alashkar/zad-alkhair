@@ -47,6 +47,8 @@ async function postJSON(url,payload,options={}){
 const RPC_HEADERS={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY};
 /* القاعدة ترفض بهذا كل فعل للمنظّم إن كان رمزه المحفوظ قديمًا (غيّره من جهاز آخر). */
 const ORG_CODE_REJECTED="الرمز أو الجهاز غير صحيح";
+/* الإرسال لكل المجموعة ينتظر تيليغرام لكل مشارك، فمهلته أطول من بقية الطلبات. */
+const GROUP_SEND_TIMEOUT=60000;
 const DEVICE_LOCK_ERRS=["مقفول على جهاز صاحبه","هذا السجل لصاحب الحساب فقط"];
 let rebinding=null;
 

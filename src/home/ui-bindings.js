@@ -215,9 +215,21 @@ function settings(){
     "ختمة جديدة","تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم. ويصلهم إشعار بالبداية.","ابدأ",
     async(d)=>{
       const oc=await organizerCode(); if(!oc) return;
-      const requestId=`${code}:${state.roundNo||1}:${d}`;
+      const round=state.roundNo||1;
+      const requestId=`${code}:${round}:${d}`;
       const body={kind:"round",code,orgCode:oc,device:deviceId(),end:d,requestId};
-      const r=await edge("announce",body,{key:`round:${requestId}`});
+      toast("جارٍ البدء وإبلاغ المشاركين…");
+      let r;
+      try{
+        r=await edge("announce",body,{key:`round:${requestId}`,timeout:GROUP_SEND_TIMEOUT});
+      }catch(err){
+        /* إن انقطع الرد بعد أن بدأت الختمة في الخادم فقد تمّ الأمر؛ نتحقق قبل أن نقول تعذّر. */
+        if(err&&err.status) throw err;
+        await refresh();
+        if(!state||(state.roundNo||1)<=round) throw err;
+        closeLayer();
+        return toast("بدأت ختمة جديدة");
+      }
       if(!r.ok) return toast(r.error||"تعذّر البدء");
       if(r.failed) enqueueEdge("announce",body,`round-notify:${requestId}`);
       closeLayer(); await refresh();
