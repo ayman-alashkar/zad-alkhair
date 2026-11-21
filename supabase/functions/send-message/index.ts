@@ -70,6 +70,21 @@ function navigationRows(sourceUrl: string, login = "") {
   }
 }
 
+const SEND_LANES = 4;
+
+/* ينفّذ work لكل عنصر، وفي كل لحظة lanes عناصر على الأكثر. */
+async function eachConcurrently<T>(items: T[], lanes: number,
+  work: (item: T) => Promise<void>) {
+  let next = 0;
+  const lane = async () => {
+    while (next < items.length) {
+      const item = items[next++];
+      await work(item);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(lanes, items.length) }, lane));
+}
+
 async function rpc(fn: string, args: unknown = {}) {
   const response = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
     method: "POST",
@@ -182,7 +197,9 @@ Deno.serve(async (req) => {
   let sent = 0;
   let blocked = 0;
   let failed = 0;
-  for (const chat of target.chats ?? []) {
+  /* كل مشارك يكلف نحو ثانية (رابط الدخول ثم تيليغرام)، والواجهة تنتظر الرد، فيُرسل
+     إلى عدة مشاركين معًا بدل واحد بعد واحد. أربعة مسارات تبقى بعيدة عن حدود تيليغرام. */
+  await eachConcurrently(target.chats ?? [], SEND_LANES, async (chat) => {
     const result = await send(chat.chatId, text, link);
     if (result.ok) sent++;
     else if (result.blocked) {
@@ -194,7 +211,7 @@ Deno.serve(async (req) => {
       }
     } else failed++;
     await new Promise((resolve) => setTimeout(resolve, 60));
-  }
+  });
 
   return Response.json({ ok: true, sent, blocked, failed, cut },
     { headers: CORS });

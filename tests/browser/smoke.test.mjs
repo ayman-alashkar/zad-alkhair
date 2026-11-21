@@ -1141,6 +1141,32 @@ test("an organizer without a saved code is asked for it once, over the open mess
   await context.close();
 });
 
+/* بدء ختمة جديدة لمجموعة كبيرة قد يتجاوز مهلة الرد بينما يتمّ في الخادم: الواجهة تتحقق من
+   رقم الختمة بدل أن تقول «تعذّر الاتصال» وتبقى النافذة مفتوحة. */
+test("a new round that completes on the server after the response is lost is reported as started", async () => {
+  const base = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org",
+    members: [{ id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({
+    rpc: { list_active_khatmahs: [] },
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "org", name: "المشرف" }), "zad:orgcode:ABCD": "SECRET1" }
+  });
+  let started = false;
+  await context.route(/\/rpc\/get_state/, route => route.fulfill({ status: 200, contentType: "application/json",
+    body: JSON.stringify({ ok: true, ...base, roundNo: started ? 2 : 1 }) }));
+  await context.route(/\/functions\/v1\/announce/, route => { started = true; return route.abort("connectionreset"); });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.click("#zk-launch-zad");
+  await page.waitForSelector("#btn-settings");
+  await page.click("#btn-settings");
+  await page.click("#s-next");
+  await page.click("#d-go");
+  await page.waitForFunction(() => document.getElementById("toast")?.textContent === "بدأت ختمة جديدة", null, { timeout: 5000 });
+  assert.equal(await page.locator("#d-go").count(), 0, "the date dialog is closed");
+  assert.deepEqual(errors.filter(e => !/net::ERR|Failed to fetch/i.test(e)), []);
+  await context.close();
+});
+
 /* «ما تيسّر»: الزر يفعّل الوضع (الوسم وسطر «التالي»)، والضغطة الثانية تطفئه.
    الصوت هنا ممنوع، فالمطلوب حالة الواجهة لا التلاوة نفسها. */
 test("«ما تيسّر» turns on with its tag and up-next line, and a second press turns it off", async () => {

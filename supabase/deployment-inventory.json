@@ -28,15 +28,15 @@
     },
     {
       "slug": "send-message",
-      "version": 11,
+      "version": 12,
       "verify_jwt": false,
-      "bundle_sha256": "d4e7c9f142422777cd7c7843f80635af9e4a618ddb23b12888af1e2afc965a6e"
+      "bundle_sha256": "1f92f7c63098007998dc096056119dfe346906d24209c6398c9d0dd35d199786"
     },
     {
       "slug": "announce",
-      "version": 12,
+      "version": 13,
       "verify_jwt": false,
-      "bundle_sha256": "efb9bf07e07a9829168e57553e06bd19a566c454eafb6a8454a5906f8fa50b52"
+      "bundle_sha256": "a7048423b8185d72ec70554876dd4731c6f0fe68d94cbe8bac3983e28d62ccc0"
     },
     {
       "slug": "migration-handoff",

@@ -425,11 +425,15 @@ function messageDialog(id,name){
     try{
       const body={code,orgCode:oc,device:deviceId(),to:id||null,text:t};
       const r=await edge("send-message",body,
-        {key:`message:${code}:${id||"all"}:${t}`});
+        {key:`message:${code}:${id||"all"}:${t}`,timeout:GROUP_SEND_TIMEOUT});
       if(!r.ok) return toast(r.error||"تعذّر الإرسال");
       closeLayer();
       toast(r.sent?`وصلت ${ar(r.sent)} ${r.sent===1?"رسالة":"رسائل"}`:"لم تصل أي رسالة");
-    }catch(e){ toast(requestError(e)); }
+    }catch(e){
+      /* انقطاع بلا رد قد يأتي بعد أن خرجت الرسائل، فلا نقول «تعذّر» ولا نشجع على التكرار. */
+      toast(e&&e.status?requestError(e)
+        :navigator.onLine===false?"تعذّر الاتصال":"لم يصل الرد، وربما خرجت الرسائل. تأكد قبل الإعادة");
+    }
   };
 }
 
