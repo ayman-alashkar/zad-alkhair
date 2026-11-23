@@ -14,6 +14,7 @@ const page = n => JSON.parse(fs.readFileSync(path.join(Q, "pages", String(n).pad
 const statements = JSON.parse(fs.readFileSync(path.join(Q, "statements.json"), "utf8"));
 const index = JSON.parse(fs.readFileSync(path.join(Q, "index.json"), "utf8"));
 const corrections = JSON.parse(fs.readFileSync(path.join(root, "data/qiraat-src/corrections.json"), "utf8"));
+const rules = JSON.parse(fs.readFileSync(path.join(root, "data/qiraat-src/rules.json"), "utf8"));
 
 function find(s, a, nth = 1) {          // أول صفحة فيها الكلمة رقم nth من الآية
   for (let p = 1; p <= 604; p++) {
@@ -67,6 +68,12 @@ test("every rule (قاعدة) says why, and on what basis", () => {
   for (const c of corrections) {
     assert.ok(c.reason && c.basis && c.after && c.kind, JSON.stringify(c.key));
     assert.equal(c.key.length, 3);
+    const r = rules[c.rule];
+    assert.ok(r, `rule ${c.rule} of ${JSON.stringify(c.key)} is in rules.json`);
+  }
+  for (const [id, r] of Object.entries(rules)) {
+    assert.ok(r.title && r.sources.length, id);
+    for (const s of r.sources) assert.match(s.url, /^https:\/\/shamela\.ws\/book\/\d+\/\d+$/, id);
   }
 });
 
