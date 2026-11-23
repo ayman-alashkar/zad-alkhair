@@ -1,4 +1,5 @@
-/* إعداد مشترك لكل الوظائف: الأسرار من بيئة Supabase، وعنوان التطبيق. */
+/* إعداد مشترك لكل الوظائف: الأسرار من بيئة Supabase، وعنوان التطبيق.
+   أي تغيير في _shared يعيد نشر الوظائف كلها عند الدمج (deploy.yml). */
 
 export const TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
 export const SB_URL = Deno.env.get("SUPABASE_URL")!;
