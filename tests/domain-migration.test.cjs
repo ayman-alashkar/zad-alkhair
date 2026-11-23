@@ -15,11 +15,8 @@ function sourceSecurityChecks(){
     "legacy URLs redirect directly while preserving path, query, and hash");
   assert.doesNotMatch(bridge,/migration-handoff|collectHandoff|zad-domain-migration/,
     "the legacy origin no longer migrates identity or displays a migration page");
-  const edge=fs.readFileSync(path.join(root,"supabase/functions/migration-handoff/index.ts"),"utf8");
-  assert.match(edge,/error:"migration_retired"/,"the server permanently rejects legacy migration");
-  assert.match(edge,/status:410/,"retired migration requests receive Gone");
-  assert.doesNotMatch(edge,/SUPABASE_SERVICE_ROLE_KEY|complete_origin_domain_migration|redeem\(/,
-    "the retired endpoint cannot read or mutate migration data");
+  for(const fn of ["migration-handoff","telegram-migration"])
+    assert.ok(!fs.existsSync(path.join(root,"supabase/functions",fn)),`the retired ${fn} endpoint is gone`);
   const transfer=fs.readFileSync(path.join(root,"transfer/index.html"),"utf8");
   assert.match(transfer,/location\.replace\("https:\/\/zad-alkhair\.net\/"\)/,
     "the retired transfer page redirects directly to the final site");

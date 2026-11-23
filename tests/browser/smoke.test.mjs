@@ -1055,6 +1055,82 @@ test("live sync: joins the khatmah's channel, and a «changed» signal refreshes
   await context.close();
 });
 
+/* منظّم دخل دون رمزه (برابط تيليغرام أو بعد مسح التخزين): أول فعل إشرافي يطلب الرمز فوق النافذة
+   المفتوحة، والرمز الخاطئ لا يُحفظ، والصحيح يُحفظ ويُرسل مع الرسالة. */
+test("an organizer without a saved code is asked for it once, over the open message dialog", async () => {
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "me", name: "أنا", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({
+    rpc: { get_state: state, list_active_khatmahs: [] },
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "org", name: "المشرف" }) }
+  });
+  const signIns = [], sends = [];
+  await context.route(/\/rpc\/sign_in/, route => {
+    const body = JSON.parse(route.request().postData());
+    signIns.push(body);
+    const ok = body.p_org_code === "SECRET1";
+    return route.fulfill({ status: 200, contentType: "application/json",
+      body: JSON.stringify(ok ? { ok: true, id: "org", name: "المشرف", isOrganizer: true } : { ok: false, needCode: true }) });
+  });
+  await context.route(/\/functions\/v1\/send-message/, route => {
+    sends.push(JSON.parse(route.request().postData()));
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sent: 2 }) });
+  });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.click("#zk-launch-zad");
+  await page.waitForSelector("#btn-broadcast");
+  await page.click("#btn-broadcast");
+  await page.fill("#msg-text", "السلام عليكم");
+  await page.click("#msg-go");
+  await page.waitForSelector("#org-code-input");
+  await page.fill("#org-code-input", "WRONG1");
+  await page.click("[data-code-ok]");
+  await page.waitForFunction(() => document.getElementById("toast")?.textContent.includes("الرمز غير صحيح"), null, { timeout: 3000 });
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:orgcode:ABCD")), null);
+  assert.equal(await page.locator("#org-code-input").count(), 1, "the prompt stays after a wrong code");
+  await page.fill("#org-code-input", "SECRET1");
+  /* البيت يمنع الضغطة الثانية على الزر نفسه خلال ٧٠٠ ملّي ثانية (الضغطة المزدوجة العرضية). */
+  await page.waitForTimeout(800);
+  await page.click("[data-code-ok]");
+  await page.waitForSelector("#org-code-input", { state: "detached" });
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:orgcode:ABCD")), "SECRET1");
+  assert.equal(await page.inputValue("#msg-text"), "السلام عليكم", "the typed message is kept");
+  await page.click("[data-confirm-ok]");
+  for (let i = 0; i < 30 && !sends.length; i++) await page.waitForTimeout(100);
+  assert.equal(sends.length, 1);
+  assert.equal(sends[0].orgCode, "SECRET1");
+  assert.equal(signIns.length, 2);
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
+/* بدء ختمة جديدة لمجموعة كبيرة قد يتجاوز مهلة الرد بينما يتمّ في الخادم: الواجهة تتحقق من
+   رقم الختمة بدل أن تقول «تعذّر الاتصال» وتبقى النافذة مفتوحة. */
+test("a new round that completes on the server after the response is lost is reported as started", async () => {
+  const base = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org",
+    members: [{ id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({
+    rpc: { list_active_khatmahs: [] },
+    storage: { "zad:last": "ABCD", "zad:viewer:ABCD": JSON.stringify({ id: "org", name: "المشرف" }), "zad:orgcode:ABCD": "SECRET1" }
+  });
+  let started = false;
+  await context.route(/\/rpc\/get_state/, route => route.fulfill({ status: 200, contentType: "application/json",
+    body: JSON.stringify({ ok: true, ...base, roundNo: started ? 2 : 1 }) }));
+  await context.route(/\/functions\/v1\/announce/, route => { started = true; return route.abort("connectionreset"); });
+  await page.goto(BASE + "/", { waitUntil: "load" });
+  await page.click("#zk-launch-zad");
+  await page.waitForSelector("#btn-settings");
+  await page.click("#btn-settings");
+  await page.click("#s-next");
+  await page.click("#d-go");
+  await page.waitForFunction(() => document.getElementById("toast")?.textContent === "بدأت ختمة جديدة", null, { timeout: 5000 });
+  assert.equal(await page.locator("#d-go").count(), 0, "the date dialog is closed");
+  assert.deepEqual(errors.filter(e => !/net::ERR|Failed to fetch/i.test(e)), []);
+  await context.close();
+});
+
 /* «ما تيسّر»: الزر يفعّل الوضع (الوسم وسطر «التالي»)، والضغطة الثانية تطفئه.
    الصوت هنا ممنوع، فالمطلوب حالة الواجهة لا التلاوة نفسها. */
 test("«ما تيسّر» turns on with its tag and up-next line, and a second press turns it off", async () => {
@@ -1263,4 +1339,22 @@ test("the mushaf comes from Zad itself, and tajweed only switches the colour pal
   } finally {
     await context.close();
   }
+});
+
+/* على الآيفون قد تُعاد الصفحة عند الرجوع من تيليغرام: الطلب المعلّق يُستأنف بعد التحميل،
+   فيدخل المستخدم دون أن يضغط الزر من جديد. */
+test("a pending Telegram login resumes after the page reloads", async () => {
+  const nonce = "fedcba9876543210fedcba9876543210";
+  const state = { publicId: "p", code: "ABCD", title: "ختمتي", endDate: "2030-01-01", accessType: "private", organizerId: "org", roundNo: 1,
+    members: [{ id: "سالم", name: "سالم", linked: true }, { id: "org", name: "المشرف", linked: true }],
+    juz: Array.from({ length: 30 }, () => ({ status: "free", ownerId: null })) };
+  const { page, errors, context } = await appPage({
+    storage: { "zad:tglogin": JSON.stringify({ nonce, code: "ABCD", wanted: null, at: Date.now() - 60000 }) },
+    rpc: { get_state: state, finish_tg_login: { ok: true, memberships: [{ code: "ABCD", id: "سالم", name: "سالم" }] } } });
+  await page.goto(`${BASE}/#ABCD`, { waitUntil: "load" });
+  await page.waitForFunction(() => document.querySelectorAll("#app .cell").length >= 30, null, { timeout: 8000 });
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("zad:viewer:ABCD")).id), "سالم");
+  assert.equal(await page.evaluate(() => localStorage.getItem("zad:tglogin")), null, "the pending request is cleared");
+  assert.deepEqual(errors, []);
+  await context.close();
 });

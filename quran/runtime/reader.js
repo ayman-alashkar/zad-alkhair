@@ -44,7 +44,7 @@ const ZU_OFF="zad:usage-off";
 const ZU_ID_KEY="zad:pwa-install-id";
 const ZU_LOCK="zad:usage-flush-at";
 const ZU_SURFACES=["home","prayer","khatmahs","adhkar","quran","reader","listen"];
-const ZU_KEYS=ZU_SURFACES.concat("listen_seconds","tayassar_seconds");
+const ZU_KEYS=ZU_SURFACES.concat("listen_seconds","tayassar_seconds","storage_reset","pack_fresh");
 const ZU_KEEP_DAYS=6;          /* الخادم يقبل أيام الأسبوع الأخير فقط */
 const ZU_REOPEN_MS=30*60*1000; /* العودة إلى التطبيق بعد نصف ساعة في الخلفية تُعدّ فتحًا جديدًا */
 
@@ -98,6 +98,10 @@ function zuTimeZone(){
 }
 function zuInstalled(){
   try{return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}
+}
+/* هل منح المتصفح الموقع تخزينًا دائمًا لا يُمسح عند ضيق المساحة؟ فارغ إن لم يُعرف. */
+async function zuPersisted(){
+  try{return navigator.storage&&navigator.storage.persisted?await navigator.storage.persisted():null}catch(_){return null}
 }
 
 /* ── المخزن المحلي: { "2026-11-11": { home: 2, listen_seconds: 340, … }, … } ── */
@@ -180,13 +184,14 @@ async function zuFlush(){
   const id=zuDeviceId();
   if(!id)return;
   zuFlushing=true;
+  const persisted=await zuPersisted();
   try{
     for(const day of days){
       const counts=store[day];
       const r=await fetch(ZU_ENDPOINT,{
         method:"POST",keepalive:true,
         headers:{"Content-Type":"application/json",apikey:ZU_KEY,Authorization:"Bearer "+ZU_KEY},
-        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_tz:zuTimeZone(),p_counts:counts})
+        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_tz:zuTimeZone(),p_persisted:persisted,p_counts:counts})
       });
       /* رفض الخادم (يوم أقدم من المسموح مثلًا) يُسقط هذا اليوم؛ عطل الخادم يُبقيه للمرة القادمة. */
       if(r.ok||(r.status>=400&&r.status<500))zuSubtract(day,counts);
@@ -199,6 +204,21 @@ async function zuFlush(){
     try{localStorage.removeItem(ZU_LOCK)}catch(_){}
   }
 }
+
+/* ── تشخيص ضياع التخزين ──
+   على أندرويد يشارك التطبيقُ المثبّت Chrome تخزينَ الموقع، فالمعرّف موجود منذ زيارة الموقع قبل التثبيت.
+   فإن فُتح مثبّتًا ولم يجده فقد مُسح تخزين الموقع كله (ضيق المساحة أو منظّف الهاتف أو مسح يدوي).
+   على iOS يبدأ التطبيق المثبّت بتخزين مستقل فارغ، فلا يُعدّ هناك. */
+(function zuCheckStorageReset(){
+  try{
+    if(zuOff()||zuPlatform()!=="android"||!zuInstalled())return;
+    if(localStorage.getItem(ZU_ID_KEY))return;
+    zuDeviceId();
+    zuAdd({storage_reset:1});
+  }catch(_){ }
+})();
+/* يناديه القارئ حين يبدأ عامل الخدمة تنزيل حزمة المصحف من الصفر. */
+function zuPackFresh(){zuAdd({pack_fresh:1})}
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){zuHiddenAt=Date.now();zuFlush();return}
@@ -4329,6 +4349,7 @@ if("serviceWorker" in navigator){
         if(lastOfflinePercent>0||Number(data.failed)>0)showToast("لم يكتمل التجهيز؛ ستُستكمل الملفات الناقصة عند المحاولة مجدداً");
       }
     }else if(data.type==="OFFLINE_LIBRARY_PROGRESS"){
+      if(data.kind==="library"&&data.fresh===true&&Number(data.done)===0)zuPackFresh();
       paintOfflineProgress(data.done,data.total);
     }else if(data.type==="AUDIO_OFFLINE_PROGRESS"){
       const job=audioDownloadJobs.get(String(data.tag||""));

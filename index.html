@@ -1973,7 +1973,7 @@ const ZU_OFF="zad:usage-off";
 const ZU_ID_KEY="zad:pwa-install-id";
 const ZU_LOCK="zad:usage-flush-at";
 const ZU_SURFACES=["home","prayer","khatmahs","adhkar","quran","reader","listen"];
-const ZU_KEYS=ZU_SURFACES.concat("listen_seconds","tayassar_seconds");
+const ZU_KEYS=ZU_SURFACES.concat("listen_seconds","tayassar_seconds","storage_reset","pack_fresh");
 const ZU_KEEP_DAYS=6;          /* الخادم يقبل أيام الأسبوع الأخير فقط */
 const ZU_REOPEN_MS=30*60*1000; /* العودة إلى التطبيق بعد نصف ساعة في الخلفية تُعدّ فتحًا جديدًا */
 
@@ -2027,6 +2027,10 @@ function zuTimeZone(){
 }
 function zuInstalled(){
   try{return window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true}catch(_){return false}
+}
+/* هل منح المتصفح الموقع تخزينًا دائمًا لا يُمسح عند ضيق المساحة؟ فارغ إن لم يُعرف. */
+async function zuPersisted(){
+  try{return navigator.storage&&navigator.storage.persisted?await navigator.storage.persisted():null}catch(_){return null}
 }
 
 /* ── المخزن المحلي: { "2026-11-11": { home: 2, listen_seconds: 340, … }, … } ── */
@@ -2109,13 +2113,14 @@ async function zuFlush(){
   const id=zuDeviceId();
   if(!id)return;
   zuFlushing=true;
+  const persisted=await zuPersisted();
   try{
     for(const day of days){
       const counts=store[day];
       const r=await fetch(ZU_ENDPOINT,{
         method:"POST",keepalive:true,
         headers:{"Content-Type":"application/json",apikey:ZU_KEY,Authorization:"Bearer "+ZU_KEY},
-        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_tz:zuTimeZone(),p_counts:counts})
+        body:JSON.stringify({p_device:id,p_day:day,p_platform:zuPlatform(),p_installed:zuInstalled(),p_tz:zuTimeZone(),p_persisted:persisted,p_counts:counts})
       });
       /* رفض الخادم (يوم أقدم من المسموح مثلًا) يُسقط هذا اليوم؛ عطل الخادم يُبقيه للمرة القادمة. */
       if(r.ok||(r.status>=400&&r.status<500))zuSubtract(day,counts);
@@ -2128,6 +2133,21 @@ async function zuFlush(){
     try{localStorage.removeItem(ZU_LOCK)}catch(_){}
   }
 }
+
+/* ── تشخيص ضياع التخزين ──
+   على أندرويد يشارك التطبيقُ المثبّت Chrome تخزينَ الموقع، فالمعرّف موجود منذ زيارة الموقع قبل التثبيت.
+   فإن فُتح مثبّتًا ولم يجده فقد مُسح تخزين الموقع كله (ضيق المساحة أو منظّف الهاتف أو مسح يدوي).
+   على iOS يبدأ التطبيق المثبّت بتخزين مستقل فارغ، فلا يُعدّ هناك. */
+(function zuCheckStorageReset(){
+  try{
+    if(zuOff()||zuPlatform()!=="android"||!zuInstalled())return;
+    if(localStorage.getItem(ZU_ID_KEY))return;
+    zuDeviceId();
+    zuAdd({storage_reset:1});
+  }catch(_){ }
+})();
+/* يناديه القارئ حين يبدأ عامل الخدمة تنزيل حزمة المصحف من الصفر. */
+function zuPackFresh(){zuAdd({pack_fresh:1})}
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){zuHiddenAt=Date.now();zuFlush();return}
@@ -2549,6 +2569,10 @@ async function postJSON(url,payload,options={}){
 }
 
 const RPC_HEADERS={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY};
+/* القاعدة ترفض بهذا كل فعل للمنظّم إن كان رمزه المحفوظ قديمًا (غيّره من جهاز آخر). */
+const ORG_CODE_REJECTED="الرمز أو الجهاز غير صحيح";
+/* الإرسال لكل المجموعة ينتظر تيليغرام لكل مشارك، فمهلته أطول من بقية الطلبات. */
+const GROUP_SEND_TIMEOUT=60000;
 const DEVICE_LOCK_ERRS=["مقفول على جهاز صاحبه","هذا السجل لصاحب الحساب فقط"];
 let rebinding=null;
 
@@ -2581,6 +2605,8 @@ async function rpc(fn, args){
   const r=await call();
   const locked=r&&r.ok===false&&typeof r.error==="string"
     &&DEVICE_LOCK_ERRS.some(m=>r.error.indexOf(m)!==-1);
+  /* رمز قديم يُنسى، فيُطلب من جديد في المحاولة التالية بدل أن يُرفض كل فعل. */
+  if(r&&r.ok===false&&r.error===ORG_CODE_REJECTED&&isOrganizer()) localStorage.removeItem(cKey());
   if(locked&&fn!=="sign_in"&&viewer&&code){
     if(await rebindDevice()) return call();
     /* الاسم مقفول على أجهزة أخرى وهذا المتصفح ليس منها: يُعرض طريق الدخول
@@ -2594,6 +2620,22 @@ async function rpc(fn, args){
 const edge=(fn,body,options={})=>postJSON(
   `${SUPABASE_URL}/functions/v1/${fn}`,body,
   {...options,key:options.key||`edge:${fn}:${JSON.stringify(body||{})}`});
+
+/* رمز المنظّم لأفعال الإشراف: المحفوظ في هذا المتصفح، وإلا يُطلب مرة واحدة.
+   null حين يلغي المنظّم، فيتوقف الفعل دون رسالة خطأ. */
+async function organizerCode(){
+  return orgCode()||await askOrganizerCode();
+}
+
+/* رسالة الخطأ للمستخدم: ما قاله الخادم إن ردّ برفض واضح، و«تعذّر الاتصال» إن لم يصل الطلب
+   أو تعطل الخادم. */
+function requestError(e){
+  if(e&&e.status>=400&&e.status<500&&e.message){
+    if(e.message===ORG_CODE_REJECTED&&isOrganizer()) localStorage.removeItem(cKey());
+    return e.message;
+  }
+  return "تعذّر الاتصال";
+}
 
 /* ===================== أدوات ===================== */
 const AR="٠١٢٣٤٥٦٧٨٩";
@@ -3656,6 +3698,58 @@ function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغ
   });
 }
 
+/* رمز المنظّم لمن دخل دونه (برابط تيليغرام، أو بعد مسح تخزين المتصفح): يُطلب مرة واحدة
+   فوق النافذة المفتوحة، فلا يضيع ما كتبه المنظّم فيها، ويُحفظ بعد أن تقبله القاعدة. */
+function askOrganizerCode(){
+  return new Promise(resolve=>{
+    const host=document.createElement("div");
+    host.className="modal app-confirm-overlay";
+    host.setAttribute("role","presentation");
+    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="org-code-title">
+      <div class="display" id="org-code-title" style="font-size:1.4rem">رمز المنظّم</div>
+      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">دخلت من هذا الجهاز دون رمز المنظّم. اكتبه مرة واحدة ليُحفظ هنا.</p>
+      <div class="field-row"><input id="org-code-input" class="field" type="password" autocomplete="off" placeholder="الرمز الذي اخترته"></div>
+      <div class="actions">
+        <button class="btn gold" data-code-ok>متابعة</button>
+        <button class="btn quiet" data-code-cancel>إلغاء</button>
+      </div>
+    </div>`;
+    document.body.appendChild(host);
+    const input=host.querySelector("#org-code-input");
+    const okBtn=host.querySelector("[data-code-ok]");
+    let settled=false,busy=false;
+    const done=value=>{
+      if(settled) return;
+      settled=true;
+      document.removeEventListener("keydown",onKey,true);
+      host.remove();
+      resolve(value);
+    };
+    const submit=async()=>{
+      if(busy) return;
+      const oc=norm(input.value);
+      if(!oc) return toast("أدخل الرمز");
+      busy=true;okBtn.disabled=true;
+      try{
+        const r=await rpc("sign_in",{p_code:code,p_id:viewer.id,p_name:viewer.name,
+          p_device:deviceId(),p_org_code:oc});
+        if(r&&r.ok){ localStorage.setItem(cKey(),oc); return done(oc); }
+        toast(r&&r.needCode?"الرمز غير صحيح":(r&&r.error)||"تعذّر التحقق");
+      }catch(e){ toast("تعذّر الاتصال"); }
+      finally{ busy=false;okBtn.disabled=false; }
+    };
+    const onKey=e=>{
+      if(e.key==="Escape"){e.preventDefault();done(null);}
+      else if(e.key==="Enter"&&e.target===input){e.preventDefault();submit();}
+    };
+    okBtn.onclick=submit;
+    host.querySelector("[data-code-cancel]").onclick=()=>done(null);
+    host.onclick=e=>{if(e.target===host)done(null);};
+    document.addEventListener("keydown",onKey,true);
+    requestAnimationFrame(()=>input.focus({preventScroll:true}));
+  });
+}
+
 /* بديل داخلي لـ prompt، بنفس نافذة التطبيق القياسية. */
 function appCopyFallback(title,value){
   return new Promise(resolve=>{
@@ -4162,33 +4256,61 @@ async function linkTelegram(){
    دون أن يحتاج المشرف. الطلب صالح عشر دقائق، ولا ينهيه إلا هذا المتصفح. */
 let tgLoginTimer=null;
 let tgLoginWake=()=>{};
+/* الطلب المعلّق يُحفظ في التخزين: على الآيفون قد يُعاد تحميل الصفحة عند الرجوع من
+   تيليغرام فيضيع الانتظار، فيُستأنف عند فتح الصفحة بدل أن يبدأ المستخدم من جديد. */
+const TG_PENDING_KEY="zad:tglogin";
+const TG_PENDING_MS=15*60*1000;
+function tgPendingSave(p){ try{ localStorage.setItem(TG_PENDING_KEY,JSON.stringify(p)); }catch(_){ } }
+function tgPendingClear(){ try{ localStorage.removeItem(TG_PENDING_KEY); }catch(_){ } }
+function tgPendingGet(){
+  try{
+    const p=JSON.parse(localStorage.getItem(TG_PENDING_KEY)||"null");
+    if(p&&/^[0-9a-f]{32}$/.test(p.nonce)&&Date.now()-p.at<TG_PENDING_MS) return p;
+  }catch(_){ }
+  tgPendingClear();
+  return null;
+}
 function tgLoginStop(){
   clearInterval(tgLoginTimer); tgLoginTimer=null;
   document.removeEventListener("visibilitychange",tgLoginWake);
+  window.removeEventListener("pageshow",tgLoginWake);
+  window.removeEventListener("focus",tgLoginWake);
 }
 async function tgLogin(wantedId){
   if(tgLoginTimer) return;
   /* فتح النافذة داخل ضغطة المستخدم، كما في تفعيل التذكير. */
   const w=window.open("about:blank","_blank");
   if(w) w.opener=null;
+  const wanted=typeof wantedId==="string"?wantedId:null;
   let nonce=null;
-  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null,p_id:typeof wantedId==="string"?wantedId:null}); }catch(_){ }
+  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null,p_id:wanted}); }catch(_){ }
   if(typeof nonce!=="string"||!/^[0-9a-f]{32}$/.test(nonce)){
     if(w) w.close();
     return toast("تعذّر الآن، حاول بعد قليل");
   }
-  const url=`https://t.me/${BOT_USERNAME}?start=login_${nonce}`;
-  if(w) w.location.replace(url);
+  const pending={nonce,code:code||null,wanted,at:Date.now()};
+  tgPendingSave(pending);
+  if(w) w.location.replace(tgLoginUrl(nonce));
+  tgLoginWait(pending);
+}
+function tgLoginUrl(nonce){ return `https://t.me/${BOT_USERNAME}?start=login_${nonce}`; }
+/* عند فتح الصفحة: إن كان طلب دخول عبر تيليغرام معلّقًا من هذا المتصفح، يُكمَل. */
+function resumeTgLogin(){
+  if(tgLoginTimer) return;
+  const p=tgPendingGet();
+  if(p) tgLoginWait(p);
+}
+function tgLoginWait(p){
+  const nonce=p.nonce, wantedId=p.wanted;
   modal(`<div class="display" style="font-size:1.35rem">أكمل الدخول في تيليغرام</div>
     <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
       في محادثة بوت زاد الخير اضغط «ابدأ»، ثم «نعم، أدخلني»، وارجع إلى هنا.</p>
     <div class="actions">
-      <a class="btn tg-login" id="tl-open" href="${url}" target="_blank" rel="noopener">${TG_ICON}<span>افتح تيليغرام</span></a>
+      <a class="btn tg-login" id="tl-open" href="${tgLoginUrl(nonce)}" target="_blank" rel="noopener">${TG_ICON}<span>افتح تيليغرام</span></a>
       <button class="btn quiet" id="tl-cancel">إلغاء</button></div>`);
-  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();closeLayer();};
+  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();tgPendingClear();closeLayer();};
 
   let checking=false;
-  const started=Date.now();
   const check=async()=>{
     if(checking) return;
     checking=true;
@@ -4196,10 +4318,10 @@ async function tgLogin(wantedId){
       let r=null;
       try{ r=await rpc("finish_tg_login",{p_nonce:nonce,p_device:deviceId()}); }catch(_){ return; }
       if(r&&r.pending){
-        if(Date.now()-started>15*60*1000){ tgLoginStop(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
+        if(Date.now()-p.at>TG_PENDING_MS){ tgLoginStop(); tgPendingClear(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
         return;
       }
-      tgLoginStop(); closeLayer();
+      tgLoginStop(); tgPendingClear(); closeLayer();
       if(!r||!r.ok) return toast("انتهت مدة الطلب، حاول من جديد");
       storeMemberships(r.memberships);
       if(!code){ toast("أهلًا بك"); return; }
@@ -4215,7 +4337,10 @@ async function tgLogin(wantedId){
   /* العودة من تيليغرام تُظهر الصفحة، فيُسأل فورًا بدل انتظار الدورة التالية. */
   tgLoginWake=()=>{ if(document.visibilityState==="visible") check(); };
   document.addEventListener("visibilitychange",tgLoginWake);
+  window.addEventListener("pageshow",tgLoginWake);
+  window.addEventListener("focus",tgLoginWake);
   tgLoginTimer=setInterval(check,2500);
+  check();
 }
 
 /* ===================== إسناد الأجزاء ===================== */
@@ -4258,8 +4383,9 @@ function assignDialog(i){
     const id=keyOf(nm);
     if(memberOf(id)) return toast("الاسم مسجَّل، اختره من القائمة");
     if(!await appConfirm(`سيُضاف ${nm} إلى المشاركين ويُسنَد إليه الجزء ${ar(num)}.\nلن يصله تذكير حتى يدخل بنفسه ويفعّله.`,{title:"إضافة مشارك",ok:"أضفه وأسنده"})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("add_member",{p_code:code,p_org_code:orgCode(),p_id:id,p_name:nm,p_device:deviceId()});
+      const r=await rpc("add_member",{p_code:code,p_org_code:oc,p_id:id,p_name:nm,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الإضافة");
       await doAssign(num,id);
     }catch(e){ toast("تعذّر الاتصال"); }
@@ -4267,8 +4393,9 @@ function assignDialog(i){
 }
 
 async function doAssign(num,to){
+  const oc=await organizerCode(); if(!oc) return;
   try{
-    const r=await rpc("assign_juz",{p_code:code,p_org_code:orgCode(),p_num:num,p_to:to,p_device:deviceId()});
+    const r=await rpc("assign_juz",{p_code:code,p_org_code:oc,p_num:num,p_to:to,p_device:deviceId()});
     if(!r.ok) return toast(r.error||"تعذّر الإسناد");
     closeLayer(); await refresh();
     toast(r.linked?`أُسنِد إلى ${r.name}`:`أُسنِد إلى ${r.name} — بلّغه بنفسك`);
@@ -4292,8 +4419,9 @@ function mergeDialog(fromId){
   document.getElementById("mg-no").onclick=closeLayer;
   document.getElementById("mg-go").onclick=async()=>{
     const to=document.getElementById("f-to").value;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("merge_members",{p_code:code,p_org_code:orgCode(),p_from:fromId,p_to:to,p_device:deviceId()});
+      const r=await rpc("merge_members",{p_code:code,p_org_code:oc,p_from:fromId,p_to:to,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الدمج");
       closeLayer(); await refresh();
       toast(`نُقلت ${ar(r.moved)} أجزاء إلى ${r.name}`);
@@ -4396,32 +4524,31 @@ function helpDialog(){
 function nameAccessDialog(id){
   const m=memberOf(id); if(!m) return;
   modal(`<div class="display" style="font-size:1.4rem">فتح اسم «${esc(m.name)}»</div>
-    <p class="hint" style="line-height:2;margin:.7rem 0">اختر طريقة الدخول المناسبة للمشارك.</p>
+    ${m.linked
+      ? `<p class="hint" style="line-height:2;margin:.7rem 0">«${esc(m.name)}» مربوط بتيليغرام، فيستطيع الدخول من أي جهاز بنفسه عبر «ادخل عبر تيليغرام»، أو من زر «افتح زاد الخير» في رسائل البوت. لا حاجة لفتح اسمه غالبًا.</p>`
+      : `<p class="hint" style="line-height:2;margin:.7rem 0">إن غيّر المشارك هاتفه أو متصفحه، افتح اسمه لمرة واحدة ليدخل من جهازه الجديد.</p>`}
     <div class="mlist">
       <button class="mact" id="access-once"><b>فتح لمرة واحدة</b>
         <span>أول متصفح يدخل بالاسم يصبح الجهاز المسموح له، ثم يُقفل الاسم مجدداً.</span></button>
       ${m.openPermanently
         ? `<button class="mact" id="access-lock"><b>إلغاء الفتح الدائم</b><span>تعود الحماية للأجهزة المسموح لها قبل الفتح الدائم.</span></button>`
-        : `<button class="mact" id="access-open"><b>فتح دائم</b><span>يمكن الدخول بالاسم من أي متصفح حتى تلغي الفتح.</span></button>`}
+        : ""}
     </div>
-    <p class="hint" style="line-height:1.9;margin:.8rem 0">عند الفتح الدائم يستطيع أي شخص يعرف الاسم ورابط الختمة الدخول به.</p>
     <div class="actions"><button class="btn quiet" id="access-back">رجوع</button></div>`);
   document.getElementById("access-back").onclick=()=>memberDialog(id);
   async function setAccess(mode){
-    const message=mode==="open"
-      ? `سيستطيع أي شخص يعرف اسم «${m.name}» ورابط الختمة الدخول به من أي متصفح حتى تلغي الفتح. هل تريد المتابعة؟`
-      : mode==="once"
+    const message=mode==="once"
         ? `سيتمكن أول متصفح يدخل باسم «${m.name}» من استخدامه، ثم يُقفل الاسم عليه. تأكد أن صاحبه سيدخل فوراً.`
         : `ستعود حماية اسم «${m.name}» للأجهزة التي كانت مسموحة قبل الفتح الدائم.`;
     if(!await appConfirm(message,{title:"فتح الاسم",ok:mode==="lock"?"ألغِ الفتح":"تأكيد"})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("set_name_access",{p_code:code,p_org_code:orgCode(),p_id:id,p_device:deviceId(),p_mode:mode});
+      const r=await rpc("set_name_access",{p_code:code,p_org_code:oc,p_id:id,p_device:deviceId(),p_mode:mode});
       if(!r?.ok) return toast(r?.error||"تعذّر التنفيذ");
-      closeLayer(); await refresh(); toast(mode==="open"?"فُتح الاسم دائماً":mode==="once"?"فُتح الاسم لمرة واحدة":"أُلغي الفتح الدائم");
+      closeLayer(); await refresh(); toast(mode==="once"?"فُتح الاسم لمرة واحدة":"أُلغي الفتح الدائم");
     }catch(e){toast("تعذّر الاتصال");}
   }
   document.getElementById("access-once").onclick=()=>setAccess("once");
-  document.getElementById("access-open")?.addEventListener("click",()=>setAccess("open"));
   document.getElementById("access-lock")?.addEventListener("click",()=>setAccess("lock"));
 }
 
@@ -4450,7 +4577,7 @@ function memberDialog(id){
           ?"سيُطلب منه تفعيل تلغرام في المرة القادمة"
           :"لمن لا تلغرام على هاتفه، فيدخل ويحجز بنفسه"}</span></button>`:""}
       ${m.id!==state.organizerId?`<button class="mact" id="m-release"><b>${m.openPermanently?"إدارة فتح الاسم":"افتح الاسم"}</b>
-        <span>${m.openPermanently?"الاسم مفتوح على جميع الأجهزة":"فتح لمرة واحدة أو فتح دائم"}</span></button>`:""}
+        <span>${m.openPermanently?"الاسم مفتوح على جميع الأجهزة":"ليدخل من جهاز جديد"}</span></button>`:""}
       <button class="mact" id="m-merge"><b>ادمجه في اسم آخر</b>
         <span>تنتقل أجزاؤه وتذكيره، ويُحذف هذا الاسم</span></button>
       <button class="mact danger" id="m-remove"><b>احذفه</b>
@@ -4468,8 +4595,9 @@ function memberDialog(id){
   if(ex) ex.onclick=async()=>{
     const on=!m.exempt;
     if(on&&!await appConfirm(`سيدخل «${m.name}» ويحجز بلا تفعيل تلغرام، ولن يصله تذكير.`,{title:"الدخول بلا تذكير",ok:"ائذن له"})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("set_exempt",{p_code:code,p_org_code:orgCode(),p_id:id,p_on:on,p_device:deviceId()});
+      const r=await rpc("set_exempt",{p_code:code,p_org_code:oc,p_id:id,p_on:on,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر التنفيذ");
       closeLayer(); await refresh(); toast(on?"أُذِن له بالدخول":"سُحب الإذن");
     }catch(e){ toast("تعذّر الاتصال"); }
@@ -4581,8 +4709,9 @@ function transferDialog(){
     const who=memberOf(to);
     if(nc.length<6) return toast("الرمز ستة محارف فأكثر");
     if(!await appConfirm(`سيصير ${who?who.name:""} مشرف الختمة، وتفقد أنت صلاحيات الإشراف.`,{title:"تسليم الإشراف",ok:"سلّم الإشراف",danger:true})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("transfer_organizer",{p_code:code,p_org_code:orgCode(),
+      const r=await rpc("transfer_organizer",{p_code:code,p_org_code:oc,
         p_device:deviceId(),p_to:to,p_new_code:nc});
       if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التسليم");
       localStorage.removeItem(cKey());
@@ -4604,8 +4733,9 @@ function orgCodeDialog(){
   document.getElementById("oc-go").onclick=async()=>{
     const nc=norm(document.getElementById("oc-new").value);
     if(nc.length<6) return toast("الرمز ستة محارف فأكثر");
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("change_organizer_code",{p_code:code,p_org_code:orgCode(),
+      const r=await rpc("change_organizer_code",{p_code:code,p_org_code:oc,
         p_device:deviceId(),p_new_code:nc});
       if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التغيير");
       localStorage.setItem(cKey(),nc);
@@ -4634,16 +4764,21 @@ function messageDialog(id,name){
   document.getElementById("msg-go").onclick=async()=>{
     const t=ta.value.trim();
     if(!t) return toast("اكتب الرسالة");
+    const oc=await organizerCode(); if(!oc) return;
     if(all&&!await appConfirm(`ستُرسل هذه الرسالة إلى ${ar(n)} من المشاركين.`,{title:"رسالة للمجموعة",ok:"أرسل"})) return;
     toast("جارٍ الإرسال…");
     try{
-      const body={code,orgCode:orgCode(),device:deviceId(),to:id||null,text:t};
+      const body={code,orgCode:oc,device:deviceId(),to:id||null,text:t};
       const r=await edge("send-message",body,
-        {key:`message:${code}:${id||"all"}:${t}`});
+        {key:`message:${code}:${id||"all"}:${t}`,timeout:GROUP_SEND_TIMEOUT});
       if(!r.ok) return toast(r.error||"تعذّر الإرسال");
       closeLayer();
       toast(r.sent?`وصلت ${ar(r.sent)} ${r.sent===1?"رسالة":"رسائل"}`:"لم تصل أي رسالة");
-    }catch(e){ toast("تعذّر الاتصال"); }
+    }catch(e){
+      /* انقطاع بلا رد قد يأتي بعد أن خرجت الرسائل، فلا نقول «تعذّر» ولا نشجع على التكرار. */
+      toast(e&&e.status?requestError(e)
+        :navigator.onLine===false?"تعذّر الاتصال":"لم يصل الرد، وربما خرجت الرسائل. تأكد قبل الإعادة");
+    }
   };
 }
 
@@ -4671,8 +4806,9 @@ function removeDialog(id){
 
   document.getElementById("rm-no").onclick=closeLayer;
   document.getElementById("rm-go").onclick=async()=>{
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("remove_member",{p_code:code,p_org_code:orgCode(),p_id:id,p_device:deviceId()});
+      const r=await rpc("remove_member",{p_code:code,p_org_code:oc,p_id:id,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الحذف");
       closeLayer(); await refresh();
       toast(r.freed?`حُذف ${r.name}، وتحرّرت ${ar(r.freed)} أجزاء`:`حُذف ${r.name}`);
@@ -4906,7 +5042,8 @@ function bind(){
   if($("btn-extend")) $("btn-extend").onclick=()=>datePicker(
     "تمديد الموعد","تبقى الحجوزات كما هي، ويعود التذكير إلى العمل.","مدّد",
     async(d)=>{
-      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+      const oc=await organizerCode(); if(!oc) return;
+      const r=await rpc("update_settings",{p_code:code,p_org_code:oc,
         p_title:state.title,p_dedication:state.dedication||"",
         p_end:d,p_hour:state.reminderHour,p_minute:0,p_device:deviceId(),
         p_access_type:state.accessType||"private"});
@@ -4974,8 +5111,9 @@ function settings(){
 
   document.getElementById("s-save").onclick=async()=>{
     if(!eEnd.value) return toast("اختر تاريخ الانتهاء");
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+      const r=await rpc("update_settings",{p_code:code,p_org_code:oc,
         p_title:norm(document.getElementById("s-title").value),
         p_dedication:norm(document.getElementById("s-ded").value),
         p_end:eEnd.value,p_hour:+document.getElementById("s-hour").value,p_minute:0,
@@ -4989,9 +5127,22 @@ function settings(){
   document.getElementById("s-next").onclick=()=>datePicker(
     "ختمة جديدة","تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم. ويصلهم إشعار بالبداية.","ابدأ",
     async(d)=>{
-      const requestId=`${code}:${state.roundNo||1}:${d}`;
-      const body={kind:"round",code,orgCode:orgCode(),device:deviceId(),end:d,requestId};
-      const r=await edge("announce",body,{key:`round:${requestId}`});
+      const oc=await organizerCode(); if(!oc) return;
+      const round=state.roundNo||1;
+      const requestId=`${code}:${round}:${d}`;
+      const body={kind:"round",code,orgCode:oc,device:deviceId(),end:d,requestId};
+      toast("جارٍ البدء وإبلاغ المشاركين…");
+      let r;
+      try{
+        r=await edge("announce",body,{key:`round:${requestId}`,timeout:GROUP_SEND_TIMEOUT});
+      }catch(err){
+        /* إن انقطع الرد بعد أن بدأت الختمة في الخادم فقد تمّ الأمر؛ نتحقق قبل أن نقول تعذّر. */
+        if(err&&err.status) throw err;
+        await refresh();
+        if(!state||(state.roundNo||1)<=round) throw err;
+        closeLayer();
+        return toast("بدأت ختمة جديدة");
+      }
       if(!r.ok) return toast(r.error||"تعذّر البدء");
       if(r.failed) enqueueEdge("announce",body,`round-notify:${requestId}`);
       closeLayer(); await refresh();
@@ -5020,7 +5171,7 @@ function datePicker(title,note,okLabel,onOk){
   document.getElementById("d-no").onclick=closeLayer;
   document.getElementById("d-go").onclick=async()=>{
     if(!e.value) return toast("اختر التاريخ");
-    try{ await onOk(e.value); }catch(err){ toast("تعذّر الاتصال"); }
+    try{ await onOk(e.value); }catch(err){ toast(requestError(err)); }
   };
 }
 
@@ -5028,8 +5179,9 @@ async function cancelKhatmah(){
   if(!await appConfirm(`سيُحذف كل شيء نهائيًا: المشاركون وتذكيراتهم ورمز الختمة، ويتعطّل الرابط الذي شاركته، وتصل المجموعة رسالة بالإلغاء.
 
 لبدء ختمة جديدة بنفس المجموعة استعمل «ابدأ ختمة جديدة» بدلًا من هذا.`,{title:"إلغاء الختمة",ok:"نعم، ألغِ الختمة",danger:true})) return;
+  const oc=await organizerCode(); if(!oc) return;
   try{
-    const body={code,orgCode:orgCode(),device:deviceId()};
+    const body={code,orgCode:oc,device:deviceId()};
     const r=await edge("cancel-khatmah",body,{key:`cancel:${code}`});
     if(!r.ok) return toast(r.error||"الرمز غير صحيح");
     mineForget(code);
@@ -5038,7 +5190,7 @@ async function cancelKhatmah(){
     zkReplaceHash(""); code=""; state=null; viewer=null; screen="home"; closeLayer(); render();
     loadPublicKhatmahs(true);
     toast("أُلغيت الختمة");
-  }catch(e){ toast("تعذّر الاتصال"); }
+  }catch(e){ toast(requestError(e)); }
 }
 
 /* ═══════════ الصفحة الرئيسية «اليوم» ═══════════
@@ -6415,8 +6567,9 @@ function zkCountSurface(){
 }
 if(zkIncomingKhatmah||zkSection==="khatmahs"){
   zkHideLaunch();
-  if(zkLoginReady){screen="boot";render();zkLoginReady.finally(boot);}
-  else boot();
+  const booted=zkLoginReady?(screen="boot",render(),zkLoginReady.finally(boot)):boot();
+  /* طلب دخول عبر تيليغرام بدأ قبل إعادة تحميل الصفحة يُستأنف بعد الإقلاع. */
+  Promise.resolve(booted).finally(resumeTgLogin);
 }
 else{zkShowLaunch();if(zkSection==="prayer")ztSetView("prayer")}
 zkArmRootGuard();

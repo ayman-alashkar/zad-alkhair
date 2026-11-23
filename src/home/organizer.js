@@ -38,8 +38,9 @@ function assignDialog(i){
     const id=keyOf(nm);
     if(memberOf(id)) return toast("الاسم مسجَّل، اختره من القائمة");
     if(!await appConfirm(`سيُضاف ${nm} إلى المشاركين ويُسنَد إليه الجزء ${ar(num)}.\nلن يصله تذكير حتى يدخل بنفسه ويفعّله.`,{title:"إضافة مشارك",ok:"أضفه وأسنده"})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("add_member",{p_code:code,p_org_code:orgCode(),p_id:id,p_name:nm,p_device:deviceId()});
+      const r=await rpc("add_member",{p_code:code,p_org_code:oc,p_id:id,p_name:nm,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الإضافة");
       await doAssign(num,id);
     }catch(e){ toast("تعذّر الاتصال"); }
@@ -47,8 +48,9 @@ function assignDialog(i){
 }
 
 async function doAssign(num,to){
+  const oc=await organizerCode(); if(!oc) return;
   try{
-    const r=await rpc("assign_juz",{p_code:code,p_org_code:orgCode(),p_num:num,p_to:to,p_device:deviceId()});
+    const r=await rpc("assign_juz",{p_code:code,p_org_code:oc,p_num:num,p_to:to,p_device:deviceId()});
     if(!r.ok) return toast(r.error||"تعذّر الإسناد");
     closeLayer(); await refresh();
     toast(r.linked?`أُسنِد إلى ${r.name}`:`أُسنِد إلى ${r.name} — بلّغه بنفسك`);
@@ -72,8 +74,9 @@ function mergeDialog(fromId){
   document.getElementById("mg-no").onclick=closeLayer;
   document.getElementById("mg-go").onclick=async()=>{
     const to=document.getElementById("f-to").value;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("merge_members",{p_code:code,p_org_code:orgCode(),p_from:fromId,p_to:to,p_device:deviceId()});
+      const r=await rpc("merge_members",{p_code:code,p_org_code:oc,p_from:fromId,p_to:to,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الدمج");
       closeLayer(); await refresh();
       toast(`نُقلت ${ar(r.moved)} أجزاء إلى ${r.name}`);
@@ -176,32 +179,31 @@ function helpDialog(){
 function nameAccessDialog(id){
   const m=memberOf(id); if(!m) return;
   modal(`<div class="display" style="font-size:1.4rem">فتح اسم «${esc(m.name)}»</div>
-    <p class="hint" style="line-height:2;margin:.7rem 0">اختر طريقة الدخول المناسبة للمشارك.</p>
+    ${m.linked
+      ? `<p class="hint" style="line-height:2;margin:.7rem 0">«${esc(m.name)}» مربوط بتيليغرام، فيستطيع الدخول من أي جهاز بنفسه عبر «ادخل عبر تيليغرام»، أو من زر «افتح زاد الخير» في رسائل البوت. لا حاجة لفتح اسمه غالبًا.</p>`
+      : `<p class="hint" style="line-height:2;margin:.7rem 0">إن غيّر المشارك هاتفه أو متصفحه، افتح اسمه لمرة واحدة ليدخل من جهازه الجديد.</p>`}
     <div class="mlist">
       <button class="mact" id="access-once"><b>فتح لمرة واحدة</b>
         <span>أول متصفح يدخل بالاسم يصبح الجهاز المسموح له، ثم يُقفل الاسم مجدداً.</span></button>
       ${m.openPermanently
         ? `<button class="mact" id="access-lock"><b>إلغاء الفتح الدائم</b><span>تعود الحماية للأجهزة المسموح لها قبل الفتح الدائم.</span></button>`
-        : `<button class="mact" id="access-open"><b>فتح دائم</b><span>يمكن الدخول بالاسم من أي متصفح حتى تلغي الفتح.</span></button>`}
+        : ""}
     </div>
-    <p class="hint" style="line-height:1.9;margin:.8rem 0">عند الفتح الدائم يستطيع أي شخص يعرف الاسم ورابط الختمة الدخول به.</p>
     <div class="actions"><button class="btn quiet" id="access-back">رجوع</button></div>`);
   document.getElementById("access-back").onclick=()=>memberDialog(id);
   async function setAccess(mode){
-    const message=mode==="open"
-      ? `سيستطيع أي شخص يعرف اسم «${m.name}» ورابط الختمة الدخول به من أي متصفح حتى تلغي الفتح. هل تريد المتابعة؟`
-      : mode==="once"
+    const message=mode==="once"
         ? `سيتمكن أول متصفح يدخل باسم «${m.name}» من استخدامه، ثم يُقفل الاسم عليه. تأكد أن صاحبه سيدخل فوراً.`
         : `ستعود حماية اسم «${m.name}» للأجهزة التي كانت مسموحة قبل الفتح الدائم.`;
     if(!await appConfirm(message,{title:"فتح الاسم",ok:mode==="lock"?"ألغِ الفتح":"تأكيد"})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("set_name_access",{p_code:code,p_org_code:orgCode(),p_id:id,p_device:deviceId(),p_mode:mode});
+      const r=await rpc("set_name_access",{p_code:code,p_org_code:oc,p_id:id,p_device:deviceId(),p_mode:mode});
       if(!r?.ok) return toast(r?.error||"تعذّر التنفيذ");
-      closeLayer(); await refresh(); toast(mode==="open"?"فُتح الاسم دائماً":mode==="once"?"فُتح الاسم لمرة واحدة":"أُلغي الفتح الدائم");
+      closeLayer(); await refresh(); toast(mode==="once"?"فُتح الاسم لمرة واحدة":"أُلغي الفتح الدائم");
     }catch(e){toast("تعذّر الاتصال");}
   }
   document.getElementById("access-once").onclick=()=>setAccess("once");
-  document.getElementById("access-open")?.addEventListener("click",()=>setAccess("open"));
   document.getElementById("access-lock")?.addEventListener("click",()=>setAccess("lock"));
 }
 
@@ -230,7 +232,7 @@ function memberDialog(id){
           ?"سيُطلب منه تفعيل تلغرام في المرة القادمة"
           :"لمن لا تلغرام على هاتفه، فيدخل ويحجز بنفسه"}</span></button>`:""}
       ${m.id!==state.organizerId?`<button class="mact" id="m-release"><b>${m.openPermanently?"إدارة فتح الاسم":"افتح الاسم"}</b>
-        <span>${m.openPermanently?"الاسم مفتوح على جميع الأجهزة":"فتح لمرة واحدة أو فتح دائم"}</span></button>`:""}
+        <span>${m.openPermanently?"الاسم مفتوح على جميع الأجهزة":"ليدخل من جهاز جديد"}</span></button>`:""}
       <button class="mact" id="m-merge"><b>ادمجه في اسم آخر</b>
         <span>تنتقل أجزاؤه وتذكيره، ويُحذف هذا الاسم</span></button>
       <button class="mact danger" id="m-remove"><b>احذفه</b>
@@ -248,8 +250,9 @@ function memberDialog(id){
   if(ex) ex.onclick=async()=>{
     const on=!m.exempt;
     if(on&&!await appConfirm(`سيدخل «${m.name}» ويحجز بلا تفعيل تلغرام، ولن يصله تذكير.`,{title:"الدخول بلا تذكير",ok:"ائذن له"})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("set_exempt",{p_code:code,p_org_code:orgCode(),p_id:id,p_on:on,p_device:deviceId()});
+      const r=await rpc("set_exempt",{p_code:code,p_org_code:oc,p_id:id,p_on:on,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر التنفيذ");
       closeLayer(); await refresh(); toast(on?"أُذِن له بالدخول":"سُحب الإذن");
     }catch(e){ toast("تعذّر الاتصال"); }
@@ -361,8 +364,9 @@ function transferDialog(){
     const who=memberOf(to);
     if(nc.length<6) return toast("الرمز ستة محارف فأكثر");
     if(!await appConfirm(`سيصير ${who?who.name:""} مشرف الختمة، وتفقد أنت صلاحيات الإشراف.`,{title:"تسليم الإشراف",ok:"سلّم الإشراف",danger:true})) return;
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("transfer_organizer",{p_code:code,p_org_code:orgCode(),
+      const r=await rpc("transfer_organizer",{p_code:code,p_org_code:oc,
         p_device:deviceId(),p_to:to,p_new_code:nc});
       if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التسليم");
       localStorage.removeItem(cKey());
@@ -384,8 +388,9 @@ function orgCodeDialog(){
   document.getElementById("oc-go").onclick=async()=>{
     const nc=norm(document.getElementById("oc-new").value);
     if(nc.length<6) return toast("الرمز ستة محارف فأكثر");
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("change_organizer_code",{p_code:code,p_org_code:orgCode(),
+      const r=await rpc("change_organizer_code",{p_code:code,p_org_code:oc,
         p_device:deviceId(),p_new_code:nc});
       if(!r||!r.ok) return toast((r&&r.error)||"تعذّر التغيير");
       localStorage.setItem(cKey(),nc);
@@ -414,16 +419,21 @@ function messageDialog(id,name){
   document.getElementById("msg-go").onclick=async()=>{
     const t=ta.value.trim();
     if(!t) return toast("اكتب الرسالة");
+    const oc=await organizerCode(); if(!oc) return;
     if(all&&!await appConfirm(`ستُرسل هذه الرسالة إلى ${ar(n)} من المشاركين.`,{title:"رسالة للمجموعة",ok:"أرسل"})) return;
     toast("جارٍ الإرسال…");
     try{
-      const body={code,orgCode:orgCode(),device:deviceId(),to:id||null,text:t};
+      const body={code,orgCode:oc,device:deviceId(),to:id||null,text:t};
       const r=await edge("send-message",body,
-        {key:`message:${code}:${id||"all"}:${t}`});
+        {key:`message:${code}:${id||"all"}:${t}`,timeout:GROUP_SEND_TIMEOUT});
       if(!r.ok) return toast(r.error||"تعذّر الإرسال");
       closeLayer();
       toast(r.sent?`وصلت ${ar(r.sent)} ${r.sent===1?"رسالة":"رسائل"}`:"لم تصل أي رسالة");
-    }catch(e){ toast("تعذّر الاتصال"); }
+    }catch(e){
+      /* انقطاع بلا رد قد يأتي بعد أن خرجت الرسائل، فلا نقول «تعذّر» ولا نشجع على التكرار. */
+      toast(e&&e.status?requestError(e)
+        :navigator.onLine===false?"تعذّر الاتصال":"لم يصل الرد، وربما خرجت الرسائل. تأكد قبل الإعادة");
+    }
   };
 }
 
@@ -451,8 +461,9 @@ function removeDialog(id){
 
   document.getElementById("rm-no").onclick=closeLayer;
   document.getElementById("rm-go").onclick=async()=>{
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("remove_member",{p_code:code,p_org_code:orgCode(),p_id:id,p_device:deviceId()});
+      const r=await rpc("remove_member",{p_code:code,p_org_code:oc,p_id:id,p_device:deviceId()});
       if(!r.ok) return toast(r.error||"تعذّر الحذف");
       closeLayer(); await refresh();
       toast(r.freed?`حُذف ${r.name}، وتحرّرت ${ar(r.freed)} أجزاء`:`حُذف ${r.name}`);

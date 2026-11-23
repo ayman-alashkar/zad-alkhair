@@ -129,7 +129,8 @@ function bind(){
   if($("btn-extend")) $("btn-extend").onclick=()=>datePicker(
     "تمديد الموعد","تبقى الحجوزات كما هي، ويعود التذكير إلى العمل.","مدّد",
     async(d)=>{
-      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+      const oc=await organizerCode(); if(!oc) return;
+      const r=await rpc("update_settings",{p_code:code,p_org_code:oc,
         p_title:state.title,p_dedication:state.dedication||"",
         p_end:d,p_hour:state.reminderHour,p_minute:0,p_device:deviceId(),
         p_access_type:state.accessType||"private"});
@@ -197,8 +198,9 @@ function settings(){
 
   document.getElementById("s-save").onclick=async()=>{
     if(!eEnd.value) return toast("اختر تاريخ الانتهاء");
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+      const r=await rpc("update_settings",{p_code:code,p_org_code:oc,
         p_title:norm(document.getElementById("s-title").value),
         p_dedication:norm(document.getElementById("s-ded").value),
         p_end:eEnd.value,p_hour:+document.getElementById("s-hour").value,p_minute:0,
@@ -212,9 +214,22 @@ function settings(){
   document.getElementById("s-next").onclick=()=>datePicker(
     "ختمة جديدة","تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم. ويصلهم إشعار بالبداية.","ابدأ",
     async(d)=>{
-      const requestId=`${code}:${state.roundNo||1}:${d}`;
-      const body={kind:"round",code,orgCode:orgCode(),device:deviceId(),end:d,requestId};
-      const r=await edge("announce",body,{key:`round:${requestId}`});
+      const oc=await organizerCode(); if(!oc) return;
+      const round=state.roundNo||1;
+      const requestId=`${code}:${round}:${d}`;
+      const body={kind:"round",code,orgCode:oc,device:deviceId(),end:d,requestId};
+      toast("جارٍ البدء وإبلاغ المشاركين…");
+      let r;
+      try{
+        r=await edge("announce",body,{key:`round:${requestId}`,timeout:GROUP_SEND_TIMEOUT});
+      }catch(err){
+        /* إن انقطع الرد بعد أن بدأت الختمة في الخادم فقد تمّ الأمر؛ نتحقق قبل أن نقول تعذّر. */
+        if(err&&err.status) throw err;
+        await refresh();
+        if(!state||(state.roundNo||1)<=round) throw err;
+        closeLayer();
+        return toast("بدأت ختمة جديدة");
+      }
       if(!r.ok) return toast(r.error||"تعذّر البدء");
       if(r.failed) enqueueEdge("announce",body,`round-notify:${requestId}`);
       closeLayer(); await refresh();
@@ -243,7 +258,7 @@ function datePicker(title,note,okLabel,onOk){
   document.getElementById("d-no").onclick=closeLayer;
   document.getElementById("d-go").onclick=async()=>{
     if(!e.value) return toast("اختر التاريخ");
-    try{ await onOk(e.value); }catch(err){ toast("تعذّر الاتصال"); }
+    try{ await onOk(e.value); }catch(err){ toast(requestError(err)); }
   };
 }
 
@@ -251,8 +266,9 @@ async function cancelKhatmah(){
   if(!await appConfirm(`سيُحذف كل شيء نهائيًا: المشاركون وتذكيراتهم ورمز الختمة، ويتعطّل الرابط الذي شاركته، وتصل المجموعة رسالة بالإلغاء.
 
 لبدء ختمة جديدة بنفس المجموعة استعمل «ابدأ ختمة جديدة» بدلًا من هذا.`,{title:"إلغاء الختمة",ok:"نعم، ألغِ الختمة",danger:true})) return;
+  const oc=await organizerCode(); if(!oc) return;
   try{
-    const body={code,orgCode:orgCode(),device:deviceId()};
+    const body={code,orgCode:oc,device:deviceId()};
     const r=await edge("cancel-khatmah",body,{key:`cancel:${code}`});
     if(!r.ok) return toast(r.error||"الرمز غير صحيح");
     mineForget(code);
@@ -261,5 +277,5 @@ async function cancelKhatmah(){
     zkReplaceHash(""); code=""; state=null; viewer=null; screen="home"; closeLayer(); render();
     loadPublicKhatmahs(true);
     toast("أُلغيت الختمة");
-  }catch(e){ toast("تعذّر الاتصال"); }
+  }catch(e){ toast(requestError(e)); }
 }

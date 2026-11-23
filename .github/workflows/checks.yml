@@ -30,3 +30,30 @@ jobs:
       - run: npm run test:browser
         env:
           ZAD_BROWSER: ${{ matrix.engine }}
+  database:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        # نفس إصدار PostgreSQL في الإنتاج (17)، بصورة Supabase التي تحمل أدوارها وامتداداتها
+        image: supabase/postgres:17.6.1.177
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -h localhost"
+          --health-interval 5s --health-timeout 5s --health-retries 40
+    env:
+      PGHOST: localhost
+      PGPORT: '5432'
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extensions the baseline expects
+        run: psql -X -v ON_ERROR_STOP=1 -U supabase_admin -c "create extension if not exists pg_net with schema extensions"
+      - name: Build from the repo, compare with production, run tests
+        run: scripts/db-test.sh
+        env:
+          PGUSER: postgres
+          ZAD_DB_FINGERPRINT_EXPECTED: supabase/checks/fingerprint.expected
