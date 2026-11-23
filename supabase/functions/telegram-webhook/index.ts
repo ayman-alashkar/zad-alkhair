@@ -3,135 +3,18 @@
    وظيفتها الأساسية: ربط محادثة تلغرام بالمشارك عند /start
    ============================================================ */
 
+import { codeFromUrl, navRows, readerLink, type TelegramButton } from "../_shared/links.ts";
+import { loginToken, rpc } from "../_shared/supabase.ts";
+import { sendMessage, telegram } from "../_shared/telegram.ts";
+import { ar, esc } from "../_shared/text.ts";
+
 const HOOK_SECRET = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") ?? "";
-const TOKEN  = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const FINAL_ORIGIN = "https://zad-alkhair.net";
-const APP_URL = FINAL_ORIGIN;
 
-async function rpc(fn: string, args: unknown = {}) {
-  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(args),
-  });
-  const t = await r.text();
-  if (!r.ok) throw new Error(`${fn}: ${r.status} ${t}`);
-  return t ? JSON.parse(t) : null;
-}
-
-function appRoot() {
-  if (!APP_URL) return null;
-  try {
-    const root = new URL(APP_URL);
-    root.hash = "";
-    root.search = "";
-    if (!root.pathname.endsWith("/")) {
-      const last = root.pathname.split("/").pop() ?? "";
-      root.pathname = last.includes(".")
-        ? root.pathname.replace(/[^/]*$/, "")
-        : root.pathname + "/";
-    }
-    return root;
-  } catch {
-    return null;
-  }
-}
-
-function appLink(code?: string, login?: string) {
-  const root = appRoot();
-  if (!root) return APP_URL;
-  if (login) root.searchParams.set("login", login);
-  if (code) root.hash = String(code).trim().toUpperCase();
-  return root.href;
-}
-
-function readerLink(code?: string, juz?: number) {
-  const root = appRoot();
-  if (!root) return APP_URL;
-  const url = new URL("quran-read/", root);
-  if (Number.isInteger(juz) && Number(juz) >= 1 && Number(juz) <= 30) {
-    url.searchParams.set("juz", String(juz));
-  }
-  if (code) url.searchParams.set("code", String(code).trim().toUpperCase());
-  return url.href;
-}
-
-function generalReaderLink() {
-  const root = appRoot();
-  return root ? new URL("quran-read/", root).href : APP_URL;
-}
-
-function codeFromUrl(url?: string) {
-  if (!url) return "";
-  try {
-    const parsed = new URL(url);
-    return (parsed.searchParams.get("code") ?? "").trim().toUpperCase();
-  } catch {
-    return "";
-  }
-}
-
-function navigationRows(url?: string, login = "") {
-  const code = codeFromUrl(url);
-  const app = appLink(code || undefined, login || undefined);
-  const reader = generalReaderLink();
-  const row: Array<{ text: string; url: string }> = [];
-  if (app) row.push({ text: "افتح زاد الخير", url: app });
-  if (reader) row.push({ text: "افتح المصحف", url: reader });
-  return row.length ? [row] : [];
-}
-
-/* رابط دخول شخصي في زر «افتح زاد الخير»: يضيف المتصفح الذي يُفتح منه الزر
-   إلى أجهزة صاحب الرسالة، فلا يُطلب منه اسمه من جديد. إن تعذّر إصداره يبقى
-   الزر رابطًا عاديًا كما كان. */
-async function loginToken(chat: number) {
-  try {
-    const token = await rpc("issue_login_link", { p_chat: chat });
-    return typeof token === "string" && /^[0-9a-f]{36}$/.test(token) ? token : "";
-  } catch {
-    return "";
-  }
-}
-
-/* إرسال رسالة. يعيد blocked إذا حظر المستخدم البوت */
+/* إرسال رسالة. إن أُعطي رابط مصحف أُضيف زرّا «افتح زاد الخير» (على ختمة الرابط) و«افتح المصحف». */
 async function send(chat: number, text: string, url?: string) {
-  const body: Record<string, unknown> = {
-    chat_id: chat,
-    text,
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-  };
-  if (url) {
-    body.reply_markup = { inline_keyboard: navigationRows(url, await loginToken(chat)) };
-  }
-  const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (r.ok) return { ok: true, blocked: false };
-  const j = await r.json().catch(() => ({}));
-  const blocked = r.status === 403 ||
-    /blocked|deactivated|chat not found/i.test(j?.description ?? "");
-  return { ok: false, blocked, error: j?.description ?? r.status };
+  const rows = url ? navRows(codeFromUrl(url), await loginToken(chat)) : undefined;
+  return sendMessage(chat, text, rows);
 }
-
-const AR = "٠١٢٣٤٥٦٧٨٩";
-const ar = (n: number | string) => String(n).replace(/\d/g, (d) => AR[+d]);
-const esc = (value: unknown) => String(value ?? "")
-  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-type TelegramButton = {
-  text: string;
-  callback_data?: string;
-  url?: string;
-};
 
 type TelegramMessage = {
   chat?: { id?: number };
@@ -159,32 +42,16 @@ type SharePublication = {
 };
 
 async function sendKb(chat: number, text: string, rows: TelegramButton[][]) {
-  await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chat, text, parse_mode: "HTML",
-      disable_web_page_preview: true,
-      reply_markup: { inline_keyboard: rows },
-    }),
-  });
+  await sendMessage(chat, text, rows);
 }
 
 async function stripKb(chat: number, msgId: number) {
-  await fetch(`https://api.telegram.org/bot${TOKEN}/editMessageReplyMarkup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chat, message_id: msgId,
-      reply_markup: { inline_keyboard: [] } }),
-  }).catch(() => {});
+  await telegram("editMessageReplyMarkup", { chat_id: chat, message_id: msgId,
+    reply_markup: { inline_keyboard: [] } }).catch(() => {});
 }
 
 async function answerCb(id: string, text?: string) {
-  await fetch(`https://api.telegram.org/bot${TOKEN}/answerCallbackQuery`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ callback_query_id: id, text }),
-  }).catch(() => {});
+  await telegram("answerCallbackQuery", { callback_query_id: id, text }).catch(() => {});
 }
 
 const ASK_WRITE = `إذًا اكتبها هنا، وسأنقلها إلى الجميع.\n\nلن تتم مشاركة اسمك أو هويتك، فلا تخشَ حظًّا للأنا فيما تكتب، لكن احرص على تحرّي الصحة والدقة والإخلاص فيما تريد إيصاله.`;
@@ -243,7 +110,7 @@ async function publish(r: SharePublication) {
   const link = linkTo(r.code);
   let sent = 0;
   for (const c of r.chats ?? []) {
-    const s = await send(c.chatId, shareText(r.title, r.text), link);
+    const s = await send(c.chatId, shareText(r.title ?? "", r.text ?? ""), link);
     if (s.ok && c.chatId !== r.authorChat) sent++;
     else if (s.blocked) { try { await rpc("unlink_by_chat", { p_chat: c.chatId }); } catch { /**/ } }
     await new Promise((res) => setTimeout(res, 60));
