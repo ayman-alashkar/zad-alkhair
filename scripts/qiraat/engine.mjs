@@ -105,8 +105,8 @@ const SOUND = 'ترقيق|تفخيم|تغليظ|الغنة|الإخفاء|الب
 const FEATURES = [
   ['silah_mim', 'صلة ميم الجمع|ووصلها بواو'],
   ['silah_ha', 'بصلة هاء الضمير|بصلة الهاء'],
-  ['imala', 'بالإمالة|بإمالة (?!هاء التأنيث)'],
-  ['taqlil', 'بالتقليل|بتقليل|بين اللفظين'],
+  ['imala', 'بالإمالة|بإمالة (?!هاء التأنيث)|مع الإمالة'],
+  ['taqlil', 'بالتقليل|بتقليل|بين اللفظين|مع التقليل'],
   ['sakt', '(?<!بترك )(?<!ترك )بالسكت'],
   ['naql', 'بالنقل|بنقل حركة'],
   ['ibdal', 'بإبدال الهمزة الساكنة'],
@@ -116,15 +116,15 @@ const FEATURES = [
   ['ha_kasr', 'بكسر هاء الضمير|بكسر الهاء(?! والميم)'],
   ['ya_fath', 'بفتح ياء الإضافة'],
   ['ya_sukun', 'بإسكان ياء الإضافة'],
-  ['ya_ithbat', 'بإثبات الياء الزائدة'],
+  ['ya_ithbat', 'بإثبات الياء الزائدة|مع إثبات الياء'],
   ['hm_damm', 'بضم الهاء والميم'],
   ['hm_kasr', 'بكسر الهاء والميم'],
   ['ghayb', 'بياء الغيب'],
   ['khitab', 'بتاء الخطاب'],
   ['idgham_s', 'أدغم \\S+ في \\S+|بإدغام \\S+ في \\S+|بالإدغام(?! الكبير)(?! مع)'],
 ].map(([n, rx]) => [n, rx, new RegExp(rx)]);
-const NEUTRAL = /قرأ|قرؤوا|وصلاً|وصلا|ووقفا|ووقفاً|وقفا|في الحالين|بلا خلاف عنهم?|بخلف عنهم?|بلا خلاف|خلافا لجمهور القراء|باتفاق|وعدمه|مع|وله|وجه|،|\.|:|\(.*?\)/g;
-const NEG = /ب?ترك [^،.]*|ب?تحقيق [^،.]*|بالفتح[^،.]*|بفتح هاء التأنيث|بالإظهار[^،.]*|بالإدغام مع (ترك )?الغنة|بقصر [^،.]*|بإسكان ميم الجمع[^،.]*|بضم ميم الجمع/g;
+const NEUTRAL = /مع تحقيقها|مع تسهيلها|في الحالين|قرأ|قرؤوا|وصلاً|وصلا|ووقفا|ووقفاً|وقفا|في الحالين|بلا خلاف عنهم?|بخلف عنهم?|بلا خلاف|خلافا لجمهور القراء|باتفاق|وعدمه|مع|وله|وجه|،|\.|:|\(.*?\)/g;
+const NEG = /(?:مع |و)?فتح هاء التأنيث|على الأصل|وله إبدالها[^،.]*|ويمتنع[^،.]*|ب?ترك [^،.]*|ب?تحقيق [^،.]*|بالفتح[^،.]*|بفتح هاء التأنيث|بالإظهار[^،.]*|بالإدغام مع (ترك )?الغنة|بقصر [^،.]*|بإسكان ميم الجمع[^،.]*|بضم ميم الجمع/g;
 const SOUND_RX = new RegExp(SOUND);
 const SOUND_STRIP = new RegExp(`[بو]?\\S*(?:${SOUND})[^،.]*`, 'g');
 const FEATURE_STRIP = FEATURES.map(([, rx]) => new RegExp(`ب?(?:${rx})[^،.]*`, 'g'));
@@ -132,7 +132,7 @@ const FEATURE_STRIP = FEATURES.map(([, rx]) => new RegExp(`ب?(?:${rx})[^،.]*`,
 /** ما يُقرأ في الوصل: يحذف ما يخص الوقف وحده. */
 export function waslPart(d) {
   if (d.includes('السورتين')) return '';
-  d = d.split(/،? ووقف|^وقف/)[0];
+  d = d.split(/،? ووقف (?=ب|على|من)|^وقف /)[0];   // «ووقف بالإبدال» جملة وقف، أما «وصلاً ووقفاً» فللحالين
   return d.split(/،\s*/).filter((c) => !(/وقف/.test(c) && !/وصل|الحالين/.test(c))).join('، ');
 }
 
@@ -141,19 +141,73 @@ export function waqfPart(d) {
   if (!d) return '';
   const parts = [...d.matchAll(/(?:^|،\s*)(و?وقف[^.]*)/g)].map((m) => m[1]);
   for (const c of d.split(/،\s*/)) if (/وقف/.test(c) && !/وصل|الحالين|^و?وقف/.test(c.trim())) parts.push(c);
-  return parts.filter((p) => !/ترك|بالتحقيق$|بتحقيق/.test(p)).map((p) => p.trim()).join(' | ');
+  const empty = (p) => !p.replace(/^و?وقف/, '').replace(/(?:ب|و|مع )?(?:ترك|تحقيق|بالتحقيق)[^،]*/g, '').replace(/[\s،.]/g, '');
+  return parts.filter((p) => !empty(p)).map((p) => p.trim()).join(' | ');
 }
 
-/** {feats, sound, ok}: الخصائص المفهومة، وهل فيه أداء، وهل فُهم الوصف كله. */
+// ---------- الفرش وأحكام الهمز: أوصاف تسمّي الحرف وما يتغيّر فيه ----------
+// «بكسر الباء»، «بضم النون، وكسر الزاي»، «بتشديد الذال»، «بالرفع»، «تسهيل الهمزة الثانية»…
+// كل وصف يصير عملية على حرف بعينه. إن تعدد الحرف في الكلمة ولم يحدده الوصف (الأولى/الثانية)
+// لا نخمّن: يبقى الوصف غير مفهوم، فتُلوَّن الكلمة كلها ويُعرض نص المركز.
+const LETTERS = {
+  'الباء': 'ب', 'التاء': 'ت', 'الثاء': 'ث', 'الجيم': 'ج', 'الحاء': 'ح', 'الخاء': 'خ', 'الدال': 'د', 'الذال': 'ذ',
+  'الراء': 'ر', 'الزاي': 'ز', 'السين': 'س', 'الشين': 'ش', 'الصاد': 'ص', 'الضاد': 'ض', 'الطاء': 'ط', 'الظاء': 'ظ',
+  'العين': 'ع', 'الغين': 'غ', 'الفاء': 'ف', 'القاف': 'ق', 'الكاف': 'ك', 'اللام': 'ل', 'الميم': 'م', 'النون': 'ن',
+  'الهاء': 'ه', 'الواو': 'و', 'الياء': 'ي', 'الهمزة': 'ء',
+};
+const LNAMES = Object.keys(LETTERS).join('|');
+const ORD = { 'الأولى': 1, 'الأول': 1, 'الثانية': 2, 'الثاني': 2, 'الثالثة': 3, 'الأخيرة': -1, 'الأخير': -1 };
+const ORDS = Object.keys(ORD).join('|');
+const VOWEL = { 'كسر': 'ِ', 'فتح': 'َ', 'ضم': 'ُ', 'إسكان': 'ۡ' };
+const OPS = [
+  // تسهيل الهمزة الثانية / إبدال الهمزة الأولى ياء / إسقاط الأولى (مع ما يتبعه من وصف الهمزة)
+  { rx: new RegExp(`(?:ب|و|مع )?(تسهيل|إبدال|إسقاط|حذف|تحقيق) (?:الهمزة )?(الأولى|الثانية)(?: (?:واوا|ياء|ألفا)(?: (?:مفتوحة|مضمومة|مكسورة|ساكنة|خالصة))?)?(?: مع (?:المد والقصر|القصر والمد|القصر|المد|الإدخال|ترك الإدخال))*`, 'g'),
+    op: (m) => ({ kind: 'hamza', act: m[1], nth: ORD[m[2]] }) },
+  { rx: /(?:ب|و|مع )?(تسهيل|إبدال|إسقاط|حذف) (?:إحدى )?الهمزتين/g, op: (m) => ({ kind: 'hamza', act: m[1], nth: 0 }) },
+  { rx: /وله في الهمزة (الأولى|الثانية):? (?:التسهيل|الإبدال)(?: مع (?:الإدغام|المد والقصر))?(?:،? (?:أو|و)(?:التسهيل|الإبدال| التسهيل| الإبدال)(?: مع (?:الإدغام|المد والقصر))?)?(?: (?:واوا|ياء|ألفا)(?: (?:مفتوحة|مضمومة|مكسورة))?)?/g,
+    op: (m) => ({ kind: 'hamza', act: 'تسهيل', nth: ORD[m[1]] }) },
+  // همزة واحدة في الكلمة: «بإبدال الهمزة ياء مفتوحة»، «بإبدال الهمزة حرفا مديا من جنس ما قبله»
+  { rx: /(?:ب|و|مع )?(تسهيل|إبدال|إسقاط|حذف|قصر) الهمزة(?! الساكنة)(?: وصلاً?)?(?: (?:واوا?|ياءً?|ألفاً?|حرفا مديا|حرف مد)(?: خالصة)?(?: (?:مفتوحة|مضمومة|مكسورة|ساكنة|مدية))?)?(?: من جنس (?:ما قبله|ما قبلها|سابقها))?/g,
+    op: (m) => ({ kind: 'hamza', act: m[1], nth: 0, single: true }) },
+  { rx: /(?:ب|مع )نون العظمة/g, op: () => ({ kind: 'prefix', to: 'ن' }) },
+  { rx: /(?:ب|و|مع )?(ضم|كسر|فتح) التنوين/g, op: () => ({ kind: 'tanween' }) },
+  // «بإدغام الذال في التاء»، «أدغم الثاء في التاء»
+  { rx: new RegExp(`(?:ب|و|مع )?(?:إدغام|أدغم) (${LNAMES})(?: في (${LNAMES}))?`, 'g'), op: (m) => ({ kind: 'idgham', a: LETTERS[m[1]], b: m[2] ? LETTERS[m[2]] : null }) },
+  { rx: /ب?همزتين (?:محققتين )?على الاستفهام|بهمزة واحدة على الخبر|على الاستفهام|على الخبر/g, op: () => null },
+  // بكسر الباء، وفتح الياء الأولى، ويجوز «بفتح النون والزاي»
+  { rx: new RegExp(`(?:ب|و|مع )?(كسر|فتح|ضم|إسكان) ((?:${LNAMES})(?: (?:${ORDS}))?(?:(?:،)? و(?:${LNAMES})(?: (?:${ORDS}))?)*)`, 'g'),
+    op: (m) => [...m[2].matchAll(new RegExp(`(${LNAMES})(?: (${ORDS}))?`, 'g'))].map((x) => ({ kind: 'vowel', letter: LETTERS[x[1]], nth: x[2] ? ORD[x[2]] : 0, mark: VOWEL[m[1]] })) },
+  { rx: new RegExp(`(?:ب|و|مع )?(تشديد|تخفيف) (${LNAMES})(?: (${ORDS}))?`, 'g'),
+    op: (m) => ({ kind: m[1] === 'تشديد' ? 'shadda' : 'noshadda', letter: LETTERS[m[2]], nth: m[3] ? ORD[m[3]] : 0 }) },
+  { rx: /(?:ب|و|مع )?(?:ال)?(رفع|نصب|خفض|جر)(?= |،|\.|$)/g, op: (m) => ({ kind: 'case', mark: { 'رفع': 'ُ', 'نصب': 'َ', 'خفض': 'ِ', 'جر': 'ِ' }[m[1]] }) },
+];
+const MADD_SOUND = /(?:ب|مع |و)?(?:قصر|توسط|تثليث|إشباع|طول|مد) (?:مد )?(?:البدل|اللين|المنفصل|المتصل)|مع (?:المد والقصر|القصر والمد)|مع الإدخال|بلا إدخال|ترك الإدخال/g;
+
+function extractOps(w) {
+  const ops = [];
+  let rest = w.replace(/\([^)]*\)/g, ' ');   // الكلمة المقتبسة بين قوسين: ما بعدها يصفها
+  for (const { rx, op } of OPS) {
+    rest = rest.replace(rx, (...args) => {
+      const r = op(args);
+      if (Array.isArray(r)) ops.push(...r); else if (r) ops.push(r);
+      return ' ';
+    });
+  }
+  return { ops, rest };
+}
+
+/** {feats, ops, sound, ok}: الخصائص المفهومة، وعمليات الفرش، وهل فيه أداء، وهل فُهم الوصف كله. */
 export function understand(d) {
-  if (d == null) return { feats: new Set(), sound: false, ok: true };
-  const w = waslPart(d);
-  const feats = new Set(FEATURES.filter(([, , rx]) => rx.test(w)).map(([n]) => n));
-  const sound = SOUND_RX.test(w);
-  let rest = w.replace(NEG, ' ');
+  if (d == null) return { feats: new Set(), ops: [], sound: false, ok: true };
+  const w0 = waslPart(d);
+  const feats = new Set(FEATURES.filter(([, , rx]) => rx.test(w0)).map(([n]) => n));
+  const sound = SOUND_RX.test(w0) || MADD_SOUND.test(w0);
+  MADD_SOUND.lastIndex = 0;
+  const { ops, rest: r0 } = extractOps(w0.replace(MADD_SOUND, ' '));
+  let rest = r0.replace(NEG, ' ');
   for (const rx of FEATURE_STRIP) rest = rest.replace(rx, ' ');
   rest = rest.replace(SOUND_STRIP, ' ').replace(NEG, ' ').replace(NEUTRAL, ' ').replace(/\s+/g, ' ').trim();
-  return { feats, sound, ok: rest === '' };
+  return { feats, ops, sound, ok: rest === '' };
 }
 
 // ---------- تحديد الموضع: من كلمة حفص إلى كلمة الرواية ----------
@@ -174,12 +228,12 @@ export function clusters(t) {
 }
 
 class Word {
-  constructor(text) { this.c = clusters(text); this.k = this.c.map(() => null); }
+  constructor(text) { this.c = clusters(text); this.o = [...this.c]; this.k = this.c.map(() => null); }
   set(i, nw, cat) {
     if (i < 0) i += this.c.length;
     if (i >= 0 && i < this.c.length) { this.c[i] = nw; this.k[i] = cat; }
   }
-  base(i) { return [...this.c[i]][0]; }
+  base(i) { return [...this.c[i]][0] || ''; }
   segs() {
     const out = [];
     this.c.forEach((t, i) => {
@@ -309,14 +363,134 @@ function tShaddaFirst(w, cat) {
   return true;
 }
 
+// ---------- تطبيق عمليات الفرش والهمز ----------
+const HAMZA_BASES = 'أإؤئءآ';
+const VOWELS_RX = /[\u064B-\u0650\u0652\u06E1\u08F0-\u08F2]/g;   // الحركات والتنوين والسكون (لا الشدة)
+const isHamza = (cl) => HAMZA_BASES.includes([...cl][0]) || cl.includes('\u0654') || cl.includes('\u0655');
+const baseOf = (cl) => [...cl][0] || '';
+// لواحق الضمير لا تحمل علامة الإعراب: «بُنۡيَٰنَهُۥ» الإعراب على النون
+const SUFFIX_RX = /(هُۥ|هِۦ|هُ|هِ|هُمۡ|هِمۡ|هُمَا|هِمَا|كُمۡ|كُمَا|كَ|كِ|هَا|نَا|ي|ىٰ)$/;
+
+function pick(idx, nth) {
+  if (!idx.length) return -1;
+  if (nth === -1) return idx[idx.length - 1];
+  if (nth > 0) return idx[nth - 1] ?? -1;
+  return idx.length === 1 ? idx[0] : -1;      // الحرف متعدد ولم يُحدَّد: لا نخمّن
+}
+function setVowel(cl, mark) {
+  const b = baseOf(cl);
+  const rest = [...cl].slice(1).join('');
+  const hadTanween = /[\u064B-\u064D\u08F0-\u08F2]/.test(rest);
+  const kept = rest.replace(VOWELS_RX, '');
+  let m = mark;
+  if (hadTanween && mark !== SUKUN) m = { [FATHA]: '\u064B', [DAMMA]: '\u064C', [KASRA]: '\u064D' }[mark];
+  // الشدة قبل الحركة كما في نص المجمع
+  return kept.includes(SHADDA) ? b + SHADDA + m + kept.replace(SHADDA, '') : b + m + kept;
+}
+function applyOp(w, op, feats, prevSide) {
+  if (op.kind === 'hamza') {
+    const idx = w.c.map((cl, i) => (isHamza(cl) ? i : -1)).filter((i) => i >= 0);
+    if (op.act === 'تحقيق') return true;               // ما عليه حفص
+    let i;
+    if (prevSide) i = op.nth === 2 || op.single ? idx[0] : -1;   // الهمزة في أول الكلمة التالية
+    else if (op.side === 'wasl') i = op.nth === 1 || op.nth === 0 ? idx[idx.length - 1] : -2;
+    else if (op.single && op.side === 'wasl' && !idx.length) return true;   // الهمزة في أول الكلمة التالية
+    else if (op.single) i = idx.length === 1 ? idx[0] : -1;
+    else i = op.nth === 0 ? idx[idx.length - 1] : idx[op.nth - 1];
+    if (i === -2) {                                     // الهمزة الثانية في الكلمة التالية: نعلّم الأولى معها
+      const j = idx[idx.length - 1];
+      if (j == null) return true;                       // «يَٰزَكَرِيَّآ»: الهمزة الأولى غير مرسومة
+      w.k[j] = w.k[j] || 'hamz';
+      return true;
+    }
+    if (i == null || i < 0) return false;
+    w.k[i] = 'hamz';
+    return true;
+  }
+  if (op.kind === 'case') {
+    const base = w.c.map(baseOf).join('');
+    const sm = base.replace(/[ٰۥۦ]/g, '').match(SUFFIX_RX);
+    let end = w.c.length - 1;
+    if (w.base(end) === 'ا' && end > 0) end -= 1;       // ألف تنوين النصب
+    if (sm && end > 1) {
+      // تخطَّ حروف اللاحقة (بلا علامات المد الصغيرة)
+      let n = [...sm[1]].filter((c) => !isMark(c)).length;
+      while (n > 0 && end > 0) { if (!'ۥۦ'.includes(w.base(end))) n--; end--; }
+    }
+    if (end < 0) return false;
+    if (![...w.c[end]].some((c) => /[\u064B-\u0650\u08F0-\u08F2]/.test(c))) return false;
+    w.set(end, setVowel(w.c[end], op.mark), 'farsh');
+    return true;
+  }
+  if (op.kind === 'prefix') {
+    for (let i = 0; i < Math.min(3, w.c.length); i++) {
+      const b = baseOf(w.c[i]);
+      if (b === 'ي' || b === 'ت') { w.set(i, op.to + [...w.c[i]].slice(1).join(''), 'farsh'); return true; }
+      if (!'وفل'.includes(b)) break;
+    }
+    return false;
+  }
+  if (op.kind === 'tanween') {
+    let j = w.c.length - 1;
+    if (w.base(j) === 'ا' && j > 0) j -= 1;
+    if (!/[\u064B-\u064D\u08F0-\u08F2]/.test(w.c[j])) return false;
+    w.k[j] = 'farsh';
+    return true;
+  }
+  if (op.kind === 'idgham') {
+    for (let i = 0; i < w.c.length - 1; i++) {
+      if (op.b && baseOf(w.c[i]) === op.a && baseOf(w.c[i + 1]) === op.b) {
+        w.set(i, w.c[i].replace(SUKUN, ''), 'idgham'); return true;
+      }
+    }
+    // بين كلمتين: الحرف الأول آخر هذه الكلمة
+    const L = lastLetter(w);
+    if (op.side === 'wasl' && baseOf(w.c[L]) === op.a) { w.set(L, w.c[L].replace(VOWELS_RX, ''), 'idgham'); return true; }
+    return false;
+  }
+  if (op.letter === 'ه' && (feats.has('ha_sukun') || feats.has('ha_damm') || feats.has('ha_kasr') || feats.has('hm_damm') || feats.has('hm_kasr'))) return true;
+  if (op.letter === 'م' && (feats.has('hm_damm') || feats.has('hm_kasr'))) return true;
+  const want = op.letter === 'ء' ? null : op.letter;
+  let idx = w.c.map((cl, i) => ((want ? baseOf(cl) === want : isHamza(cl)) ? i : -1)).filter((i) => i >= 0);
+  if (want === 'ي' && idx.length > 1 && idx[0] === 0 && w.c[0].includes('ٰ')) idx = idx.slice(1);   // ياء النداء «يَٰبُنَيَّ»
+  const i = pick(idx, op.nth);
+  if (i < 0) return false;
+  // ما يوافق فيه الوصفُ كتابةَ حفص لا يُلوَّن («بتشديد الصاد» في «وَوَصَّىٰ» لمن يقرأ كحفص)
+  let nw = w.c[i];
+  if (op.kind === 'vowel') nw = setVowel(w.c[i], op.mark);
+  else if (op.kind === 'shadda' && !w.c[i].includes(SHADDA)) nw = baseOf(w.c[i]) + SHADDA + [...w.c[i]].slice(1).join('').replace(SUKUN, '');
+  else if (op.kind === 'noshadda') nw = w.c[i].replace(SHADDA, '');
+  if (nw.replace(VOWELS_RX, (c) => c) !== w.c[i] && [...nw].sort().join('') !== [...w.c[i]].sort().join('')) w.set(i, nw, 'farsh');
+  return true;
+}
+
+// الكلمة المقتبسة بين قوسين في وصف المركز، مثل «(هُزُؤًا)»: إن طابقت كلمة حفص حرفًا بحرف
+// إلا في حرف أو حرفين، فهي تبيّن موضع الخلاف وكتابته بلا حاجة إلى فهم بقية الوصف.
+const vowelsOf = (cl) => [...cl].filter((c) => /[\u064B-\u0652\u06E1]/.test(c)).map((c) => (c === 'ْ' ? SUKUN : c)).sort().join('');
+function formDiff(w, form) {
+  const nb = (cl) => (isHamza(cl) || (baseOf(cl) === 'ـ' && cl.includes('\u0654')) ? 'ء' : baseOf(cl).replace('ٱ', 'ا'));
+  const F = clusters(form.replace(/\s+/g, '').replace(/ٱ/g, 'ا'));
+  const B = w.o.map(nb);
+  if (F.length !== B.length) return false;
+  const diff = [];
+  for (let i = 0; i < F.length; i++) {
+    if (nb(F[i]) !== B[i]) diff.push(i);
+    else if (vowelsOf(F[i]) && vowelsOf(F[i]).replace('ّ', '') !== vowelsOf(w.o[i]).replace('ّ', '')) diff.push(i);
+  }
+  if (!diff.length || diff.length > 2) return false;
+  for (const i of diff) w.set(i, F[i].replace(/ْ/g, SUKUN), 'farsh');
+  return true;
+}
+
 /**
  * يطبّق ما فُهم من الوصف على كلمة حفص.
  * h: كلمة حفص؛ wordD/waslD: وصف الرواية في الكلمة وعند الوصل (null إن وافقت حفصًا)؛
- * next: كلمة حفص التالية؛ prevWaslFeats: خصائص وصل الكلمة السابقة لهذه الرواية.
+ * next: كلمة حفص التالية؛ prevWasl: ما فُهم من وصل الكلمة السابقة لهذه الرواية ({feats, ops}).
  */
-export function buildWord(h, wordD, waslD, next = null, prevWaslFeats = null) {
+export function buildWord(h, wordD, waslD, next = null, prevWasl = null) {
   const w = new Word(h);
   const U = understand(wordD), L = understand(waslD);
+  const prevWaslFeats = prevWasl ? prevWasl.feats : null;
   const fw = U.feats, fl = L.feats;
   const sound = U.sound || L.sound;
   let ok = U.ok && L.ok;
@@ -346,13 +520,25 @@ export function buildWord(h, wordD, waslD, next = null, prevWaslFeats = null) {
     if (w.c[i].includes(SUKUN)) {
       const nx = clusters(next)[0];
       w.set(i, w.base(i) + ([...nx][0] === 'إ' ? KASRA : hamzaVowel(nx)), 'naql');
+    } else {
+      // التنوين: تُنقل الحركة إلى نونه، فنلوّن الحرف الأخير
+      let j = i;
+      if (w.base(j) === 'ا' && j > 0) j -= 1;
+      if (/[\u064B-\u064D\u08F0-\u08F2]/.test(w.c[j])) w.k[j] = 'naql';
     }
   }
+  for (const op of U.ops) tries.push(applyOp(w, op, fw, false));
+  for (const op of L.ops) tries.push(applyOp(w, { ...op, side: 'wasl' }, fl, false));
+  if (prevWasl) for (const op of prevWasl.ops) if (op.kind === 'hamza' && (op.nth === 2 || op.single) && op.act !== 'تحقيق') applyOp(w, op, new Set(), true);
   if (prevWaslFeats) {
     if (prevWaslFeats.has('naql')) naqlFrom(w);
     if (prevWaslFeats.has('idgham_k') || prevWaslFeats.has('idgham_s')) tShaddaFirst(w, 'idgham');
   }
   if (tries.length && !tries.every(Boolean)) ok = false; // فُهم الوصف ولم يوجد موضع التطبيق
+  if (!ok && wordD && L.ok) {
+    const m = wordD.match(/\(([^)]+)\)/);
+    if (m && formDiff(w, m[1])) ok = true;
+  }
   const segs = w.segs();
-  return { segs: segs.some(([, k]) => k) ? segs : null, sound, ok, waslFeats: fl };
+  return { segs: segs.some(([, k]) => k) ? segs : null, sound, ok, wasl: { feats: fl, ops: L.ops } };
 }

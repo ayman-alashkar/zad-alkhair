@@ -93,16 +93,17 @@ for (const r of RIWAYAT) {
     const P = parsed[i];
     const wd = differs(P.word, r), wl = differs(P.wasl, r);
     const bw = buildWord(words[i].text, wd, wl, words[i + 1] ? words[i + 1].text : null, prevWasl);
-    prevWasl = understand(wl).feats;
+    prevWasl = bw.wasl;
     const waqf = [[wd, P.word], [wl, P.wasl]].some(([x, full]) => x && waqfPart(x) !== waqfPart(full ? full.hafs : ''));
     // خلاف عند المركز لم يُنتج البرنامج له علامة (فُهم الوصف ولا أثر له في الكتابة، كـ«بالإظهار»):
     // تُلوَّن الكلمة كلها ويُعرض نص المركز، فلا يضيع خلاف.
     const silent = (wd || wl) && !bw.segs && !bw.sound && !waqf;
     const unk = !bw.ok || silent;
-    out[i] = { segs: bw.segs, s: bw.sound && !bw.segs, u: unk, w: waqf };
+    // وصف لم يُفهم كله: لا نعرض تلوينًا جزئيًا قد يوهم، بل الكلمة كلها ونص المركز
+    out[i] = { segs: unk ? null : bw.segs, s: bw.sound && !bw.segs && !unk, u: unk, w: waqf };
     if (wd || wl) {
       c.diffs++;
-      if (bw.segs) c.coloured++; else if (bw.sound) c.sound++; else if (waqf) c.waqf++;
+      if (unk) {} else if (bw.segs) c.coloured++; else if (bw.sound) c.sound++; else if (waqf) c.waqf++;
       if (unk) c.unknown++;
       if (silent) c.silent++;
       // كل خلاف عند المركز يجب أن تكون له علامة
