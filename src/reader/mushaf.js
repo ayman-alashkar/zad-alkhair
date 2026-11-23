@@ -60,15 +60,22 @@ async function loadVerseIndex(){
   verseIndex=fresh;storageJsonSet(STORAGE_KEYS.verseIndex,verseIndex);
   return verseIndex;
 }
+/* خط الصفحة: QCFV4_P005 ← /fonts/qcf-v4/p5.woff2 (الصفحة 328 وحدها بصيغة woff كما تنشرها QUL).
+   الخط ملوّن، فلونه من مجموعة ألوانه لا من color: تُعرَّف مجموعات هذه الصفحة عند تحميل خطها. */
+function qcfFontUrl(name){
+  const n=Number(String(name).slice(7));
+  return QCF_FONT_BASE+"p"+n+(n===328?".woff":".woff2")+MUSHAF_Q;
+}
 async function ensureQcfFont(name){
-  if(!name||name==="QCF4_QBSML")return;
+  if(!name||!/^QCFV4_P\d{3}$/.test(name))return;
   if(qcfFontLoads.has(name))return qcfFontLoads.get(name);
   // Do not use document.fonts.check() for undeclared QCF families:
   // browsers may report fallback availability as true and skip the real font.
   const job=(async()=>{
-    const face=new FontFace(name,`url("${QCF_FONT_BASE}${name}_W.woff2") format("woff2")`);
+    const face=new FontFace(name,`url("${qcfFontUrl(name)}") format("${name==="QCFV4_P328"?"woff":"woff2"}")`);
     const loaded=await face.load();
     document.fonts.add(loaded);
+    addQcfPalettes(name);
     return loaded;
   })().catch(err=>{qcfFontLoads.delete(name);throw err});
   qcfFontLoads.set(name,job);
@@ -153,7 +160,7 @@ function normalizeArabic(s){return (s||"").replace(/[\u064B-\u065F\u0670\u06D6-\
 function isAllah(t){const n=normalizeArabic(t);return n.includes("الله")||n.includes("لله")}
 
 async function fetchPage(p){
-  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+".json",{cache:"force-cache"});
+  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+PAGE_SUFFIX,{cache:"force-cache"});
   if(!r.ok)throw new Error("page "+p);
   const data=await r.json();
   if(Number(data?.page)!==Number(p)||!Array.isArray(data?.lines))throw new Error("invalid page "+p);
@@ -270,6 +277,7 @@ function renderPage(data){
   const root=document.querySelector(`.page[data-page="${data.page}"]`);
   const surahId=surahIdFromPageData(data),juz=juzForPage(data.page);
   root.dataset.loaded="1";
+  root.dataset.qfont=data.font||"";
   root.innerHTML=`<div class="page-stage ${data.page<=2?"special":"full"}">
     <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
     <div class="mushaf" id="mushaf-${data.page}"></div>

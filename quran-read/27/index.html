@@ -38,9 +38,8 @@
 <meta name="twitter:description" content="اقرأ سورة النمل في المصحف الشريف مع التفسير الوجيز في زاد الخير.">
 <meta name="twitter:image" content="https://zad-alkhair.net/social/surah/surah-027-read-v2.jpg">
 
-<link rel="preconnect" href="https://cdn.jsdelivr.net">
 
-<link rel="stylesheet" href="/quran/runtime/reader.css?v=947d899ce047">
+<link rel="stylesheet" href="/quran/runtime/reader.css?v=a8de95515d11">
 </head>
 <body class="hidden-tools zad-identity">
 <div class="reader" id="reader">
@@ -64,6 +63,7 @@
   <button class="brand brand-home quran-home-link" id="quranHomeBtn" type="button" aria-label="فتح فهرس القرآن">الفهرس</button>
   <div class="reader-context" id="readerContext" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="top-actions">
+    <button type="button" class="iconbtn tj-btn" id="tajweedBtn" aria-label="ألوان التجويد" aria-pressed="false" hidden>تجويد</button>
     <button type="button" class="iconbtn" id="themeBtn" aria-label="تفعيل الوضع الليلي"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.4A8.6 8.6 0 0 1 8.6 3.8a8.8 8.8 0 1 0 11.6 11.6Z"/></svg></button>
     <button type="button" class="iconbtn" id="readerSearchBtn" aria-label="البحث" title="البحث"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg></button>
     <button type="button" class="iconbtn zad-return-btn" id="backBtn" aria-label="الصفحة الرئيسية" title="الصفحة الرئيسية"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M11 6h4.5a4.5 4.5 0 1 1 0 9H4"/><path d="M7 12s-3 2.21-3 3s3 3 3 3"/></g></svg></button>
@@ -79,6 +79,7 @@
     <button type="button" class="tool" id="bookmarkBtn" aria-label="أضف علامة" title="أضف علامة" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg><span class="bookmark-label">أضف علامة</span></button>
     <button type="button" class="tool" id="jumpBookmarkBtn" title="الانتقال إلى العلامة المحفوظة"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 4.5A2.5 2.5 0 0 1 9 2h6a2.5 2.5 0 0 1 2.5 2.5V22L12 18.5 6.5 22Z"/></svg><span>الانتقال إلى العلامة</span></button>
   </div>
+  <div class="tj-strip" id="tajweedStrip" aria-label="دليل ألوان التجويد"></div>
 </footer>
 
 <nav class="desktop-page-nav" aria-label="التنقل بين صفحات المصحف">
@@ -157,7 +158,7 @@
 
 <!-- التفسير الوجيز: بيانات الإنتاج المحققة مضمّنة محليًا للاختبار Offline -->
 
-<script src="/quran/runtime/reader.js?v=947d899ce047"></script>
+<script src="/quran/runtime/reader.js?v=a8de95515d11"></script>
 <noscript><p>فعّل JavaScript لفتح المصحف ومشغّل التلاوة. <a href="/quran-index/">فهرس القرآن</a></p></noscript>
 </body>
 </html>

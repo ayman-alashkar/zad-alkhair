@@ -59,30 +59,15 @@ async function appPage({ profile = PHONE, rpc = {}, storage = {}, realtime = () 
   return { page, errors, context };
 }
 
-/* Real reader layout with neutral Arabic text and local fonts, without CDN audio/data. */
+/* القارئ الحقيقي بصفحات المصحف وخطوطه المحلية (data/qcf-v4)، دون صوت أو بيانات خارجية. */
 async function readerPage({ profile = PHONE, theme = "light" } = {}) {
-  const { surahs } = JSON.parse(readFileSync(path.join(root, "src/discovery/catalog.json"), "utf8"));
-  const chapters = surahs.map(s => ({ id: s.n, name_arabic: s.name, verses_count: s.verses, pages: [1, 604] }));
-  const fixture = await appPage({
-    profile,
-    storage: { "zad:qcf4:meta-v1": JSON.stringify({ chapters }), "zad:qcf4:theme": theme }
-  });
-  await fixture.context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
-    path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
-    headers: { "Access-Control-Allow-Origin": "*" }
-  }));
-  await fixture.context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
-    headers: { "Access-Control-Allow-Origin": "*" },
-    json: {
-      page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
-      font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
-      lines: Array.from({ length: 15 }, (_, i) => ({ words: [
-        ...Array.from({ length: 6 + i % 3 }, () => ({ type: "word", text: "نص تجريبي", char: "نَصٌّ تَجْرِيبِيٌّ", verse_key: `2:${60 + i}` })),
-        { type: "end", text: `V${60 + i}`, char: "١٢٣", verse_key: `2:${60 + i}` }
-      ] }))
-    }
-  }));
-  return fixture;
+  return appPage({ profile, storage: { "zad:qcf4:theme": theme } });
+}
+/* أول آية في السطر الأخير من صفحة، من بيانات الصفحة نفسها. */
+function lastLineVerse(p) {
+  const data = JSON.parse(readFileSync(path.join(root, `data/qcf-v4/pages/${String(p).padStart(3, "0")}.json`), "utf8"));
+  const key = data.lines.at(-1).words.find(w => w.verse_key).verse_key, [surah, ayah] = key.split(":").map(Number);
+  return { surah, ayah, key };
 }
 
 /* «نسخ» يأخذ الآية بالرسم العثماني من نص تنزيل، لا الإملاء المبسّط المرافق لخطوط الصفحة. */
@@ -424,7 +409,7 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
         const toolsBox = await toolbar.boundingBox(), headerBox = await page.locator(".topbar").boundingBox();
         assert.ok(toolsBox.y >= headerBox.y + headerBox.height + 3, "tools clear the header");
         assert.ok(toolsBox.y + toolsBox.height < point.y - 8, "tools clear the selecting finger and text");
-        assert.ok(await root.locator('.verse-segment.selected[data-key="2:74"]').count());
+        assert.ok(await root.locator(`.verse-segment.selected[data-key="${lastLineVerse(9).key}"]`).count());
         assert.equal(await page.locator(".backdrop").count(), 0, "selecting does not open tafsir");
         assert.equal(await page.locator("body.player-on").count(), 0, "selecting does not open the player");
         assert.equal(await root.locator(".page-bookmark").count(), 0, "selecting does not add a bookmark");
@@ -454,11 +439,9 @@ test("a linked verse is scrolled into view on a rotated phone, with the four too
       profile: { viewport: { width, height }, isMobile: true, hasTouch: true }
     });
     try {
-      // The fixture's page 9 ends with verse 2:74, the last of its 15 lines.
-      await context.route(/quran-qcf4@[^/]+\/verses\.json/, route => route.fulfill({
-        headers: { "Access-Control-Allow-Origin": "*" }, json: { "2:74": { page: 9 } }
-      }));
-      await page.goto(BASE + "/quran-read/2/?ayah=74");
+      // The verse that opens the last line of page 9.
+      const target = lastLineVerse(9);
+      await page.goto(BASE + `/quran-read/${target.surah}/?ayah=${target.ayah}`);
       const verse = page.locator('.page[data-page="9"] .verse-segment.selected').first();
       await verse.waitFor();
       await page.waitForTimeout(600);
@@ -545,6 +528,8 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
         assert.ok(portrait.labelsStayInMargins, "larger labels stay inside the existing page margins");
         assert.ok(portrait.columnWidth > width * .9, "portrait reading uses the available width");
         await page.setViewportSize({ width: height, height: width });
+        // ينتظر إعادة الضبط نفسها لا مدة ثابتة (هنا وعند العودة إلى العمودي): WebKit يعيد الضبط بعد Chromium بقليل.
+        await page.waitForFunction(size => parseFloat(getComputedStyle(document.querySelector('.page[data-page="9"] .line-inner')).fontSize) > size * 1.3, portrait.fontSize, { timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
         const landscape = await measure();
         assert.ok(landscape.widthFit, "touch landscape activates width fitting");
@@ -571,6 +556,7 @@ test("Quran text and verse numbers stay readable when a phone or tablet rotates"
           }), "the last row and page number are reachable together at the end of scrolling");
         } else assert.ok(landscape.fits, "the complete page fits when the height permits it");
         await page.setViewportSize({ width, height });
+        await page.waitForFunction(() => !document.querySelector('.page[data-page="9"] .mushaf').style.paddingTop, null, { timeout: 5000 }).catch(() => {});
         await page.waitForTimeout(300);
         const restored = await measure();
         assert.ok(!restored.widthFit, "portrait leaves width fitting");
@@ -596,14 +582,6 @@ test("the Quran index resumes the saved page and shares a direct juz link", asyn
       "zad:qcf4:last-surface-v1": JSON.stringify({ surface: "reader", page: 45 })
     }
   });
-  await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
-    path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
-    headers: { "Access-Control-Allow-Origin": "*" }
-  }));
-  await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
-    headers: { "Access-Control-Allow-Origin": "*" },
-    json: { page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]), lines: [], surahs: [{ id: 1 }] }
-  }));
   try {
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "share", {
@@ -706,20 +684,6 @@ test("one reading mark moves between pages and the index keeps five recent visit
       localStorage.setItem("zad:qcf4:bookmarks", oldAyahs);
       sessionStorage.setItem("bookmark-test-seeded", "1");
     }, { chapters, theme, oldAyahs });
-    await context.route(/quran-qcf4@[^/]+\/fonts-woff2\//, route => route.fulfill({
-      path: path.join(root, "fonts/aref-ruqaa-arabic-400.woff2"),
-      headers: { "Access-Control-Allow-Origin": "*" }
-    }));
-    await context.route(/quran-qcf4@[^/]+\/pages\/\d+\.json/, route => route.fulfill({
-      headers: { "Access-Control-Allow-Origin": "*" },
-      json: {
-        page: Number(new URL(route.request().url()).pathname.match(/(\d+)\.json$/)[1]),
-        font: "QCF4_Hafs_01", surahs: [{ id: 2 }],
-        lines: Array.from({ length: 15 }, (_, i) => ({
-          words: [{ type: "word", text: "آية للقراءة", char: "آية للقراءة", verse_key: `2:${60 + i}` }]
-        }))
-      }
-    }));
     const currentVerse = n => page.locator(`.page[data-page="${n}"] .verse-segment`).first();
     const ribbon = n => page.locator(`.page[data-page="${n}"] .page-bookmark`);
     const storedPages = () => page.evaluate(() => JSON.parse(localStorage.getItem("zad:qcf4:page-bookmarks")).map(x => x.page));
@@ -1340,6 +1304,41 @@ test("an action refused on an unregistered browser offers the Telegram confirmat
   assert.equal(await page.evaluate(() => document.getElementById("toast").classList.contains("show")), false, "no bare error toast");
   assert.deepEqual(errors, []);
   await context.close();
+});
+
+/* المصحف من زاد الخير نفسه (QCF V4)، والتجويد يبدّل مجموعة الألوان فقط: الكلمات وأحجامها لا تتغيّر. */
+test("the mushaf comes from Zad itself, and tajweed only switches the colour palette", async () => {
+  const { page, errors, context } = await readerPage();
+  const external = [];
+  context.on("request", r => { if (/jsdelivr\.net|tarteel\.ai/.test(r.url())) external.push(r.url()); });
+  try {
+    await page.goto(BASE + "/quran-read/?page=5");
+    const root = page.locator('.page[data-page="5"]');
+    await root.locator(".word.end").first().waitFor({ state: "attached" });
+    await page.waitForTimeout(400);
+    const state = () => root.evaluate(el => ({
+      word: getComputedStyle(el.querySelector(".word:not(.allah):not(.end)")).fontPalette,
+      allah: getComputedStyle(el.querySelector(".word.allah")).fontPalette,
+      widths: [...el.querySelectorAll(".line-inner")].map(l => Math.round(l.getBoundingClientRect().width)),
+      tajweed: document.documentElement.dataset.tajweed
+    }));
+    const before = await state();
+    assert.equal(before.tajweed, "off");
+    assert.equal(before.word, "--q005lt", "reading uses the single-colour palette");
+    assert.equal(before.allah, "--q005la", "the name of Allah keeps its red");
+    await page.locator("#tajweedBtn").evaluate(b => b.click());
+    const after = await state();
+    assert.equal(after.tajweed, "on");
+    assert.equal(after.word, "--q005lj");
+    assert.equal(after.allah, "--q005lj", "tajweed colours replace the red, as in the tajweed mushaf");
+    assert.deepEqual(after.widths, before.widths, "words and lines keep their size");
+    await page.locator("#tajweedBtn").evaluate(b => b.click());
+    assert.equal((await state()).word, "--q005lt");
+    assert.deepEqual(external, [], "no Mushaf file comes from another server");
+    assert.deepEqual(errors, []);
+  } finally {
+    await context.close();
+  }
 });
 
 /* على الآيفون قد تُعاد الصفحة عند الرجوع من تيليغرام: الطلب المعلّق يُستأنف بعد التحميل،

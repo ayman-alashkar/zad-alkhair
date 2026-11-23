@@ -11,13 +11,19 @@
    - Verified tafsir is loaded lazily from the local audited static repository.
    - Audio behavior is provider-specific; no hidden provider switching.
    - UI ordering never determines the default reciter.
-   - QCF4 data/fonts are pinned to npm quran-qcf4@1.0.3; QUL decorative title remains optional with QCF fallback.
+   - The Mushaf is QCF V4 (Madinah 1441, KFGQPC and Dar al-Maarifah, as published by QUL), self-hosted:
+     one colour font per page (fonts/qcf-v4), page data built by scripts/build-qcf-v4.mjs.
+     Reading uses the single-colour palette, so pages look as QCF4 did; tajweed switches the palette.
+   - QUL decorative title remains optional with QCF fallback.
 */
-const QCF_BASE="https://cdn.jsdelivr.net/npm/quran-qcf4@1.0.3/";
+const MUSHAF_VERSION="a20f2fb07973";
+const MUSHAF_Q="?v="+MUSHAF_VERSION;
+const QCF_BASE="/data/qcf-v4/";
 const PAGE_BASE=QCF_BASE+"pages/";
-const INDEX_URL=QCF_BASE+"index.json";
-const VERSE_INDEX_URL=QCF_BASE+"verses.json";
-const QCF_FONT_BASE=QCF_BASE+"fonts-woff2/";
+const PAGE_SUFFIX=".json"+MUSHAF_Q;
+const INDEX_URL=QCF_BASE+"index.json"+MUSHAF_Q;
+const VERSE_INDEX_URL=QCF_BASE+"verses.json"+MUSHAF_Q;
+const QCF_FONT_BASE="/fonts/qcf-v4/";
 const TOTAL_PAGES=604;
 const SURAH_HEADER_GLYPHS=[null,"ﱅ","ﱆ","ﱇ","ﱊ","ﱋ","ﱎ","ﱏ","ﱑ","ﱒ","ﱓ","ﱕ","ﱖ","ﱘ","ﱚ","ﱛ","ﱜ","ﱝ","ﱞ","ﱡ","ﱢ","ﱤ","ﭑ","ﭒ","ﭔ","ﭕ","ﭗ","ﭘ","ﭚ","ﭛ","ﭝ","ﭞ","ﭠ","ﭡ","ﭣ","ﭤ","ﭦ","ﭧ","ﭩ","ﭪ","ﭬ","ﭭ","ﭯ","ﭰ","ﭲ","ﭳ","ﭵ","ﭶ","ﭸ","ﭹ","ﭻ","ﭼ","ﭾ","ﭿ","ﮁ","ﮂ","ﮄ","ﮅ","ﮇ","ﮈ","ﮊ","ﮋ","ﮍ","ﮎ","ﮐ","ﮑ","ﮓ","ﮔ","ﮖ","ﮗ","ﮙ","ﮚ","ﮜ","ﮝ","ﮟ","ﮠ","ﮢ","ﮣ","ﮥ","ﮦ","ﮨ","ﮩ","ﮫ","ﮬ","ﮮ","ﮯ","ﮱ","﮲","﮴","﮵","﮷","﮸","﮺","﮻","﮽","﮾","﯀","﯁","ﯓ","ﯔ","ﯖ","ﯗ","ﯙ","ﯚ","ﯜ","ﯝ","ﯟ","ﯠ","ﯢ","ﯣ","ﯥ","ﯦ","ﯨ","ﯩ","ﯫ"];
 let surahHeaderReady=false;
@@ -589,15 +595,22 @@ async function loadVerseIndex(){
   verseIndex=fresh;storageJsonSet(STORAGE_KEYS.verseIndex,verseIndex);
   return verseIndex;
 }
+/* خط الصفحة: QCFV4_P005 ← /fonts/qcf-v4/p5.woff2 (الصفحة 328 وحدها بصيغة woff كما تنشرها QUL).
+   الخط ملوّن، فلونه من مجموعة ألوانه لا من color: تُعرَّف مجموعات هذه الصفحة عند تحميل خطها. */
+function qcfFontUrl(name){
+  const n=Number(String(name).slice(7));
+  return QCF_FONT_BASE+"p"+n+(n===328?".woff":".woff2")+MUSHAF_Q;
+}
 async function ensureQcfFont(name){
-  if(!name||name==="QCF4_QBSML")return;
+  if(!name||!/^QCFV4_P\d{3}$/.test(name))return;
   if(qcfFontLoads.has(name))return qcfFontLoads.get(name);
   // Do not use document.fonts.check() for undeclared QCF families:
   // browsers may report fallback availability as true and skip the real font.
   const job=(async()=>{
-    const face=new FontFace(name,`url("${QCF_FONT_BASE}${name}_W.woff2") format("woff2")`);
+    const face=new FontFace(name,`url("${qcfFontUrl(name)}") format("${name==="QCFV4_P328"?"woff":"woff2"}")`);
     const loaded=await face.load();
     document.fonts.add(loaded);
+    addQcfPalettes(name);
     return loaded;
   })().catch(err=>{qcfFontLoads.delete(name);throw err});
   qcfFontLoads.set(name,job);
@@ -682,7 +695,7 @@ function normalizeArabic(s){return (s||"").replace(/[\u064B-\u065F\u0670\u06D6-\
 function isAllah(t){const n=normalizeArabic(t);return n.includes("الله")||n.includes("لله")}
 
 async function fetchPage(p){
-  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+".json",{cache:"force-cache"});
+  const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+PAGE_SUFFIX,{cache:"force-cache"});
   if(!r.ok)throw new Error("page "+p);
   const data=await r.json();
   if(Number(data?.page)!==Number(p)||!Array.isArray(data?.lines))throw new Error("invalid page "+p);
@@ -799,6 +812,7 @@ function renderPage(data){
   const root=document.querySelector(`.page[data-page="${data.page}"]`);
   const surahId=surahIdFromPageData(data),juz=juzForPage(data.page);
   root.dataset.loaded="1";
+  root.dataset.qfont=data.font||"";
   root.innerHTML=`<div class="page-stage ${data.page<=2?"special":"full"}">
     <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
     <div class="mushaf" id="mushaf-${data.page}"></div>
@@ -921,6 +935,73 @@ function surahGlyphAspect(glyph){
   try{if(ready&&document.fonts)ready=document.fonts.check(`${sample}px "QUL_SurahHeader"`,glyph)}catch(e){}
   if(ready&&aspect>0)surahAspectCache.set(glyph,aspect);
   return aspect;
+}
+/* ---------- ألوان مصحف QCF V4 ----------
+   خط كل صفحة ملوّن (COLR/CPAL)، فلون الحرف من مجموعة ألوان الخط لا من color.
+   لكل صفحة تُعرَّف عند تحميل خطها ست مجموعات: التلاوة ولفظ الجلالة والتجويد، نهارًا وليلًا.
+   كل مجموعة تكتب ألوان الفهارس الستة عشر كلها، فلا تعتمد على ألوان الخط الأصلية:
+   0 الحبر، 1 و2 و15 ما لا يُلفظ، 3 مدّ لازم، 4 مدّ جائز، 5 مدّ حركتان، 6 غنّة، 7 تفخيم، 8 قلقلة،
+   9 مدّ واجب، 10 إطار دائرة الآية، 11 تعبئة تاجيها، 12 تعبئتها، 13 رقم الآية، 14 مربعات الهامش (تُخفى).
+   ألوان الحبر ورقم الآية ولفظ الجلالة هي --quran و--ayah-number و--red في styles.css. */
+const QCF_INK={
+  l:{ink:"#0B1611",ayah:"#634314",red:"#B95157"},
+  d:{ink:"#FFF9EA",ayah:"#E4C980",red:"#D77B80"}
+};
+/* ألوان التجويد: ألوان دليل مصحف التجويد (دار المعرفة)، وفي الليل درجات متباعدة. */
+const QCF_TAJWEED={
+  l:{silent:"#9C9EA4",lazim:"#B2016B",jaiz:"#FD8014",madd2:"#FEB609",ghunna:"#05A54C",tafkhim:"#046D9C",qalqala:"#03ADF1",wajib:"#E8038C"},
+  d:{silent:"rgba(255,249,234,.38)",lazim:"#C08CFF",jaiz:"#FF8838",madd2:"#FFE45C",ghunna:"#46D97F",tafkhim:"#6D9BFF",qalqala:"#5CE6F2",wajib:"#FF7AB8"}
+};
+/* mode: t تلاوة (لون واحد)، a لفظ الجلالة، j تجويد. */
+function qcfPalette(theme,mode){
+  const c=QCF_INK[theme],t=QCF_TAJWEED[theme];
+  if(mode==="j")return [c.ink,t.silent,t.silent,t.lazim,t.jaiz,t.madd2,t.ghunna,t.tafkhim,t.qalqala,t.wajib,
+    c.ayah,"transparent","transparent",c.ayah,"transparent",t.silent];
+  const ink=mode==="a"?c.red:c.ink;
+  return [...Array(10).fill(ink),c.ayah,"transparent","transparent",c.ayah,"transparent",ink];
+}
+const qcfPaletteStyle=document.createElement("style");
+document.head.appendChild(qcfPaletteStyle);
+function addQcfPalettes(fam){
+  const n=fam.slice(7),page=`.page[data-qfont="${fam}"]`,css=[];
+  for(const theme of ["l","d"])for(const mode of ["t","a","j"]){
+    const colors=qcfPalette(theme,mode).map((x,i)=>i+" "+x).join(",");
+    css.push(`@font-palette-values --q${n}${theme}${mode}{font-family:"${fam}";base-palette:0;override-colors:${colors}}`);
+  }
+  css.push(
+    `${page} .word{font-palette:--q${n}lt}`,
+    `${page} .word.allah{font-palette:--q${n}la}`,
+    `html[data-theme="dark"] ${page} .word{font-palette:--q${n}dt}`,
+    `html[data-theme="dark"] ${page} .word.allah{font-palette:--q${n}da}`,
+    /* التجويد يغلب لون لفظ الجلالة، كما في مصحف التجويد. */
+    `html[data-tajweed="on"] ${page} .word,html[data-tajweed="on"] ${page} .word.allah{font-palette:--q${n}lj}`,
+    `html[data-theme="dark"][data-tajweed="on"] ${page} .word,html[data-theme="dark"][data-tajweed="on"] ${page} .word.allah{font-palette:--q${n}dj}`
+  );
+  qcfPaletteStyle.textContent+=css.join("\n")+"\n";
+}
+
+/* ---------- وضع التجويد ----------
+   الإظهار صنف على <html> فقط: تتبدّل مجموعة الألوان، دون إعادة رسم ولا تحميل، ودون تغيّر الكلمات. */
+const TAJWEED_KEY="zad:mushaf-tajweed";
+/* دليل الأحكام: بطاقة تظهر مع أدوات القراءة ما دام التجويد ظاهرًا.
+   المسمّيات والألوان كما في دليل مصحف التجويد (دار المعرفة)، عمودان: المدود، ثم أحكام الحروف. */
+const TAJWEED_LEGEND=[
+  ["المدود",[["tj8","مدّ ٦ حركات لزوماً"],["tj7","مدّ واجب ٤ أو ٥ حركات"],["tj6","مدّ ٢ أو ٤ أو ٦ جوازاً"],["tj5","مدّ حركتان"]]],
+  ["أحكام الحروف",[["tj1","إخفاء، ومواقع الغنّة (حركتان)"],["tj3","إدغام، وما لا يُلفظ"],["tj2","تفخيم"],["tj4","قلقلة"]]]
+];
+function setTajweed(on,announce=false){
+  document.documentElement.dataset.tajweed=on?"on":"off";
+  storageSet(TAJWEED_KEY,on?"1":"0");
+  const btn=document.getElementById("tajweedBtn");
+  if(btn){btn.setAttribute("aria-pressed",String(on));btn.classList.toggle("active",on)}
+  if(announce)showToast(on?"تم تفعيل وضع التجويد":"تم إيقاف وضع التجويد");
+}
+{
+  const btn=document.getElementById("tajweedBtn");
+  const strip=document.getElementById("tajweedStrip");
+  if(strip)strip.innerHTML=TAJWEED_LEGEND.map(([title,items])=>`<div class="tj-col"><b>${title}</b>${items.map(([c,name])=>`<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("")}</div>`).join("");
+  if(btn){btn.hidden=false;btn.onclick=()=>setTajweed(document.documentElement.dataset.tajweed!=="on",true)}
+  setTajweed(storageGet(TAJWEED_KEY,"0")==="1");
 }
 
 /* حبر QCF4 يتجاوز صندوق سطره صعودًا ونزولًا: الشدّة والمدّة تعلوان الصندوق،
