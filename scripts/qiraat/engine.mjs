@@ -487,8 +487,24 @@ function formDiff(w, form) {
  * h: كلمة حفص؛ wordD/waslD: وصف الرواية في الكلمة وعند الوصل (null إن وافقت حفصًا)؛
  * next: كلمة حفص التالية؛ prevWasl: ما فُهم من وصل الكلمة السابقة لهذه الرواية ({feats, ops}).
  */
-export function buildWord(h, wordD, waslD, next = null, prevWasl = null) {
+/** يحذف من وصف الرواية ما يشاركها فيه حفص حرفيًا («بمد الهمزة» إن قالها الاثنان): ما يوافق حفصًا لا خلاف فيه. */
+const clauseNorm = (c) => c.replace(/^(?:قرأ|قرؤوا)\s+/, '').replace(/[.\s]+$/g, '').trim();
+export function dropShared(d, hafsD) {
+  if (!d || !hafsD) return d;
+  const hs = new Set(hafsD.split(/،\s*|\s+مع\s+/).map(clauseNorm).filter(Boolean));
+  const parts = d.split(/(،\s*|\s+مع\s+)/);
+  let out = '';
+  for (let i = 0; i < parts.length; i += 2) {
+    const c = parts[i], sep = parts[i - 1] || '';
+    if (hs.has(clauseNorm(c))) continue;
+    out += (out ? sep : '') + c;
+  }
+  return out.trim() || d;
+}
+
+export function buildWord(h, wordD, waslD, next = null, prevWasl = null, hafsWordD = null, hafsWaslD = null) {
   const w = new Word(h);
+  wordD = dropShared(wordD, hafsWordD); waslD = dropShared(waslD, hafsWaslD);
   const U = understand(wordD), L = understand(waslD);
   const prevWaslFeats = prevWasl ? prevWasl.feats : null;
   const fw = U.feats, fl = L.feats;

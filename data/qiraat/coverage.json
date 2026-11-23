@@ -3,164 +3,164 @@
  "riwayat": {
   "qalun": {
    "diffs": 7687,
-   "coloured": 7264,
+   "coloured": 7281,
    "sound": 7,
    "waqf": 1,
-   "unknown": 415,
-   "silent": 239
+   "unknown": 398,
+   "silent": 248
   },
   "warsh": {
    "diffs": 11906,
-   "coloured": 7934,
-   "sound": 3022,
-   "waqf": 240,
-   "unknown": 710,
-   "silent": 260
+   "coloured": 7970,
+   "sound": 3066,
+   "waqf": 243,
+   "unknown": 627,
+   "silent": 271
   },
   "bazzi": {
    "diffs": 8585,
-   "coloured": 8023,
-   "sound": 46,
-   "waqf": 37,
-   "unknown": 479,
-   "silent": 257
+   "coloured": 8035,
+   "sound": 10,
+   "waqf": 90,
+   "unknown": 450,
+   "silent": 261
   },
   "qunbul": {
    "diffs": 8540,
-   "coloured": 7977,
-   "sound": 46,
-   "waqf": 10,
-   "unknown": 507,
-   "silent": 279
+   "coloured": 7986,
+   "sound": 10,
+   "waqf": 63,
+   "unknown": 481,
+   "silent": 283
   },
   "duri": {
    "diffs": 3248,
-   "coloured": 2711,
-   "sound": 45,
-   "waqf": 102,
-   "unknown": 390,
-   "silent": 212
+   "coloured": 2728,
+   "sound": 5,
+   "waqf": 150,
+   "unknown": 365,
+   "silent": 215
   },
   "susi": {
    "diffs": 5388,
-   "coloured": 4771,
-   "sound": 46,
-   "waqf": 95,
-   "unknown": 476,
-   "silent": 265
+   "coloured": 4798,
+   "sound": 9,
+   "waqf": 140,
+   "unknown": 441,
+   "silent": 268
   },
   "hisham": {
    "diffs": 2447,
-   "coloured": 708,
-   "sound": 74,
-   "waqf": 1228,
-   "unknown": 437,
-   "silent": 220
+   "coloured": 716,
+   "sound": 70,
+   "waqf": 1238,
+   "unknown": 423,
+   "silent": 228
   },
   "dhakwan": {
    "diffs": 1286,
-   "coloured": 908,
+   "coloured": 918,
    "sound": 9,
    "waqf": 7,
-   "unknown": 362,
-   "silent": 219
+   "unknown": 352,
+   "silent": 223
   },
   "shubah": {
    "diffs": 644,
-   "coloured": 415,
+   "coloured": 424,
    "sound": 2,
    "waqf": 2,
-   "unknown": 225,
-   "silent": 134
+   "unknown": 216,
+   "silent": 137
   },
   "khalaf": {
    "diffs": 17293,
-   "coloured": 7184,
-   "sound": 3228,
-   "waqf": 5772,
-   "unknown": 1109,
-   "silent": 587
+   "coloured": 7192,
+   "sound": 3225,
+   "waqf": 5829,
+   "unknown": 1047,
+   "silent": 591
   },
   "khallad": {
    "diffs": 13610,
-   "coloured": 4266,
-   "sound": 58,
-   "waqf": 8180,
-   "unknown": 1106,
-   "silent": 628
+   "coloured": 4272,
+   "sound": 48,
+   "waqf": 8248,
+   "unknown": 1042,
+   "silent": 633
   },
   "harith": {
    "diffs": 5473,
-   "coloured": 2592,
-   "sound": 283,
-   "waqf": 2020,
-   "unknown": 578,
-   "silent": 188
+   "coloured": 2607,
+   "sound": 276,
+   "waqf": 2057,
+   "unknown": 533,
+   "silent": 193
   },
   "durik": {
    "diffs": 5811,
-   "coloured": 2917,
-   "sound": 283,
-   "waqf": 2020,
-   "unknown": 591,
-   "silent": 196
+   "coloured": 2934,
+   "sound": 276,
+   "waqf": 2057,
+   "unknown": 544,
+   "silent": 201
   },
   "wardan": {
    "diffs": 9116,
-   "coloured": 8302,
+   "coloured": 8328,
    "sound": 228,
    "waqf": 5,
-   "unknown": 581,
-   "silent": 253
+   "unknown": 555,
+   "silent": 266
   },
   "jammaz": {
    "diffs": 9101,
-   "coloured": 8293,
+   "coloured": 8320,
    "sound": 228,
    "waqf": 5,
-   "unknown": 575,
-   "silent": 252
+   "unknown": 548,
+   "silent": 265
   },
   "ruwais": {
    "diffs": 2720,
-   "coloured": 1338,
-   "sound": 127,
-   "waqf": 814,
-   "unknown": 441,
-   "silent": 219
+   "coloured": 1354,
+   "sound": 75,
+   "waqf": 875,
+   "unknown": 416,
+   "silent": 222
   },
   "rawh": {
    "diffs": 2262,
-   "coloured": 1040,
-   "sound": 57,
-   "waqf": 813,
-   "unknown": 352,
-   "silent": 157
+   "coloured": 1051,
+   "sound": 5,
+   "waqf": 872,
+   "unknown": 334,
+   "silent": 160
   },
   "ishaq": {
    "diffs": 3033,
-   "coloured": 2452,
-   "sound": 25,
-   "waqf": 244,
-   "unknown": 312,
-   "silent": 165
+   "coloured": 2474,
+   "sound": 21,
+   "waqf": 253,
+   "unknown": 285,
+   "silent": 169
   },
   "idris": {
    "diffs": 3033,
-   "coloured": 2452,
-   "sound": 25,
-   "waqf": 244,
-   "unknown": 312,
-   "silent": 165
+   "coloured": 2474,
+   "sound": 21,
+   "waqf": 253,
+   "unknown": 285,
+   "silent": 169
   }
  },
  "total": {
   "diffs": 121183,
-  "coloured": 81547,
-  "sound": 7839,
-  "waqf": 21839,
-  "unknown": 9958,
-  "silent": 4895
+  "coloured": 81862,
+  "sound": 7591,
+  "waqf": 22388,
+  "unknown": 9342,
+  "silent": 5003
  },
  "corrections": {
   "entries": 116,

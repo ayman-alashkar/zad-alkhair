@@ -92,7 +92,7 @@ for (const r of RIWAYAT) {
   for (let i = 0; i < words.length; i++) {
     const P = parsed[i];
     const wd = differs(P.word, r), wl = differs(P.wasl, r);
-    const bw = buildWord(words[i].text, wd, wl, words[i + 1] ? words[i + 1].text : null, prevWasl);
+    const bw = buildWord(words[i].text, wd, wl, words[i + 1] ? words[i + 1].text : null, prevWasl, P.word && P.word.hafs, P.wasl && P.wasl.hafs);
     prevWasl = bw.wasl;
     const waqf = [[wd, P.word], [wl, P.wasl]].some(([x, full]) => x && waqfPart(x) !== waqfPart(full ? full.hafs : ''));
     // خلاف عند المركز لم يُنتج البرنامج له علامة (فُهم الوصف ولا أثر له في الكتابة، كـ«بالإظهار»):
