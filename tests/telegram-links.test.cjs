@@ -9,33 +9,36 @@ const root=path.resolve(__dirname,"..");
    هذا الاختبار يمنعها من العودة إلى مسارات حُذفت من الموقع. */
 const FUNCTIONS=["telegram-webhook","send-reminders","send-message","announce","send-completions"];
 const read=name=>fs.readFileSync(path.join(root,"supabase/functions",name,"index.ts"),"utf8");
+/* الروابط ورمز الدخول في المكتبة المشتركة؛ كل وظيفة تستوردها ولا تبني روابطها بنفسها. */
+const shared=name=>fs.readFileSync(path.join(root,"supabase/functions/_shared",name),"utf8");
 
 test("Telegram and notification links open the unified reader path",()=>{
   assert.ok(fs.existsSync(path.join(root,"quran-read/index.html")),"the reader lives at /quran-read/");
+  const links=shared("links.ts");
+  assert.match(links,/new URL\("quran-read\/", root\)/,"the reader link is built on /quran-read/");
   for(const name of FUNCTIONS){
     const src=read(name);
-    assert.doesNotMatch(src,/reader\.html|["'`]surah\/|["'`]quran\/["'`]/,`${name} still links to a removed page`);
-    assert.match(src,/new URL\("quran-read\/", root\)/,`${name} builds its reader link on /quran-read/`);
+    assert.doesNotMatch(src,/reader\.html|["'`]surah\/|["'`]quran\/["'`]|new URL\(/,`${name} builds links itself instead of using _shared/links.ts`);
+    assert.match(src,/from "\.\.\/_shared\/links\.ts"/,`${name} uses the shared links`);
   }
 });
 
 test("juz reminders open the reader on the juz with the khatmah code",()=>{
-  for(const name of ["telegram-webhook","send-reminders","send-message"]){
-    const src=read(name);
-    assert.match(src,/searchParams\.set\("juz", String\(juz\)\)/,`${name} passes the juz to the reader`);
-    assert.match(src,/searchParams\.set\("code", String\(code\)\.trim\(\)\.toUpperCase\(\)\)/,`${name} passes the khatmah code`);
-  }
+  const links=shared("links.ts");
+  assert.match(links,/searchParams\.set\("juz", String\(juz\)\)/,"the juz is passed to the reader");
+  assert.match(links,/searchParams\.set\("code", String\(code\)\.trim\(\)\.toUpperCase\(\)\)/,"the khatmah code is passed");
+  assert.match(read("send-reminders"),/readerLink\(code, n\)/,"each reminded juz links to its page");
 });
 
 /* زر «افتح زاد الخير» يحمل رمز دخول لصاحب الرسالة (?login=)، فيُعرف المستخدم
    في أي متصفح يُفتح منه الزر. فشل إصدار الرمز لا يمنع الإرسال. */
 test("the «افتح زاد الخير» button carries the recipient's login token",()=>{
+  const supa=shared("supabase.ts");
+  assert.match(supa,/rpc\("issue_login_link", \{ p_chat: chat \}\)/,"a login token is issued for the recipient");
+  assert.match(supa,/async function loginToken[\s\S]*?catch \{\s*return "";/,"failure falls back to a plain link");
+  assert.match(shared("links.ts"),/searchParams\.set\("login", login\)/,"the token goes on the app link");
   for(const name of FUNCTIONS){
-    const src=read(name);
-    assert.match(src,/rpc\("issue_login_link", \{ p_chat: chat \}\)/,`${name} issues a login token for the recipient`);
-    assert.match(src,/searchParams\.set\("login", login\)/,`${name} puts the token on the app link`);
-    assert.match(src,/await loginToken\(chat\)/,`${name} uses the token when sending`);
-    assert.match(src,/async function loginToken[\s\S]*?catch \{\s*return "";/,`${name} falls back to a plain link`);
+    assert.match(read(name),/navRows\(.*await loginToken\(chat\)\)/,`${name} puts the token on its buttons`);
   }
 });
 

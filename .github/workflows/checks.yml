@@ -57,3 +57,17 @@ jobs:
         env:
           PGUSER: postgres
           ZAD_DB_FINGERPRINT_EXPECTED: supabase/checks/fingerprint.expected
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check every edge function
+        working-directory: supabase/functions
+        run: for f in */index.ts; do deno check "$f"; done
+      - name: Lint
+        run: deno lint supabase/functions
+      - name: Shared library tests
+        run: deno test --allow-env supabase/functions/_shared

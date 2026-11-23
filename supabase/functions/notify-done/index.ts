@@ -3,72 +3,10 @@
    قاعدة البيانات تتحقق من الإنجاز وتحجز تسليمًا لا يتكرر.
    ============================================================ */
 
-const TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const AR = "٠١٢٣٤٥٦٧٨٩";
-const ar = (value: number | string) =>
-  String(value).replace(/\d/g, (digit) => AR[+digit]);
-const esc = (value: unknown) => String(value ?? "")
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;");
-
-const JUZ = [
-  "الفاتحة ١ – البقرة ١٤١", "البقرة ١٤٢ – ٢٥٢", "البقرة ٢٥٣ – آل عمران ٩٢", "آل عمران ٩٣ – النساء ٢٣",
-  "النساء ٢٤ – ١٤٧", "النساء ١٤٨ – المائدة ٨١", "المائدة ٨٢ – الأنعام ١١٠", "الأنعام ١١١ – الأعراف ٨٧",
-  "الأعراف ٨٨ – الأنفال ٤٠", "الأنفال ٤١ – التوبة ٩٢", "التوبة ٩٣ – هود ٥", "هود ٦ – يوسف ٥٢",
-  "يوسف ٥٣ – إبراهيم ٥٢", "الحجر ١ – النحل ١٢٨", "الإسراء ١ – الكهف ٧٤", "الكهف ٧٥ – طه ١٣٥",
-  "الأنبياء ١ – الحج ٧٨", "المؤمنون ١ – الفرقان ٢٠", "الفرقان ٢١ – النمل ٥٥", "النمل ٥٦ – العنكبوت ٤٥",
-  "العنكبوت ٤٦ – الأحزاب ٣٠", "الأحزاب ٣١ – يس ٢٧", "يس ٢٨ – الزمر ٣١", "الزمر ٣٢ – فصلت ٤٦",
-  "فصلت ٤٧ – الجاثية ٣٧", "الأحقاف ١ – الذاريات ٣٠", "الذاريات ٣١ – الحديد ٢٩", "المجادلة ١ – التحريم ١٢",
-  "الملك ١ – المرسلات ٥٠", "النبأ ١ – الناس ٦",
-];
-
-async function rpc(fn: string, args: unknown = {}) {
-  const response = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(args),
-  });
-  const raw = await response.text();
-  if (!response.ok) throw new Error(`${fn}: ${response.status} ${raw}`);
-  return raw ? JSON.parse(raw) : null;
-}
-
-async function sendKb(chat: number, text: string, rows: unknown[][]) {
-  const response = await fetch(
-    `https://api.telegram.org/bot${TOKEN}/sendMessage`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chat,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-        reply_markup: { inline_keyboard: rows },
-      }),
-    },
-  );
-  if (response.ok) return { ok: true, blocked: false };
-  const result = await response.json().catch(() => ({}));
-  const description = String(result?.description ?? response.status);
-  const blocked = response.status === 403 ||
-    /blocked|deactivated|chat not found/i.test(description);
-  return { ok: false, blocked, error: description };
-}
+import { CORS } from "../_shared/config.ts";
+import { rpc } from "../_shared/supabase.ts";
+import { sendMessage } from "../_shared/telegram.ts";
+import { ar, esc, JUZ } from "../_shared/text.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -136,7 +74,7 @@ Deno.serve(async (req) => {
 ــــــ
 هل صادفت في هذا الجزء آية أو معنًى ترك فيك أثرًا جميلًا، ووددتَ لو أن كل من يتدارسون القرآن معك في هذه الختمة على دراية به؟`;
 
-  const result = await sendKb(delivery.chatId, text, [[
+  const result = await sendMessage(delivery.chatId, text, [[
     { text: "نعم", callback_data: `ask:${body.code}:${num}` },
     { text: "ليس الآن", callback_data: `not:${body.code}` },
   ]]);
