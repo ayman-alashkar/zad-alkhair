@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-21",
+  "captured_at": "2026-11-23",
   "project_ref": "webqpbcijjbawatykoxe",
   "edge_functions": [
     {
@@ -145,12 +145,34 @@
     {
       "version": "20261121005330",
       "name": "retire_permanent_name_open"
+    },
+    {
+      "version": "20261123014710",
+      "name": "retire_domain_migration_leftovers"
     }
   ],
   "tables": [
     {
       "schema": "private",
       "name": "completed_khatmahs",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "private",
+      "name": "login_links",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "private",
+      "name": "retired_domain_migration_rows",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "private",
+      "name": "tg_login_requests",
       "rls_enabled": true,
       "policies": 0
     },
@@ -180,12 +202,6 @@
     },
     {
       "schema": "public",
-      "name": "member_domain_migrations",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "public",
       "name": "members",
       "rls_enabled": true,
       "policies": 0
@@ -193,12 +209,6 @@
     {
       "schema": "public",
       "name": "notification_deliveries",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "public",
-      "name": "origin_migration_handoffs",
       "rls_enabled": true,
       "policies": 0
     },
@@ -229,18 +239,6 @@
     {
       "schema": "public",
       "name": "share_wait",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "private",
-      "name": "login_links",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "private",
-      "name": "tg_login_requests",
       "rls_enabled": true,
       "policies": 0
     }

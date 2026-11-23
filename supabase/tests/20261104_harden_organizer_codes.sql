@@ -5,14 +5,10 @@ declare
   r json; c text; kid uuid; ok boolean; n int; i int;
   log text := '';
 begin
-  -- رموز المشرف الحالية: كلها مجزأة، وما زالت تطابق قيمها الأصلية
+  -- رموز المشرف الحالية: كلها مجزأة
   select count(*) into n from public.khatmah where organizer_code !~ '^\$2[abxy]\$';
   if n <> 0 then raise exception 'FAIL: % plaintext organizer codes remain', n; end if;
-  for kid, c in select id, organizer_code from private.backup_20261104_organizer_codes loop
-    if not private.organizer_code_ok(kid, c, null) then
-      raise exception 'FAIL: existing khatmah % no longer accepts its code', kid;
-    end if;
-  end loop;
+  -- (مطابقة الرموز لقيمها الأصلية تحقّقت يوم الترحيل من نسخة الاسترجاع، وقد حُذفت بعده.)
   select count(*) into n from public.members m join public.khatmah k on k.id = m.khatmah_id and k.organizer_id = m.mid
    where coalesce(m.device, '') <> '' and not (m.device = any(m.devices));
   if n <> 0 then raise exception 'FAIL: organizer primary device missing from devices'; end if;
