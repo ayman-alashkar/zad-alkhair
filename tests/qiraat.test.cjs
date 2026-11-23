@@ -83,3 +83,30 @@ test("a card statement names known riwayat only", () => {
     else assert.ok(keys.length && keys.every(k => k >= 0 && k < 20), who);
   }
 });
+
+/* عدّ الآي لكل رواية (data/qiraat-src/ayah-count.json) */
+test("ayah counts: every surah matches the six counting madhhabs, and each riwaya its mushaf", async () => {
+  const ac = await import(path.join(root, "scripts/qiraat/ayah-count.mjs"));
+  const T = ac.SURAH_TOTALS;
+  [...T.order].forEach((m, i) => {
+    const t = ac.surahTotals(ac.madhhabEnds(m));
+    for (let s = 1; s <= 114; s++) assert.equal(t[s - 1], T.by_surah[s][i], `${m} surah ${s}`);
+  });
+  const sum = (r) => ac.surahTotals(ac.riwayaEnds(r)).reduce((a, b) => a + b, 0);
+  const want = { qalun: 6214, warsh: 6214, duri: 6217, susi: 6217, bazzi: 6220, qunbul: 6220, shubah: 6236, hafs: 6236,
+    hisham: 6226, dhakwan: 6226, ruwais: 6204, rawh: 6204, wardan: 6214, jammaz: 6214, khalaf: 6236, ishaq: 6236 };
+  for (const [r, n] of Object.entries(want)) assert.equal(sum(r), n, r);
+  for (const r of Object.keys(ac.RIWAYA_COUNT)) assert.ok(sum(r) > 6200, r);
+});
+
+test("ayah counts: known boundaries (الم، نذير، قريبا، مصلحون)", async () => {
+  const ac = await import(path.join(root, "scripts/qiraat/ayah-count.mjs"));
+  const hafs = JSON.parse(fs.readFileSync(path.join(root, "data/mushaf-src/hafs.json"), "utf8"));
+  const surah = (s) => hafs.surah_starts[s - 1];
+  const word = (s, a, i) => hafs.ayah_starts[hafs.surahs[s - 1].first_ayah + a - 1] + i;
+  assert.ok(!ac.riwayaEnds("warsh").has(surah(2)), "«الم» is not an ayah for Warsh");
+  assert.ok(ac.riwayaEnds("hafs").has(surah(2)));
+  assert.ok(ac.riwayaEnds("warsh").has(word(67, 9, 4)), "«قد جاءنا نذير» ends an ayah for Warsh");
+  assert.ok(ac.riwayaEnds("ruwais").has(word(78, 40, 3)) && !ac.riwayaEnds("wardan").has(word(78, 40, 3)), "«قريبا» is Basri only");
+  assert.ok(!ac.riwayaEnds("hisham").has(word(2, 11, 3)), "«مصلحون» is not an ayah for the Shami count");
+});
