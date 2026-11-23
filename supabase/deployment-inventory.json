@@ -39,18 +39,6 @@
       "bundle_sha256": "a7048423b8185d72ec70554876dd4731c6f0fe68d94cbe8bac3983e28d62ccc0"
     },
     {
-      "slug": "migration-handoff",
-      "version": 4,
-      "verify_jwt": false,
-      "bundle_sha256": "69f475422b849ac8e9a51b7fadc9b59ce6b4a6f73580ad05100ab7a454fb01c9"
-    },
-    {
-      "slug": "telegram-migration",
-      "version": 3,
-      "verify_jwt": false,
-      "bundle_sha256": "001c257af4ab3d6e530eaf0ca1ab9ba5a3a208e2136a85649a5225039e4a57b1"
-    },
-    {
       "slug": "send-completions",
       "version": 3,
       "verify_jwt": false,

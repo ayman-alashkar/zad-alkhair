@@ -1,0 +1,27 @@
+# إعداد Supabase CLI للنشر الآلي من GitHub Actions. ليس للتشغيل المحلي.
+project_id = "zad-alkhair"
+
+[db]
+major_version = 17
+
+# كل الوظائف تتحقق بنفسها (سر webhook أو سر cron أو صلاحيات الدوال)، فلا تطلب JWT.
+[functions.announce]
+verify_jwt = false
+
+[functions.cancel-khatmah]
+verify_jwt = false
+
+[functions.notify-done]
+verify_jwt = false
+
+[functions.send-completions]
+verify_jwt = false
+
+[functions.send-message]
+verify_jwt = false
+
+[functions.send-reminders]
+verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false

@@ -14,7 +14,12 @@ set client_min_messages = warning;
 
 create extension if not exists pgcrypto with schema extensions;
 create extension if not exists "uuid-ossp" with schema extensions;
-create extension if not exists pg_net with schema extensions;
+-- pg_net متاح في كل مشاريع Supabase؛ الشرط يسمح بالتجربة على PostgreSQL عادي.
+do $$ begin
+  if exists (select 1 from pg_available_extensions where name = 'pg_net') then
+    create extension if not exists pg_net with schema extensions;
+  end if;
+end $$;
 
 create schema if not exists private;
 revoke all on schema private from public;
