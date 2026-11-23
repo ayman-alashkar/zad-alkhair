@@ -29,7 +29,13 @@ jobs:
           version: latest
       - name: Link the project and connect to the database
         run: |
+          supabase --version
           supabase link --project-ref "$PROJECT_REF"
+          ls -la supabase/.temp || true
+          for f in supabase/.temp/*; do echo "== $f"; sed -E 's#://[^@]*@#://***@#' "$f" | head -3; done
+          for h in aws-0-ap-southeast-2 aws-1-ap-southeast-2; do
+            PGCONNECT_TIMEOUT=8 psql -X -tA "host=$h.pooler.supabase.com port=5432 user=postgres.$PROJECT_REF dbname=postgres sslmode=require" -c "select '$h ok'" || true
+          done
           url=$(cat supabase/.temp/pooler-url)
           # postgresql://USER@HOST:PORT/DB → متغيرات psql؛ منفذ الجلسة 5432 لأن الترحيلات تحتاج جلسة كاملة
           rest=${url#*://}; user=${rest%%@*}; user=${user%%:*}; hostport=${rest#*@}; hostport=${hostport%%/*}
