@@ -7,6 +7,8 @@ acl as (
     from (select oid, relacl as acl from pg_class union all select oid, proacl from pg_proc) a
     cross join lateral aclexplode(a.acl) x
    where x.grantee <> a.oid and pg_get_userbyid(x.grantee) <> 'postgres'
+     -- MAINTAIN صلاحية جديدة في PostgreSQL 17 تُمنح ضمن ALL؛ تُستثنى ليتطابق الناتج بين الإصدارات
+     and x.privilege_type <> 'MAINTAIN'
    group by a.oid
 ),
 objs as (

@@ -4,7 +4,10 @@
 # المتغيرات: PGHOST PGPORT PGUSER PGDATABASE (اتصال psql المعتاد).
 #   ZAD_DB_PRE  ملف SQL اختياري يُشغَّل قبل الترحيلات (بدائل محلية مثلًا).
 #   ZAD_DB_FINGERPRINT_EXPECTED  ملف البصمة المتوقعة؛ إن وُجد قورنت به البنية.
+# الخيار --update يكتب بصمة القاعدة المبنية في supabase/checks/fingerprint.expected
+# بدل مقارنتها (بعد إضافة ترحيل جديد).
 set -euo pipefail
+update=0; [ "${1:-}" = "--update" ] && update=1
 cd "$(dirname "$0")/.."
 psql_q() { psql -v ON_ERROR_STOP=1 -q -X "$@"; }
 
@@ -14,7 +17,10 @@ for f in supabase/migrations/*.sql; do
   psql_q -f "$f"
 done
 
-if [ -n "${ZAD_DB_FINGERPRINT_EXPECTED:-}" ]; then
+if [ $update = 1 ]; then
+  psql -X -tA -F' ' -f supabase/checks/fingerprint.sql > supabase/checks/fingerprint.expected
+  echo "wrote supabase/checks/fingerprint.expected"
+elif [ -n "${ZAD_DB_FINGERPRINT_EXPECTED:-}" ]; then
   actual=$(mktemp)
   psql -X -tA -F' ' -f supabase/checks/fingerprint.sql > "$actual"
   if ! diff -u "$ZAD_DB_FINGERPRINT_EXPECTED" "$actual"; then

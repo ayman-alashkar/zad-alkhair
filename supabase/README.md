@@ -13,8 +13,6 @@
 | `announce` | إعلان اكتمال الختمة أو بدء دورة جديدة |
 | `send-message` | رسائل المنظم |
 | `cancel-khatmah` | إنهاء الختمة وفق صلاحية المنظم |
-| `migration-handoff` | نقطة نقل متقاعدة تعيد 410 |
-| `telegram-migration` | نقطة نقل تلغرام متقاعدة تعيد 410 |
 
 القيم `verify_jwt` في المخزون تصف المنشور بالفعل؛ لا تعني أن جميع النقاط عامة بلا تحقق. الوظائف تستخدم تحقق سر webhook أو cron أو صلاحيات RPC بحسب الدور. لم تُنشر وظائف جديدة خلال التنظيف؛ الملفات المسترجعة تطابق المصادر المنشورة.
 
@@ -52,7 +50,7 @@
 
 الترحيل `20261123014710_retire_domain_migration_leftovers` حذف الجدولين `member_domain_migrations` و`origin_migration_handoffs` والدالة `complete_origin_domain_migration`. صفوفهما الثماني عشرة محفوظة في `private.retired_domain_migration_rows` (دون حقلي التشفير)، ويُحذف الأرشيف في المرحلة ٤.
 
-الوظيفتان `migration-handoff` و`telegram-migration` ما زالتا منشورتين وتعيدان 410، لأن الموصل لا يملك حذف الوظائف. تُحذفان من لوحة Supabase، ثم يُحذف مجلداهما من `functions/` ومن المخزون.
+الوظيفتان `migration-handoff` و`telegram-migration` حُذفتا من الإنتاج ومن `functions/` (٢٣ نوفمبر).
 
 صفحات التحويل (`transfer/` و`cleanup/` و`telegram-transfer/` و`reader.html`) و`migration.js` والفيديو تبقى. ليست بقايا: الأولى تحمي روابط محفوظة، و`migration.js` يطلب التخزين الدائم في كل صفحة، والفيديو يعرضه دليل المشغّل.
 
