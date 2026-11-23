@@ -42,8 +42,10 @@ jobs:
       - name: Production matches main before this change
         if: github.event_name == 'pull_request'
         run: |
+          # بصمة main واستعلامها معًا، لأن هذا الـPR قد يغيّر أيهما
           git show "origin/${{ github.base_ref }}:supabase/checks/fingerprint.expected" > /tmp/main.expected
-          scripts/db-drift.sh /tmp/main.expected
+          git show "origin/${{ github.base_ref }}:supabase/checks/fingerprint.sql" > /tmp/main.sql
+          scripts/db-drift.sh /tmp/main.expected /tmp/main.sql
       - name: Apply migrations
         if: github.event_name == 'push'
         run: scripts/db-deploy.sh

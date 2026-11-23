@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# يقارن بنية قاعدة الإنتاج بالبصمة المحفوظة. الاستعمال: scripts/db-drift.sh <ملف البصمة>
+# يقارن بنية قاعدة الإنتاج بالبصمة المحفوظة.
+# الاستعمال: scripts/db-drift.sh [ملف البصمة] [استعلام البصمة]
 # أي فرق يعني أن الإنتاج تغيّر بغير ترحيل في المستودع، أو أن الترحيل لم يُطبَّق.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 expected=${1:-supabase/checks/fingerprint.expected}
+query=${2:-supabase/checks/fingerprint.sql}
 actual=$(mktemp)
-psql -X -tA -F' ' -f supabase/checks/fingerprint.sql > "$actual"
+psql -X -tA -F' ' -f "$query" > "$actual"
 if ! diff -u "$expected" "$actual"; then
   echo "FAIL: production differs from the repo fingerprint"; exit 1
 fi
