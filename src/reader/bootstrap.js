@@ -105,7 +105,7 @@
   }
 })();
 
-/* إحصاءات الاستعمال (src/shared/usage.js): الظاهر من الفهرس أو المشغّل أو المصحف،
+/* إحصاءات الاستعمال (src/shared/usage.mjs): الظاهر من الفهرس أو المشغّل أو المصحف،
    فكلاهما يُضاف إلى body ويُزال منه، وثواني الاستماع ومنها ثواني «ما تيسّر». */
 function readerUsageSurface(){
   return document.querySelector(".zad-listen")?"listen":document.querySelector(".quran-index")?"quran":"reader";

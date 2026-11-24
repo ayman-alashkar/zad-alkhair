@@ -210,7 +210,7 @@ function zkSyncSection(){
     history.replaceState(history.state,"",url.href);
   }catch(_){}
 }
-/* إحصاءات الاستعمال: القسم الظاهر الآن (src/shared/usage.js يعدّه إن بقي ظاهرًا). */
+/* إحصاءات الاستعمال: القسم الظاهر الآن (src/shared/usage.mjs يعدّه إن بقي ظاهرًا). */
 function zkCountSurface(){
   if(typeof zaIsOpen==="function"&&zaIsOpen())zuSurface("adhkar");
   else if(!zkLaunchVisible())zuSurface("khatmahs");

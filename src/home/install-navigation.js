@@ -36,7 +36,7 @@ pwaInstallButton?.addEventListener("click",async event=>{
   else pwaPaintInstallButton();
 });
 pwaPaintInstallButton();
-/* المعرّف المجهول ونوع الجهاز مشتركان مع إحصاءات الاستعمال (src/shared/usage.js). */
+/* المعرّف المجهول ونوع الجهاز مشتركان مع إحصاءات الاستعمال (src/shared/usage.mjs). */
 function pwaInstallPlatform(){return zuPlatform()}
 function pwaInstallId(){return zuDeviceId()}
 function pwaClearLegacyAnalyticsFlags(){
