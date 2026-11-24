@@ -1882,6 +1882,338 @@ var appState = {
   peopleOpen: false
 };
 
+// src/home/config.mjs
+var SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
+var SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
+var BOT_USERNAME = "ZadAlkhair_Bot";
+
+// src/shared/usage.mjs
+var ZU_ENDPOINT = "https://webqpbcijjbawatykoxe.supabase.co/rest/v1/rpc/record_usage";
+var ZU_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
+var ZU_STORE = "zad:usage-v1";
+var ZU_OFF = "zad:usage-off";
+var ZU_ID_KEY = "zad:pwa-install-id";
+var ZU_LOCK = "zad:usage-flush-at";
+var ZU_SURFACES = ["home", "prayer", "khatmahs", "adhkar", "quran", "reader", "listen"];
+var ZU_KEYS = ZU_SURFACES.concat("listen_seconds", "tayassar_seconds", "storage_reset", "pack_fresh");
+var ZU_KEEP_DAYS = 6;
+var ZU_REOPEN_MS = 30 * 60 * 1e3;
+(function zuReadSwitch() {
+  try {
+    const q = new URLSearchParams(location.search);
+    if (q.has("nostats")) {
+      localStorage.setItem(ZU_OFF, "1");
+      localStorage.removeItem(ZU_STORE);
+    } else if (q.has("stats")) localStorage.removeItem(ZU_OFF);
+  } catch (_) {
+  }
+})();
+var ZU_BOT = (() => {
+  try {
+    return navigator.webdriver === true || /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|inspectiontool/i.test(navigator.userAgent || "");
+  } catch (_) {
+    return false;
+  }
+})();
+function zuOff() {
+  if (ZU_BOT) return true;
+  try {
+    return localStorage.getItem(ZU_OFF) === "1";
+  } catch (_) {
+    return true;
+  }
+}
+function zuDay(t = Date.now()) {
+  return new Date(t + 3 * 3600 * 1e3).toISOString().slice(0, 10);
+}
+function zuDeviceId() {
+  try {
+    let id = localStorage.getItem(ZU_ID_KEY);
+    const valid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (id && valid.test(id)) return id;
+    if (crypto.randomUUID) id = crypto.randomUUID();
+    else {
+      const b = new Uint8Array(16);
+      crypto.getRandomValues(b);
+      b[6] = b[6] & 15 | 64;
+      b[8] = b[8] & 63 | 128;
+      const h = [...b].map((v) => v.toString(16).padStart(2, "0")).join("");
+      id = `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+    }
+    localStorage.setItem(ZU_ID_KEY, id);
+    return id;
+  } catch (_) {
+    return null;
+  }
+}
+function zuPlatform() {
+  const ua = navigator.userAgent || "";
+  const uaPlatform = navigator.userAgentData && navigator.userAgentData.platform || "";
+  if (/Android/i.test(ua) || /Android/i.test(uaPlatform)) return "android";
+  if (/iPad|iPhone|iPod/i.test(ua) || /iPad|iPhone|iPod|iOS/i.test(uaPlatform) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) return "ios";
+  if (/Windows|Macintosh|MacIntel|Linux|CrOS/i.test(`${ua} ${uaPlatform} ${navigator.platform || ""}`)) return "desktop";
+  return "other";
+}
+function zuTimeZone() {
+  try {
+    return String(Intl.DateTimeFormat().resolvedOptions().timeZone || "").slice(0, 64) || null;
+  } catch (_) {
+    return null;
+  }
+}
+function zuInstalled() {
+  try {
+    return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  } catch (_) {
+    return false;
+  }
+}
+async function zuPersisted() {
+  try {
+    return navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null;
+  } catch (_) {
+    return null;
+  }
+}
+function zuRead() {
+  try {
+    const v = JSON.parse(localStorage.getItem(ZU_STORE) || "{}");
+    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  } catch (_) {
+    return {};
+  }
+}
+function zuWrite(store) {
+  try {
+    localStorage.setItem(ZU_STORE, JSON.stringify(store));
+  } catch (_) {
+  }
+}
+function zuAdd(counts) {
+  if (zuOff()) return;
+  const store = zuRead(), day = zuDay(), oldest = zuDay(Date.now() - ZU_KEEP_DAYS * 864e5);
+  for (const d of Object.keys(store)) if (d < oldest) delete store[d];
+  const row = store[day] || (store[day] = {});
+  for (const [key, n] of Object.entries(counts)) {
+    if (!ZU_KEYS.includes(key) || !(n > 0)) continue;
+    row[key] = (row[key] || 0) + Math.round(n);
+  }
+  if (!Object.keys(row).length) delete store[day];
+  zuWrite(store);
+}
+function zuSubtract(day, sent) {
+  const store = zuRead(), row = store[day];
+  if (!row) return;
+  for (const [key, n] of Object.entries(sent)) {
+    row[key] = (row[key] || 0) - n;
+    if (row[key] <= 0) delete row[key];
+  }
+  if (!Object.keys(row).length) delete store[day];
+  zuWrite(store);
+}
+var zuShown = null;
+var zuWanted = null;
+var zuSurfaceTimer = 0;
+var zuHiddenAt = 0;
+function zuSurface(name) {
+  if (!ZU_SURFACES.includes(name)) return;
+  zuWanted = name;
+  clearTimeout(zuSurfaceTimer);
+  zuSurfaceTimer = setTimeout(() => {
+    if (document.hidden || zuWanted === zuShown) return;
+    zuShown = zuWanted;
+    zuAdd({ [zuShown]: 1 });
+  }, 600);
+}
+var zuAudioFrom = 0;
+var zuAudioCarry = 0;
+var zuAudioTayassar = () => false;
+function zuCommitAudio(keepGoing) {
+  if (!zuAudioFrom) return;
+  const now = Date.now(), ms = now - zuAudioFrom;
+  zuAudioFrom = keepGoing ? now : 0;
+  if (ms <= 0 || ms > 3600 * 1e3) return;
+  const total = ms + zuAudioCarry, secs = Math.floor(total / 1e3);
+  zuAudioCarry = total - secs * 1e3;
+  if (!secs) return;
+  let tayassar = false;
+  try {
+    tayassar = !!zuAudioTayassar();
+  } catch (_) {
+  }
+  zuAdd(tayassar ? { listen_seconds: secs, tayassar_seconds: secs } : { listen_seconds: secs });
+}
+var zuFlushing = false;
+async function zuFlush() {
+  zuCommitAudio(true);
+  if (zuFlushing || zuOff() || navigator.onLine === false) return;
+  const store = zuRead(), days = Object.keys(store).sort();
+  if (!days.length) return;
+  try {
+    if (Date.now() - (Number(localStorage.getItem(ZU_LOCK)) || 0) < 15e3) return;
+    localStorage.setItem(ZU_LOCK, String(Date.now()));
+  } catch (_) {
+    return;
+  }
+  const id = zuDeviceId();
+  if (!id) return;
+  zuFlushing = true;
+  const persisted = await zuPersisted();
+  try {
+    for (const day of days) {
+      const counts = store[day];
+      const r = await fetch(ZU_ENDPOINT, {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", apikey: ZU_KEY, Authorization: "Bearer " + ZU_KEY },
+        body: JSON.stringify({ p_device: id, p_day: day, p_platform: zuPlatform(), p_installed: zuInstalled(), p_tz: zuTimeZone(), p_persisted: persisted, p_counts: counts })
+      });
+      if (r.ok || r.status >= 400 && r.status < 500) zuSubtract(day, counts);
+      else break;
+    }
+  } catch (_) {
+  } finally {
+    zuFlushing = false;
+    try {
+      localStorage.removeItem(ZU_LOCK);
+    } catch (_) {
+    }
+  }
+}
+(function zuCheckStorageReset() {
+  try {
+    if (zuOff() || zuPlatform() !== "android" || !zuInstalled()) return;
+    if (localStorage.getItem(ZU_ID_KEY)) return;
+    zuDeviceId();
+    zuAdd({ storage_reset: 1 });
+  } catch (_) {
+  }
+})();
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    zuHiddenAt = Date.now();
+    zuFlush();
+    return;
+  }
+  if (zuHiddenAt && Date.now() - zuHiddenAt > ZU_REOPEN_MS) zuShown = null;
+  zuHiddenAt = 0;
+  if (zuWanted) zuSurface(zuWanted);
+});
+window.addEventListener("pagehide", () => zuFlush());
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    zuShown = null;
+    if (zuWanted) zuSurface(zuWanted);
+  }
+});
+window.addEventListener("online", () => zuFlush());
+setTimeout(() => zuFlush(), 4e3);
+setInterval(() => zuFlush(), 15 * 60 * 1e3);
+
+// src/home/install.mjs
+var PWA_APP_VERSION = "v115";
+var pwaInstallReportBusy = false;
+var pwaInstallReportedThisPage = false;
+function pwaIsStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+var pwaInstallPrompt = null;
+var pwaInstallButton = document.getElementById("zk-launch-install");
+function pwaPaintInstallButton() {
+  if (pwaInstallButton) pwaInstallButton.hidden = pwaIsStandalone();
+}
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  pwaInstallPrompt = event;
+  pwaPaintInstallButton();
+});
+window.addEventListener("appinstalled", () => {
+  pwaInstallPrompt = null;
+  if (pwaInstallButton) pwaInstallButton.hidden = true;
+});
+try {
+  window.matchMedia("(display-mode: standalone)").addEventListener("change", pwaPaintInstallButton);
+} catch (_) {
+}
+pwaInstallButton?.addEventListener("click", async (event) => {
+  if (pwaIsStandalone()) {
+    event.preventDefault();
+    pwaInstallButton.hidden = true;
+    return;
+  }
+  if (!pwaInstallPrompt) return;
+  event.preventDefault();
+  const prompt = pwaInstallPrompt;
+  pwaInstallPrompt = null;
+  let choice = null;
+  try {
+    await prompt.prompt();
+    choice = await prompt.userChoice;
+  } catch (_) {
+    location.href = pwaInstallButton.href;
+    return;
+  }
+  if (choice && choice.outcome === "accepted") pwaInstallButton.hidden = true;
+  else pwaPaintInstallButton();
+});
+pwaPaintInstallButton();
+function pwaInstallPlatform() {
+  return zuPlatform();
+}
+function pwaInstallId() {
+  return zuDeviceId();
+}
+function pwaClearLegacyAnalyticsFlags() {
+  try {
+    [
+      "zad:pwa-standalone-reported-v1",
+      "zad:pwa-standalone-reported-v2",
+      "zad:pwa-standalone-pending-v1",
+      "zad:pwa-standalone-pending-v2",
+      "zad:pwa-install-accepted-reported-v1"
+    ].forEach((k) => localStorage.removeItem(k));
+  } catch (_) {
+  }
+}
+async function pwaReportStandalone() {
+  if (!pwaIsStandalone() || pwaInstallReportBusy || pwaInstallReportedThisPage) return;
+  const id = pwaInstallId();
+  if (!id) return;
+  pwaInstallReportBusy = true;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/record_pwa_install`, {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
+      body: JSON.stringify({
+        p_device_id: id,
+        p_platform: pwaInstallPlatform(),
+        p_event: "standalone_open",
+        p_app_version: PWA_APP_VERSION
+      })
+    });
+    if (r.ok) pwaInstallReportedThisPage = true;
+  } catch (_) {
+  } finally {
+    pwaInstallReportBusy = false;
+  }
+}
+pwaClearLegacyAnalyticsFlags();
+pwaReportStandalone();
+window.addEventListener("online", pwaReportStandalone, { passive: true });
+
+// src/home/reader-links.mjs
+function readerLink(j = null, khatmahCode = appState.code, page = null) {
+  const q = new URLSearchParams();
+  const n = Number(j);
+  if (Number.isInteger(page) && page >= 1 && page <= 604) q.set("page", String(page));
+  else if (Number.isInteger(n) && n >= 1 && n <= 30) q.set("juz", String(n));
+  const c = String(khatmahCode || "").trim().toUpperCase();
+  if (c) q.set("code", c);
+  const tail = q.toString();
+  return "/quran-read/" + (tail ? "?" + tail : "");
+}
+
 // src/home/content.mjs
 var JUZ = [
   "الفاتحة ١ – البقرة ١٤١",
@@ -2268,229 +2600,6 @@ var ZA_TEXT = [
 ];
 var ZA_LISTS = { "morning": [[0, 1], [1, 3], [2, 3], [3, 3], [4, 1], [5, 1], [6, 3], [7, 4], [8, 1], [9, 7], [10, 3], [11, 1], [12, 1], [13, 3], [14, 3], [15, 3], [16, 1], [17, 3], [18, 1], [19, 1], [20, 3], [21, 10], [22, 3], [23, 3], [24, 3], [25, 3], [26, 1], [27, 1], [28, 100], [29, 100], [30, 100]], "evening": [[0, 1], [31, 1], [1, 3], [2, 3], [3, 3], [32, 1], [5, 1], [6, 3], [33, 4], [34, 1], [9, 7], [10, 3], [35, 1], [36, 1], [13, 3], [14, 3], [15, 3], [16, 1], [17, 3], [37, 1], [19, 1], [20, 3], [21, 10], [22, 3], [23, 3], [24, 3], [25, 3], [28, 100], [27, 1], [29, 100]], "prayer": [[38, 3], [39, 1], [40, 1], [41, 1], [42, 33], [43, 33], [44, 33], [45, 1], [1, 1, { "fm": 3 }], [2, 1, { "fm": 3 }], [3, 1, { "fm": 3 }], [0, 1], [46, 10, { "only": "fm" }], [47, 1, { "only": "f" }]], "sleep": [[48, 3, { "note": "يجمع كفّيه ثم ينفث فيهما فيقرأ فيهما، ثم يمسح بهما ما استطاع من جسده، يبدأ برأسه ووجهه وما أقبل من جسده" }], [0, 1], [31, 1], [49, 1], [50, 1], [51, 1], [52, 1], [42, 33], [43, 33], [44, 34], [53, 1], [54, 1], [55, 1], [56, 1, { "surahs": [[32, "السجدة"], [67, "الملك"]] }], [57, 1]], "waking": [[58, 1], [59, 1], [60, 1], [61, 1]] };
 
-// src/shared/usage.mjs
-var ZU_ENDPOINT = "https://webqpbcijjbawatykoxe.supabase.co/rest/v1/rpc/record_usage";
-var ZU_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
-var ZU_STORE = "zad:usage-v1";
-var ZU_OFF = "zad:usage-off";
-var ZU_ID_KEY = "zad:pwa-install-id";
-var ZU_LOCK = "zad:usage-flush-at";
-var ZU_SURFACES = ["home", "prayer", "khatmahs", "adhkar", "quran", "reader", "listen"];
-var ZU_KEYS = ZU_SURFACES.concat("listen_seconds", "tayassar_seconds", "storage_reset", "pack_fresh");
-var ZU_KEEP_DAYS = 6;
-var ZU_REOPEN_MS = 30 * 60 * 1e3;
-(function zuReadSwitch() {
-  try {
-    const q = new URLSearchParams(location.search);
-    if (q.has("nostats")) {
-      localStorage.setItem(ZU_OFF, "1");
-      localStorage.removeItem(ZU_STORE);
-    } else if (q.has("stats")) localStorage.removeItem(ZU_OFF);
-  } catch (_) {
-  }
-})();
-var ZU_BOT = (() => {
-  try {
-    return navigator.webdriver === true || /bot|crawl|spider|slurp|headless|lighthouse|pagespeed|inspectiontool/i.test(navigator.userAgent || "");
-  } catch (_) {
-    return false;
-  }
-})();
-function zuOff() {
-  if (ZU_BOT) return true;
-  try {
-    return localStorage.getItem(ZU_OFF) === "1";
-  } catch (_) {
-    return true;
-  }
-}
-function zuDay(t = Date.now()) {
-  return new Date(t + 3 * 3600 * 1e3).toISOString().slice(0, 10);
-}
-function zuDeviceId() {
-  try {
-    let id = localStorage.getItem(ZU_ID_KEY);
-    const valid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (id && valid.test(id)) return id;
-    if (crypto.randomUUID) id = crypto.randomUUID();
-    else {
-      const b = new Uint8Array(16);
-      crypto.getRandomValues(b);
-      b[6] = b[6] & 15 | 64;
-      b[8] = b[8] & 63 | 128;
-      const h = [...b].map((v) => v.toString(16).padStart(2, "0")).join("");
-      id = `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
-    }
-    localStorage.setItem(ZU_ID_KEY, id);
-    return id;
-  } catch (_) {
-    return null;
-  }
-}
-function zuPlatform() {
-  const ua = navigator.userAgent || "";
-  const uaPlatform = navigator.userAgentData && navigator.userAgentData.platform || "";
-  if (/Android/i.test(ua) || /Android/i.test(uaPlatform)) return "android";
-  if (/iPad|iPhone|iPod/i.test(ua) || /iPad|iPhone|iPod|iOS/i.test(uaPlatform) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) return "ios";
-  if (/Windows|Macintosh|MacIntel|Linux|CrOS/i.test(`${ua} ${uaPlatform} ${navigator.platform || ""}`)) return "desktop";
-  return "other";
-}
-function zuTimeZone() {
-  try {
-    return String(Intl.DateTimeFormat().resolvedOptions().timeZone || "").slice(0, 64) || null;
-  } catch (_) {
-    return null;
-  }
-}
-function zuInstalled() {
-  try {
-    return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  } catch (_) {
-    return false;
-  }
-}
-async function zuPersisted() {
-  try {
-    return navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : null;
-  } catch (_) {
-    return null;
-  }
-}
-function zuRead() {
-  try {
-    const v = JSON.parse(localStorage.getItem(ZU_STORE) || "{}");
-    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
-  } catch (_) {
-    return {};
-  }
-}
-function zuWrite(store) {
-  try {
-    localStorage.setItem(ZU_STORE, JSON.stringify(store));
-  } catch (_) {
-  }
-}
-function zuAdd(counts) {
-  if (zuOff()) return;
-  const store = zuRead(), day = zuDay(), oldest = zuDay(Date.now() - ZU_KEEP_DAYS * 864e5);
-  for (const d of Object.keys(store)) if (d < oldest) delete store[d];
-  const row = store[day] || (store[day] = {});
-  for (const [key, n] of Object.entries(counts)) {
-    if (!ZU_KEYS.includes(key) || !(n > 0)) continue;
-    row[key] = (row[key] || 0) + Math.round(n);
-  }
-  if (!Object.keys(row).length) delete store[day];
-  zuWrite(store);
-}
-function zuSubtract(day, sent) {
-  const store = zuRead(), row = store[day];
-  if (!row) return;
-  for (const [key, n] of Object.entries(sent)) {
-    row[key] = (row[key] || 0) - n;
-    if (row[key] <= 0) delete row[key];
-  }
-  if (!Object.keys(row).length) delete store[day];
-  zuWrite(store);
-}
-var zuShown = null;
-var zuWanted = null;
-var zuSurfaceTimer = 0;
-var zuHiddenAt = 0;
-function zuSurface(name) {
-  if (!ZU_SURFACES.includes(name)) return;
-  zuWanted = name;
-  clearTimeout(zuSurfaceTimer);
-  zuSurfaceTimer = setTimeout(() => {
-    if (document.hidden || zuWanted === zuShown) return;
-    zuShown = zuWanted;
-    zuAdd({ [zuShown]: 1 });
-  }, 600);
-}
-var zuAudioFrom = 0;
-var zuAudioCarry = 0;
-var zuAudioTayassar = () => false;
-function zuCommitAudio(keepGoing) {
-  if (!zuAudioFrom) return;
-  const now = Date.now(), ms = now - zuAudioFrom;
-  zuAudioFrom = keepGoing ? now : 0;
-  if (ms <= 0 || ms > 3600 * 1e3) return;
-  const total = ms + zuAudioCarry, secs = Math.floor(total / 1e3);
-  zuAudioCarry = total - secs * 1e3;
-  if (!secs) return;
-  let tayassar = false;
-  try {
-    tayassar = !!zuAudioTayassar();
-  } catch (_) {
-  }
-  zuAdd(tayassar ? { listen_seconds: secs, tayassar_seconds: secs } : { listen_seconds: secs });
-}
-var zuFlushing = false;
-async function zuFlush() {
-  zuCommitAudio(true);
-  if (zuFlushing || zuOff() || navigator.onLine === false) return;
-  const store = zuRead(), days = Object.keys(store).sort();
-  if (!days.length) return;
-  try {
-    if (Date.now() - (Number(localStorage.getItem(ZU_LOCK)) || 0) < 15e3) return;
-    localStorage.setItem(ZU_LOCK, String(Date.now()));
-  } catch (_) {
-    return;
-  }
-  const id = zuDeviceId();
-  if (!id) return;
-  zuFlushing = true;
-  const persisted = await zuPersisted();
-  try {
-    for (const day of days) {
-      const counts = store[day];
-      const r = await fetch(ZU_ENDPOINT, {
-        method: "POST",
-        keepalive: true,
-        headers: { "Content-Type": "application/json", apikey: ZU_KEY, Authorization: "Bearer " + ZU_KEY },
-        body: JSON.stringify({ p_device: id, p_day: day, p_platform: zuPlatform(), p_installed: zuInstalled(), p_tz: zuTimeZone(), p_persisted: persisted, p_counts: counts })
-      });
-      if (r.ok || r.status >= 400 && r.status < 500) zuSubtract(day, counts);
-      else break;
-    }
-  } catch (_) {
-  } finally {
-    zuFlushing = false;
-    try {
-      localStorage.removeItem(ZU_LOCK);
-    } catch (_) {
-    }
-  }
-}
-(function zuCheckStorageReset() {
-  try {
-    if (zuOff() || zuPlatform() !== "android" || !zuInstalled()) return;
-    if (localStorage.getItem(ZU_ID_KEY)) return;
-    zuDeviceId();
-    zuAdd({ storage_reset: 1 });
-  } catch (_) {
-  }
-})();
-document.addEventListener("visibilitychange", () => {
-  if (document.hidden) {
-    zuHiddenAt = Date.now();
-    zuFlush();
-    return;
-  }
-  if (zuHiddenAt && Date.now() - zuHiddenAt > ZU_REOPEN_MS) zuShown = null;
-  zuHiddenAt = 0;
-  if (zuWanted) zuSurface(zuWanted);
-});
-window.addEventListener("pagehide", () => zuFlush());
-window.addEventListener("pageshow", (event) => {
-  if (event.persisted) {
-    zuShown = null;
-    if (zuWanted) zuSurface(zuWanted);
-  }
-});
-window.addEventListener("online", () => zuFlush());
-setTimeout(() => zuFlush(), 4e3);
-setInterval(() => zuFlush(), 15 * 60 * 1e3);
-
 // src/home/quran-map.mjs
 var SURAH_NAMES = ["الفاتحة", "البقرة", "آل عمران", "النساء", "المائدة", "الأنعام", "الأعراف", "الأنفال", "التوبة", "يونس", "هود", "يوسف", "الرعد", "إبراهيم", "الحجر", "النحل", "الإسراء", "الكهف", "مريم", "طه", "الأنبياء", "الحج", "المؤمنون", "النور", "الفرقان", "الشعراء", "النمل", "القصص", "العنكبوت", "الروم", "لقمان", "السجدة", "الأحزاب", "سبإ", "فاطر", "يس", "الصافات", "ص", "الزمر", "غافر", "فصلت", "الشورى", "الزخرف", "الدخان", "الجاثية", "الأحقاف", "محمد", "الفتح", "الحجرات", "ق", "الذاريات", "الطور", "النجم", "القمر", "الرحمن", "الواقعة", "الحديد", "المجادلة", "الحشر", "الممتحنة", "الصف", "الجمعة", "المنافقون", "التغابن", "الطلاق", "التحريم", "الملك", "القلم", "الحاقة", "المعارج", "نوح", "الجن", "المزمل", "المدثر", "القيامة", "الإنسان", "المرسلات", "النبأ", "النازعات", "عبس", "التكوير", "الانفطار", "المطففين", "الانشقاق", "البروج", "الطارق", "الأعلى", "الغاشية", "الفجر", "البلد", "الشمس", "الليل", "الضحى", "الشرح", "التين", "العلق", "القدر", "البينة", "الزلزلة", "العاديات", "القارعة", "التكاثر", "العصر", "الهمزة", "الفيل", "قريش", "الماعون", "الكوثر", "الكافرون", "النصر", "المسد", "الإخلاص", "الفلق", "الناس"];
 var SURAH_START_PAGES = [1, 2, 50, 77, 106, 128, 151, 177, 187, 208, 221, 235, 249, 255, 262, 267, 282, 293, 305, 312, 322, 332, 342, 350, 359, 367, 377, 385, 396, 404, 411, 415, 418, 428, 434, 440, 446, 453, 458, 467, 477, 483, 489, 496, 499, 502, 507, 511, 515, 518, 520, 523, 526, 528, 531, 534, 537, 542, 545, 549, 551, 553, 554, 556, 558, 560, 562, 564, 566, 568, 570, 572, 574, 575, 577, 578, 580, 582, 583, 585, 586, 587, 587, 589, 590, 591, 591, 592, 593, 594, 595, 595, 596, 596, 597, 597, 598, 598, 599, 599, 600, 600, 601, 601, 601, 602, 602, 602, 603, 603, 603, 604, 604, 604];
@@ -2507,109 +2616,6 @@ function surahForPage(page) {
 var JUZ_PAGES = [[1, 21], [22, 41], [42, 61], [62, 81], [82, 101], [102, 121], [122, 141], [142, 161], [162, 181], [182, 201], [202, 221], [222, 241], [242, 261], [262, 281], [282, 301], [302, 321], [322, 341], [342, 361], [362, 381], [382, 401], [402, 421], [422, 441], [442, 461], [462, 481], [482, 501], [502, 521], [522, 541], [542, 561], [562, 581], [582, 604]];
 
 // src/home/app.js
-var SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
-var SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
-var BOT_USERNAME = "ZadAlkhair_Bot";
-var PWA_APP_VERSION = "v115";
-var pwaInstallReportBusy = false;
-var pwaInstallReportedThisPage = false;
-function pwaIsStandalone() {
-  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
-}
-var pwaInstallPrompt = null;
-var pwaInstallButton = document.getElementById("zk-launch-install");
-function pwaPaintInstallButton() {
-  if (pwaInstallButton) pwaInstallButton.hidden = pwaIsStandalone();
-}
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  pwaInstallPrompt = event;
-  pwaPaintInstallButton();
-});
-window.addEventListener("appinstalled", () => {
-  pwaInstallPrompt = null;
-  if (pwaInstallButton) pwaInstallButton.hidden = true;
-});
-try {
-  window.matchMedia("(display-mode: standalone)").addEventListener("change", pwaPaintInstallButton);
-} catch (_) {
-}
-pwaInstallButton?.addEventListener("click", async (event) => {
-  if (pwaIsStandalone()) {
-    event.preventDefault();
-    pwaInstallButton.hidden = true;
-    return;
-  }
-  if (!pwaInstallPrompt) return;
-  event.preventDefault();
-  const prompt = pwaInstallPrompt;
-  pwaInstallPrompt = null;
-  let choice = null;
-  try {
-    await prompt.prompt();
-    choice = await prompt.userChoice;
-  } catch (_) {
-    location.href = pwaInstallButton.href;
-    return;
-  }
-  if (choice && choice.outcome === "accepted") pwaInstallButton.hidden = true;
-  else pwaPaintInstallButton();
-});
-pwaPaintInstallButton();
-function pwaInstallPlatform() {
-  return zuPlatform();
-}
-function pwaInstallId() {
-  return zuDeviceId();
-}
-function pwaClearLegacyAnalyticsFlags() {
-  try {
-    [
-      "zad:pwa-standalone-reported-v1",
-      "zad:pwa-standalone-reported-v2",
-      "zad:pwa-standalone-pending-v1",
-      "zad:pwa-standalone-pending-v2",
-      "zad:pwa-install-accepted-reported-v1"
-    ].forEach((k) => localStorage.removeItem(k));
-  } catch (_) {
-  }
-}
-async function pwaReportStandalone() {
-  if (!pwaIsStandalone() || pwaInstallReportBusy || pwaInstallReportedThisPage) return;
-  const id = pwaInstallId();
-  if (!id) return;
-  pwaInstallReportBusy = true;
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/record_pwa_install`, {
-      method: "POST",
-      keepalive: true,
-      headers: { "Content-Type": "application/json", apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY },
-      body: JSON.stringify({
-        p_device_id: id,
-        p_platform: pwaInstallPlatform(),
-        p_event: "standalone_open",
-        p_app_version: PWA_APP_VERSION
-      })
-    });
-    if (r.ok) pwaInstallReportedThisPage = true;
-  } catch (_) {
-  } finally {
-    pwaInstallReportBusy = false;
-  }
-}
-pwaClearLegacyAnalyticsFlags();
-pwaReportStandalone();
-window.addEventListener("online", pwaReportStandalone, { passive: true });
-function readerLink(j = null, khatmahCode = appState.code, page = null) {
-  const q = new URLSearchParams();
-  const n = Number(j);
-  if (Number.isInteger(page) && page >= 1 && page <= 604) q.set("page", String(page));
-  else if (Number.isInteger(n) && n >= 1 && n <= 30) q.set("juz", String(n));
-  const c = String(khatmahCode || "").trim().toUpperCase();
-  if (c) q.set("code", c);
-  const tail = q.toString();
-  return "/quran-read/" + (tail ? "?" + tail : "");
-}
 var PT_KEY = "zad:prayer";
 var PT_NAMES = { fajr: "الفجر", sunrise: "الشروق", dhuhr: "الظهر", asr: "العصر", maghrib: "المغرب", isha: "العشاء" };
 var PT_ORDER = ["fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha"];
