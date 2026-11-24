@@ -29,10 +29,8 @@ test("home screen keeps the shared theme, real crawlable tabs and offline patter
   assert.equal((read("src/home/bootstrap.js").match(/ztOnLaunchChange\(\);/g)||[]).length,2);
 });
 
-test("midday prayers read as ظهرًا, not عصرًا",()=>{
-  const src=read("src/home/formatting-clock.js");
-  const ctx={};vm.createContext(ctx);
-  vm.runInContext(src.slice(0,src.indexOf("const hourOptions"))+";this.fmtTime=fmtTime",ctx);
+test("midday prayers read as ظهرًا, not عصرًا",async()=>{
+  const ctx=await import(path.join(root,"src/home/format.mjs"));
   assert.match(ctx.fmtTime(12,19),/ظهرًا$/);assert.match(ctx.fmtTime(15,18),/عصرًا$/);
   assert.match(ctx.fmtTime(5,31),/صباحًا$/);assert.match(ctx.fmtTime(19,1),/مساءً$/);
 });
@@ -148,4 +146,11 @@ test("guide pages carry the home menu beside the theme button, sharing the insta
   assert.match(read("seo-install.js"),/url=location\.origin\+'\/install\/'/);
   assert.match(read("src/home/today.js"),/new URL\("\/install\/",location\.origin\)/);
   assert.match(read("src/home/bootstrap.js"),/zkArmRootGuard\(\);\n\/\* «تعليمات»/);
+});
+
+test("name matching finds the same name written with or without diacritics and hamzas",async()=>{
+  const {nameScore,similarTo}=await import(path.join(root,"src/home/name-matching.mjs"));
+  assert.equal(nameScore("أيمن الأشقر","ايمن الاشقر"),1);
+  assert.deepEqual(similarTo("محمد",[{id:"a",name:"محمّد"},{id:"b",name:"سالم"}]).map(m=>m.id),["a"]);
+  assert.deepEqual(similarTo("خالد",[{id:"b",name:"سالم"}]),[]);
 });

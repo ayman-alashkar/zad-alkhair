@@ -1,3 +1,11 @@
+/* ===================== حالة التطبيق ===================== */
+let justCreated=false;
+let publicKhatmahs=[],publicKhatmahsLoaded=false,publicKhatmahsLoading=false,publicKhatmahsError=false;
+let code="", state=null, viewer=null, selected=null, gateName="",
+    screen="boot";   /* boot | home | create | share | gate | main | notfound */
+
+const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
+
 function zkReplaceHash(value=""){
   try{
     const url=new URL(location.href);url.hash=value?String(value):"";

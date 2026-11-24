@@ -60,6 +60,7 @@ jobs:
           PGUSER: postgres
           ZAD_DB_FINGERPRINT_EXPECTED: supabase/checks/fingerprint.expected
   functions:
+    # وظائف Supabase ووحدات الواجهة، بأدوات Deno
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,3 +74,6 @@ jobs:
         run: deno lint supabase/functions
       - name: Shared library tests
         run: deno test --allow-env supabase/functions/_shared
+      # وحدات الواجهة (.mjs) تستورد كل ما تستعمله: اسم غير معرّف يعني اعتمادًا خفيًا على الأقسام القديمة
+      - name: Front-end modules use only what they import
+        run: deno lint --rules-tags= --rules-include=no-undef src/home/*.mjs

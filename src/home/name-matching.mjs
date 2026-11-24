@@ -1,10 +1,12 @@
+import { araNorm, keyOf } from "./format.mjs";
+
 /* ═══════════ مطابقة الأسماء ═══════════
    المنهج المعتمد لأسماء الأشخاص: Jaro-Winkler لا مسافة التحرير،
    لأنها تكافئ تطابق أوائل الحروف وتتسامح مع تبادل موضعين،
    وأكثر اختلاف الأسماء العربية يقع في آخرها (ة/ا، ى/ي).
    ويُضاف إليها تفكيك الاسم إلى كلمات، لأن الكنية تُزاد وتُنقص. */
 
-function jaro(a,b){
+export function jaro(a,b){
   if(a===b) return 1;
   const la=a.length, lb=b.length;
   if(!la||!lb) return 0;
@@ -31,7 +33,7 @@ function jaro(a,b){
 }
 
 /* مكافأة البادئة، بحدّ أربعة أحرف كما في الصيغة المعتمدة */
-function jw(a,b){
+export function jw(a,b){
   const j=jaro(a,b);
   if(j<0.7) return j;
   let p=0;
@@ -40,13 +42,13 @@ function jw(a,b){
 }
 
 /* كلمات لا تميّز صاحبها، فلا يُبنى عليها تشابه */
-const KUNYA=new Set(["ام","ابو","ابن","بنت","بن","ابي","عبد","ال","الحاج","الحاجه","الشيخ","دكتور"]);
+export const KUNYA=new Set(["ام","ابو","ابن","بنت","بن","ابي","عبد","ال","الحاج","الحاجه","الشيخ","دكتور"]);
 
-const tokensOf=s=>araNorm(s).split(/\s+/).filter(t=>t.length>=2);
-const coreTokens=s=>tokensOf(s).filter(t=>!KUNYA.has(t));
+export const tokensOf=s=>araNorm(s).split(/\s+/).filter(t=>t.length>=2);
+export const coreTokens=s=>tokensOf(s).filter(t=>!KUNYA.has(t));
 
 /* درجة التشابه بين اسمين: صفر إلى واحد */
-function nameScore(a,b){
+export function nameScore(a,b){
   const ka=keyOf(a), kb=keyOf(b);
   if(ka===kb) return 1;
 
@@ -64,9 +66,9 @@ function nameScore(a,b){
 
 /* العتبة: العتبات الشائعة بين ٠٫٨٠ و٠٫٩٠، واخترنا ٠٫٨٧
    لأن الاقتراح يُعرض ولا يُفرض، فالتساهل اليسير أهون من التفويت */
-const NEAR=0.87;
+export const NEAR=0.87;
 
-function similarTo(typed,members){
+export function similarTo(typed,members){
   return (members||[])
     .map(m=>({m,s:nameScore(typed,m.name)}))
     .filter(x=>x.s>=NEAR && x.m.id!==keyOf(typed))
@@ -74,10 +76,3 @@ function similarTo(typed,members){
     .slice(0,3)
     .map(x=>x.m);
 }
-
-let justCreated=false;
-let publicKhatmahs=[],publicKhatmahsLoaded=false,publicKhatmahsLoading=false,publicKhatmahsError=false;
-let code="", state=null, viewer=null, selected=null, gateName="",
-    screen="boot";   /* boot | home | create | share | gate | main | notfound */
-
-const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
