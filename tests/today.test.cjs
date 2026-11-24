@@ -22,9 +22,8 @@ test("home screen keeps the shared theme, real crawlable tabs and offline patter
   assert.match(home,/<nav class="zk-tabs" id="zk-tabs" aria-label="الأقسام">/);
   assert.match(sw,/"\.\/icons\/zad-rosette\.svg"/);
   assert.ok(fs.existsSync(path.join(root,"icons/zad-rosette.svg")));
-  // The Today screen reads the khatmah into its own variables; it must never assign the app's globals.
-  // (A statement-position assignment; a query string such as "&code=" in a URL is not one.)
-  assert.doesNotMatch(today.replace(/(&amp;|[?&])(code|state|viewer)=/g,""),/(^|[\s;{(,])(code|viewer|state)\s*=[^=]/m);
+  // The Today screen reads the open khatmah; it must never change the app's shared state.
+  assert.doesNotMatch(today,/appState\.(code|viewer|state|screen)\s*=[^=]/);
   // Opening and closing the home screen keeps the tabs and browser colour in step.
   assert.equal((read("src/home/bootstrap.js").match(/ztOnLaunchChange\(\);/g)||[]).length,2);
 });

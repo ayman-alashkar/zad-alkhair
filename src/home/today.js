@@ -210,9 +210,9 @@ async function ztCompleteJuz(khatmahCode,n){
   if(activeKhatmahGet()!==khatmahCode)return;
   zkHideLaunch();
   await boot();
-  if(!state||!viewer||code!==khatmahCode)return;
-  const j=state.juz[n-1];
-  if(!j||j.ownerId!==viewer.id||j.status==="done")return;
+  if(!appState.state||!appState.viewer||appState.code!==khatmahCode)return;
+  const j=appState.state.juz[n-1];
+  if(!j||j.ownerId!==appState.viewer.id||j.status==="done")return;
   if(!await appConfirm(`هل أتممت قراءة الجزء ${ar(n)}؟`,{title:"إتمام الجزء",ok:"نعم، أتممته"}))return;
   await act("done",n-1);
 }

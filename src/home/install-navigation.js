@@ -87,7 +87,7 @@ const JUZ_START=[
   [21,1],  [23,1],  [25,21], [27,56], [29,46], [33,31], [36,28], [39,32],
   [41,47], [46,1],  [51,31], [58,1],  [67,1],  [78,1],
 ];
-function readerLink(j=null,khatmahCode=code,page=null){
+function readerLink(j=null,khatmahCode=appState.code,page=null){
   const q=new URLSearchParams();
   const n=Number(j);
   if(Number.isInteger(page)&&page>=1&&page<=604) q.set("page",String(page));

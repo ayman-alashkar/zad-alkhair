@@ -1,8 +1,8 @@
 /* ===================== لوح الجزء ===================== */
 function openSheet(i){
-  selected=i;
-  const j=state.juz[i];
-  const o=j.ownerId?memberOf(j.ownerId):null, mine=j.ownerId===viewer.id;
+  appState.selected=i;
+  const j=appState.state.juz[i];
+  const o=j.ownerId?memberOf(j.ownerId):null, mine=j.ownerId===appState.viewer.id;
   let acts="", note="";
   if(j.status==="free") acts=`<button class="btn green" data-act="take" data-i="${i}">احجز هذا الجزء</button>`
     + (isOrganizer()?`<button class="btn" id="s-assign" data-i="${i}">أسنده إلى مشارك</button>`:"");
@@ -45,7 +45,7 @@ function openSheet(i){
   if(asg) asg.onclick=()=>assignDialog(i);
   document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>act(b.dataset.act,+b.dataset.i));
 }
-function closeLayer(){document.getElementById("layer").innerHTML="";document.body.classList.remove("zk-launch-prayer");selected=null;}
+function closeLayer(){document.getElementById("layer").innerHTML="";document.body.classList.remove("zk-launch-prayer");appState.selected=null;}
 function modal(html,kind=""){
   document.getElementById("layer").innerHTML=`<div class="modal${kind?` ${kind}`:""}" id="m-back"><div class="frame">${html}</div></div>`;
   document.getElementById("m-back").onclick=e=>{if(e.target.id==="m-back")closeLayer();};
@@ -121,7 +121,7 @@ function askOrganizerCode(){
       if(!oc) return toast("أدخل الرمز");
       busy=true;okBtn.disabled=true;
       try{
-        const r=await rpc("sign_in",{p_code:code,p_id:viewer.id,p_name:viewer.name,
+        const r=await rpc("sign_in",{p_code:appState.code,p_id:appState.viewer.id,p_name:appState.viewer.name,
           p_device:deviceId(),p_org_code:oc});
         if(r&&r.ok){ localStorage.setItem(cKey(),oc); return done(oc); }
         toast(r&&r.needCode?"الرمز غير صحيح":(r&&r.error)||"تعذّر التحقق");
@@ -163,33 +163,33 @@ function appCopyFallback(title,value){
 }
 
 async function loadPublicKhatmahs(force=false){
-  if(publicKhatmahsLoading||(!force&&publicKhatmahsLoaded)) return;
-  publicKhatmahsLoading=true;publicKhatmahsError=false;
-  if(screen==="home") render();
+  if(appState.publicKhatmahsLoading||(!force&&appState.publicKhatmahsLoaded)) return;
+  appState.publicKhatmahsLoading=true;appState.publicKhatmahsError=false;
+  if(appState.screen==="home") render();
   try{
     const rows=await rpc("list_active_khatmahs",{});
-    publicKhatmahs=Array.isArray(rows)?rows:[];
-    publicKhatmahsLoaded=true;
+    appState.publicKhatmahs=Array.isArray(rows)?rows:[];
+    appState.publicKhatmahsLoaded=true;
   }catch(e){
     /* بيانات عرض داخل بيئة المعاينة وحدها؛ لا تُستعمل على الموقع الحقيقي. */
     if(location.hostname==="terminal.local"){
-      publicKhatmahs=[
+      appState.publicKhatmahs=[
         {publicId:"preview-1",title:"ختمة أهل القرآن",accessType:"public",participantCount:12,reservedCount:23,doneCount:14,endDate:plusDays(5)},
         {publicId:"preview-2",title:"ختمة المحبة",accessType:"public",participantCount:8,reservedCount:17,doneCount:9,endDate:plusDays(8)},
         {publicId:"preview-3",title:"رفقة النور",accessType:"private",participantCount:21,reservedCount:30,doneCount:26,endDate:plusDays(2)},
         {publicId:"preview-4",title:"ختمة العائلة",accessType:"private",participantCount:6,reservedCount:11,doneCount:4,endDate:plusDays(10)}
       ];
-      publicKhatmahsLoaded=true;
-    }else publicKhatmahsError=true;
+      appState.publicKhatmahsLoaded=true;
+    }else appState.publicKhatmahsError=true;
   }
   finally{
-    publicKhatmahsLoading=false;
-    if(screen==="home") render();
+    appState.publicKhatmahsLoading=false;
+    if(appState.screen==="home") render();
   }
 }
 
 async function joinKhatmahCard(publicId){
-  const item=publicKhatmahs.find(k=>k.publicId===publicId);
+  const item=appState.publicKhatmahs.find(k=>k.publicId===publicId);
   if(!item) return;
   const mine=mineByPublicId(publicId);
   if(mine){zkReplaceHash(mine.code);boot();return;}
@@ -229,7 +229,7 @@ async function historyDialog(){
   let result;
   try{
     result=await rpc("get_my_history",{
-      p_code:code,p_id:viewer.id,p_device:deviceId()
+      p_code:appState.code,p_id:appState.viewer.id,p_device:deviceId()
     });
   }catch(e){
     modal(`<div class="display" style="font-size:1.35rem">سجلي في هذه الختمة</div>

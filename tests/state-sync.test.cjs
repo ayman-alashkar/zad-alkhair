@@ -11,11 +11,9 @@ for (const fails of [false, true]) {
   test(`a delayed khatmah ${fails ? "error" : "response"} is ignored after leaving it`, async () => {
     const response = Promise.withResolvers();
     const calls = [];
+    const appState = { code: "ABCD", state: { title: "الختمة السابقة" }, screen: "main", viewer: null };
     const context = vm.createContext({
-      code: "ABCD",
-      state: { title: "الختمة السابقة" },
-      screen: "main",
-      viewer: null,
+      appState,
       rpc(method, { p_code }) {
         assert.equal(method, "get_state");
         assert.equal(p_code, "ABCD");
@@ -30,13 +28,13 @@ for (const fails of [false, true]) {
     vm.runInContext(source, context);
 
     const loading = context.refresh();
-    Object.assign(context, { code: "", state: null, screen: "home" });
+    Object.assign(appState, { code: "", state: null, screen: "home" });
     if (fails) response.reject(new Error("Network unavailable"));
     else response.resolve(null);
 
     assert.equal(await loading, false);
-    assert.equal(context.state, null);
-    assert.equal(context.screen, "home");
+    assert.equal(appState.state, null);
+    assert.equal(appState.screen, "home");
     assert.deepEqual(calls, []);
   });
 }

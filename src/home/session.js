@@ -1,8 +1,5 @@
-/* ===================== حالة التطبيق ===================== */
-let justCreated=false;
-let publicKhatmahs=[],publicKhatmahsLoaded=false,publicKhatmahsLoading=false,publicKhatmahsError=false;
-let code="", state=null, viewer=null, selected=null, gateName="",
-    screen="boot";   /* boot | home | create | share | gate | main | notfound */
+/* ===================== الجلسة =====================
+   حالة التطبيق المشتركة في app-state.mjs (appState). */
 
 const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
 
@@ -43,7 +40,7 @@ function activeKhatmahForget(value=""){
   try{const saved=JSON.parse(localStorage.getItem("zad:khatmah-state-v1")||"null");if(!c||saved?.code===c)localStorage.removeItem("zad:khatmah-state-v1");}catch(_){ }
 }
 const linkFor=c=>location.origin+location.pathname+"#"+c;
-const vKey=()=>"zad:viewer:"+code;
+const vKey=()=>"zad:viewer:"+appState.code;
 
 /* ختمات هذا الجهاز: يُبنى منها شريط «ختماتي» في الرئيسية،
    فيعود القارئ إلى ختمته بضغطة، بلا رمز ولا اسم. */
@@ -56,11 +53,11 @@ function minePut(list){
   try{ localStorage.setItem(MINE,JSON.stringify(list.slice(0,12))); }catch(e){}
 }
 function mineRemember(){
-  if(!code||!viewer||!state) return;
-  activeKhatmahSet(code,true);
-  const rest=mineGet().filter(x=>x.code!==code);
-  rest.unshift({code,name:viewer.name,title:state.title||"",
-                publicId:state.publicId||null,at:Date.now()});
+  if(!appState.code||!appState.viewer||!appState.state) return;
+  activeKhatmahSet(appState.code,true);
+  const rest=mineGet().filter(x=>x.code!==appState.code);
+  rest.unshift({code: appState.code,name:appState.viewer.name,title:appState.state.title||"",
+                publicId:appState.state.publicId||null,at:Date.now()});
   minePut(rest);
 }
 /* ختمة من بطاقات «الختمات الجارية» يكون هذا الجهاز عضوًا فيها، فتُفتح دون رمز. */
@@ -94,10 +91,10 @@ function minePruneMissing(){
     });
     if(!missing.size&&!filled) return false;
     minePut(next);
-    if(screen==="home") render();
+    if(appState.screen==="home") render();
     return true;
   })().finally(()=>{minePrunePromise=null});
   return minePrunePromise;
 }
-const cKey=()=>"zad:orgcode:"+code;
+const cKey=()=>"zad:orgcode:"+appState.code;
 const orgCode=()=>localStorage.getItem(cKey())||null;
