@@ -5,7 +5,7 @@
    و«واة» «اة» (الصلواة، الزكواة، الحيواة). ثم يُسمح في النص بألف أو همزة زائدة بين حروف ما كُتب
    («الرحمن» تجد «الرحمان»، و«القران» تجد «القرءان»)، وبمسافة اختيارية مكان المسافة («يأيها» و«يا أيها»).
    والهاء في آخر الكلمة المكتوبة تقبل التاء المربوطة («الصلاه»). */
-function searchNormalize(s){
+export function searchNormalize(s){
   return String(s||"")
     .replace(/&#(\d+);/g,(_,code)=>String.fromCodePoint(Number(code)))
     .replace(/#\d+/g,"")
@@ -19,7 +19,7 @@ function searchNormalize(s){
     .replace(/\s+/g," ")
     .trim();
 }
-function searchMatcher(query){
+export function searchMatcher(query){
   const q=searchNormalize(query);
   if(!q)return null;
   const parts=[...q].map((c,i)=>{

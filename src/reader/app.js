@@ -1,5 +1,8 @@
 
 import { zuDeviceId, zuPackFresh, zuPlatform, zuSurface, zuTrackAudio } from "../shared/usage.mjs";
+import { escapeHtml, pad3 } from "./util.mjs";
+import { searchMatcher, searchNormalize } from "./search-text.mjs";
+import { TAFSIR_DATASET, loadTafsirIndex, tafsirAyahRecord, tafsirFadlForSurah } from "./tafsir.mjs";
 (()=>{
 "use strict";
 /* v85 Reader Navigation + Hardware Back + Bottom Dock
@@ -32,7 +35,6 @@ let surahHeaderReady=false;
    الفهرس قد يظهر قبل ذلك؛ ومن يغادره إلى المصحف ينتظر هذا الوعد. */
 let readerBooted=false,readerGoPending=false,readerBootDone=()=>{};
 const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=true;resolve()}});
-/* @include tafsir.js */
 
 /* @include reciters.js */
 
@@ -43,7 +45,6 @@ const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=tru
 /* @include page-fit.js */
 
 /* @include uthmani.js */
-/* @include search-text.js */
 /* @include reading-tools.js */
 
 /* @include library.js */
