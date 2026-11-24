@@ -5,6 +5,8 @@ const path = require("node:path");
 // Expand explicit source sections at build time. They stay in the original
 // lexical scope and order; browsers still receive one self-contained document.
 // "../shared/name.js" sections come from src/shared and may serve both apps.
+// Files that are real ES modules end in .mjs and are imported instead
+// (import ... from "./name.mjs"); esbuild bundles them, so they are not sections.
 function readAppScript(dir) {
   const used = new Set();
   const entry = fs.readFileSync(path.join(dir, "app.js"), "utf8");

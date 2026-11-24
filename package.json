@@ -15,5 +15,8 @@
     "check": "npm run check:syntax && npm run check:generated && npm run validate:tafsir && npm test",
     "dev": "node scripts/serve.cjs",
     "test:browser": "node --test tests/browser/*.test.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

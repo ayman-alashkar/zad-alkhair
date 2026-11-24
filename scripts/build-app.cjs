@@ -7,6 +7,7 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { readerRoutes, supported, shareOrigin, preview, indexPath } = require("./quran-routes.cjs");
 const { readAppScript } = require("./app-source.cjs");
+const esbuild = require("esbuild");
 const root = path.resolve(__dirname, "..");
 const check = process.argv.includes("--check");
 const escape = value => String(value).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
@@ -26,9 +27,22 @@ function write(output, content) {
 
 function appSources(dir) {
   const css = fs.readFileSync(path.join(dir, "styles.css"), "utf8");
-  const js = readAppScript(dir).replace(/^const MUSHAF_VERSION=.*;$/m, () => `const MUSHAF_VERSION=${JSON.stringify(mushafVersion())};`);
+  const js = bundle(dir, readAppScript(dir).replace(/^const MUSHAF_VERSION=.*;$/m, () => `const MUSHAF_VERSION=${JSON.stringify(mushafVersion())};`));
   if (/<\/script[\s>]/i.test(js) || /<\/style[\s>]/i.test(css)) throw Error(`Unsafe inline closing tag in ${dir}`);
   return { css, js };
+}
+
+/* esbuild يضمّ إلى الملف الموحّد ما يستورده من وحدات (import). الناتج بصيغة esm دون
+   import أو export باقية، فيعمل في <script> عادي، وأسماء الملف الموحّد تبقى عامة كما
+   كانت (تعتمد عليها اختبارات المتصفح) حتى يتحول كله إلى وحدات. لا تحويل للصياغة ولا
+   تصغير؛ يعيد esbuild تنسيق الشيفرة ويحذف التعليقات، فالمصدر الذي يُعدَّل هو src/. */
+function bundle(dir, source) {
+  const result = esbuild.buildSync({
+    stdin: { contents: source, resolveDir: dir, sourcefile: "app.js", loader: "js" },
+    bundle: true, format: "esm", target: "esnext", charset: "utf8",
+    legalComments: "inline", write: false, logLevel: "silent",
+  });
+  return result.outputFiles[0].text;
 }
 
 function readerMeta({ mode, surah, path: route }) {

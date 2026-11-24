@@ -1,6 +1,6 @@
+import { JUZ_PAGES, SURAH_NAMES, SURAH_START_PAGES, surahForPage } from "./quran-map.mjs";
 
 /* @include content.js */
-/* @include quran-map.js */
 
 /* ===================== الإعدادات ===================== */
 const SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
