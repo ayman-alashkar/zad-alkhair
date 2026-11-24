@@ -3,8 +3,9 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const root=path.join(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 
-test("surah map matches the catalogue and names the right surah for a page",()=>{
-  const ctx={};vm.createContext(ctx);vm.runInContext(read("src/home/quran-map.js")+";this.SURAH_NAMES=SURAH_NAMES;this.SURAH_START_PAGES=SURAH_START_PAGES;this.surahForPage=surahForPage",ctx);
+test("surah map matches the catalogue and names the right surah for a page",async()=>{
+  // وحدة ES حقيقية: تُستورد كما يستوردها التطبيق
+  const ctx=await import(path.join(root,"src/home/quran-map.mjs"));
   const catalog=JSON.parse(read("src/discovery/catalog.json")).surahs.map(s=>s.name);
   assert.deepEqual([...ctx.SURAH_NAMES],catalog);
   const pages=[...ctx.SURAH_START_PAGES];
@@ -49,7 +50,7 @@ test("khatmah screens rely on the bottom tabs: no duplicate brand, Quran link or
 
 test("juz page ranges on the home screen match the reader's",()=>{
   const grab=(file)=>{const m=read(file).match(/const JUZ_PAGES=(\[\[.*?\]\]);/);assert.ok(m,file);return JSON.parse(m[1])};
-  assert.deepEqual(grab("src/home/quran-map.js"),grab("src/reader/state.js"));
+  assert.deepEqual(grab("src/home/quran-map.mjs"),grab("src/reader/state.js"));
 });
 
 test("the reader records the furthest page only inside the user's unfinished juz",()=>{
