@@ -63,7 +63,7 @@ test("mutashabihat: every QUL occurrence maps to words inside its own ayah",()=>
     for(const [a,b] of occ){n++;assert.ok(a<=b&&ayahOf(a)===ayahOf(b),`phrase ${id} [${a},${b}] crosses an ayah`)}
   }
   assert.equal(n,3558);
-  const text=([a,b])=>H.words.slice(a,b+1).join(" ");
-  assert.ok(M["16318"].map(text).filter(t=>t==="إِن كُنتَ مِنَ ٱلصَّٰدِقِينَ").length>=3,"15:7 offset handled via QCF split");
-  assert.ok(M["4970"].some(o=>text(o)==="فَسَيُؤۡتِيهِ أَجۡرًا عَظِيمࣰا"),"48:10 QUL fix");
+  const in157=M["16318"].filter(([a])=>ayahOf(a)===ayahOf(gi(15,7,0)));
+  assert.deepEqual(in157,[[gi(15,7,3),gi(15,7,6)]],"15:7 «إن كنت من الصادقين»: QUL 5–8 on QCF split = words 4–7");
+  assert.ok(M["4970"].some(([a,b])=>a===gi(48,10,22)&&b===gi(48,10,24)),"48:10 QUL fix: words 23–25");
 });
