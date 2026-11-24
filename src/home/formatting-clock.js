@@ -1,11 +1,11 @@
 /* ═══════════ موعد الختمة والعدّاد ═══════════ */
 function deadlineDialog(){
-  if(!state||!state.endDate) return;
+  if(!appState.state||!appState.state.endDate) return;
   modal(`<div class="deadline-dialog" role="dialog" aria-modal="true" aria-label="موعد انتهاء الختمة">
     <p class="deadline-copy">التاريخ المتفق عليه للانتهاء من القراءة الجماعية لهذه الختمة هو:</p>
     <div class="deadline-date-field">
-      <span class="deadline-date-g">${esc(fmtClockG(state.endDate))}</span>
-      <span class="deadline-date-h">${esc(fmtClockH(state.endDate))}</span>
+      <span class="deadline-date-g">${esc(fmtClockG(appState.state.endDate))}</span>
+      <span class="deadline-date-h">${esc(fmtClockH(appState.state.endDate))}</span>
     </div>
     <button class="btn gold" id="deadline-close">إغلاق</button>
   </div>`);
@@ -15,9 +15,9 @@ function deadlineDialog(){
 /* الوقت المتبقّي حتى نهاية يوم الموعد، في لوحة التقدّم (khatmahProgress). */
 function zTick(){
   const hms=document.getElementById("cd-hms");
-  if(!hms||!state||!state.endDate) return;
+  if(!hms||!appState.state||!appState.state.endDate) return;
   const days=document.getElementById("cd-days"), lab=document.getElementById("cd-lab");
-  const left=new Date(state.endDate+"T23:59:59").getTime()-Date.now();
+  const left=new Date(appState.state.endDate+"T23:59:59").getTime()-Date.now();
   if(left<=0){
     if(lab) lab.textContent="انقضى وقت الختمة";
     if(days) days.textContent="";

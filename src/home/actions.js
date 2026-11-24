@@ -2,8 +2,8 @@
 let actionBusy=false;
 async function act(a,i){
   const num=i+1;
-  const j=state.juz[i];
-  const mine=j.ownerId===viewer.id;
+  const j=appState.state.juz[i];
+  const mine=j.ownerId===appState.viewer.id;
   const o=j.ownerId?memberOf(j.ownerId):null;
 
   /* حين يتصرّف المنظّم في جزء غيره، يُسأل باسم صاحبه صراحةً */
@@ -16,14 +16,14 @@ async function act(a,i){
   if(actionBusy) return;
   actionBusy=true;
   let ownerId=j.ownerId;
-  const unreadBefore=state.juz.filter(x=>x.status!=="done").length;
+  const unreadBefore=appState.state.juz.filter(x=>x.status!=="done").length;
   try{
     try{
       let r;
-      if(a==="take")        r=await rpc("claim_juz",{p_code:code,p_id:viewer.id,p_num:num,p_device:deviceId()});
-      else if(a==="free")   r=await rpc("release_juz",{p_code:code,p_id:viewer.id,p_num:num,p_org_code:orgCode(),p_device:deviceId()});
-      else if(a==="done")   r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:true,p_org_code:orgCode(),p_device:deviceId()});
-      else if(a==="undone") r=await rpc("set_done",{p_code:code,p_id:viewer.id,p_num:num,p_done:false,p_org_code:orgCode(),p_device:deviceId()});
+      if(a==="take")        r=await rpc("claim_juz",{p_code:appState.code,p_id:appState.viewer.id,p_num:num,p_device:deviceId()});
+      else if(a==="free")   r=await rpc("release_juz",{p_code:appState.code,p_id:appState.viewer.id,p_num:num,p_org_code:orgCode(),p_device:deviceId()});
+      else if(a==="done")   r=await rpc("set_done",{p_code:appState.code,p_id:appState.viewer.id,p_num:num,p_done:true,p_org_code:orgCode(),p_device:deviceId()});
+      else if(a==="undone") r=await rpc("set_done",{p_code:appState.code,p_id:appState.viewer.id,p_num:num,p_done:false,p_org_code:orgCode(),p_device:deviceId()});
       if(r&&!r.ok){ await refresh(); return r.handled?undefined:toast(r.error||"تعذّر التنفيذ"); }
       if(r&&r.ownerId) ownerId=r.ownerId;
     }catch(e){ return toast("تعذّر الاتصال"); }
@@ -33,15 +33,15 @@ async function act(a,i){
 
     if(a==="done"){
       /* تحفظ الرسالة محليًا إن انقطع الاتصال، ثم تُعاد محاولتها تلقائيًا. */
-      enqueueEdge("notify-done",{code,id:ownerId,num},
-        `notify:${code}:${state.roundNo||1}:${ownerId}:${num}:done`);
-      const left=loaded&&state
-        ?state.juz.filter(x=>x.status!=="done").length
+      enqueueEdge("notify-done",{code: appState.code,id:ownerId,num},
+        `notify:${appState.code}:${appState.state.roundNo||1}:${ownerId}:${num}:done`);
+      const left=loaded&&appState.state
+        ?appState.state.juz.filter(x=>x.status!=="done").length
         :Math.max(0,unreadBefore-1);
       if(left===0){
         /* اكتملت الثلاثون، فيُبلَّغ الجميع تلقائيًا. */
-        enqueueEdge("announce",{kind:"done",code},
-          `announce:${code}:${state.roundNo||1}:done`);
+        enqueueEdge("announce",{kind:"done",code: appState.code},
+          `announce:${appState.code}:${appState.state.roundNo||1}:done`);
       }
       toast(left===0?"تمّت الختمة، تقبّل الله"
         :mine?`تقبّل الله. بقي ${ar(left)} جزءًا`:`سُجّل جزء ${o?o.name:""}`);
@@ -50,33 +50,33 @@ async function act(a,i){
 }
 
 function copyLink(){
-  const url=linkFor(code);
+  const url=linkFor(appState.code);
   navigator.clipboard.writeText(url).then(()=>toast("نُسخ الرابط"))
     .catch(()=>appCopyFallback("نسخ رابط الدعوة",url));
 }
 
 function shareText(){
-  const free=state.juz.map((j,i)=>j.status==="free"?i+1:null).filter(Boolean);
-  const done=state.juz.filter(j=>j.status==="done").length;
-  const msg=`${state.title}${state.dedication?"\nعلى نية: "+state.dedication:""}
-تنتهي: ${fmtG(state.endDate)} — ${fmtH(state.endDate)}
+  const free=appState.state.juz.map((j,i)=>j.status==="free"?i+1:null).filter(Boolean);
+  const done=appState.state.juz.filter(j=>j.status==="done").length;
+  const msg=`${appState.state.title}${appState.state.dedication?"\nعلى نية: "+appState.state.dedication:""}
+تنتهي: ${fmtG(appState.state.endDate)} — ${fmtH(appState.state.endDate)}
 تمّت قراءة ${done} من 30 جزءًا.
 ${free.length?"الأجزاء المتاحة: "+free.join("، "):"اكتملت الحجوزات، بارك الله فيكم."}
-ادخل واحجز جزءك: ${linkFor(code)}`;
+ادخل واحجز جزءك: ${linkFor(appState.code)}`;
   navigator.clipboard.writeText(msg).then(()=>toast("نُسخت الرسالة، أرسلها للمجموعة"))
     .catch(()=>appCopyFallback("نسخ رسالة الدعوة",msg));
 }
 
 function logoutCurrent(){
   localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
-  activeKhatmahForget(code);
-  clearInterval(lkTimer); lkTimer=null; linking=false;
-  viewer=null;gateName="";closeTopMenu();closeLayer();screen="gate";render();
+  activeKhatmahForget(appState.code);
+  clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false;
+  appState.viewer=null;appState.gateName="";closeTopMenu();closeLayer();appState.screen="gate";render();
 }
 function reminderFromAccountMenu(){
   /* في الختمة العامة لكل مشارك ساعة تذكير خاصة به؛
      لذلك يبدأ التفعيل وإعادة التفعيل دائمًا باختيار الساعة. */
-  if(state&&state.accessType==="public") askReminderHour();
+  if(appState.state&&appState.state.accessType==="public") askReminderHour();
   else linkTelegram();
 }
 function handleTopMenuClick(e){

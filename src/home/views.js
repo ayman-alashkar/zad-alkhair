@@ -5,14 +5,14 @@ function shamsa(){
   const cx=100,cy=100,r1=66,r2=90,step=12,gap=1.6;
   const pt=(r,d)=>{const a=d*Math.PI/180;return[(cx+r*Math.cos(a)).toFixed(2),(cy+r*Math.sin(a)).toFixed(2)];};
   let w="",dots="";
-  state.juz.forEach((j,i)=>{
+  appState.state.juz.forEach((j,i)=>{
     const a1=-90+i*step+gap/2,a2=-90+(i+1)*step-gap/2;
     const[x1,y1]=pt(r2,a1),[x2,y2]=pt(r2,a2),[x3,y3]=pt(r1,a2),[x4,y4]=pt(r1,a1);
     const cls=j.status==="done"?"done":j.status==="taken"?"taken":"free";
     w+=`<path class="kw ${cls}" style="animation-delay:${i*18}ms" d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z"/>`;
-    if(j.ownerId===viewer.id){const[x,y]=pt(97,-90+(i+.5)*step);dots+=`<circle class="kdot" cx="${x}" cy="${y}" r="2.8"/>`;}
+    if(j.ownerId===appState.viewer.id){const[x,y]=pt(97,-90+(i+.5)*step);dots+=`<circle class="kdot" cx="${x}" cy="${y}" r="2.8"/>`;}
   });
-  const done=state.juz.filter(j=>j.status==="done").length;
+  const done=appState.state.juz.filter(j=>j.status==="done").length;
   return `<svg class="shamsa" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img"
       aria-label="تمّت قراءة ${ar(done)} من ثلاثين جزءًا">
     <defs><linearGradient id="kgold" x1="0" y1="0" x2="0" y2="1">
@@ -24,8 +24,8 @@ function shamsa(){
 
 /* لوحة التقدّم: الشمسة ومفتاح ألوانها، وتحتها الوقت المتبقّي (يحدّثه zTick). */
 function khatmahProgress(){
-  const n=s=>state.juz.filter(s).length;
-  const done=n(j=>j.status==="done"),free=n(j=>j.status==="free"),mine=n(j=>j.ownerId===viewer.id);
+  const n=s=>appState.state.juz.filter(s).length;
+  const done=n(j=>j.status==="done"),free=n(j=>j.status==="free"),mine=n(j=>j.ownerId===appState.viewer.id);
   return `<div class="kp">
     <div class="kp-row">
       <div class="kp-ring">${shamsa()}
@@ -55,12 +55,12 @@ function juzBadge(n,done,big=false){
 /* أبعد صفحة بلغها القارئ داخل الجزء، كما يحفظها القارئ نفسه (recordJuzProgress). */
 function juzReading(n){
   const [first,last]=JUZ_PAGES[n-1],total=last-first+1;
-  const reached=Number((ztReadJson(ZT_JUZ_PROGRESS)||{})[code]?.[n]);
+  const reached=Number((ztReadJson(ZT_JUZ_PROGRESS)||{})[appState.code]?.[n]);
   const started=reached>=first&&reached<=last;
   return {total,reached,started,read:started?reached-first:0,atEnd:started&&reached===last};
 }
 function myJuzCard(){
-  const mine=state.juz.map((j,i)=>({i,n:i+1,done:j.status==="done",own:j.ownerId===viewer.id})).filter(x=>x.own);
+  const mine=appState.state.juz.map((j,i)=>({i,n:i+1,done:j.status==="done",own:j.ownerId===appState.viewer.id})).filter(x=>x.own);
   const head=(sub)=>`<div class="sec-head"><h2 class="sec">أجزاؤك</h2>${sub?`<span class="myjuz-sub">${sub}</span>`:""}</div>`;
   if(!mine.length) return `<section class="frame myjuz">${head("")}
       <div class="myjuz-empty"><span class="jbadge free big" aria-hidden="true"><b>+</b></span>
@@ -72,7 +72,7 @@ function myJuzCard(){
       <div class="myjuz-empty"><span class="jbadge done big" aria-hidden="true"><b>✓</b></span>
         <div><strong>أتممت أجزاءك، تقبّل الله منك</strong><span>${mine.length===1?"الجزء":"الأجزاء"} ${mine.map(x=>ar(x.n)).join(" و")}</span></div></div></section>`;
   const cur=pending[0],r=juzReading(cur.n);
-  const href=readerLink(cur.n,code,r.started?r.reached:null);
+  const href=readerLink(cur.n,appState.code,r.started?r.reached:null);
   const readLabel=!r.started?"اقرأ جزءك":r.atEnd?"راجع جزءك":"تابع القراءة";
   const order=mine.length>1?`<span class="myjuz-order">${ztJuzOrder(doneCount+1,mine.length)}</span>`:"";
   const rows=mine.filter(x=>x!==cur).map(x=>{
@@ -138,7 +138,7 @@ function mineStrip(){
 }
 
 function khatmahCardsGroup(accessType,title,note){
-  const items=publicKhatmahs.filter(k=>
+  const items=appState.publicKhatmahs.filter(k=>
     (k.accessType==="public"?"public":"private")===accessType);
   const cards=items.length?`<div class="khatmah-cards">${items.map(k=>{
     const done=Number(k.doneCount)||0,reserved=Number(k.reservedCount)||0;
@@ -178,10 +178,10 @@ function khatmahCardsGroup(accessType,title,note){
 }
 
 function publicCardsMarkup(){
-  if(publicKhatmahsLoading&&!publicKhatmahsLoaded){
+  if(appState.publicKhatmahsLoading&&!appState.publicKhatmahsLoaded){
     return `<div class="khatmah-cards cards-loading">${Array.from({length:4},()=>'<div class="khatmah-card" aria-hidden="true"></div>').join("")}</div>`;
   }
-  if(publicKhatmahsError&&!publicKhatmahs.length){
+  if(appState.publicKhatmahsError&&!appState.publicKhatmahs.length){
     return `<div class="cards-empty">تعذّر تحميل الختمات الجارية الآن.</div>`;
   }
   return `<div class="khatmah-kinds">
@@ -205,16 +205,16 @@ function topMineMarkup(withBack=false){
 }
 /* قائمة الحساب في شاشة الختمة: الاسم وشارتاه في رأسها، ثم ما كان في شريط المستخدم. */
 function topAccountMarkup(){
-  const me=viewer&&state?memberOf(viewer.id):null;
-  const head=viewer?`<div class="tb-menu-head"><b>${esc(viewer.name)}</b>
+  const me=appState.viewer&&appState.state?memberOf(appState.viewer.id):null;
+  const head=appState.viewer?`<div class="tb-menu-head"><b>${esc(appState.viewer.name)}</b>
       ${isOrganizer()?'<span class="tag">المنظّم</span>':""}${me&&me.linked?'<span class="tag j">التذكير مفعّل</span>':""}</div>`:"";
   return `${head}<button class="tb-menu-item" data-top-action="mine">ختماتي</button>
     <button class="tb-menu-item" data-top-action="history">سجلي</button>
     <button class="tb-menu-item" data-top-action="reminder">${me&&me.linked?"أعد تفعيل التذكير":"فعّل التذكير"}</button>
     <button class="tb-menu-item" data-top-action="logout">خروج</button>
-    ${viewer&&state&&!isOrganizer()?'<button class="tb-menu-item danger" data-top-action="leave">مغادرة الختمة</button>':""}`;
+    ${appState.viewer&&appState.state&&!isOrganizer()?'<button class="tb-menu-item danger" data-top-action="leave">مغادرة الختمة</button>':""}`;
 }
-function showTopMenu(kind,mineBack=(kind==="mine"&&screen==="main")){
+function showTopMenu(kind,mineBack=(kind==="mine"&&appState.screen==="main")){
   const menu=document.getElementById("tb-popover"),btn=document.getElementById("tb-user");
   if(!menu||!btn) return;
   menu.innerHTML=kind==="mine"?topMineMarkup(mineBack):topAccountMarkup();
@@ -224,7 +224,7 @@ function toggleTopMenu(){
   const menu=document.getElementById("tb-popover"),btn=document.getElementById("tb-user");
   if(!menu||!btn||!btn.textContent.trim()) return;
   if(!menu.hidden){closeTopMenu();return;}
-  showTopMenu(screen==="home"?"mine":"account");
+  showTopMenu(appState.screen==="home"?"mine":"account");
 }
 /* قائمة الختمات وشاشة الختمة لهما رأس كبقية التبويبات: «الختمات الجماعية» يمينًا،
    وزرّ بأيقونة شخص يسارًا يفتح «ختماتي» في القائمة، وقائمة الحساب داخل الختمة.
@@ -234,20 +234,20 @@ function syncTopUser(){
   const topUser=document.getElementById("tb-user");
   if(!topUser) return;
   closeTopMenu();
-  const inMain=!!(viewer&&screen==="main");
+  const inMain=!!(appState.viewer&&appState.screen==="main");
   document.body.classList.remove("show-top-user","show-home-mine");
-  document.body.classList.toggle("kh-head",screen==="home"||inMain);
+  document.body.classList.toggle("kh-head",appState.screen==="home"||inMain);
   topUser.textContent="";
   topUser.removeAttribute("aria-label");
   topUser.disabled=true;
 
-  if(screen==="home"&&mineGet().length){
+  if(appState.screen==="home"&&mineGet().length){
     topUser.innerHTML=`${TOP_USER_ICON}<span class="tb-sr">ختماتي</span>`;
     topUser.setAttribute("aria-label","ختماتي");topUser.disabled=false;
     document.body.classList.add("show-home-mine");
   }else if(inMain){
-    topUser.innerHTML=`${TOP_USER_ICON}<span class="tb-sr">${esc(viewer.name)}</span>`;
-    topUser.setAttribute("aria-label",`حسابي: ${viewer.name}`);topUser.disabled=false;
+    topUser.innerHTML=`${TOP_USER_ICON}<span class="tb-sr">${esc(appState.viewer.name)}</span>`;
+    topUser.setAttribute("aria-label",`حسابي: ${appState.viewer.name}`);topUser.disabled=false;
     document.body.classList.add("show-top-user");
   }
 }
@@ -259,11 +259,11 @@ function syncTopUser(){
 let lastRendered={screen:"",html:""};
 function render(){
   const v={boot:viewBoot,home:viewHome,create:viewSetup,share:viewShare,
-           gate:viewGate,main:viewMain,notfound:viewNotFound,linking:viewLinking}[screen]||viewBoot;
+           gate:viewGate,main:viewMain,notfound:viewNotFound,linking:viewLinking}[appState.screen]||viewBoot;
   const app=document.getElementById("app"),html=v();
-  const sameScreen=lastRendered.screen===screen;
+  const sameScreen=lastRendered.screen===appState.screen;
   if(sameScreen&&lastRendered.html===html&&app.firstChild){requestAnimationFrame(syncTopUser);return}
-  lastRendered={screen,html};
+  lastRendered={screen: appState.screen,html};
   app.classList.toggle("no-intro",sameScreen);
   app.innerHTML=html;
   bind();
@@ -273,9 +273,9 @@ function render(){
 const viewBoot=()=>`<div class="gate"><p class="lede">جارٍ التحميل…</p></div>`;
 
 function viewLinking(){
-  const org = justCreated || (state && viewer && state.organizerId===viewer.id);
+  const org = appState.justCreated || (appState.state && appState.viewer && appState.state.organizerId===appState.viewer.id);
   return `<div class="gate">
-    <div class="display">${esc(state&&state.title?state.title:"زاد الخير")}</div>
+    <div class="display">${esc(appState.state&&appState.state.title?appState.state.title:"زاد الخير")}</div>
     ${rule()}
     <div class="frame card">
       <div class="tgbig">${TG_ICON}</div>
@@ -320,7 +320,7 @@ function viewNotFound(){
   return `<div class="gate">
     <div class="display">لا توجد ختمة بهذا الرمز</div>
     ${rule()}
-    <p class="lede">تأكّد من الرمز <b>${esc(code)}</b>، أو اطلبه من المنظّم من جديد.</p>
+    <p class="lede">تأكّد من الرمز <b>${esc(appState.code)}</b>، أو اطلبه من المنظّم من جديد.</p>
     <button class="btn gold wide" data-home style="margin-top:1.2rem">رجوع</button>
   </div>`;
 }
@@ -369,7 +369,7 @@ function viewSetup(){
 }
 
 function viewShare(){
-  const isPublic=state&&state.accessType==="public";
+  const isPublic=appState.state&&appState.state.accessType==="public";
   return `<div class="gate" style="max-width:44ch">
     <div class="display">بدأت الختمة</div>
     ${rule()}
@@ -378,9 +378,9 @@ function viewShare(){
       :"شارك هذا الرابط مع المجموعة. من يفتحه يكتب اسمه ويحجز جزءه مباشرة."}</p>
     <div class="frame card">
       ${isPublic?'<span class="access-badge public">ختمة عامة</span>':`
-        <div class="codebig">${esc(code)}</div>
+        <div class="codebig">${esc(appState.code)}</div>
         <p class="hint" style="margin:0 0 1.1rem">رمز الختمة، لمن أراد الانضمام يدويًا</p>`}
-      <div class="linkbox">${esc(linkFor(code))}</div>
+      <div class="linkbox">${esc(linkFor(appState.code))}</div>
       <button class="btn gold wide" id="btn-copy" style="margin-top:.9rem">نسخ رابط الدعوة</button>
       <button class="btn wide" id="btn-enter" style="margin-top:.5rem">ادخل إلى الختمة</button>
       <p class="hint">احفظ رمز المنظّم الذي اخترته، فهو ما يثبت أنك مشرف الختمة.</p>
@@ -389,29 +389,29 @@ function viewShare(){
 }
 
 function viewGate(){
-  const asks=!!gateName;
-  const org=memberOf(state.organizerId);
-  const isPublic=state.accessType==="public";
+  const asks=!!appState.gateName;
+  const org=memberOf(appState.state.organizerId);
+  const isPublic=appState.state.accessType==="public";
   return `<div class="gate">
     <p class="joining">انضمامك إلى ختمة</p>
-    <div class="display">${esc(state.title)}</div>
-    ${state.dedication?`<p class="lede" style="margin-top:.2rem">على نية: ${esc(state.dedication)}</p>`:""}
+    <div class="display">${esc(appState.state.title)}</div>
+    ${appState.state.dedication?`<p class="lede" style="margin-top:.2rem">على نية: ${esc(appState.state.dedication)}</p>`:""}
     <p class="joining">بإشراف ${esc(org?org.name:"—")} · ${isPublic
       ?'<span class="access-badge public">ختمة عامة</span>'
-      :`رمز الختمة <b>${esc(code)}</b>`}</p>
+      :`رمز الختمة <b>${esc(appState.code)}</b>`}</p>
     ${rule()}
     <div class="frame card">
     ${asks?`
       <div class="field-row"><label for="f-code">رمز المنظّم</label>
         <input id="f-code" class="field" type="password" autocomplete="off" placeholder="الرمز الذي اخترته">
-        <p class="hint">اسم «${esc(gateName)}» هو منظّم الختمة، ورمزه يضمن أن يبقى منظّمًا واحدًا.</p></div>
+        <p class="hint">اسم «${esc(appState.gateName)}» هو منظّم الختمة، ورمزه يضمن أن يبقى منظّمًا واحدًا.</p></div>
       <button class="btn gold wide" id="btn-code">تأكيد</button>
       <button class="btn quiet wide" id="btn-back" style="margin-top:.5rem">رجوع</button>`
     :`
       <div class="field-row"><input id="f-name" class="field" placeholder="أدخل اسمك لو سمحت" autocomplete="name"></div>
       <button class="btn gold wide" id="btn-login">دخول</button>
       <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>
-      ${(state.members||[]).some(m=>m.linked)?`<div class="rule" style="margin:1.1rem 0 .8rem"><i>◆</i></div>
+      ${(appState.state.members||[]).some(m=>m.linked)?`<div class="rule" style="margin:1.1rem 0 .8rem"><i>◆</i></div>
       <p class="hint" style="margin:0 0 .6rem">دخلت هذه الختمة من قبل؟</p>
       <button class="btn tg-login outline wide" id="btn-tg-login">${TG_ICON}<span>ادخل عبر تيليغرام</span></button>`:""}`}
     </div>
@@ -421,17 +421,15 @@ function viewGate(){
   </div>`;
 }
 
-/* يبقيان كما اختارهما المستخدم حين يُعاد رسم الصفحة بعد كل تحديث. */
-let juzFilter="all", peopleOpen=false;
 function viewMain(){
-  const done=state.juz.filter(j=>j.status==="done").length;
-  const free=state.juz.filter(j=>j.status==="free").length;
-  const dl=daysLeft(state.endDate);
-  const me=memberOf(viewer.id)||{};
+  const done=appState.state.juz.filter(j=>j.status==="done").length;
+  const free=appState.state.juz.filter(j=>j.status==="free").length;
+  const dl=daysLeft(appState.state.endDate);
+  const me=memberOf(appState.viewer.id)||{};
 
-  const cells=state.juz.map((j,i)=>{
+  const cells=appState.state.juz.map((j,i)=>{
     const cls=j.status==="done"?"done":j.status==="taken"?"taken":"";
-    const mine=j.ownerId===viewer.id?" mine":"";
+    const mine=j.ownerId===appState.viewer.id?" mine":"";
     const o=j.ownerId?memberOf(j.ownerId):null;
     return `<button class="cell ${cls}${mine}" data-i="${i}" style="animation-delay:${i*14}ms" aria-label="الجزء ${i+1}">
       <span class="num">${ar(i+1)}</span>
@@ -439,23 +437,23 @@ function viewMain(){
       <span class="who">${o?esc(o.name):(j.status==="done"?"مقروء":"متاح")}</span></button>`;
   }).join("");
 
-  const sortedMembers=[...(state.members||[])].sort((a,b)=>
+  const sortedMembers=[...(appState.state.members||[])].sort((a,b)=>
     norm(a.name).localeCompare(norm(b.name),"ar",{sensitivity:"base"}));
   const roster=sortedMembers.map(m=>{
-    const n=state.juz.filter(j=>j.ownerId===m.id).length;
-    const d=state.juz.filter(j=>j.ownerId===m.id&&j.status==="done").length;
+    const n=appState.state.juz.filter(j=>j.ownerId===m.id).length;
+    const d=appState.state.juz.filter(j=>j.ownerId===m.id&&j.status==="done").length;
     return `<div class="roster-row">
       <span class="avatar">${esc(norm(m.name).charAt(0)||"؟")}</span>
       <span class="rwho">
         <span class="rname">${esc(m.name)}</span>
-        ${m.id===state.organizerId?'<span class="tag">المنظّم</span>':""}
+        ${m.id===appState.state.organizerId?'<span class="tag">المنظّم</span>':""}
       </span>
       <span class="rtag">
         ${m.linked?'<span class="tag j">التذكير مفعّل</span>':(!m.linked&&m.exempt?'<span class="tag ex">بلا تذكير</span>':"")}
       </span>
       <span class="n">${n?`${ar(d)} / ${ar(n)}`:"—"}</span>
       ${isOrganizer()
-        ? (m.id!==viewer.id
+        ? (m.id!==appState.viewer.id
             ? `<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>`
             : `<span class="dots-gap" aria-hidden="true"></span>`)
         : ""}
@@ -464,8 +462,8 @@ function viewMain(){
   return `<div class="khatma-shell">
   <div class="frame hero">
     <div class="hero-intro">
-      <div class="display">${esc(state.title)}</div>
-      ${state.dedication?`<div class="dedication">على نية: ${esc(state.dedication)}</div>`:""}
+      <div class="display">${esc(appState.state.title)}</div>
+      ${appState.state.dedication?`<div class="dedication">على نية: ${esc(appState.state.dedication)}</div>`:""}
     </div>
     ${khatmahProgress()}
   </div>
@@ -478,17 +476,17 @@ function viewMain(){
     <section class="juz-panel">
       <div class="sec-head"><h2 class="sec">الأجزاء الثلاثون</h2>
         ${free?`<div class="jfilter" role="group" aria-label="عرض الأجزاء">
-          <button type="button" data-jf="all" aria-pressed="${juzFilter!=="free"}">الكل</button>
-          <button type="button" data-jf="free" aria-pressed="${juzFilter==="free"}">المتاحة ${ar(free)}</button>
+          <button type="button" data-jf="all" aria-pressed="${appState.juzFilter!=="free"}">الكل</button>
+          <button type="button" data-jf="free" aria-pressed="${appState.juzFilter==="free"}">المتاحة ${ar(free)}</button>
         </div>`:""}
         <div class="legend"><b class="lg-free">متاح</b><b class="lg-take">محجوز</b><b class="lg-done">تمّت قراءته</b></div>
       </div>
-      <div class="grid${free&&juzFilter==="free"?" only-free":""}" id="juz-grid">${cells}</div>
+      <div class="grid${free&&appState.juzFilter==="free"?" only-free":""}" id="juz-grid">${cells}</div>
     </section>
 
-    <details class="people-panel" id="people-panel"${peopleOpen?" open":""}>
+    <details class="people-panel" id="people-panel"${appState.peopleOpen?" open":""}>
       <summary class="sec-head"><h2 class="sec">المشاركون</h2>
-        <span class="people-count">${ar((state.members||[]).length)}</span>
+        <span class="people-count">${ar((appState.state.members||[]).length)}</span>
         <svg class="people-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <div class="frame roster-list">${roster}</div>
     </details>
@@ -497,15 +495,15 @@ function viewMain(){
   <div class="toolbar">
     <button class="btn quiet" data-home>صفحة الختمات</button>
     <button class="btn" id="btn-share">نسخ رابط الدعوة</button>
-    <span class="codechip">رمز الختمة <b>${esc(code)}</b></span>
+    <span class="codechip">رمز الختمة <b>${esc(appState.code)}</b></span>
     ${isOrganizer()?`<button class="btn quiet" id="btn-broadcast">رسالة للمجموعة</button>`:""}
     ${isOrganizer()?`<button class="btn quiet" id="btn-settings">إعدادات الختمة</button>`:""}
     ${isOrganizer()?`<button class="btn danger" id="btn-reset">إلغاء الختمة</button>`:""}
     ${isOrganizer()?"":`<button class="btn danger spacer" id="btn-leave">مغادرة الختمة</button>`}
   </div>
-  ${state.accessType==="public"
-    ? (me.linked?`<p class="hint">موعد تذكيرك اليومي: ${fmtTime(me.reminderHour??state.reminderHour,me.reminderMinute??0)}.</p>`:"")
-    : `<p class="hint">يصل التذكير يوميًا في ${fmtTime(state.reminderHour,state.reminderMinute??0)} إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>`}
+  ${appState.state.accessType==="public"
+    ? (me.linked?`<p class="hint">موعد تذكيرك اليومي: ${fmtTime(me.reminderHour??appState.state.reminderHour,me.reminderMinute??0)}.</p>`:"")
+    : `<p class="hint">يصل التذكير يوميًا في ${fmtTime(appState.state.reminderHour,appState.state.reminderMinute??0)} إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>`}
   </div>`;
 }
 
@@ -520,7 +518,7 @@ function viewLinkCall(){
 }
 
 function viewOverdue(){
-  const left=state.juz.filter(j=>j.status!=="done").length;
+  const left=appState.state.juz.filter(j=>j.status!=="done").length;
   return `<div class="frame overdue">
     <h2>انقضى الموعد</h2>
     <p>بقي ${ar(left)} ${left===1?"جزء لم يُقرأ":"أجزاء لم تُقرأ"}. لا يُلغى شيء، والتذكير يستمر أسبوعًا بعد الموعد.</p>

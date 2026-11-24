@@ -2,31 +2,31 @@
 async function boot(){
   flushOutbox();
   minePruneMissing();
-  code=hashCode();
+  appState.code=hashCode();
   closeLayer();
-  clearInterval(lkTimer); lkTimer=null; linking=false;
+  clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false;
 
-  if(!code){
+  if(!appState.code){
     /* زر «الختمات الجماعية» يفتح سياق الجلسة أولًا، ثم آخر ختمة محفوظة
        على الجهاز. إن لم توجد ختمة نشطة أصلًا نعرض صفحة الختمات المعتادة. */
     const active=activeKhatmahGet();
-    if(active){zkReplaceHash(active);code=active;}
-    else{state=null;viewer=null;screen="home";render();loadPublicKhatmahs();return;}
+    if(active){zkReplaceHash(active);appState.code=active;}
+    else{appState.state=null;appState.viewer=null;appState.screen="home";render();loadPublicKhatmahs();return;}
   }
 
-  activeKhatmahSet(code,false);
+  activeKhatmahSet(appState.code,false);
   zlEnsure();
   loadViewer();
-  if(viewer) activeKhatmahSet(code,true);
+  if(appState.viewer) activeKhatmahSet(appState.code,true);
   /* A member who has opened this khatmah before sees it at once; refresh()
      then corrects it (or moves to linking / not-found) as before. */
-  const saved=viewer?khatmahStateSaved(code):null;
+  const saved=appState.viewer?khatmahStateSaved(appState.code):null;
   if(saved){
-    state=saved;
-    const me=memberOf(viewer.id);
-    if(me&&(me.linked||me.exempt)){screen="main";render();}
-    else{state=null;screen="boot";render();}
-  }else{screen="boot";render();}
+    appState.state=saved;
+    const me=memberOf(appState.viewer.id);
+    if(me&&(me.linked||me.exempt)){appState.screen="main";render();}
+    else{appState.state=null;appState.screen="boot";render();}
+  }else{appState.screen="boot";render();}
   await refresh();
 }
 document.getElementById("btn-help").onclick=helpDialog;
@@ -35,7 +35,7 @@ const tbHome=document.getElementById("tb-home");
    «الختمات الجماعية» there returns to it. */
 if(tbHome) tbHome.onclick=()=>{zkShowLaunch();zkArmRootGuard()};
 const tbReader=document.getElementById("tb-reader");
-if(tbReader) tbReader.onclick=()=>{ location.href=readerLink(null,code); };
+if(tbReader) tbReader.onclick=()=>{ location.href=readerLink(null,appState.code); };
 const tbUser=document.getElementById("tb-user");
 if(tbUser) tbUser.onclick=e=>{e.stopPropagation();toggleTopMenu();};
 const tbPopover=document.getElementById("tb-popover");
@@ -218,7 +218,7 @@ function zkCountSurface(){
 }
 if(zkIncomingKhatmah||zkSection==="khatmahs"){
   zkHideLaunch();
-  const booted=zkLoginReady?(screen="boot",render(),zkLoginReady.finally(boot)):boot();
+  const booted=zkLoginReady?(appState.screen="boot",render(),zkLoginReady.finally(boot)):boot();
   /* طلب دخول عبر تيليغرام بدأ قبل إعادة تحميل الصفحة يُستأنف بعد الإقلاع. */
   Promise.resolve(booted).finally(resumeTgLogin);
 }
@@ -278,14 +278,14 @@ zLoop();
 let syncBusy=false;
 async function syncState(){
   if(syncBusy) return;
-  if(screen!=="main") return;
-  if(selected!==null || document.getElementById("layer").innerHTML) return;
+  if(appState.screen!=="main") return;
+  if(appState.selected!==null || document.getElementById("layer").innerHTML) return;
   syncBusy=true;
   lastSyncAt=Date.now();
-  const before=JSON.stringify(state);
+  const before=JSON.stringify(appState.state);
   try{
     const loaded=await refresh(true);
-    if(loaded&&JSON.stringify(state)!==before) render();
+    if(loaded&&JSON.stringify(appState.state)!==before) render();
   }finally{ syncBusy=false; }
 }
 /* السؤال الدوري احتياط للتحديث الفوري (live-sync.js): كل ١٥ ثانية إن لم يكن الاتصال

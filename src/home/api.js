@@ -61,7 +61,7 @@ async function rebindDevice(){
   rebinding=(async()=>{
     try{
       const r=await postJSON(`${SUPABASE_URL}/rest/v1/rpc/sign_in`,
-        {p_code:code,p_id:viewer.id,p_name:viewer.name,
+        {p_code:appState.code,p_id:appState.viewer.id,p_name:appState.viewer.name,
          p_device:deviceId(),p_org_code:orgCode()},
         {headers:RPC_HEADERS});
       return !!(r&&r.ok);
@@ -83,7 +83,7 @@ async function rpc(fn, args){
     &&DEVICE_LOCK_ERRS.some(m=>r.error.indexOf(m)!==-1);
   /* رمز قديم يُنسى، فيُطلب من جديد في المحاولة التالية بدل أن يُرفض كل فعل. */
   if(r&&r.ok===false&&r.error===ORG_CODE_REJECTED&&isOrganizer()) localStorage.removeItem(cKey());
-  if(locked&&fn!=="sign_in"&&viewer&&code){
+  if(locked&&fn!=="sign_in"&&appState.viewer&&appState.code){
     if(await rebindDevice()) return call();
     /* الاسم مقفول على أجهزة أخرى وهذا المتصفح ليس منها: يُعرض طريق الدخول
        بدل رسالة خطأ لا يعرف القارئ ما يفعل بعدها. */

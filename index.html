@@ -1853,7 +1853,36 @@ body.kh-head:not(.zk-launch-open){padding-top:max(5.4rem,calc(env(safe-area-inse
 <div id="layer"></div>
 <div class="toast" id="toast"></div>
 
-<script>// src/home/content.mjs
+<script>// src/home/app-state.mjs
+var appState = {
+  /* الختمة المفتوحة */
+  code: "",
+  /* رمزها، كما في #ABCD */
+  state: null,
+  /* بياناتها كما أعادتها get_state */
+  viewer: null,
+  /* المشارك الذي يراها من هذا المتصفح: {id, name} */
+  selected: null,
+  /* الجزء المحدد في الحوار */
+  gateName: "",
+  /* الاسم المكتوب في شاشة الدخول */
+  screen: "boot",
+  /* boot | home | create | share | gate | main | notfound */
+  justCreated: false,
+  /* الختمات العامة في شاشة البداية */
+  publicKhatmahs: [],
+  publicKhatmahsLoaded: false,
+  publicKhatmahsLoading: false,
+  publicKhatmahsError: false,
+  /* ربط تيليغرام: linking يمنع توليد رمز ثانٍ أثناء ربط جارٍ، وlkTimer مؤقت مراقبته */
+  linking: false,
+  lkTimer: null,
+  /* اختيارات الصفحة الرئيسية للختمة، تبقى كما هي حين يُعاد رسمها بعد كل تحديث */
+  juzFilter: "all",
+  peopleOpen: false
+};
+
+// src/home/content.mjs
 var JUZ = [
   "الفاتحة ١ – البقرة ١٤١",
   "البقرة ١٤٢ – ٢٥٢",
@@ -2571,7 +2600,7 @@ async function pwaReportStandalone() {
 pwaClearLegacyAnalyticsFlags();
 pwaReportStandalone();
 window.addEventListener("online", pwaReportStandalone, { passive: true });
-function readerLink(j = null, khatmahCode = code, page = null) {
+function readerLink(j = null, khatmahCode = appState.code, page = null) {
   const q = new URLSearchParams();
   const n = Number(j);
   if (Number.isInteger(page) && page >= 1 && page <= 604) q.set("page", String(page));
@@ -2863,9 +2892,9 @@ async function rebindDevice() {
       const r = await postJSON(
         `${SUPABASE_URL}/rest/v1/rpc/sign_in`,
         {
-          p_code: code,
-          p_id: viewer.id,
-          p_name: viewer.name,
+          p_code: appState.code,
+          p_id: appState.viewer.id,
+          p_name: appState.viewer.name,
           p_device: deviceId(),
           p_org_code: orgCode()
         },
@@ -2889,7 +2918,7 @@ async function rpc(fn, args) {
   const r = await call();
   const locked = r && r.ok === false && typeof r.error === "string" && DEVICE_LOCK_ERRS.some((m) => r.error.indexOf(m) !== -1);
   if (r && r.ok === false && r.error === ORG_CODE_REJECTED && isOrganizer()) localStorage.removeItem(cKey());
-  if (locked && fn !== "sign_in" && viewer && code) {
+  if (locked && fn !== "sign_in" && appState.viewer && appState.code) {
     if (await rebindDevice()) return call();
     deviceNotRecognised();
     r.handled = true;
@@ -2912,12 +2941,12 @@ function requestError(e) {
   return "تعذّر الاتصال";
 }
 function deadlineDialog() {
-  if (!state || !state.endDate) return;
+  if (!appState.state || !appState.state.endDate) return;
   modal(`<div class="deadline-dialog" role="dialog" aria-modal="true" aria-label="موعد انتهاء الختمة">
     <p class="deadline-copy">التاريخ المتفق عليه للانتهاء من القراءة الجماعية لهذه الختمة هو:</p>
     <div class="deadline-date-field">
-      <span class="deadline-date-g">${esc(fmtClockG(state.endDate))}</span>
-      <span class="deadline-date-h">${esc(fmtClockH(state.endDate))}</span>
+      <span class="deadline-date-g">${esc(fmtClockG(appState.state.endDate))}</span>
+      <span class="deadline-date-h">${esc(fmtClockH(appState.state.endDate))}</span>
     </div>
     <button class="btn gold" id="deadline-close">إغلاق</button>
   </div>`);
@@ -2925,9 +2954,9 @@ function deadlineDialog() {
 }
 function zTick() {
   const hms = document.getElementById("cd-hms");
-  if (!hms || !state || !state.endDate) return;
+  if (!hms || !appState.state || !appState.state.endDate) return;
   const days = document.getElementById("cd-days"), lab = document.getElementById("cd-lab");
-  const left = (/* @__PURE__ */ new Date(state.endDate + "T23:59:59")).getTime() - Date.now();
+  const left = (/* @__PURE__ */ new Date(appState.state.endDate + "T23:59:59")).getTime() - Date.now();
   if (left <= 0) {
     if (lab) lab.textContent = "انقضى وقت الختمة";
     if (days) days.textContent = "";
@@ -2942,17 +2971,6 @@ function zLoop() {
   zTick();
   setTimeout(zLoop, 1e3 - Date.now() % 1e3);
 }
-var justCreated = false;
-var publicKhatmahs = [];
-var publicKhatmahsLoaded = false;
-var publicKhatmahsLoading = false;
-var publicKhatmahsError = false;
-var code = "";
-var state = null;
-var viewer = null;
-var selected = null;
-var gateName = "";
-var screen = "boot";
 var hashCode = () => (location.hash || "").replace(/^#/, "").trim().toUpperCase().slice(0, 4);
 function zkReplaceHash(value = "") {
   try {
@@ -3017,7 +3035,7 @@ function activeKhatmahForget(value = "") {
   }
 }
 var linkFor = (c) => location.origin + location.pathname + "#" + c;
-var vKey = () => "zad:viewer:" + code;
+var vKey = () => "zad:viewer:" + appState.code;
 var MINE = "zad:mine";
 function mineGet() {
   try {
@@ -3034,14 +3052,14 @@ function minePut(list) {
   }
 }
 function mineRemember() {
-  if (!code || !viewer || !state) return;
-  activeKhatmahSet(code, true);
-  const rest = mineGet().filter((x) => x.code !== code);
+  if (!appState.code || !appState.viewer || !appState.state) return;
+  activeKhatmahSet(appState.code, true);
+  const rest = mineGet().filter((x) => x.code !== appState.code);
   rest.unshift({
-    code,
-    name: viewer.name,
-    title: state.title || "",
-    publicId: state.publicId || null,
+    code: appState.code,
+    name: appState.viewer.name,
+    title: appState.state.title || "",
+    publicId: appState.state.publicId || null,
     at: Date.now()
   });
   minePut(rest);
@@ -3076,14 +3094,14 @@ function minePruneMissing() {
     });
     if (!missing.size && !filled) return false;
     minePut(next);
-    if (screen === "home") render();
+    if (appState.screen === "home") render();
     return true;
   })().finally(() => {
     minePrunePromise = null;
   });
   return minePrunePromise;
 }
-var cKey = () => "zad:orgcode:" + code;
+var cKey = () => "zad:orgcode:" + appState.code;
 var orgCode = () => localStorage.getItem(cKey()) || null;
 var OUTBOX = "zad:notification-outbox";
 var outboxBusy = false;
@@ -3236,21 +3254,21 @@ function storeMemberships(list) {
 }
 function loadViewer() {
   try {
-    viewer = JSON.parse(localStorage.getItem(vKey()) || "null");
+    appState.viewer = JSON.parse(localStorage.getItem(vKey()) || "null");
   } catch (e) {
-    viewer = null;
+    appState.viewer = null;
   }
 }
 function goHome() {
-  clearInterval(lkTimer);
-  lkTimer = null;
-  linking = false;
+  clearInterval(appState.lkTimer);
+  appState.lkTimer = null;
+  appState.linking = false;
   closeLayer();
   zkReplaceHash("");
-  code = "";
-  state = null;
-  viewer = null;
-  screen = "home";
+  appState.code = "";
+  appState.state = null;
+  appState.viewer = null;
+  appState.screen = "home";
   render();
   loadPublicKhatmahs(true);
 }
@@ -3261,8 +3279,8 @@ function toast(m) {
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove("show"), 3e3);
 }
-var isOrganizer = () => !!(viewer && state && state.organizerId === viewer.id);
-var memberOf = (id) => (state && state.members || []).find((m) => m.id === id);
+var isOrganizer = () => !!(appState.viewer && appState.state && appState.state.organizerId === appState.viewer.id);
+var memberOf = (id) => (appState.state && appState.state.members || []).find((m) => m.id === id);
 var BOOK_ICON = `<svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M12 6.25C10.15 4.85 7.95 4.2 5.15 4.2v12.65c2.75.02 5.08.78 6.85 2.25 1.77-1.47 4.1-2.23 6.85-2.25V4.2c-2.8 0-5 .65-6.85 2.05Z"/>
@@ -3280,17 +3298,17 @@ function shamsa() {
     return [(cx + r * Math.cos(a)).toFixed(2), (cy + r * Math.sin(a)).toFixed(2)];
   };
   let w = "", dots = "";
-  state.juz.forEach((j, i) => {
+  appState.state.juz.forEach((j, i) => {
     const a1 = -90 + i * step + gap / 2, a2 = -90 + (i + 1) * step - gap / 2;
     const [x1, y1] = pt(r2, a1), [x2, y2] = pt(r2, a2), [x3, y3] = pt(r1, a2), [x4, y4] = pt(r1, a1);
     const cls = j.status === "done" ? "done" : j.status === "taken" ? "taken" : "free";
     w += `<path class="kw ${cls}" style="animation-delay:${i * 18}ms" d="M${x1} ${y1}A${r2} ${r2} 0 0 1 ${x2} ${y2}L${x3} ${y3}A${r1} ${r1} 0 0 0 ${x4} ${y4}Z"/>`;
-    if (j.ownerId === viewer.id) {
+    if (j.ownerId === appState.viewer.id) {
       const [x, y] = pt(97, -90 + (i + 0.5) * step);
       dots += `<circle class="kdot" cx="${x}" cy="${y}" r="2.8"/>`;
     }
   });
-  const done = state.juz.filter((j) => j.status === "done").length;
+  const done = appState.state.juz.filter((j) => j.status === "done").length;
   return `<svg class="shamsa" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img"
       aria-label="تمّت قراءة ${ar(done)} من ثلاثين جزءًا">
     <defs><linearGradient id="kgold" x1="0" y1="0" x2="0" y2="1">
@@ -3300,8 +3318,8 @@ function shamsa() {
   </svg>`;
 }
 function khatmahProgress() {
-  const n = (s) => state.juz.filter(s).length;
-  const done = n((j) => j.status === "done"), free = n((j) => j.status === "free"), mine = n((j) => j.ownerId === viewer.id);
+  const n = (s) => appState.state.juz.filter(s).length;
+  const done = n((j) => j.status === "done"), free = n((j) => j.status === "free"), mine = n((j) => j.ownerId === appState.viewer.id);
   return `<div class="kp">
     <div class="kp-row">
       <div class="kp-ring">${shamsa()}
@@ -3328,12 +3346,12 @@ function juzBadge(n, done, big = false) {
 }
 function juzReading(n) {
   const [first, last] = JUZ_PAGES[n - 1], total = last - first + 1;
-  const reached = Number((ztReadJson(ZT_JUZ_PROGRESS) || {})[code]?.[n]);
+  const reached = Number((ztReadJson(ZT_JUZ_PROGRESS) || {})[appState.code]?.[n]);
   const started = reached >= first && reached <= last;
   return { total, reached, started, read: started ? reached - first : 0, atEnd: started && reached === last };
 }
 function myJuzCard() {
-  const mine = state.juz.map((j, i) => ({ i, n: i + 1, done: j.status === "done", own: j.ownerId === viewer.id })).filter((x) => x.own);
+  const mine = appState.state.juz.map((j, i) => ({ i, n: i + 1, done: j.status === "done", own: j.ownerId === appState.viewer.id })).filter((x) => x.own);
   const head = (sub2) => `<div class="sec-head"><h2 class="sec">أجزاؤك</h2>${sub2 ? `<span class="myjuz-sub">${sub2}</span>` : ""}</div>`;
   if (!mine.length) return `<section class="frame myjuz">${head("")}
       <div class="myjuz-empty"><span class="jbadge free big" aria-hidden="true"><b>+</b></span>
@@ -3345,7 +3363,7 @@ function myJuzCard() {
       <div class="myjuz-empty"><span class="jbadge done big" aria-hidden="true"><b>✓</b></span>
         <div><strong>أتممت أجزاءك، تقبّل الله منك</strong><span>${mine.length === 1 ? "الجزء" : "الأجزاء"} ${mine.map((x) => ar(x.n)).join(" و")}</span></div></div></section>`;
   const cur = pending[0], r = juzReading(cur.n);
-  const href = readerLink(cur.n, code, r.started ? r.reached : null);
+  const href = readerLink(cur.n, appState.code, r.started ? r.reached : null);
   const readLabel = !r.started ? "اقرأ جزءك" : r.atEnd ? "راجع جزءك" : "تابع القراءة";
   const order = mine.length > 1 ? `<span class="myjuz-order">${ztJuzOrder(doneCount + 1, mine.length)}</span>` : "";
   const rows = mine.filter((x) => x !== cur).map((x) => {
@@ -3395,7 +3413,7 @@ function participantWord(n) {
 }
 var pct = (n) => Math.max(0, Math.min(100, (Number(n) || 0) / 30 * 100));
 function khatmahCardsGroup(accessType, title, note) {
-  const items = publicKhatmahs.filter((k) => (k.accessType === "public" ? "public" : "private") === accessType);
+  const items = appState.publicKhatmahs.filter((k) => (k.accessType === "public" ? "public" : "private") === accessType);
   const cards = items.length ? `<div class="khatmah-cards">${items.map((k) => {
     const done = Number(k.doneCount) || 0, reserved = Number(k.reservedCount) || 0;
     const people = Number(k.participantCount) || 0, overdue = daysLeft(k.endDate) < 0;
@@ -3428,10 +3446,10 @@ function khatmahCardsGroup(accessType, title, note) {
   </section>`;
 }
 function publicCardsMarkup() {
-  if (publicKhatmahsLoading && !publicKhatmahsLoaded) {
+  if (appState.publicKhatmahsLoading && !appState.publicKhatmahsLoaded) {
     return `<div class="khatmah-cards cards-loading">${Array.from({ length: 4 }, () => '<div class="khatmah-card" aria-hidden="true"></div>').join("")}</div>`;
   }
-  if (publicKhatmahsError && !publicKhatmahs.length) {
+  if (appState.publicKhatmahsError && !appState.publicKhatmahs.length) {
     return `<div class="cards-empty">تعذّر تحميل الختمات الجارية الآن.</div>`;
   }
   return `<div class="khatmah-kinds">
@@ -3454,16 +3472,16 @@ function topMineMarkup(withBack = false) {
       <span>${esc(x.title || "ختمة")}</span><small>${esc(x.name || "")}</small></button>`).join("") : '<div class="tb-menu-empty">لا توجد ختمات محفوظة على هذا الجهاز.</div>'}`;
 }
 function topAccountMarkup() {
-  const me = viewer && state ? memberOf(viewer.id) : null;
-  const head = viewer ? `<div class="tb-menu-head"><b>${esc(viewer.name)}</b>
+  const me = appState.viewer && appState.state ? memberOf(appState.viewer.id) : null;
+  const head = appState.viewer ? `<div class="tb-menu-head"><b>${esc(appState.viewer.name)}</b>
       ${isOrganizer() ? '<span class="tag">المنظّم</span>' : ""}${me && me.linked ? '<span class="tag j">التذكير مفعّل</span>' : ""}</div>` : "";
   return `${head}<button class="tb-menu-item" data-top-action="mine">ختماتي</button>
     <button class="tb-menu-item" data-top-action="history">سجلي</button>
     <button class="tb-menu-item" data-top-action="reminder">${me && me.linked ? "أعد تفعيل التذكير" : "فعّل التذكير"}</button>
     <button class="tb-menu-item" data-top-action="logout">خروج</button>
-    ${viewer && state && !isOrganizer() ? '<button class="tb-menu-item danger" data-top-action="leave">مغادرة الختمة</button>' : ""}`;
+    ${appState.viewer && appState.state && !isOrganizer() ? '<button class="tb-menu-item danger" data-top-action="leave">مغادرة الختمة</button>' : ""}`;
 }
-function showTopMenu(kind, mineBack = kind === "mine" && screen === "main") {
+function showTopMenu(kind, mineBack = kind === "mine" && appState.screen === "main") {
   const menu = document.getElementById("tb-popover"), btn = document.getElementById("tb-user");
   if (!menu || !btn) return;
   menu.innerHTML = kind === "mine" ? topMineMarkup(mineBack) : topAccountMarkup();
@@ -3477,27 +3495,27 @@ function toggleTopMenu() {
     closeTopMenu();
     return;
   }
-  showTopMenu(screen === "home" ? "mine" : "account");
+  showTopMenu(appState.screen === "home" ? "mine" : "account");
 }
 var TOP_USER_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20.5c.8-3.8 3.6-5.8 7-5.8s6.2 2 7 5.8"/></svg>`;
 function syncTopUser() {
   const topUser = document.getElementById("tb-user");
   if (!topUser) return;
   closeTopMenu();
-  const inMain = !!(viewer && screen === "main");
+  const inMain = !!(appState.viewer && appState.screen === "main");
   document.body.classList.remove("show-top-user", "show-home-mine");
-  document.body.classList.toggle("kh-head", screen === "home" || inMain);
+  document.body.classList.toggle("kh-head", appState.screen === "home" || inMain);
   topUser.textContent = "";
   topUser.removeAttribute("aria-label");
   topUser.disabled = true;
-  if (screen === "home" && mineGet().length) {
+  if (appState.screen === "home" && mineGet().length) {
     topUser.innerHTML = `${TOP_USER_ICON}<span class="tb-sr">ختماتي</span>`;
     topUser.setAttribute("aria-label", "ختماتي");
     topUser.disabled = false;
     document.body.classList.add("show-home-mine");
   } else if (inMain) {
-    topUser.innerHTML = `${TOP_USER_ICON}<span class="tb-sr">${esc(viewer.name)}</span>`;
-    topUser.setAttribute("aria-label", `حسابي: ${viewer.name}`);
+    topUser.innerHTML = `${TOP_USER_ICON}<span class="tb-sr">${esc(appState.viewer.name)}</span>`;
+    topUser.setAttribute("aria-label", `حسابي: ${appState.viewer.name}`);
     topUser.disabled = false;
     document.body.classList.add("show-top-user");
   }
@@ -3513,14 +3531,14 @@ function render() {
     main: viewMain,
     notfound: viewNotFound,
     linking: viewLinking
-  }[screen] || viewBoot;
+  }[appState.screen] || viewBoot;
   const app = document.getElementById("app"), html = v();
-  const sameScreen = lastRendered.screen === screen;
+  const sameScreen = lastRendered.screen === appState.screen;
   if (sameScreen && lastRendered.html === html && app.firstChild) {
     requestAnimationFrame(syncTopUser);
     return;
   }
-  lastRendered = { screen, html };
+  lastRendered = { screen: appState.screen, html };
   app.classList.toggle("no-intro", sameScreen);
   app.innerHTML = html;
   bind();
@@ -3528,9 +3546,9 @@ function render() {
 }
 var viewBoot = () => `<div class="gate"><p class="lede">جارٍ التحميل…</p></div>`;
 function viewLinking() {
-  const org = justCreated || state && viewer && state.organizerId === viewer.id;
+  const org = appState.justCreated || appState.state && appState.viewer && appState.state.organizerId === appState.viewer.id;
   return `<div class="gate">
-    <div class="display">${esc(state && state.title ? state.title : "زاد الخير")}</div>
+    <div class="display">${esc(appState.state && appState.state.title ? appState.state.title : "زاد الخير")}</div>
     ${rule()}
     <div class="frame card">
       <div class="tgbig">${TG_ICON}</div>
@@ -3571,7 +3589,7 @@ function viewNotFound() {
   return `<div class="gate">
     <div class="display">لا توجد ختمة بهذا الرمز</div>
     ${rule()}
-    <p class="lede">تأكّد من الرمز <b>${esc(code)}</b>، أو اطلبه من المنظّم من جديد.</p>
+    <p class="lede">تأكّد من الرمز <b>${esc(appState.code)}</b>، أو اطلبه من المنظّم من جديد.</p>
     <button class="btn gold wide" data-home style="margin-top:1.2rem">رجوع</button>
   </div>`;
 }
@@ -3618,16 +3636,16 @@ function viewSetup() {
   </div>`;
 }
 function viewShare() {
-  const isPublic = state && state.accessType === "public";
+  const isPublic = appState.state && appState.state.accessType === "public";
   return `<div class="gate" style="max-width:44ch">
     <div class="display">بدأت الختمة</div>
     ${rule()}
     <p class="lede">${isPublic ? "ختمتك عامة؛ يستطيع أي قارئ الانضمام إليها من الصفحة الرئيسية، ويمكنك أيضًا مشاركة رابطها." : "شارك هذا الرابط مع المجموعة. من يفتحه يكتب اسمه ويحجز جزءه مباشرة."}</p>
     <div class="frame card">
       ${isPublic ? '<span class="access-badge public">ختمة عامة</span>' : `
-        <div class="codebig">${esc(code)}</div>
+        <div class="codebig">${esc(appState.code)}</div>
         <p class="hint" style="margin:0 0 1.1rem">رمز الختمة، لمن أراد الانضمام يدويًا</p>`}
-      <div class="linkbox">${esc(linkFor(code))}</div>
+      <div class="linkbox">${esc(linkFor(appState.code))}</div>
       <button class="btn gold wide" id="btn-copy" style="margin-top:.9rem">نسخ رابط الدعوة</button>
       <button class="btn wide" id="btn-enter" style="margin-top:.5rem">ادخل إلى الختمة</button>
       <p class="hint">احفظ رمز المنظّم الذي اخترته، فهو ما يثبت أنك مشرف الختمة.</p>
@@ -3635,26 +3653,26 @@ function viewShare() {
   </div>`;
 }
 function viewGate() {
-  const asks = !!gateName;
-  const org = memberOf(state.organizerId);
-  const isPublic = state.accessType === "public";
+  const asks = !!appState.gateName;
+  const org = memberOf(appState.state.organizerId);
+  const isPublic = appState.state.accessType === "public";
   return `<div class="gate">
     <p class="joining">انضمامك إلى ختمة</p>
-    <div class="display">${esc(state.title)}</div>
-    ${state.dedication ? `<p class="lede" style="margin-top:.2rem">على نية: ${esc(state.dedication)}</p>` : ""}
-    <p class="joining">بإشراف ${esc(org ? org.name : "—")} · ${isPublic ? '<span class="access-badge public">ختمة عامة</span>' : `رمز الختمة <b>${esc(code)}</b>`}</p>
+    <div class="display">${esc(appState.state.title)}</div>
+    ${appState.state.dedication ? `<p class="lede" style="margin-top:.2rem">على نية: ${esc(appState.state.dedication)}</p>` : ""}
+    <p class="joining">بإشراف ${esc(org ? org.name : "—")} · ${isPublic ? '<span class="access-badge public">ختمة عامة</span>' : `رمز الختمة <b>${esc(appState.code)}</b>`}</p>
     ${rule()}
     <div class="frame card">
     ${asks ? `
       <div class="field-row"><label for="f-code">رمز المنظّم</label>
         <input id="f-code" class="field" type="password" autocomplete="off" placeholder="الرمز الذي اخترته">
-        <p class="hint">اسم «${esc(gateName)}» هو منظّم الختمة، ورمزه يضمن أن يبقى منظّمًا واحدًا.</p></div>
+        <p class="hint">اسم «${esc(appState.gateName)}» هو منظّم الختمة، ورمزه يضمن أن يبقى منظّمًا واحدًا.</p></div>
       <button class="btn gold wide" id="btn-code">تأكيد</button>
       <button class="btn quiet wide" id="btn-back" style="margin-top:.5rem">رجوع</button>` : `
       <div class="field-row"><input id="f-name" class="field" placeholder="أدخل اسمك لو سمحت" autocomplete="name"></div>
       <button class="btn gold wide" id="btn-login">دخول</button>
       <p class="hint">اسمك هو هويتك هنا. ادخل بالاسم نفسه في كل مرة لتجد أجزاءك.</p>
-      ${(state.members || []).some((m) => m.linked) ? `<div class="rule" style="margin:1.1rem 0 .8rem"><i>◆</i></div>
+      ${(appState.state.members || []).some((m) => m.linked) ? `<div class="rule" style="margin:1.1rem 0 .8rem"><i>◆</i></div>
       <p class="hint" style="margin:0 0 .6rem">دخلت هذه الختمة من قبل؟</p>
       <button class="btn tg-login outline wide" id="btn-tg-login">${TG_ICON}<span>ادخل عبر تيليغرام</span></button>` : ""}`}
     </div>
@@ -3663,44 +3681,42 @@ function viewGate() {
       <button class="btn quiet sm" data-home>صفحة الختمات</button></p>`}
   </div>`;
 }
-var juzFilter = "all";
-var peopleOpen = false;
 function viewMain() {
-  const done = state.juz.filter((j) => j.status === "done").length;
-  const free = state.juz.filter((j) => j.status === "free").length;
-  const dl = daysLeft(state.endDate);
-  const me = memberOf(viewer.id) || {};
-  const cells = state.juz.map((j, i) => {
+  const done = appState.state.juz.filter((j) => j.status === "done").length;
+  const free = appState.state.juz.filter((j) => j.status === "free").length;
+  const dl = daysLeft(appState.state.endDate);
+  const me = memberOf(appState.viewer.id) || {};
+  const cells = appState.state.juz.map((j, i) => {
     const cls = j.status === "done" ? "done" : j.status === "taken" ? "taken" : "";
-    const mine = j.ownerId === viewer.id ? " mine" : "";
+    const mine = j.ownerId === appState.viewer.id ? " mine" : "";
     const o = j.ownerId ? memberOf(j.ownerId) : null;
     return `<button class="cell ${cls}${mine}" data-i="${i}" style="animation-delay:${i * 14}ms" aria-label="الجزء ${i + 1}">
       <span class="num">${ar(i + 1)}</span>
       <span class="range">${JUZ[i]}</span>
       <span class="who">${o ? esc(o.name) : j.status === "done" ? "مقروء" : "متاح"}</span></button>`;
   }).join("");
-  const sortedMembers = [...state.members || []].sort((a, b) => norm(a.name).localeCompare(norm(b.name), "ar", { sensitivity: "base" }));
+  const sortedMembers = [...appState.state.members || []].sort((a, b) => norm(a.name).localeCompare(norm(b.name), "ar", { sensitivity: "base" }));
   const roster = sortedMembers.map((m) => {
-    const n = state.juz.filter((j) => j.ownerId === m.id).length;
-    const d = state.juz.filter((j) => j.ownerId === m.id && j.status === "done").length;
+    const n = appState.state.juz.filter((j) => j.ownerId === m.id).length;
+    const d = appState.state.juz.filter((j) => j.ownerId === m.id && j.status === "done").length;
     return `<div class="roster-row">
       <span class="avatar">${esc(norm(m.name).charAt(0) || "؟")}</span>
       <span class="rwho">
         <span class="rname">${esc(m.name)}</span>
-        ${m.id === state.organizerId ? '<span class="tag">المنظّم</span>' : ""}
+        ${m.id === appState.state.organizerId ? '<span class="tag">المنظّم</span>' : ""}
       </span>
       <span class="rtag">
         ${m.linked ? '<span class="tag j">التذكير مفعّل</span>' : !m.linked && m.exempt ? '<span class="tag ex">بلا تذكير</span>' : ""}
       </span>
       <span class="n">${n ? `${ar(d)} / ${ar(n)}` : "—"}</span>
-      ${isOrganizer() ? m.id !== viewer.id ? `<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>` : `<span class="dots-gap" aria-hidden="true"></span>` : ""}
+      ${isOrganizer() ? m.id !== appState.viewer.id ? `<button class="btn quiet sm dots" data-member="${esc(m.id)}" aria-label="خيارات">⋯</button>` : `<span class="dots-gap" aria-hidden="true"></span>` : ""}
     </div>`;
   }).join("");
   return `<div class="khatma-shell">
   <div class="frame hero">
     <div class="hero-intro">
-      <div class="display">${esc(state.title)}</div>
-      ${state.dedication ? `<div class="dedication">على نية: ${esc(state.dedication)}</div>` : ""}
+      <div class="display">${esc(appState.state.title)}</div>
+      ${appState.state.dedication ? `<div class="dedication">على نية: ${esc(appState.state.dedication)}</div>` : ""}
     </div>
     ${khatmahProgress()}
   </div>
@@ -3713,17 +3729,17 @@ function viewMain() {
     <section class="juz-panel">
       <div class="sec-head"><h2 class="sec">الأجزاء الثلاثون</h2>
         ${free ? `<div class="jfilter" role="group" aria-label="عرض الأجزاء">
-          <button type="button" data-jf="all" aria-pressed="${juzFilter !== "free"}">الكل</button>
-          <button type="button" data-jf="free" aria-pressed="${juzFilter === "free"}">المتاحة ${ar(free)}</button>
+          <button type="button" data-jf="all" aria-pressed="${appState.juzFilter !== "free"}">الكل</button>
+          <button type="button" data-jf="free" aria-pressed="${appState.juzFilter === "free"}">المتاحة ${ar(free)}</button>
         </div>` : ""}
         <div class="legend"><b class="lg-free">متاح</b><b class="lg-take">محجوز</b><b class="lg-done">تمّت قراءته</b></div>
       </div>
-      <div class="grid${free && juzFilter === "free" ? " only-free" : ""}" id="juz-grid">${cells}</div>
+      <div class="grid${free && appState.juzFilter === "free" ? " only-free" : ""}" id="juz-grid">${cells}</div>
     </section>
 
-    <details class="people-panel" id="people-panel"${peopleOpen ? " open" : ""}>
+    <details class="people-panel" id="people-panel"${appState.peopleOpen ? " open" : ""}>
       <summary class="sec-head"><h2 class="sec">المشاركون</h2>
-        <span class="people-count">${ar((state.members || []).length)}</span>
+        <span class="people-count">${ar((appState.state.members || []).length)}</span>
         <svg class="people-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
       <div class="frame roster-list">${roster}</div>
     </details>
@@ -3732,13 +3748,13 @@ function viewMain() {
   <div class="toolbar">
     <button class="btn quiet" data-home>صفحة الختمات</button>
     <button class="btn" id="btn-share">نسخ رابط الدعوة</button>
-    <span class="codechip">رمز الختمة <b>${esc(code)}</b></span>
+    <span class="codechip">رمز الختمة <b>${esc(appState.code)}</b></span>
     ${isOrganizer() ? `<button class="btn quiet" id="btn-broadcast">رسالة للمجموعة</button>` : ""}
     ${isOrganizer() ? `<button class="btn quiet" id="btn-settings">إعدادات الختمة</button>` : ""}
     ${isOrganizer() ? `<button class="btn danger" id="btn-reset">إلغاء الختمة</button>` : ""}
     ${isOrganizer() ? "" : `<button class="btn danger spacer" id="btn-leave">مغادرة الختمة</button>`}
   </div>
-  ${state.accessType === "public" ? me.linked ? `<p class="hint">موعد تذكيرك اليومي: ${fmtTime(me.reminderHour ?? state.reminderHour, me.reminderMinute ?? 0)}.</p>` : "" : `<p class="hint">يصل التذكير يوميًا في ${fmtTime(state.reminderHour, state.reminderMinute ?? 0)} إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>`}
+  ${appState.state.accessType === "public" ? me.linked ? `<p class="hint">موعد تذكيرك اليومي: ${fmtTime(me.reminderHour ?? appState.state.reminderHour, me.reminderMinute ?? 0)}.</p>` : "" : `<p class="hint">يصل التذكير يوميًا في ${fmtTime(appState.state.reminderHour, appState.state.reminderMinute ?? 0)} إلى كل من فعّل التذكير وحجز جزءًا ولم يُتمّه.</p>`}
   </div>`;
 }
 function viewLinkCall() {
@@ -3751,7 +3767,7 @@ function viewLinkCall() {
   </div>`;
 }
 function viewOverdue() {
-  const left = state.juz.filter((j) => j.status !== "done").length;
+  const left = appState.state.juz.filter((j) => j.status !== "done").length;
   return `<div class="frame overdue">
     <h2>انقضى الموعد</h2>
     <p>بقي ${ar(left)} ${left === 1 ? "جزء لم يُقرأ" : "أجزاء لم تُقرأ"}. لا يُلغى شيء، والتذكير يستمر أسبوعًا بعد الموعد.</p>
@@ -3768,9 +3784,9 @@ function viewKhatm() {
   </div>`;
 }
 function openSheet(i) {
-  selected = i;
-  const j = state.juz[i];
-  const o = j.ownerId ? memberOf(j.ownerId) : null, mine = j.ownerId === viewer.id;
+  appState.selected = i;
+  const j = appState.state.juz[i];
+  const o = j.ownerId ? memberOf(j.ownerId) : null, mine = j.ownerId === appState.viewer.id;
   let acts = "", note = "";
   if (j.status === "free") acts = `<button class="btn green" data-act="take" data-i="${i}">احجز هذا الجزء</button>` + (isOrganizer() ? `<button class="btn" id="s-assign" data-i="${i}">أسنده إلى مشارك</button>` : "");
   else if (mine && j.status === "taken") acts = `<button class="btn gold" data-act="done" data-i="${i}">أتممت قراءته</button>
@@ -3814,7 +3830,7 @@ function openSheet(i) {
 function closeLayer() {
   document.getElementById("layer").innerHTML = "";
   document.body.classList.remove("zk-launch-prayer");
-  selected = null;
+  appState.selected = null;
 }
 function modal(html, kind = "") {
   document.getElementById("layer").innerHTML = `<div class="modal${kind ? ` ${kind}` : ""}" id="m-back"><div class="frame">${html}</div></div>`;
@@ -3894,9 +3910,9 @@ function askOrganizerCode() {
       okBtn.disabled = true;
       try {
         const r = await rpc("sign_in", {
-          p_code: code,
-          p_id: viewer.id,
-          p_name: viewer.name,
+          p_code: appState.code,
+          p_id: appState.viewer.id,
+          p_name: appState.viewer.name,
           p_device: deviceId(),
           p_org_code: oc
         });
@@ -3959,31 +3975,31 @@ function appCopyFallback(title, value) {
   });
 }
 async function loadPublicKhatmahs(force = false) {
-  if (publicKhatmahsLoading || !force && publicKhatmahsLoaded) return;
-  publicKhatmahsLoading = true;
-  publicKhatmahsError = false;
-  if (screen === "home") render();
+  if (appState.publicKhatmahsLoading || !force && appState.publicKhatmahsLoaded) return;
+  appState.publicKhatmahsLoading = true;
+  appState.publicKhatmahsError = false;
+  if (appState.screen === "home") render();
   try {
     const rows = await rpc("list_active_khatmahs", {});
-    publicKhatmahs = Array.isArray(rows) ? rows : [];
-    publicKhatmahsLoaded = true;
+    appState.publicKhatmahs = Array.isArray(rows) ? rows : [];
+    appState.publicKhatmahsLoaded = true;
   } catch (e) {
     if (location.hostname === "terminal.local") {
-      publicKhatmahs = [
+      appState.publicKhatmahs = [
         { publicId: "preview-1", title: "ختمة أهل القرآن", accessType: "public", participantCount: 12, reservedCount: 23, doneCount: 14, endDate: plusDays(5) },
         { publicId: "preview-2", title: "ختمة المحبة", accessType: "public", participantCount: 8, reservedCount: 17, doneCount: 9, endDate: plusDays(8) },
         { publicId: "preview-3", title: "رفقة النور", accessType: "private", participantCount: 21, reservedCount: 30, doneCount: 26, endDate: plusDays(2) },
         { publicId: "preview-4", title: "ختمة العائلة", accessType: "private", participantCount: 6, reservedCount: 11, doneCount: 4, endDate: plusDays(10) }
       ];
-      publicKhatmahsLoaded = true;
-    } else publicKhatmahsError = true;
+      appState.publicKhatmahsLoaded = true;
+    } else appState.publicKhatmahsError = true;
   } finally {
-    publicKhatmahsLoading = false;
-    if (screen === "home") render();
+    appState.publicKhatmahsLoading = false;
+    if (appState.screen === "home") render();
   }
 }
 async function joinKhatmahCard(publicId) {
-  const item = publicKhatmahs.find((k) => k.publicId === publicId);
+  const item = appState.publicKhatmahs.find((k) => k.publicId === publicId);
   if (!item) return;
   const mine = mineByPublicId(publicId);
   if (mine) {
@@ -4038,8 +4054,8 @@ async function historyDialog() {
   let result;
   try {
     result = await rpc("get_my_history", {
-      p_code: code,
-      p_id: viewer.id,
+      p_code: appState.code,
+      p_id: appState.viewer.id,
       p_device: deviceId()
     });
   } catch (e) {
@@ -4077,52 +4093,52 @@ async function historyDialog() {
 }
 var refreshSeq = 0;
 async function refresh(silent = false) {
-  const requestedCode = code;
+  const requestedCode = appState.code;
   if (!requestedCode) return false;
   const seq = ++refreshSeq;
   let nextState;
   try {
     nextState = await rpc("get_state", { p_code: requestedCode });
   } catch (e) {
-    if (seq === refreshSeq && code === requestedCode && !silent) toast("تعذّر الاتصال بقاعدة البيانات");
+    if (seq === refreshSeq && appState.code === requestedCode && !silent) toast("تعذّر الاتصال بقاعدة البيانات");
     return false;
   }
-  if (seq !== refreshSeq || code !== requestedCode) return false;
-  state = nextState;
-  if (!state) {
-    mineForget(code);
-    activeKhatmahForget(code);
+  if (seq !== refreshSeq || appState.code !== requestedCode) return false;
+  appState.state = nextState;
+  if (!appState.state) {
+    mineForget(appState.code);
+    activeKhatmahForget(appState.code);
     khatmahStateForget();
-    screen = "notfound";
+    appState.screen = "notfound";
     if (!silent) render();
     return true;
   }
-  if (viewer && !memberOf(viewer.id)) {
-    viewer = null;
+  if (appState.viewer && !memberOf(appState.viewer.id)) {
+    appState.viewer = null;
     localStorage.removeItem(vKey());
   }
-  if (screen !== "linking") {
-    const me = viewer ? memberOf(viewer.id) : null;
+  if (appState.screen !== "linking") {
+    const me = appState.viewer ? memberOf(appState.viewer.id) : null;
     if (me && !me.linked && !me.exempt) {
       if (!silent) {
-        if (state.accessType === "public" && !isOrganizer()) askReminder();
+        if (appState.state.accessType === "public" && !isOrganizer()) askReminder();
         else startLinking();
         return;
       }
-      screen = "main";
+      appState.screen = "main";
     } else {
-      screen = viewer ? "main" : "gate";
+      appState.screen = appState.viewer ? "main" : "gate";
     }
   }
-  if (viewer && state) mineRemember();
-  if (viewer && state && screen === "main") khatmahStateSave();
+  if (appState.viewer && appState.state) mineRemember();
+  if (appState.viewer && appState.state && appState.screen === "main") khatmahStateSave();
   if (!silent) render();
   return true;
 }
 var KHATMAH_STATE_KEY = "zad:khatmah-state-v1";
 function khatmahStateSave() {
   try {
-    localStorage.setItem(KHATMAH_STATE_KEY, JSON.stringify({ code, state }));
+    localStorage.setItem(KHATMAH_STATE_KEY, JSON.stringify({ code: appState.code, state: appState.state }));
   } catch (_) {
   }
 }
@@ -4144,7 +4160,7 @@ async function doSignIn(id, name, ocode) {
   let r;
   try {
     r = await rpc("sign_in", {
-      p_code: code,
+      p_code: appState.code,
       p_id: id,
       p_name: name,
       p_device: deviceId(),
@@ -4155,28 +4171,28 @@ async function doSignIn(id, name, ocode) {
   }
   if (!r || !r.ok) {
     if (r && r.needCode) {
-      gateName = name;
-      screen = "gate";
+      appState.gateName = name;
+      appState.screen = "gate";
       render();
       return;
     }
     if (r && r.taken) return nameTaken(r.name, r.linked, id);
     return toast(r && r.error || "تعذّر الدخول");
   }
-  viewer = { id: r.id, name: r.name };
-  localStorage.setItem(vKey(), JSON.stringify(viewer));
-  activeKhatmahSet(code, true);
+  appState.viewer = { id: r.id, name: r.name };
+  localStorage.setItem(vKey(), JSON.stringify(appState.viewer));
+  activeKhatmahSet(appState.code, true);
   if (ocode) localStorage.setItem(cKey(), ocode);
-  gateName = "";
+  appState.gateName = "";
   if (!await refresh(true)) {
-    screen = "gate";
+    appState.screen = "gate";
     render();
     toast("تعذّر الاتصال بقاعدة البيانات");
     return;
   }
-  const me = memberOf(viewer.id);
+  const me = memberOf(appState.viewer.id);
   if (me && !me.linked && !me.exempt) {
-    if (state.accessType === "public" && !isOrganizer()) askReminder();
+    if (appState.state.accessType === "public" && !isOrganizer()) askReminder();
     else startLinking();
     return;
   }
@@ -4210,7 +4226,7 @@ function nameTaken(name, linked, id) {
 }
 function deviceNotRecognised() {
   if (tgLoginTimer || document.getElementById("nt-tg") || document.getElementById("dn-ok")) return;
-  const me = viewer ? memberOf(viewer.id) : null;
+  const me = appState.viewer ? memberOf(appState.viewer.id) : null;
   if (me && me.linked) {
     modal(`<div class="display" style="font-size:1.35rem">هذا المتصفح غير مسجَّل باسمك</div>
       <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
@@ -4220,7 +4236,7 @@ function deviceNotRecognised() {
         <button class="btn quiet" id="dn-ok">لاحقًا</button></div>`);
     document.getElementById("nt-tg").onclick = () => {
       closeLayer();
-      tgLogin(viewer && viewer.id);
+      tgLogin(appState.viewer && appState.viewer.id);
     };
     document.getElementById("dn-ok").onclick = closeLayer;
     return;
@@ -4233,7 +4249,7 @@ function deviceNotRecognised() {
 }
 function askSimilar(list, typed) {
   const rows = list.map((m) => {
-    const n = state.juz.filter((j) => j.ownerId === m.id).length;
+    const n = appState.state.juz.filter((j) => j.ownerId === m.id).length;
     return `<button class="asg-row" data-pick="${esc(m.id)}">
       <span class="avatar">${esc(norm(m.name).charAt(0) || "؟")}</span>
       <span class="asg-name">${esc(m.name)}</span>
@@ -4250,9 +4266,9 @@ function askSimilar(list, typed) {
   document.querySelectorAll("[data-pick]").forEach((b) => b.onclick = async () => {
     const m = list.find((x) => x.id === b.dataset.pick);
     closeLayer();
-    if (m.id === state.organizerId) {
-      gateName = m.name;
-      screen = "gate";
+    if (m.id === appState.state.organizerId) {
+      appState.gateName = m.name;
+      appState.screen = "gate";
       render();
       return;
     }
@@ -4261,9 +4277,9 @@ function askSimilar(list, typed) {
   document.getElementById("sim-no").onclick = async () => {
     closeLayer();
     const id = keyOf(typed);
-    if (id === state.organizerId) {
-      gateName = typed;
-      screen = "gate";
+    if (id === appState.state.organizerId) {
+      appState.gateName = typed;
+      appState.screen = "gate";
       render();
       return;
     }
@@ -4285,7 +4301,7 @@ var zlRetry = 0;
 var zlDebounceTimer = null;
 var zlPendingTimer = null;
 function zlWantedCode() {
-  const open = typeof code === "string" && code && typeof zkLaunchVisible === "function" && !zkLaunchVisible() ? code : "";
+  const open = typeof appState.code === "string" && appState.code && typeof zkLaunchVisible === "function" && !zkLaunchVisible() ? appState.code : "";
   return String(open || (typeof activeKhatmahGet === "function" ? activeKhatmahGet() : "") || "").trim().toUpperCase();
 }
 function zlHealthy() {
@@ -4424,8 +4440,8 @@ async function zlApply() {
     if (typeof ztView === "undefined" || ztView === "today") ztReadingRender();
     return;
   }
-  if (typeof screen !== "undefined" && screen === "main") {
-    if (selected !== null || document.getElementById("layer")?.innerHTML) {
+  if (typeof appState.screen !== "undefined" && appState.screen === "main") {
+    if (appState.selected !== null || document.getElementById("layer")?.innerHTML) {
       zlPendingTimer = setTimeout(zlApply, 1500);
       return;
     }
@@ -4441,29 +4457,27 @@ async function zlApply() {
     }
   });
 })();
-var lkTimer = null;
-var linking = false;
 async function startLinking(force) {
-  if (linking && !force) {
-    if (screen !== "linking") {
-      screen = "linking";
+  if (appState.linking && !force) {
+    if (appState.screen !== "linking") {
+      appState.screen = "linking";
       render();
     }
     return;
   }
-  linking = true;
-  screen = "linking";
+  appState.linking = true;
+  appState.screen = "linking";
   render();
   const opened = await openBot();
   if (!opened) showFallback();
   setTimeout(showFallback, 5e3);
-  clearInterval(lkTimer);
+  clearInterval(appState.lkTimer);
   let tries = 0, checking = false;
-  lkTimer = setInterval(async () => {
-    if (screen !== "linking" || !viewer) {
-      clearInterval(lkTimer);
-      lkTimer = null;
-      linking = false;
+  appState.lkTimer = setInterval(async () => {
+    if (appState.screen !== "linking" || !appState.viewer) {
+      clearInterval(appState.lkTimer);
+      appState.lkTimer = null;
+      appState.linking = false;
       return;
     }
     if (checking) return;
@@ -4471,32 +4485,32 @@ async function startLinking(force) {
     tries++;
     try {
       if (!await refresh(true)) return;
-      if (!state) {
-        clearInterval(lkTimer);
-        lkTimer = null;
-        linking = false;
+      if (!appState.state) {
+        clearInterval(appState.lkTimer);
+        appState.lkTimer = null;
+        appState.linking = false;
         render();
         return;
       }
-      const m = memberOf(viewer.id);
+      const m = memberOf(appState.viewer.id);
       if (m && (m.linked || m.exempt)) {
-        clearInterval(lkTimer);
-        lkTimer = null;
-        linking = false;
-        if (justCreated) {
-          justCreated = false;
-          screen = "share";
+        clearInterval(appState.lkTimer);
+        appState.lkTimer = null;
+        appState.linking = false;
+        if (appState.justCreated) {
+          appState.justCreated = false;
+          appState.screen = "share";
           render();
           toast("بدأت الختمة");
           return;
         }
-        screen = "main";
+        appState.screen = "main";
         render();
         toast(m.linked ? "تم تفعيل التذكير، تقبّل الله" : "أذن لك المنظّم بالدخول");
       } else if (tries >= 100) {
-        clearInterval(lkTimer);
-        lkTimer = null;
-        linking = false;
+        clearInterval(appState.lkTimer);
+        appState.lkTimer = null;
+        appState.linking = false;
         showFallback();
       }
     } finally {
@@ -4513,7 +4527,7 @@ async function openBot() {
   if (w) w.opener = null;
   let lc;
   try {
-    lc = await rpc("make_link_code", { p_code: code, p_id: viewer.id, p_device: deviceId() });
+    lc = await rpc("make_link_code", { p_code: appState.code, p_id: appState.viewer.id, p_device: deviceId() });
   } catch (e) {
     if (w) w.close();
     return false;
@@ -4546,13 +4560,13 @@ async function linkTelegram() {
     n++;
     try {
       if (!await refresh(true)) return;
-      if (!state) {
+      if (!appState.state) {
         clearInterval(t);
         linkBusy = false;
         render();
         return;
       }
-      const m = memberOf(viewer.id);
+      const m = memberOf(appState.viewer.id);
       if (m && m.linked) {
         clearInterval(t);
         linkBusy = false;
@@ -4607,14 +4621,14 @@ async function tgLogin(wantedId) {
   const wanted = typeof wantedId === "string" ? wantedId : null;
   let nonce = null;
   try {
-    nonce = await rpc("start_tg_login", { p_device: deviceId(), p_code: code || null, p_id: wanted });
+    nonce = await rpc("start_tg_login", { p_device: deviceId(), p_code: appState.code || null, p_id: wanted });
   } catch (_) {
   }
   if (typeof nonce !== "string" || !/^[0-9a-f]{32}$/.test(nonce)) {
     if (w) w.close();
     return toast("تعذّر الآن، حاول بعد قليل");
   }
-  const pending = { nonce, code: code || null, wanted, at: Date.now() };
+  const pending = { nonce, code: appState.code || null, wanted, at: Date.now() };
   tgPendingSave(pending);
   if (w) w.location.replace(tgLoginUrl(nonce));
   tgLoginWait(pending);
@@ -4665,20 +4679,20 @@ function tgLoginWait(p) {
       closeLayer();
       if (!r || !r.ok) return toast("انتهت مدة الطلب، حاول من جديد");
       storeMemberships(r.memberships);
-      if (!code) {
+      if (!appState.code) {
         toast("أهلًا بك");
         return;
       }
       loadViewer();
-      if (!viewer) {
-        screen = "gate";
+      if (!appState.viewer) {
+        appState.screen = "gate";
         render();
         return toast("حساب تيليغرام هذا ليس في هذه الختمة");
       }
-      activeKhatmahSet(code, true);
-      gateName = "";
+      activeKhatmahSet(appState.code, true);
+      appState.gateName = "";
       await refresh();
-      toast(typeof wantedId === "string" && viewer.id !== wantedId ? `دخلت باسم «${viewer.name}»` : "أهلًا بك");
+      toast(typeof wantedId === "string" && appState.viewer.id !== wantedId ? `دخلت باسم «${appState.viewer.name}»` : "أهلًا بك");
     } finally {
       checking = false;
     }
@@ -4694,9 +4708,9 @@ function tgLoginWait(p) {
 }
 function assignDialog(i) {
   const num = i + 1;
-  const cur = state.juz[i].ownerId;
-  const rows = (state.members || []).map((m) => {
-    const n = state.juz.filter((j) => j.ownerId === m.id).length;
+  const cur = appState.state.juz[i].ownerId;
+  const rows = (appState.state.members || []).map((m) => {
+    const n = appState.state.juz.filter((j) => j.ownerId === m.id).length;
     return `<button class="asg-row${m.id === cur ? " cur" : ""}" data-to="${esc(m.id)}">
       <span class="avatar">${esc(norm(m.name).charAt(0) || "؟")}</span>
       <span class="asg-name">${esc(m.name)}</span>
@@ -4731,7 +4745,7 @@ function assignDialog(i) {
     const oc = await organizerCode();
     if (!oc) return;
     try {
-      const r = await rpc("add_member", { p_code: code, p_org_code: oc, p_id: id, p_name: nm, p_device: deviceId() });
+      const r = await rpc("add_member", { p_code: appState.code, p_org_code: oc, p_id: id, p_name: nm, p_device: deviceId() });
       if (!r.ok) return toast(r.error || "تعذّر الإضافة");
       await doAssign(num, id);
     } catch (e) {
@@ -4743,7 +4757,7 @@ async function doAssign(num, to) {
   const oc = await organizerCode();
   if (!oc) return;
   try {
-    const r = await rpc("assign_juz", { p_code: code, p_org_code: oc, p_num: num, p_to: to, p_device: deviceId() });
+    const r = await rpc("assign_juz", { p_code: appState.code, p_org_code: oc, p_num: num, p_to: to, p_device: deviceId() });
     if (!r.ok) return toast(r.error || "تعذّر الإسناد");
     closeLayer();
     await refresh();
@@ -4755,7 +4769,7 @@ async function doAssign(num, to) {
 function mergeDialog(fromId) {
   const from = memberOf(fromId);
   if (!from) return;
-  const others = (state.members || []).filter((m) => m.id !== fromId);
+  const others = (appState.state.members || []).filter((m) => m.id !== fromId);
   modal(`<div class="display" style="font-size:1.4rem">دمج مشارك</div>
     <p class="hint" style="margin:.6rem 0 1rem">
       ستُنقل أجزاء «${esc(from.name)}» وربط تلغرامه إلى الاسم الذي تختاره، ثم يُحذف اسمه.</p>
@@ -4772,7 +4786,7 @@ function mergeDialog(fromId) {
     const oc = await organizerCode();
     if (!oc) return;
     try {
-      const r = await rpc("merge_members", { p_code: code, p_org_code: oc, p_from: fromId, p_to: to, p_device: deviceId() });
+      const r = await rpc("merge_members", { p_code: appState.code, p_org_code: oc, p_from: fromId, p_to: to, p_device: deviceId() });
       if (!r.ok) return toast(r.error || "تعذّر الدمج");
       closeLayer();
       await refresh();
@@ -4888,7 +4902,7 @@ var HELP_ONE = [
   }
 ];
 function helpDialog() {
-  const inside = !!(state && viewer && screen === "main");
+  const inside = !!(appState.state && appState.viewer && appState.screen === "main");
   const org = inside && isOrganizer();
   const block = (secs) => secs.map((x) => `<section class="hsec">
       <h4>${x.t}</h4>
@@ -4930,7 +4944,7 @@ function nameAccessDialog(id) {
     const oc = await organizerCode();
     if (!oc) return;
     try {
-      const r = await rpc("set_name_access", { p_code: code, p_org_code: oc, p_id: id, p_device: deviceId(), p_mode: mode });
+      const r = await rpc("set_name_access", { p_code: appState.code, p_org_code: oc, p_id: id, p_device: deviceId(), p_mode: mode });
       if (!r?.ok) return toast(r?.error || "تعذّر التنفيذ");
       closeLayer();
       await refresh();
@@ -4945,8 +4959,8 @@ function nameAccessDialog(id) {
 function memberDialog(id) {
   const m = memberOf(id);
   if (!m) return;
-  const n = state.juz.filter((j) => j.ownerId === id).length;
-  const d = state.juz.filter((j) => j.ownerId === id && j.status === "done").length;
+  const n = appState.state.juz.filter((j) => j.ownerId === id).length;
+  const d = appState.state.juz.filter((j) => j.ownerId === id && j.status === "done").length;
   modal(`<div class="mhead">
       <span class="avatar big">${esc(norm(m.name).charAt(0) || "؟")}</span>
       <div>
@@ -4954,17 +4968,17 @@ function memberDialog(id) {
         <p class="hint" style="margin:0">
           ${n ? `${ar(d)} من ${ar(n)} ${n === 1 ? "جزء" : "أجزاء"} أتمّها` : "لم يحجز جزءًا بعد"}
           · ${m.linked ? "التذكير مفعّل" : "بلا تذكير"}
-          ${m.exempt ? state.accessType === "public" ? "· اختار المتابعة بلا تذكير" : "· يدخل بلا تذكير بإذن منك" : ""}
+          ${m.exempt ? appState.state.accessType === "public" ? "· اختار المتابعة بلا تذكير" : "· يدخل بلا تذكير بإذن منك" : ""}
         </p>
       </div></div>
 
     <div class="mlist">
       ${m.linked ? `<button class="mact" id="m-msg"><b>أرسل له رسالة</b>
         <span>تصله في تلغرام من البوت</span></button>` : ""}
-      ${state.accessType !== "public" && !m.linked && m.id !== state.organizerId ? `<button class="mact" id="m-exempt">
+      ${appState.state.accessType !== "public" && !m.linked && m.id !== appState.state.organizerId ? `<button class="mact" id="m-exempt">
         <b>${m.exempt ? "اسحب إذن الدخول" : "ائذن له بالدخول بلا تلغرام"}</b>
         <span>${m.exempt ? "سيُطلب منه تفعيل تلغرام في المرة القادمة" : "لمن لا تلغرام على هاتفه، فيدخل ويحجز بنفسه"}</span></button>` : ""}
-      ${m.id !== state.organizerId ? `<button class="mact" id="m-release"><b>${m.openPermanently ? "إدارة فتح الاسم" : "افتح الاسم"}</b>
+      ${m.id !== appState.state.organizerId ? `<button class="mact" id="m-release"><b>${m.openPermanently ? "إدارة فتح الاسم" : "افتح الاسم"}</b>
         <span>${m.openPermanently ? "الاسم مفتوح على جميع الأجهزة" : "ليدخل من جهاز جديد"}</span></button>` : ""}
       <button class="mact" id="m-merge"><b>ادمجه في اسم آخر</b>
         <span>تنتقل أجزاؤه وتذكيره، ويُحذف هذا الاسم</span></button>
@@ -4985,7 +4999,7 @@ function memberDialog(id) {
     const oc = await organizerCode();
     if (!oc) return;
     try {
-      const r = await rpc("set_exempt", { p_code: code, p_org_code: oc, p_id: id, p_on: on, p_device: deviceId() });
+      const r = await rpc("set_exempt", { p_code: appState.code, p_org_code: oc, p_id: id, p_on: on, p_device: deviceId() });
       if (!r.ok) return toast(r.error || "تعذّر التنفيذ");
       closeLayer();
       await refresh();
@@ -5013,8 +5027,8 @@ function askReminder() {
   document.getElementById("rm-no").onclick = async () => {
     try {
       const r = await rpc("set_my_reminder", {
-        p_code: code,
-        p_id: viewer.id,
+        p_code: appState.code,
+        p_id: appState.viewer.id,
         p_device: deviceId(),
         p_wants: false,
         p_hour: null,
@@ -5030,8 +5044,8 @@ function askReminder() {
   };
 }
 function askReminderHour() {
-  const me = viewer ? memberOf(viewer.id) : null;
-  const h = me && me.reminderHour != null ? me.reminderHour : state && state.reminderHour != null ? state.reminderHour : 20;
+  const me = appState.viewer ? memberOf(appState.viewer.id) : null;
+  const h = me && me.reminderHour != null ? me.reminderHour : appState.state && appState.state.reminderHour != null ? appState.state.reminderHour : 20;
   modal(`<div class="display" style="font-size:1.4rem">متى يصلك التذكير؟</div>
     <p class="hint" style="margin:.7rem 0 1rem">اختر ساعة تناسب قراءتك. ولك تغييرها لاحقًا.</p>
     <div class="field-row"><label for="rm-hour">ساعة التذكير</label>
@@ -5044,8 +5058,8 @@ function askReminderHour() {
     const hh = +document.getElementById("rm-hour").value;
     try {
       const r = await rpc("set_my_reminder", {
-        p_code: code,
-        p_id: viewer.id,
+        p_code: appState.code,
+        p_id: appState.viewer.id,
         p_device: deviceId(),
         p_wants: true,
         p_hour: hh,
@@ -5060,12 +5074,12 @@ function askReminderHour() {
   };
 }
 function leaveDialog() {
-  const mine = state.juz.filter((j) => j.ownerId === viewer.id);
+  const mine = appState.state.juz.filter((j) => j.ownerId === appState.viewer.id);
   const done = mine.filter((j) => j.status === "done").length;
   const open = mine.length - done;
   modal(`<div class="display" style="font-size:1.4rem">مغادرة الختمة</div>
     <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">
-      ستخرج من «${esc(state.title)}» ويُرفع اسمك من المشاركين، ويتوقّف تذكيرك.</p>
+      ستخرج من «${esc(appState.state.title)}» ويُرفع اسمك من المشاركين، ويتوقّف تذكيرك.</p>
     ${open ? `<p class="warnbox">${arCount(open, "جزء لم تُتمّه سيعود متاحًا", "جزءان لم تُتمّهما سيعودان متاحين", "أجزاء لم تُتمّها ستعود متاحة", "جزءًا لم تُتمّها ستعود متاحة")} لغيرك.</p>` : ""}
     ${done ? `<p class="hint" style="margin:0 0 .9rem">وما أتممتَه (${ar(done)} ${done === 1 ? "جزء" : "أجزاء"}) يبقى محسوبًا للختمة باسمك — القراءة لا تُلغى بالمغادرة.</p>` : ""}
     <p class="hint" style="margin:0 0 1.1rem">ولك أن تعود متى شئت بالاسم نفسه.</p>
@@ -5075,12 +5089,12 @@ function leaveDialog() {
   document.getElementById("lv-no").onclick = closeLayer;
   document.getElementById("lv-go").onclick = async () => {
     try {
-      const r = await rpc("leave_khatmah", { p_code: code, p_id: viewer.id, p_device: deviceId() });
+      const r = await rpc("leave_khatmah", { p_code: appState.code, p_id: appState.viewer.id, p_device: deviceId() });
       if (!r || !r.ok) return toast(r && r.error || "تعذّر التنفيذ");
-      mineForget(code);
+      mineForget(appState.code);
       localStorage.removeItem(vKey());
       localStorage.removeItem(cKey());
-      activeKhatmahForget(code);
+      activeKhatmahForget(appState.code);
       toast(r.freed ? `غادرتَ الختمة، وتحرّرت ${ar(r.freed)} ${r.freed === 1 ? "جزء" : "أجزاء"}` : "غادرتَ الختمة");
       goHome();
     } catch (e) {
@@ -5089,7 +5103,7 @@ function leaveDialog() {
   };
 }
 function transferDialog() {
-  const others = (state.members || []).filter((m) => m.id !== state.organizerId);
+  const others = (appState.state.members || []).filter((m) => m.id !== appState.state.organizerId);
   if (!others.length) return toast("لا يوجد مشارك آخر لتسلّمه الإشراف");
   modal(`<div class="display" style="font-size:1.4rem">تسليم الإشراف</div>
     <p class="hint" style="margin:.7rem 0 1rem;line-height:2">
@@ -5116,7 +5130,7 @@ function transferDialog() {
     if (!oc) return;
     try {
       const r = await rpc("transfer_organizer", {
-        p_code: code,
+        p_code: appState.code,
         p_org_code: oc,
         p_device: deviceId(),
         p_to: to,
@@ -5148,7 +5162,7 @@ function orgCodeDialog() {
     if (!oc) return;
     try {
       const r = await rpc("change_organizer_code", {
-        p_code: code,
+        p_code: appState.code,
         p_org_code: oc,
         p_device: deviceId(),
         p_new_code: nc
@@ -5164,7 +5178,7 @@ function orgCodeDialog() {
 }
 function messageDialog(id, name) {
   const all = !id;
-  const n = (state.members || []).filter((m) => m.linked).length;
+  const n = (appState.state.members || []).filter((m) => m.linked).length;
   modal(`<div class="display" style="font-size:1.4rem">${all ? "رسالة للمجموعة" : "رسالة إلى " + esc(name)}</div>
     <p class="hint" style="margin:.6rem 0 .9rem">${all ? `تصل ${ar(n)} ${n === 1 ? "مشاركًا فعّل" : "مشاركين فعّلوا"} التذكير. ومن لم يفعّل لا يصله شيء.` : "تصله في تلغرام من البوت، تحت عنوان الختمة."}</p>
     <div class="field-row">
@@ -5184,11 +5198,11 @@ function messageDialog(id, name) {
     if (all && !await appConfirm(`ستُرسل هذه الرسالة إلى ${ar(n)} من المشاركين.`, { title: "رسالة للمجموعة", ok: "أرسل" })) return;
     toast("جارٍ الإرسال…");
     try {
-      const body = { code, orgCode: oc, device: deviceId(), to: id || null, text: t };
+      const body = { code: appState.code, orgCode: oc, device: deviceId(), to: id || null, text: t };
       const r = await edge(
         "send-message",
         body,
-        { key: `message:${code}:${id || "all"}:${t}`, timeout: GROUP_SEND_TIMEOUT }
+        { key: `message:${appState.code}:${id || "all"}:${t}`, timeout: GROUP_SEND_TIMEOUT }
       );
       if (!r.ok) return toast(r.error || "تعذّر الإرسال");
       closeLayer();
@@ -5201,8 +5215,8 @@ function messageDialog(id, name) {
 function removeDialog(id) {
   const m = memberOf(id);
   if (!m) return;
-  const n = state.juz.filter((j) => j.ownerId === id).length;
-  const d = state.juz.filter((j) => j.ownerId === id && j.status === "done").length;
+  const n = appState.state.juz.filter((j) => j.ownerId === id).length;
+  const d = appState.state.juz.filter((j) => j.ownerId === id && j.status === "done").length;
   const warn = n ? `<p class="warnbox">يحمل ${ar(n)} ${n === 1 ? "جزءًا" : "أجزاء"}${d ? `، أتمّ منها ${ar(d)}` : ""}.
        ستعود كلها متاحة للجميع.</p>` : "";
   const tg = m.linked ? `<p class="warnbox">تذكيره في تلغرام مفعّل، وسيُفقد. فإن عاد فعليه تفعيله من جديد.</p>` : "";
@@ -5220,7 +5234,7 @@ function removeDialog(id) {
     const oc = await organizerCode();
     if (!oc) return;
     try {
-      const r = await rpc("remove_member", { p_code: code, p_org_code: oc, p_id: id, p_device: deviceId() });
+      const r = await rpc("remove_member", { p_code: appState.code, p_org_code: oc, p_id: id, p_device: deviceId() });
       if (!r.ok) return toast(r.error || "تعذّر الحذف");
       closeLayer();
       await refresh();
@@ -5233,8 +5247,8 @@ function removeDialog(id) {
 var actionBusy = false;
 async function act(a, i) {
   const num = i + 1;
-  const j = state.juz[i];
-  const mine = j.ownerId === viewer.id;
+  const j = appState.state.juz[i];
+  const mine = j.ownerId === appState.viewer.id;
   const o = j.ownerId ? memberOf(j.ownerId) : null;
   if (!mine && o) {
     if (a === "done" && !await appConfirm(`هل أتمّ ${o.name} الجزء ${ar(num)} فعلًا؟
@@ -5245,14 +5259,14 @@ async function act(a, i) {
   if (actionBusy) return;
   actionBusy = true;
   let ownerId = j.ownerId;
-  const unreadBefore = state.juz.filter((x) => x.status !== "done").length;
+  const unreadBefore = appState.state.juz.filter((x) => x.status !== "done").length;
   try {
     try {
       let r;
-      if (a === "take") r = await rpc("claim_juz", { p_code: code, p_id: viewer.id, p_num: num, p_device: deviceId() });
-      else if (a === "free") r = await rpc("release_juz", { p_code: code, p_id: viewer.id, p_num: num, p_org_code: orgCode(), p_device: deviceId() });
-      else if (a === "done") r = await rpc("set_done", { p_code: code, p_id: viewer.id, p_num: num, p_done: true, p_org_code: orgCode(), p_device: deviceId() });
-      else if (a === "undone") r = await rpc("set_done", { p_code: code, p_id: viewer.id, p_num: num, p_done: false, p_org_code: orgCode(), p_device: deviceId() });
+      if (a === "take") r = await rpc("claim_juz", { p_code: appState.code, p_id: appState.viewer.id, p_num: num, p_device: deviceId() });
+      else if (a === "free") r = await rpc("release_juz", { p_code: appState.code, p_id: appState.viewer.id, p_num: num, p_org_code: orgCode(), p_device: deviceId() });
+      else if (a === "done") r = await rpc("set_done", { p_code: appState.code, p_id: appState.viewer.id, p_num: num, p_done: true, p_org_code: orgCode(), p_device: deviceId() });
+      else if (a === "undone") r = await rpc("set_done", { p_code: appState.code, p_id: appState.viewer.id, p_num: num, p_done: false, p_org_code: orgCode(), p_device: deviceId() });
       if (r && !r.ok) {
         await refresh();
         return r.handled ? void 0 : toast(r.error || "تعذّر التنفيذ");
@@ -5266,15 +5280,15 @@ async function act(a, i) {
     if (a === "done") {
       enqueueEdge(
         "notify-done",
-        { code, id: ownerId, num },
-        `notify:${code}:${state.roundNo || 1}:${ownerId}:${num}:done`
+        { code: appState.code, id: ownerId, num },
+        `notify:${appState.code}:${appState.state.roundNo || 1}:${ownerId}:${num}:done`
       );
-      const left = loaded && state ? state.juz.filter((x) => x.status !== "done").length : Math.max(0, unreadBefore - 1);
+      const left = loaded && appState.state ? appState.state.juz.filter((x) => x.status !== "done").length : Math.max(0, unreadBefore - 1);
       if (left === 0) {
         enqueueEdge(
           "announce",
-          { kind: "done", code },
-          `announce:${code}:${state.roundNo || 1}:done`
+          { kind: "done", code: appState.code },
+          `announce:${appState.code}:${appState.state.roundNo || 1}:done`
         );
       }
       toast(left === 0 ? "تمّت الختمة، تقبّل الله" : mine ? `تقبّل الله. بقي ${ar(left)} جزءًا` : `سُجّل جزء ${o ? o.name : ""}`);
@@ -5284,35 +5298,35 @@ async function act(a, i) {
   }
 }
 function copyLink() {
-  const url = linkFor(code);
+  const url = linkFor(appState.code);
   navigator.clipboard.writeText(url).then(() => toast("نُسخ الرابط")).catch(() => appCopyFallback("نسخ رابط الدعوة", url));
 }
 function shareText() {
-  const free = state.juz.map((j, i) => j.status === "free" ? i + 1 : null).filter(Boolean);
-  const done = state.juz.filter((j) => j.status === "done").length;
-  const msg = `${state.title}${state.dedication ? "\nعلى نية: " + state.dedication : ""}
-تنتهي: ${fmtG(state.endDate)} — ${fmtH(state.endDate)}
+  const free = appState.state.juz.map((j, i) => j.status === "free" ? i + 1 : null).filter(Boolean);
+  const done = appState.state.juz.filter((j) => j.status === "done").length;
+  const msg = `${appState.state.title}${appState.state.dedication ? "\nعلى نية: " + appState.state.dedication : ""}
+تنتهي: ${fmtG(appState.state.endDate)} — ${fmtH(appState.state.endDate)}
 تمّت قراءة ${done} من 30 جزءًا.
 ${free.length ? "الأجزاء المتاحة: " + free.join("، ") : "اكتملت الحجوزات، بارك الله فيكم."}
-ادخل واحجز جزءك: ${linkFor(code)}`;
+ادخل واحجز جزءك: ${linkFor(appState.code)}`;
   navigator.clipboard.writeText(msg).then(() => toast("نُسخت الرسالة، أرسلها للمجموعة")).catch(() => appCopyFallback("نسخ رسالة الدعوة", msg));
 }
 function logoutCurrent() {
   localStorage.removeItem(vKey());
   localStorage.removeItem(cKey());
-  activeKhatmahForget(code);
-  clearInterval(lkTimer);
-  lkTimer = null;
-  linking = false;
-  viewer = null;
-  gateName = "";
+  activeKhatmahForget(appState.code);
+  clearInterval(appState.lkTimer);
+  appState.lkTimer = null;
+  appState.linking = false;
+  appState.viewer = null;
+  appState.gateName = "";
   closeTopMenu();
   closeLayer();
-  screen = "gate";
+  appState.screen = "gate";
   render();
 }
 function reminderFromAccountMenu() {
-  if (state && state.accessType === "public") askReminderHour();
+  if (appState.state && appState.state.accessType === "public") askReminderHour();
   else linkTelegram();
 }
 function handleTopMenuClick(e) {
@@ -5353,7 +5367,7 @@ function bind() {
     boot();
   });
   if ($("btn-new")) $("btn-new").onclick = () => {
-    screen = "create";
+    appState.screen = "create";
     render();
   };
   document.querySelectorAll("[data-khatmah-card]").forEach((button) => button.onclick = () => joinKhatmahCard(button.dataset.khatmahCard));
@@ -5398,14 +5412,14 @@ function bind() {
         p_access_type: access
       });
       if (!r.ok) return toast(r.error || "تعذّر الإنشاء");
-      code = r.code;
-      zkReplaceHash(code);
-      viewer = { id: keyOf(org), name: org };
-      localStorage.setItem(vKey(), JSON.stringify(viewer));
-      activeKhatmahSet(code, true);
+      appState.code = r.code;
+      zkReplaceHash(appState.code);
+      appState.viewer = { id: keyOf(org), name: org };
+      localStorage.setItem(vKey(), JSON.stringify(appState.viewer));
+      activeKhatmahSet(appState.code, true);
       localStorage.setItem(cKey(), oc);
       await refresh(true);
-      justCreated = true;
+      appState.justCreated = true;
       startLinking();
     } catch (e) {
       toast("تعذّر الاتصال");
@@ -5418,15 +5432,15 @@ function bind() {
       const name = norm($("f-name").value);
       if (!name) return toast("اكتب اسمك أولًا");
       await refresh(true);
-      if (!state) return;
+      if (!appState.state) return;
       const id = keyOf(name);
-      const exact = (state.members || []).find((m) => m.id === id);
+      const exact = (appState.state.members || []).find((m) => m.id === id);
       if (!exact) {
-        const near = similarTo(name, state.members);
+        const near = similarTo(name, appState.state.members);
         if (near.length) return askSimilar(near, name);
       }
-      if (id === state.organizerId) {
-        gateName = name;
+      if (id === appState.state.organizerId) {
+        appState.gateName = name;
         render();
         return;
       }
@@ -5443,9 +5457,9 @@ function bind() {
     const go = async () => {
       const c = norm($("f-code").value);
       if (!c) return toast("أدخل الرمز");
-      const before = gateName;
+      const before = appState.gateName;
       await doSignIn(keyOf(before), before, c);
-      if (gateName) toast("الرمز غير صحيح");
+      if (appState.gateName) toast("الرمز غير صحيح");
     };
     $("btn-code").onclick = go;
     $("f-code").onkeydown = (e) => {
@@ -5453,7 +5467,7 @@ function bind() {
     };
     $("f-code").focus();
     $("btn-back").onclick = () => {
-      gateName = "";
+      appState.gateName = "";
       render();
     };
   }
@@ -5465,16 +5479,16 @@ function bind() {
     act("done", i);
   });
   document.querySelectorAll("[data-jf]").forEach((b) => b.onclick = () => {
-    juzFilter = b.dataset.jf;
-    $("juz-grid")?.classList.toggle("only-free", juzFilter === "free");
-    document.querySelectorAll("[data-jf]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.jf === juzFilter)));
+    appState.juzFilter = b.dataset.jf;
+    $("juz-grid")?.classList.toggle("only-free", appState.juzFilter === "free");
+    document.querySelectorAll("[data-jf]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.jf === appState.juzFilter)));
   });
   if ($("people-panel")) $("people-panel").ontoggle = (e) => {
-    peopleOpen = e.target.open;
+    appState.peopleOpen = e.target.open;
   };
   document.querySelectorAll("[data-member]").forEach((b) => b.onclick = () => memberDialog(b.dataset.member));
   if ($("btn-link-big")) $("btn-link-big").onclick = () => {
-    if (state && state.accessType === "public") askReminderHour();
+    if (appState.state && appState.state.accessType === "public") askReminderHour();
     else linkTelegram();
   };
   if ($("btn-share")) $("btn-share").onclick = shareText;
@@ -5487,15 +5501,15 @@ function bind() {
       const oc = await organizerCode();
       if (!oc) return;
       const r = await rpc("update_settings", {
-        p_code: code,
+        p_code: appState.code,
         p_org_code: oc,
-        p_title: state.title,
-        p_dedication: state.dedication || "",
+        p_title: appState.state.title,
+        p_dedication: appState.state.dedication || "",
         p_end: d,
-        p_hour: state.reminderHour,
+        p_hour: appState.state.reminderHour,
         p_minute: 0,
         p_device: deviceId(),
-        p_access_type: state.accessType || "private"
+        p_access_type: appState.state.accessType || "private"
       });
       if (!r.ok) return toast("تعذّر التمديد");
       closeLayer();
@@ -5512,21 +5526,21 @@ function settings() {
 
     <div class="field-row" style="margin-top:1rem;margin-bottom:.7rem">
       <label for="s-title">اسم الختمة</label>
-      <input id="s-title" class="field" value="${esc(state.title)}"></div>
+      <input id="s-title" class="field" value="${esc(appState.state.title)}"></div>
     <div class="field-row" style="margin-bottom:.9rem">
       <label for="s-ded">على نية:</label>
-      <input id="s-ded" class="field" value="${esc(state.dedication || "")}"></div>
+      <input id="s-ded" class="field" value="${esc(appState.state.dedication || "")}"></div>
 
     <fieldset class="access-picker">
       <legend>نوع الختمة</legend>
       <div class="access-options">
         <label class="access-option">
-          <input type="radio" name="s-access" value="private"${state.accessType === "public" ? "" : " checked"}>
+          <input type="radio" name="s-access" value="private"${appState.state.accessType === "public" ? "" : " checked"}>
           <span class="access-option-body"><b>خاصة</b>
             <small>تتطلب رمز الختمة عند الدخول من بطاقتها.</small></span>
         </label>
         <label class="access-option">
-          <input type="radio" name="s-access" value="public"${state.accessType === "public" ? " checked" : ""}>
+          <input type="radio" name="s-access" value="public"${appState.state.accessType === "public" ? " checked" : ""}>
           <span class="access-option-body"><b>عامة</b>
             <small>مفتوحة للانضمام مباشرة من الصفحة الرئيسية.</small></span>
         </label>
@@ -5535,10 +5549,10 @@ function settings() {
 
     <div class="dtgrid">
       <div class="dtcell"><label for="s-end">تنتهي في</label>
-        <input id="s-end" class="field" type="date" value="${state.endDate}">
+        <input id="s-end" class="field" type="date" value="${appState.state.endDate}">
         <p class="dtprev" id="p-end"></p></div>
       <div class="dtcell"><label for="s-hour">التذكير عند</label>
-        <select id="s-hour" class="field">${hourOptions(state.reminderHour)}</select>
+        <select id="s-hour" class="field">${hourOptions(appState.state.reminderHour)}</select>
         <p class="dtprev">كل يوم</p></div>
     </div>
 
@@ -5566,7 +5580,7 @@ function settings() {
     if (!oc) return;
     try {
       const r = await rpc("update_settings", {
-        p_code: code,
+        p_code: appState.code,
         p_org_code: oc,
         p_title: norm(document.getElementById("s-title").value),
         p_dedication: norm(document.getElementById("s-ded").value),
@@ -5591,9 +5605,9 @@ function settings() {
     async (d) => {
       const oc = await organizerCode();
       if (!oc) return;
-      const round = state.roundNo || 1;
-      const requestId = `${code}:${round}:${d}`;
-      const body = { kind: "round", code, orgCode: oc, device: deviceId(), end: d, requestId };
+      const round = appState.state.roundNo || 1;
+      const requestId = `${appState.code}:${round}:${d}`;
+      const body = { kind: "round", code: appState.code, orgCode: oc, device: deviceId(), end: d, requestId };
       toast("جارٍ البدء وإبلاغ المشاركين…");
       let r;
       try {
@@ -5601,7 +5615,7 @@ function settings() {
       } catch (err) {
         if (err && err.status) throw err;
         await refresh();
-        if (!state || (state.roundNo || 1) <= round) throw err;
+        if (!appState.state || (appState.state.roundNo || 1) <= round) throw err;
         closeLayer();
         return toast("بدأت ختمة جديدة");
       }
@@ -5648,18 +5662,18 @@ async function cancelKhatmah() {
   const oc = await organizerCode();
   if (!oc) return;
   try {
-    const body = { code, orgCode: oc, device: deviceId() };
-    const r = await edge("cancel-khatmah", body, { key: `cancel:${code}` });
+    const body = { code: appState.code, orgCode: oc, device: deviceId() };
+    const r = await edge("cancel-khatmah", body, { key: `cancel:${appState.code}` });
     if (!r.ok) return toast(r.error || "الرمز غير صحيح");
-    mineForget(code);
+    mineForget(appState.code);
     localStorage.removeItem(vKey());
     localStorage.removeItem(cKey());
-    activeKhatmahForget(code);
+    activeKhatmahForget(appState.code);
     zkReplaceHash("");
-    code = "";
-    state = null;
-    viewer = null;
-    screen = "home";
+    appState.code = "";
+    appState.state = null;
+    appState.viewer = null;
+    appState.screen = "home";
     closeLayer();
     render();
     loadPublicKhatmahs(true);
@@ -5890,9 +5904,9 @@ async function ztCompleteJuz(khatmahCode, n) {
   if (activeKhatmahGet() !== khatmahCode) return;
   zkHideLaunch();
   await boot();
-  if (!state || !viewer || code !== khatmahCode) return;
-  const j = state.juz[n - 1];
-  if (!j || j.ownerId !== viewer.id || j.status === "done") return;
+  if (!appState.state || !appState.viewer || appState.code !== khatmahCode) return;
+  const j = appState.state.juz[n - 1];
+  if (!j || j.ownerId !== appState.viewer.id || j.status === "done") return;
   if (!await appConfirm(`هل أتممت قراءة الجزء ${ar(n)}؟`, { title: "إتمام الجزء", ok: "نعم، أتممته" })) return;
   await act("done", n - 1);
 }
@@ -6264,7 +6278,7 @@ function zpCalendarHtml(todayNoon) {
   const days = [];
   for (let ts = first; zpHijri(ts).m === m0.m && days.length < 31; ts += ZP_DAY) days.push(ts);
   const lead = (new Date(first).getUTCDay() + 1) % 7;
-  const selected2 = todayNoon + zpDayOff * ZP_DAY;
+  const selected = todayNoon + zpDayOff * ZP_DAY;
   const cells = Array.from({ length: lead }, () => "<span></span>");
   const legend = [];
   for (const ts of days) {
@@ -6274,10 +6288,10 @@ function zpCalendarHtml(todayNoon) {
     const names = events.map((e) => e[4] ? `مساؤه ${e[2]}` : e[2]);
     if (white) names.push("من الأيام البيض");
     const label = zpHijriLong(ts) + (names.length ? `، ${names.join("، ")}` : "");
-    const cls = [ts === selected2 && "sel", ts === todayNoon && "today"].filter(Boolean).join(" ");
-    cells.push(`<button type="button" class="${cls}" data-zp-pick="${Math.round((ts - todayNoon) / ZP_DAY)}" aria-label="${label}" aria-pressed="${ts === selected2}">
+    const cls = [ts === selected && "sel", ts === todayNoon && "today"].filter(Boolean).join(" ");
+    cells.push(`<button type="button" class="${cls}" data-zp-pick="${Math.round((ts - todayNoon) / ZP_DAY)}" aria-label="${label}" aria-pressed="${ts === selected}">
       <b>${ztArabic(h.d)}</b><small>${zpGreg(ts, { day: "numeric" })}</small>${ev ? '<i class="ev" aria-hidden="true"></i>' : white ? '<i class="wh" aria-hidden="true"></i>' : ""}</button>`);
-    if (ts !== selected2) continue;
+    if (ts !== selected) continue;
     for (const e of events) {
       const span = e[3] === 30 ? `من ${ztArabic(e[1])} ${ZP_MONTHS[h.m - 1]} إلى آخره` : e[3] ? `${ztArabic(e[1])}–${ztArabic(e[3])} ${ZP_MONTHS[h.m - 1]}` : zpHijriLong(ts);
       legend.push(`<li><i class="ev" aria-hidden="true"></i><span>${e[2]}</span><small>${e[4] ? "مساء " : ""}${span}</small></li>`);
@@ -6506,18 +6520,18 @@ function zwSave(wird) {
 }
 function zwOpen(i) {
   zwActive = Math.max(0, Math.min(ZW_ITEMS.length - 1, Number(i) || 0));
-  const screen2 = ztEl("zw-screen");
-  if (!screen2) return;
-  screen2.hidden = false;
+  const screen = ztEl("zw-screen");
+  if (!screen) return;
+  screen.hidden = false;
   document.body.classList.add("zw-open");
   zwPaint();
   if (typeof zkArmRootGuard === "function") zkArmRootGuard();
   ztEl("zw-tap")?.focus({ preventScroll: true });
 }
 function zwClose() {
-  const screen2 = ztEl("zw-screen");
-  if (!screen2 || screen2.hidden) return false;
-  screen2.hidden = true;
+  const screen = ztEl("zw-screen");
+  if (!screen || screen.hidden) return false;
+  screen.hidden = true;
   document.body.classList.remove("zw-open");
   if (typeof zaOnWirdClose === "function") zaOnWirdClose();
   return true;
@@ -6708,10 +6722,10 @@ function zaIsOpen() {
   return !!ztEl("za-screen") && !ztEl("za-screen").hidden;
 }
 function zaShow() {
-  const screen2 = ztEl("za-screen");
-  if (!screen2) return false;
-  if (screen2.hidden) {
-    screen2.hidden = false;
+  const screen = ztEl("za-screen");
+  if (!screen) return false;
+  if (screen.hidden) {
+    screen.hidden = false;
     document.body.classList.add("za-open");
     if (typeof zkArmRootGuard === "function") zkArmRootGuard();
     if (typeof zkCountSurface === "function") zkCountSurface();
@@ -6719,10 +6733,10 @@ function zaShow() {
   return true;
 }
 function zaClose() {
-  const screen2 = ztEl("za-screen");
-  if (!screen2 || screen2.hidden) return false;
+  const screen = ztEl("za-screen");
+  if (!screen || screen.hidden) return false;
   clearTimeout(zaAdvance);
-  screen2.hidden = true;
+  screen.hidden = true;
   zaView = null;
   document.body.classList.remove("za-open");
   zaCardRender();
@@ -6937,43 +6951,43 @@ function zaOnWirdClose() {
 async function boot() {
   flushOutbox();
   minePruneMissing();
-  code = hashCode();
+  appState.code = hashCode();
   closeLayer();
-  clearInterval(lkTimer);
-  lkTimer = null;
-  linking = false;
-  if (!code) {
+  clearInterval(appState.lkTimer);
+  appState.lkTimer = null;
+  appState.linking = false;
+  if (!appState.code) {
     const active = activeKhatmahGet();
     if (active) {
       zkReplaceHash(active);
-      code = active;
+      appState.code = active;
     } else {
-      state = null;
-      viewer = null;
-      screen = "home";
+      appState.state = null;
+      appState.viewer = null;
+      appState.screen = "home";
       render();
       loadPublicKhatmahs();
       return;
     }
   }
-  activeKhatmahSet(code, false);
+  activeKhatmahSet(appState.code, false);
   zlEnsure();
   loadViewer();
-  if (viewer) activeKhatmahSet(code, true);
-  const saved = viewer ? khatmahStateSaved(code) : null;
+  if (appState.viewer) activeKhatmahSet(appState.code, true);
+  const saved = appState.viewer ? khatmahStateSaved(appState.code) : null;
   if (saved) {
-    state = saved;
-    const me = memberOf(viewer.id);
+    appState.state = saved;
+    const me = memberOf(appState.viewer.id);
     if (me && (me.linked || me.exempt)) {
-      screen = "main";
+      appState.screen = "main";
       render();
     } else {
-      state = null;
-      screen = "boot";
+      appState.state = null;
+      appState.screen = "boot";
       render();
     }
   } else {
-    screen = "boot";
+    appState.screen = "boot";
     render();
   }
   await refresh();
@@ -6986,7 +7000,7 @@ if (tbHome) tbHome.onclick = () => {
 };
 var tbReader = document.getElementById("tb-reader");
 if (tbReader) tbReader.onclick = () => {
-  location.href = readerLink(null, code);
+  location.href = readerLink(null, appState.code);
 };
 var tbUser = document.getElementById("tb-user");
 if (tbUser) tbUser.onclick = (e) => {
@@ -7210,7 +7224,7 @@ function zkCountSurface() {
 }
 if (zkIncomingKhatmah || zkSection === "khatmahs") {
   zkHideLaunch();
-  const booted = zkLoginReady ? (screen = "boot", render(), zkLoginReady.finally(boot)) : boot();
+  const booted = zkLoginReady ? (appState.screen = "boot", render(), zkLoginReady.finally(boot)) : boot();
   Promise.resolve(booted).finally(resumeTgLogin);
 } else {
   zkShowLaunch();
@@ -7271,14 +7285,14 @@ zLoop();
 var syncBusy = false;
 async function syncState() {
   if (syncBusy) return;
-  if (screen !== "main") return;
-  if (selected !== null || document.getElementById("layer").innerHTML) return;
+  if (appState.screen !== "main") return;
+  if (appState.selected !== null || document.getElementById("layer").innerHTML) return;
   syncBusy = true;
   lastSyncAt = Date.now();
-  const before = JSON.stringify(state);
+  const before = JSON.stringify(appState.state);
   try {
     const loaded = await refresh(true);
-    if (loaded && JSON.stringify(state) !== before) render();
+    if (loaded && JSON.stringify(appState.state) !== before) render();
   } finally {
     syncBusy = false;
   }

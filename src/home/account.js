@@ -47,22 +47,22 @@ function storeMemberships(list){
 }
 
 function loadViewer(){
-  try{ viewer=JSON.parse(localStorage.getItem(vKey())||"null"); }catch(e){ viewer=null; }
+  try{ appState.viewer=JSON.parse(localStorage.getItem(vKey())||"null"); }catch(e){ appState.viewer=null; }
 }
 
 /* الرجوع إلى الرئيسية: من الشريط العلوي ومن أزرار الصفحات سواء */
 function goHome(){
-  clearInterval(lkTimer); lkTimer=null; linking=false;
+  clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false;
   /* الرجوع إلى صفحة الختمات لا يغيّر الختمة النشطة. بذلك إذا عاد القارئ
      لاحقًا إلى واجهة زاد الخير ثم اختار «الختمات الجماعية» يرجع إلى ختمته. */
   closeLayer();
-  zkReplaceHash("");code="";state=null;viewer=null;screen="home";render();
+  zkReplaceHash("");appState.code="";appState.state=null;appState.viewer=null;appState.screen="home";render();
   loadPublicKhatmahs(true);
 }
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);}
-const isOrganizer=()=>!!(viewer&&state&&state.organizerId===viewer.id);
-const memberOf=id=>((state&&state.members)||[]).find(m=>m.id===id);
+const isOrganizer=()=>!!(appState.viewer&&appState.state&&appState.state.organizerId===appState.viewer.id);
+const memberOf=id=>((appState.state&&appState.state.members)||[]).find(m=>m.id===id);
 const BOOK_ICON=`<svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M12 6.25C10.15 4.85 7.95 4.2 5.15 4.2v12.65c2.75.02 5.08.78 6.85 2.25 1.77-1.47 4.1-2.23 6.85-2.25V4.2c-2.8 0-5 .65-6.85 2.05Z"/>
