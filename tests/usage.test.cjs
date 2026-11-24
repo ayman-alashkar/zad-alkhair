@@ -86,7 +86,7 @@ test("both apps import the usage module, sharing the install analytics identity"
   assert.match(read("src/reader/app.js"),/from "\.\.\/shared\/usage\.mjs"/);
   assert.match(read("index.html"),/record_usage/);
   assert.match(read("quran/runtime/reader.js"),/record_usage/);
-  assert.match(read("src/home/install-navigation.js"),/function pwaInstallId\(\)\{return zuDeviceId\(\)\}/);
+  assert.match(read("src/home/install.mjs"),/function pwaInstallId\(\)\{return zuDeviceId\(\)\}/);
   // The analytics check must not end ما تيسّر: tayassurActive() clears the mode as a side effect.
   assert.doesNotMatch(read("src/reader/bootstrap.js"),/zuTrackAudio\(audio,tayassurActive\)/);
 });

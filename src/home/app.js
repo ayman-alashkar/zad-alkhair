@@ -1,4 +1,7 @@
 import { appState } from "./app-state.mjs";
+import { BOT_USERNAME, SUPABASE_KEY, SUPABASE_URL } from "./config.mjs";
+import "./install.mjs";
+import { readerLink } from "./reader-links.mjs";
 import { JUZ, MOTIV } from "./content.mjs";
 import { AR, MONTHS, WEEKDAYS, ar, araNorm, dayWord, daysLeft, esc, fmtClockG, fmtClockH, fmtG, fmtH, fmtTime, hourOptions, isoParts, keyOf, norm, plusDays, todayISO } from "./format.mjs";
 import { KUNYA, NEAR, coreTokens, jaro, jw, nameScore, similarTo, tokensOf } from "./name-matching.mjs";
@@ -7,13 +10,8 @@ import { zuDeviceId, zuPackFresh, zuPlatform, zuSurface, zuTrackAudio } from "..
 import { JUZ_PAGES, SURAH_NAMES, SURAH_START_PAGES, surahForPage } from "./quran-map.mjs";
 
 
-/* ===================== الإعدادات ===================== */
-const SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
-const SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
-const BOT_USERNAME = "ZadAlkhair_Bot";
 
 
-/* @include install-navigation.js */
 
 
 
