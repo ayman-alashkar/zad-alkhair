@@ -121,6 +121,50 @@ files.set('index.json', json({
   qcf_extra: qcfExtra,
 }));
 
+// المتشابهات (QUL «Mutashabihat ul Quran»). مواضع QUL بترتيب الكلمة في الآية على تقسيم QCF
+// (15:7 فيها ثماني كلمات)، فتُحوَّل إلى gi عبر ترتيب محارف QCF في كل آية.
+// المواضع من الحقل ayah وحده. الحقل source لا يُستعمل: في 66 عبارة لا يطابق موضعه أيًّا من
+// مواضعها (مثل 7138: مصدرها 48:24 من 17 إلى 21، والآية 19 كلمة، وموضعها في القائمة 15–19).
+const QUL_FIX = {
+  // 48:10 خمس وعشرون كلمة، والعبارة «يؤتيه أجرا عظيما» تنتهي عند «عَظِيمࣰا» (25) كما في مصدرها 4:74.
+  '4970 48:10 23-27': [23, 25],
+};
+const qcfToGi = new Map(); // `${s}:${a}` -> لكل محرف QCF بالترتيب: كلمات hafs.json التي يمثلها
+for (const [k, gs] of hafsByAyah) {
+  const list = [];
+  for (const g of gs) {
+    const last = list[list.length - 1];
+    const same = last && qcf[last[0]].every((v, i) => v === qcf[g][i]);
+    if (same) last.push(g); // محرف واحد لكلمتين (37:130)
+    else list.push([g]);
+    if (qcfExtra[g]) list.push([g]); // محرف ثانٍ للكلمة نفسها (15:7)
+  }
+  qcfToGi.set(k, list);
+}
+const mutashabihat = {};
+{
+  const P = read('data/words-src/qul-mutashabihat/phrases.json');
+  const span = (id, k, f, t) => {
+    const fix = QUL_FIX[`${id} ${k} ${f}-${t}`];
+    if (fix) [f, t] = fix;
+    const list = qcfToGi.get(k);
+    if (!list || f < 1 || t > list.length || f > t) fail(`المتشابهات ${id}: ${k} ${f}-${t} خارج الآية`);
+    return [list[f - 1][0], list[t - 1][list[t - 1].length - 1]];
+  };
+  for (const [id, p] of Object.entries(P)) {
+    const occ = [];
+    for (const [k, spans] of Object.entries(p.ayah)) for (const [f, t] of spans) occ.push(span(id, k, f, t));
+    occ.sort((a, b) => a[0] - b[0]);
+    mutashabihat[id] = occ;
+  }
+}
+files.set('mutashabihat.json', json({
+  format: 1,
+  source: 'ترتيل (Tarteel) — مكتبة QUL، «Mutashabihat ul Quran»',
+  note: 'لكل عبارة (برقمها في QUL) مواضعها كلها مرتبة، كل موضع [أول gi، آخر gi] في hafs.json.',
+  phrases: mutashabihat,
+}));
+
 // طبقة المعنى والإعراب والتصريف: ملف لكل صفحة
 for (let p = 1; p <= 604; p++) {
   const words = [];

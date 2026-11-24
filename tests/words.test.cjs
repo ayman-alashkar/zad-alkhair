@@ -49,3 +49,21 @@ test("spot checks: words line up with their meanings",()=>{
   assert.match(at(H.words.length-1)[1],/بنو آدم/);
   assert.match(at(gi(15,7,0))[3],/لَوْمَا/);
 });
+
+test("mutashabihat: every QUL occurrence maps to words inside its own ayah",()=>{
+  const M=read("data/words/mutashabihat.json").phrases;
+  const P=read("data/words-src/qul-mutashabihat/phrases.json");
+  assert.equal(Object.keys(M).length,814);
+  const ayahStart=new Map();H.surahs.forEach(s=>{for(let a=1;a<=s.ayah_count;a++)ayahStart.set(`${s.number}:${a}`,H.ayah_starts[s.first_ayah+a-1])});
+  const ayahOf=g=>{let lo=0,hi=H.ayah_starts.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(H.ayah_starts[m]<=g)lo=m;else hi=m-1}return lo};
+  let n=0;
+  for(const [id,occ] of Object.entries(M)){
+    const want=Object.values(P[id].ayah).reduce((s,x)=>s+x.length,0);
+    assert.equal(occ.length,want,`phrase ${id}`);
+    for(const [a,b] of occ){n++;assert.ok(a<=b&&ayahOf(a)===ayahOf(b),`phrase ${id} [${a},${b}] crosses an ayah`)}
+  }
+  assert.equal(n,3558);
+  const text=([a,b])=>H.words.slice(a,b+1).join(" ");
+  assert.ok(M["16318"].map(text).filter(t=>t==="إِن كُنتَ مِنَ ٱلصَّٰدِقِينَ").length>=3,"15:7 offset handled via QCF split");
+  assert.ok(M["4970"].some(o=>text(o)==="فَسَيُؤۡتِيهِ أَجۡرًا عَظِيمࣰا"),"48:10 QUL fix");
+});
