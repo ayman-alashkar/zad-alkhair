@@ -1,6 +1,9 @@
+import { JUZ, MOTIV } from "./content.mjs";
+import { AR, MONTHS, WEEKDAYS, ar, araNorm, dayWord, daysLeft, esc, fmtClockG, fmtClockH, fmtG, fmtH, fmtTime, hourOptions, isoParts, keyOf, norm, plusDays, todayISO } from "./format.mjs";
+import { KUNYA, NEAR, coreTokens, jaro, jw, nameScore, similarTo, tokensOf } from "./name-matching.mjs";
+import { ZA_LISTS, ZA_TEXT } from "./adhkar-data.mjs";
 import { JUZ_PAGES, SURAH_NAMES, SURAH_START_PAGES, surahForPage } from "./quran-map.mjs";
 
-/* @include content.js */
 
 /* ===================== الإعدادات ===================== */
 const SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
@@ -19,7 +22,6 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
 
 /* @include formatting-clock.js */
 
-/* @include name-matching.js */
 /* @include session.js */
 /* @include notification-outbox.js */
 
@@ -43,7 +45,6 @@ const BOT_USERNAME = "ZadAlkhair_Bot";
 /* @include today.js */
 /* @include prayer-screen.js */
 /* @include friday-wird.js */
-/* @include adhkar-data.js */
 /* @include adhkar.js */
 
 /* @include bootstrap.js */
