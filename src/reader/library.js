@@ -242,7 +242,7 @@ function bindSurahDownloadButton(btn,s){
 let quranSearchIndex=storageJsonGet(STORAGE_KEYS.searchIndex,null);
 if(!Array.isArray(quranSearchIndex))quranSearchIndex=null;
 let quranSearchBuildPromise=null;
-/* النص الموحّد لكل آية (search-text.js)، يُحسب مرة في الجلسة. */
+/* النص الموحّد لكل آية (search-text.mjs)، يُحسب مرة في الجلسة. */
 const quranSearchNormalized=new Map();
 function searchTextOf(item){
   let text=quranSearchNormalized.get(item.key);

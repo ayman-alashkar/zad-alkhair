@@ -4,10 +4,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-/* search-text.js كما يعمل في القارئ. */
+/* search-text.mjs كما يعمل في القارئ (بعد حذف كلمة export). */
 const context = {};
 vm.createContext(context);
-vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "src/reader/search-text.js"), "utf8") +
+vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "src/reader/search-text.mjs"), "utf8").replace(/^export /gm, "") +
   "\n;Object.assign(globalThis,{searchNormalize,searchMatcher});", context);
 const finds = (query, text) => context.searchMatcher(query).test(context.searchNormalize(text));
 

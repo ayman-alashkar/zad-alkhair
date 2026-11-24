@@ -1,4 +1,6 @@
-const TAFSIR_DATASET=Object.freeze({
+import { pad3 } from "./util.mjs";
+
+export const TAFSIR_DATASET=Object.freeze({
   schemaVersion:1,
   sourceId:"wahba_al_zuhayli_al_wajeez",
   title:"التفسير الوجيز للدكتور وهبة الزحيلي",
@@ -10,9 +12,6 @@ const TAFSIR_DATASET=Object.freeze({
 });
 const tafsirSurahCache=new Map();
 let tafsirIndexCache=null,tafsirIndexPromise=null,tafsirFadlCache=null,tafsirFadlPromise=null;
-function escapeHtml(value){
-  return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-}
 function validTafsirSurah(data,surah){
   if(!data||Number(data.schema_version)!==TAFSIR_DATASET.schemaVersion||
      data.source_id!==TAFSIR_DATASET.sourceId||Number(data.surah)!==Number(surah)||
@@ -20,7 +19,7 @@ function validTafsirSurah(data,surah){
   const count=Number(data.ayah_count);
   return count>0&&Object.keys(data.ayahs).length===count;
 }
-async function loadTafsirIndex(){
+export async function loadTafsirIndex(){
   if(tafsirIndexCache)return tafsirIndexCache;
   if(tafsirIndexPromise)return tafsirIndexPromise;
   tafsirIndexPromise=(async()=>{
@@ -50,7 +49,7 @@ async function loadTafsirSurah(surah){
   tafsirSurahCache.set(s,data);
   return data;
 }
-async function tafsirAyahRecord(key){
+export async function tafsirAyahRecord(key){
   const [surah,ayah]=String(key||"").split(":").map(Number);
   if(!surah||!ayah)return null;
   const data=await loadTafsirSurah(surah);
@@ -76,4 +75,4 @@ async function loadTafsirFadl(){
   })().finally(()=>{tafsirFadlPromise=null});
   return tafsirFadlPromise;
 }
-async function tafsirFadlForSurah(surah){return (await loadTafsirFadl()).get(Number(surah))||null}
+export async function tafsirFadlForSurah(surah){return (await loadTafsirFadl()).get(Number(surah))||null}

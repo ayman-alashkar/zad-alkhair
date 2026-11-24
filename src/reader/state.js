@@ -94,7 +94,6 @@ function scheduleIndexExcerptSave(){
 }
 
 function ar(n){return String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[+d])}
-function pad3(n){return String(Number(n)||0).padStart(3,"0")}
 function verseParts(k){
   const [s,a]=k.split(":").map(Number);
   return {s,a,sname:chapterMap.get(s)?.name_arabic||({1:"الفاتحة",2:"البقرة"}[s]||`السورة ${ar(s)}`)};
