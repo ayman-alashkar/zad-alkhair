@@ -1,4 +1,5 @@
 
+import { zuDeviceId, zuPackFresh, zuPlatform, zuSurface, zuTrackAudio } from "../shared/usage.mjs";
 (()=>{
 "use strict";
 /* v85 Reader Navigation + Hardware Back + Bottom Dock
@@ -31,7 +32,6 @@ let surahHeaderReady=false;
    الفهرس قد يظهر قبل ذلك؛ ومن يغادره إلى المصحف ينتظر هذا الوعد. */
 let readerBooted=false,readerGoPending=false,readerBootDone=()=>{};
 const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=true;resolve()}});
-/* @include ../shared/usage.js */
 /* @include tafsir.js */
 
 /* @include reciters.js */

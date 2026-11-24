@@ -24,7 +24,8 @@ function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=
     fetch:async(url,opt)=>{sent.push({url,body:JSON.parse(opt.body)});return {ok:fetchStatus<300,status:fetchStatus}}
   };
   vm.createContext(ctx);
-  vm.runInContext(read("src/shared/usage.js")+";this.api={zuDay,zuSurface,zuTrackAudio,zuFlush,zuRead,zuAdd,zuDeviceId,zuPackFresh};",ctx);
+  // وحدة ES: تُشغَّل هنا في سياق معزول بعد حذف كلمة export، لتتحكم البيئة بالساعة والتخزين والمؤقتات
+  vm.runInContext(read("src/shared/usage.mjs").replace(/^export /gm,"")+";this.api={zuDay,zuSurface,zuTrackAudio,zuFlush,zuRead,zuAdd,zuDeviceId,zuPackFresh};",ctx);
   const runTimers=()=>{const due=timers.splice(0);due.forEach(t=>t.f&&t.f())};
   return {api:ctx.api,store,sent,clock,runTimers};
 }
@@ -80,9 +81,9 @@ test("a server error keeps the counts for next time; ?nostats stops counting",as
   assert.equal(off.sent.length,0);
 });
 
-test("both apps carry the usage section, sharing the install analytics identity",()=>{
-  assert.match(read("src/home/app.js"),/@include \.\.\/shared\/usage\.js/);
-  assert.match(read("src/reader/app.js"),/@include \.\.\/shared\/usage\.js/);
+test("both apps import the usage module, sharing the install analytics identity",()=>{
+  assert.match(read("src/home/app.js"),/from "\.\.\/shared\/usage\.mjs"/);
+  assert.match(read("src/reader/app.js"),/from "\.\.\/shared\/usage\.mjs"/);
   assert.match(read("index.html"),/record_usage/);
   assert.match(read("quran/runtime/reader.js"),/record_usage/);
   assert.match(read("src/home/install-navigation.js"),/function pwaInstallId\(\)\{return zuDeviceId\(\)\}/);

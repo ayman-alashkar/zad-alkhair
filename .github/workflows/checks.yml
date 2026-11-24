@@ -76,4 +76,4 @@ jobs:
         run: deno test --allow-env supabase/functions/_shared
       # وحدات الواجهة (.mjs) تستورد كل ما تستعمله: اسم غير معرّف يعني اعتمادًا خفيًا على الأقسام القديمة
       - name: Front-end modules use only what they import
-        run: deno lint --rules-tags= --rules-include=no-undef src/home/*.mjs
+        run: node scripts/check-module-names.cjs

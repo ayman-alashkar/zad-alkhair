@@ -31,9 +31,9 @@ const ZU_BOT=(()=>{
 function zuOff(){if(ZU_BOT)return true;try{return localStorage.getItem(ZU_OFF)==="1"}catch(_){return true}}
 
 /* اليوم بتوقيت مكة (UTC+3، ولا توقيت صيفي فيه)، ليوافق أغلب المستخدمين والتقويم الهجري. */
-function zuDay(t=Date.now()){return new Date(t+3*3600*1000).toISOString().slice(0,10)}
+export function zuDay(t=Date.now()){return new Date(t+3*3600*1000).toISOString().slice(0,10)}
 
-function zuDeviceId(){
+export function zuDeviceId(){
   try{
     let id=localStorage.getItem(ZU_ID_KEY);
     const valid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -49,7 +49,7 @@ function zuDeviceId(){
     return id;
   }catch(_){return null}
 }
-function zuPlatform(){
+export function zuPlatform(){
   const ua=navigator.userAgent||"";
   const uaPlatform=navigator.userAgentData&&navigator.userAgentData.platform||"";
   if(/Android/i.test(ua)||/Android/i.test(uaPlatform))return "android";
@@ -72,12 +72,12 @@ async function zuPersisted(){
 }
 
 /* ── المخزن المحلي: { "2026-11-11": { home: 2, listen_seconds: 340, … }, … } ── */
-function zuRead(){
+export function zuRead(){
   try{const v=JSON.parse(localStorage.getItem(ZU_STORE)||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{}}
   catch(_){return {}}
 }
 function zuWrite(store){try{localStorage.setItem(ZU_STORE,JSON.stringify(store))}catch(_){}}
-function zuAdd(counts){
+export function zuAdd(counts){
   if(zuOff())return;
   const store=zuRead(),day=zuDay(),oldest=zuDay(Date.now()-ZU_KEEP_DAYS*86400000);
   for(const d of Object.keys(store))if(d<oldest)delete store[d];
@@ -103,7 +103,7 @@ function zuSubtract(day,sent){
 
 /* ── الأقسام: يُعدّ القسم حين يبقى ظاهرًا ٦٠٠ ملّي ثانية، فلا تُعدّ المراحل العابرة. ── */
 let zuShown=null,zuWanted=null,zuSurfaceTimer=0,zuHiddenAt=0;
-function zuSurface(name){
+export function zuSurface(name){
   if(!ZU_SURFACES.includes(name))return;
   zuWanted=name;
   clearTimeout(zuSurfaceTimer);
@@ -128,7 +128,7 @@ function zuCommitAudio(keepGoing){
   let tayassar=false;try{tayassar=!!zuAudioTayassar()}catch(_){}
   zuAdd(tayassar?{listen_seconds:secs,tayassar_seconds:secs}:{listen_seconds:secs});
 }
-function zuTrackAudio(el,isTayassar){
+export function zuTrackAudio(el,isTayassar){
   if(!el)return;
   if(typeof isTayassar==="function")zuAudioTayassar=isTayassar;
   el.addEventListener("playing",()=>{if(!zuAudioFrom)zuAudioFrom=Date.now()});
@@ -139,7 +139,7 @@ function zuTrackAudio(el,isTayassar){
 
 /* ── الإرسال: طلب واحد لكل يوم فيه أرقام، ومن نافذة واحدة في كل مرة. ── */
 let zuFlushing=false;
-async function zuFlush(){
+export async function zuFlush(){
   zuCommitAudio(true);
   if(zuFlushing||zuOff()||navigator.onLine===false)return;
   const store=zuRead(),days=Object.keys(store).sort();
@@ -185,7 +185,7 @@ async function zuFlush(){
   }catch(_){ }
 })();
 /* يناديه القارئ حين يبدأ عامل الخدمة تنزيل حزمة المصحف من الصفر. */
-function zuPackFresh(){zuAdd({pack_fresh:1})}
+export function zuPackFresh(){zuAdd({pack_fresh:1})}
 
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){zuHiddenAt=Date.now();zuFlush();return}
