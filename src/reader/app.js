@@ -1,6 +1,7 @@
 
 import { zuDeviceId, zuPackFresh, zuPlatform, zuSurface, zuTrackAudio } from "../shared/usage.mjs";
 import { escapeHtml, pad3 } from "./util.mjs";
+import { reading } from "./reader-state.mjs";
 import { searchMatcher, searchNormalize } from "./search-text.mjs";
 import { TAFSIR_DATASET, loadTafsirIndex, tafsirAyahRecord, tafsirFadlForSurah } from "./tafsir.mjs";
 (()=>{

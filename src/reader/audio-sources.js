@@ -9,7 +9,7 @@ function audioUrl(s,a){
   if(!sourceId)throw new Error("ayah provider unavailable");
   return `https://everyayah.com/data/${sourceId}/${pad3(s)}${pad3(a)}.mp3`;
 }
-function maxAyah(s){return Number(chapterMap.get(Number(s))?.verses_count)||({1:7,2:286}[Number(s)]||286)}
+function maxAyah(s){return Number(reading.chapterMap.get(Number(s))?.verses_count)||({1:7,2:286}[Number(s)]||286)}
 function compactArabic(s){return normalizeArabic(s).replace(/[أإآ]/g,"ا").replace(/ى/g,"ي").replace(/\s+/g,"")}
 async function loadTimedReads(){
   if(!mp3ReadsPromise){

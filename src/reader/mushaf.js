@@ -32,33 +32,33 @@ function chapterMapFromMeta(meta){
   return map;
 }
 function validateMetadataConsistency(){
-  const map=chapterMapFromMeta(qcfMeta);
+  const map=chapterMapFromMeta(reading.qcfMeta);
   if(!map)throw new Error("chapter metadata integrity");
-  chapterMap=map;
+  reading.chapterMap=map;
 }
 function buildPageShells(){
   track.innerHTML=Array.from({length:TOTAL_PAGES},(_,i)=>`<section class="page" data-page="${i+1}"></section>`).join("");
   track.style.width=(TOTAL_PAGES*100)+"vw";
 }
 async function loadQcfMeta(){
-  if(qcfMeta)return qcfMeta;
+  if(reading.qcfMeta)return reading.qcfMeta;
   const cached=storageJsonGet(STORAGE_KEYS.meta,null),cachedMap=chapterMapFromMeta(cached);
-  if(cachedMap){qcfMeta=cached;chapterMap=cachedMap;return qcfMeta}
+  if(cachedMap){reading.qcfMeta=cached;reading.chapterMap=cachedMap;return reading.qcfMeta}
   const r=await fetch(INDEX_URL,{cache:"force-cache"});if(!r.ok)throw new Error("qcf index");
   const fresh=await r.json(),freshMap=chapterMapFromMeta(fresh);
   if(!freshMap)throw new Error("invalid qcf index");
-  qcfMeta=fresh;chapterMap=freshMap;storageJsonSet(STORAGE_KEYS.meta,qcfMeta);
-  return qcfMeta;
+  reading.qcfMeta=fresh;reading.chapterMap=freshMap;storageJsonSet(STORAGE_KEYS.meta,reading.qcfMeta);
+  return reading.qcfMeta;
 }
 async function loadVerseIndex(){
-  if(verseIndex)return verseIndex;
+  if(reading.verseIndex)return reading.verseIndex;
   const cached=storageJsonGet(STORAGE_KEYS.verseIndex,null);
-  if(cached&&typeof cached==="object"&&!Array.isArray(cached)){verseIndex=cached;return verseIndex}
+  if(cached&&typeof cached==="object"&&!Array.isArray(cached)){reading.verseIndex=cached;return reading.verseIndex}
   const r=await fetch(VERSE_INDEX_URL,{cache:"force-cache"});if(!r.ok)throw new Error("verse index");
   const fresh=await r.json();
   if(!fresh||typeof fresh!=="object"||Array.isArray(fresh))throw new Error("invalid verse index");
-  verseIndex=fresh;storageJsonSet(STORAGE_KEYS.verseIndex,verseIndex);
-  return verseIndex;
+  reading.verseIndex=fresh;storageJsonSet(STORAGE_KEYS.verseIndex,reading.verseIndex);
+  return reading.verseIndex;
 }
 /* خط الصفحة: QCFV4_P005 ← /fonts/qcf-v4/p5.woff2 (الصفحة 328 وحدها بصيغة woff كما تنشرها QUL).
    الخط ملوّن، فلونه من مجموعة ألوانه لا من color: تُعرَّف مجموعات هذه الصفحة عند تحميل خطها. */
@@ -146,13 +146,13 @@ window.addEventListener("popstate",()=>{
 queueMicrotask(armReaderBackGuard);
 function showNotice(m){notice.textContent=m;notice.classList.add("show");clearTimeout(notice._t);notice._t=setTimeout(()=>notice.classList.remove("show"),1500)}
 function hideTools(){
-  clearTimeout(toolsTimer);
+  clearTimeout(reading.toolsTimer);
   document.body.classList.add("hidden-tools");
 }
 function showToolsFor(ms=2800){
-  clearTimeout(toolsTimer);
+  clearTimeout(reading.toolsTimer);
   document.body.classList.remove("hidden-tools");
-  toolsTimer=setTimeout(()=>{
+  reading.toolsTimer=setTimeout(()=>{
     if(!menu.classList.contains("show")&&!document.querySelector(".backdrop"))hideTools();
   },ms);
 }
@@ -167,20 +167,20 @@ async function fetchPage(p){
   return data;
 }
 function touchPageData(p,data){
-  pages.delete(p);pages.set(p,data);
+  reading.pages.delete(p);reading.pages.set(p,data);
   return data;
 }
-function prunePageDataCache(center=currentPage){
-  if(pages.size<=PAGE_DATA_CACHE_LIMIT)return;
+function prunePageDataCache(center=reading.currentPage){
+  if(reading.pages.size<=PAGE_DATA_CACHE_LIMIT)return;
   const protectedPages=new Set([center-2,center-1,center,center+1,center+2].filter(x=>x>=1&&x<=TOTAL_PAGES));
-  for(const p of [...pages.keys()]){
-    if(pages.size<=PAGE_DATA_CACHE_LIMIT)break;
-    if(!protectedPages.has(p))pages.delete(p);
+  for(const p of [...reading.pages.keys()]){
+    if(reading.pages.size<=PAGE_DATA_CACHE_LIMIT)break;
+    if(!protectedPages.has(p))reading.pages.delete(p);
   }
 }
 async function getPageData(p){
   p=Number(p);if(!Number.isFinite(p)||p<1||p>TOTAL_PAGES)return null;
-  if(pages.has(p))return touchPageData(p,pages.get(p));
+  if(reading.pages.has(p))return touchPageData(p,reading.pages.get(p));
   if(pageDataLoads.has(p))return pageDataLoads.get(p);
   const job=fetchPage(p).then(data=>{touchPageData(p,data);prunePageDataCache();return data}).finally(()=>pageDataLoads.delete(p));
   pageDataLoads.set(p,job);return job;
@@ -189,28 +189,28 @@ function surahIdFromPageData(data){
   const direct=Number(data?.surahs?.[0]?.id||data?.surahs?.[0]?.number||data?.surahs?.[0]?.surah_number);
   if(direct)return direct;
   const name=data?.surahs?.[0]?.name_arabic;
-  if(name){for(const [id,ch] of chapterMap)if(ch?.name_arabic===name)return Number(id)}
+  if(name){for(const [id,ch] of reading.chapterMap)if(ch?.name_arabic===name)return Number(id)}
   for(const line of data?.lines||[])for(const w of line.words||[])if(w.verse_key)return Number(w.verse_key.split(":")[0]);
   return 1;
 }
 function surahIdFromMetaPage(p){
   p=Number(p);let best=1,bestStart=0;
-  for(const [id,ch] of chapterMap){
+  for(const [id,ch] of reading.chapterMap){
     const from=Number(ch?.pages?.[0]),to=Number(ch?.pages?.[1]);
     if(from<=p&&p<=to&&from>=bestStart){best=Number(id);bestStart=from}
   }
   return best;
 }
 async function pageDisplayInfo(p){
-  p=Number(p);let data=pages.get(p)||null;
+  p=Number(p);let data=reading.pages.get(p)||null;
   if(!data)try{data=await getPageData(p)}catch(_){}
   const sid=data?surahIdFromPageData(data):surahIdFromMetaPage(p);
-  return {page:p,juz:juzForPage(p),surah:sid,sname:chapterMap.get(sid)?.name_arabic||data?.surahs?.[0]?.name_arabic||""};
+  return {page:p,juz:juzForPage(p),surah:sid,sname:reading.chapterMap.get(sid)?.name_arabic||data?.surahs?.[0]?.name_arabic||""};
 }
 async function ensurePage(p){
   p=Number(p);if(!Number.isFinite(p)||p<1||p>TOTAL_PAGES)return null;
   const root=document.querySelector(`.page[data-page="${p}"]`);
-  if(root?.dataset.loaded==="1"&&pages.has(p))return touchPageData(p,pages.get(p));
+  if(root?.dataset.loaded==="1"&&reading.pages.has(p))return touchPageData(p,reading.pages.get(p));
   if(pageLoads.has(p))return pageLoads.get(p);
   const job=(async()=>{
     const data=await getPageData(p);
@@ -279,7 +279,7 @@ function renderPage(data){
   root.dataset.loaded="1";
   root.dataset.qfont=data.font||"";
   root.innerHTML=`<div class="page-stage ${data.page<=2?"special":"full"}">
-    <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
+    <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(reading.chapterMap.get(surahId)?.name_arabic||data.surahs[0]?.name_arabic||"")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
     <div class="mushaf" id="mushaf-${data.page}"></div>
     <div class="page-footer"><div class="page-no">${ar(data.page)}</div></div>
   </div>`;
@@ -313,7 +313,7 @@ function renderPage(data){
       }else{
         inner.textContent=first.char;
       }
-      inner.setAttribute("aria-label",`سورة ${chapterMap.get(sid)?.name_arabic||""}`);
+      inner.setAttribute("aria-label",`سورة ${reading.chapterMap.get(sid)?.name_arabic||""}`);
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
     if(first?.type==="bismillah"){
@@ -341,7 +341,7 @@ function renderPage(data){
     lineEl.appendChild(inner);host.appendChild(lineEl);
   }
 
-  if(selectedKey)root.querySelectorAll(`.verse-segment[data-key="${selectedKey}"]`).forEach(x=>x.classList.add("selected"));
+  if(reading.selectedKey)root.querySelectorAll(`.verse-segment[data-key="${reading.selectedKey}"]`).forEach(x=>x.classList.add("selected"));
   renderPageBookmark(root);
   requestAnimationFrame(()=>fitPage(data.page));
 }

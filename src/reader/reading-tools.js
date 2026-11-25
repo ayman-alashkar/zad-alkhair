@@ -1,3 +1,6 @@
+/* حالة اللمس: موضع بدء الضغطة، والسحب، ومؤقت الضغطة الطويلة. خاصة بهذا الملف. */
+let downX=0,downY=0,swipeActive=false,longTimer=null,longTriggered=false;
+
 function clearVerseContext(){
   const context=document.getElementById("readerContext");if(!context)return;
   clearTimeout(context._t);context.classList.remove("show");context.replaceChildren();context.removeAttribute("title");
@@ -13,7 +16,7 @@ function showVerseContext(v){
 function clearVerseSelection(){
   clearVerseContext();
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
-  selectedKey=null;selectedAnchor=null;pendingReveal=null;closeMenu();
+  reading.selectedKey=null;reading.selectedAnchor=null;pendingReveal=null;closeMenu();
 }
 /* Choose once per tap; do not move a control while that tap is in progress. */
 function placeReaderToolbar(anchor=null,point=null){
@@ -72,20 +75,20 @@ function applyPendingReveal(){
     ?start-visibleTop-4
     :verse.top-visibleTop-room/3;
   // The tools were placed against the verse's old position; place them again.
-  if(selectedAnchor===anchor)placeReaderToolbar(anchor);
+  if(reading.selectedAnchor===anchor)placeReaderToolbar(anchor);
 }
 function selectVerse(k,anchor,force=false,point=null){
-  if(!force && selectedKey===k){
+  if(!force && reading.selectedKey===k){
     clearVerseSelection();
     hideTools();
     return false;
   }
-  selectedKey=k;selectedAnchor=anchor||selectedAnchor;
+  reading.selectedKey=k;reading.selectedAnchor=anchor||reading.selectedAnchor;
   uthmaniLoad(verseParts(k).s);
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach(x=>x.classList.add("selected"));
-  if(point)pendingReveal=null;else revealVerse(selectedAnchor);
-  placeReaderToolbar(selectedAnchor,point);
+  if(point)pendingReveal=null;else revealVerse(reading.selectedAnchor);
+  placeReaderToolbar(reading.selectedAnchor,point);
   const v=verseParts(k);showVerseContext(v);
   return true;
 }
@@ -97,7 +100,7 @@ function bindSegment(seg){
     clearTimeout(longTimer);
     longTimer=setTimeout(()=>{
       if(moved)return;
-      longTriggered=true;clearTimeout(toolsTimer);selectVerse(seg.dataset.key,seg,true,{x:sx,y:sy});openPrimaryMenu(seg);
+      longTriggered=true;clearTimeout(reading.toolsTimer);selectVerse(seg.dataset.key,seg,true,{x:sx,y:sy});openPrimaryMenu(seg);
     },520);
   });
   seg.addEventListener("pointermove",e=>{
@@ -125,9 +128,9 @@ function archivePreviousVisit(item){
   saveList(key,list.slice(0,RECENT_VISITS_LIMIT));
 }
 function saveLastPosition(){
-  storageJsonSet(STORAGE_KEYS.lastPosition,{page:currentPage,savedAt:Date.now()});
-  recordJuzProgress(currentPage);
-  recordKahfVisit(currentPage);
+  storageJsonSet(STORAGE_KEYS.lastPosition,{page:reading.currentPage,savedAt:Date.now()});
+  recordJuzProgress(reading.currentPage);
+  recordKahfVisit(reading.currentPage);
 }
 /* ── تقدّم المستخدم في أجزائه من الختمة ──
    الرئيسية تحفظ ملخص الختمة النشطة (رمزها وأجزاء المستخدم). هنا يُحفظ أبعد صفحة
@@ -168,14 +171,14 @@ function recordJuzProgress(page){
   storageJsonSet(JUZ_PROGRESS_KEY,progress);
 }
 function saveReaderSurface(surface,extra={}){
-  storageJsonSet(STORAGE_KEYS.lastSurface,{surface,page:currentPage,savedAt:Date.now(),...extra});
+  storageJsonSet(STORAGE_KEYS.lastSurface,{surface,page:reading.currentPage,savedAt:Date.now(),...extra});
 }
 function cleanConsumedReaderTarget(){
   try{
     const url=new URL(location.href);
     for(const key of ["home","listen","juz","page","surah","ayah"])url.searchParams.delete(key);
     const direct=directQuranPath();
-    if(direct?.mode==="read"&&!direct.surah)url.searchParams.set("page",String(currentPage));
+    if(direct?.mode==="read"&&!direct.surah)url.searchParams.set("page",String(reading.currentPage));
     if(/^#ayah=/i.test(url.hash))url.hash="";
     history.replaceState(history.state,"",url.href);
   }catch(_){ }
@@ -190,27 +193,27 @@ function enterReaderSurface({consumeTarget=true,fromHome=false}={}){
 }
 function updatePage(animate=true,savePosition=true){
   track.style.transition=animate?"transform .31s cubic-bezier(.2,.78,.2,1)":"none";
-  track.style.transform=`translateX(${-(TOTAL_PAGES-currentPage)*100}vw)`;
-  document.getElementById("prevBtn").disabled=currentPage===1;
-  document.getElementById("nextBtn").disabled=currentPage===TOTAL_PAGES;
-  document.getElementById("desktopPrevBtn").disabled=currentPage===1;
-  document.getElementById("desktopNextBtn").disabled=currentPage===TOTAL_PAGES;
+  track.style.transform=`translateX(${-(TOTAL_PAGES-reading.currentPage)*100}vw)`;
+  document.getElementById("prevBtn").disabled=reading.currentPage===1;
+  document.getElementById("nextBtn").disabled=reading.currentPage===TOTAL_PAGES;
+  document.getElementById("desktopPrevBtn").disabled=reading.currentPage===1;
+  document.getElementById("desktopNextBtn").disabled=reading.currentPage===TOTAL_PAGES;
   closeMenu();
   syncPageBookmarkButton();
   if(savePosition)saveLastPosition();
-  const milestone=pageMilestoneLabel(currentPage);
+  const milestone=pageMilestoneLabel(reading.currentPage);
   if(milestone)showNotice(milestone);
 }
 async function go(p){
   /* لا ننتقل قبل اكتمال الإقلاع وخطوطه؛ وتبقى شاشة التحميل حتى نبلغ الصفحة المطلوبة. */
   if(!readerBooted){readerGoPending=true;await readerBootReady}
   const target=Math.max(1,Math.min(TOTAL_PAGES,Number(p)||1));
-  if(navigationBusy||target===currentPage){if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}return}
-  navigationBusy=true;
+  if(reading.navigationBusy||target===reading.currentPage){if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}return}
+  reading.navigationBusy=true;
   try{
     await ensurePage(target);
     clearVerseSelection();
-    currentPage=target;updatePage(true);enterReaderSurface({consumeTarget:true});
+    reading.currentPage=target;updatePage(true);enterReaderSurface({consumeTarget:true});
     /* لا يعود التمرير معلّقًا على نوع المؤشّر: أي صفحة قد تصير قابلة للتمرير،
        فتُفتح من أعلاها دائمًا. وهو بلا أثر على الصفحات التي تكتمل. */
     requestAnimationFrame(()=>{
@@ -219,7 +222,7 @@ async function go(p){
     });
     prefetchAround(target).then(()=>trimPageDom(target));
   }catch(e){console.error("QCF page load failed",target,e);showToast("تعذّر تحميل الصفحة "+ar(target))}
-  finally{navigationBusy=false;if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}}
+  finally{reading.navigationBusy=false;if(readerGoPending){readerGoPending=false;loading.classList.add("hide")}}
 }
 track.addEventListener("pointerdown",e=>{
   downX=e.clientX;downY=e.clientY;swipeActive=true;
@@ -229,13 +232,13 @@ track.addEventListener("pointerup",e=>{
   const dx=e.clientX-downX,dy=e.clientY-downY;
   if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.15)return;
   // Arabic book: swipe RIGHT => next page enters from LEFT.
-  if(dx>0)go(currentPage+1); else go(currentPage-1);
+  if(dx>0)go(reading.currentPage+1); else go(reading.currentPage-1);
 });
 track.addEventListener("pointercancel",()=>swipeActive=false);
-document.getElementById("prevBtn").onclick=()=>go(currentPage-1);
-document.getElementById("nextBtn").onclick=()=>go(currentPage+1);
-document.getElementById("desktopPrevBtn").onclick=()=>go(currentPage-1);
-document.getElementById("desktopNextBtn").onclick=()=>go(currentPage+1);
+document.getElementById("prevBtn").onclick=()=>go(reading.currentPage-1);
+document.getElementById("nextBtn").onclick=()=>go(reading.currentPage+1);
+document.getElementById("desktopPrevBtn").onclick=()=>go(reading.currentPage-1);
+document.getElementById("desktopNextBtn").onclick=()=>go(reading.currentPage+1);
 
 /* ---------- floating ayah menu ---------- */
 function placeMenu(anchor){
@@ -257,7 +260,7 @@ function openShareMenu(){
     <button type="button" class="menu-btn" data-share="share"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg><span class="menu-label">رابط</span></button>
     <button type="button" class="menu-btn" data-share="copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><span class="menu-label">نسخ</span></button>`;
   menu.querySelectorAll("[data-share]").forEach(b=>b.onclick=()=>doShare(b.dataset.share));
-  if(selectedAnchor)placeMenu(selectedAnchor);
+  if(reading.selectedAnchor)placeMenu(reading.selectedAnchor);
 }
 function bindPrimaryMenu(){
   menu.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
@@ -272,7 +275,7 @@ function bindPrimaryMenu(){
 /* ---------- Quran text from page JSON ---------- */
 function verseTextCached(k){
   const out=[];
-  for(const data of pages.values())for(const line of data.lines||[])for(const w of line.words||[])
+  for(const data of reading.pages.values())for(const line of data.lines||[])for(const w of line.words||[])
     if(w.verse_key===k&&w.type==="word"&&w.text)out.push(w.text);
   return out.join(" ");
 }
@@ -296,7 +299,7 @@ async function verseTextFromPages(k,pageHint=null){
   if(hinted>=1&&hinted<=TOTAL_PAGES)start=Math.max(1,hinted-1);
   else{
     const indexedStart=await getVersePage(k).catch(()=>null);
-    start=indexedStart||Math.max(1,currentPage-1);
+    start=indexedStart||Math.max(1,reading.currentPage-1);
   }
   // A verse can cross a Mushaf page boundary. With a page hint we also inspect
   // the previous page so copying/bookmarks still work if the selected segment
@@ -336,7 +339,7 @@ function linkFor(k){
 function ayahFromHash(){
   const m=location.hash.match(/^#ayah=(\d{1,3}):(\d{1,3})$/);
   if(!m)return null;
-  const s=Number(m[1]),a=Number(m[2]),max=Number(chapterMap.get(s)?.verses_count||0);
+  const s=Number(m[1]),a=Number(m[2]),max=Number(reading.chapterMap.get(s)?.verses_count||0);
   return s>=1&&s<=114&&a>=1&&a<=max?`${s}:${a}`:null;
 }
 function readerEntryParams(){
@@ -387,8 +390,8 @@ function ayahShareText(k,text,withLink=false){
   return lines.join("\n");
 }
 async function doShare(kind){
-  if(!selectedKey)return;
-  const key=selectedKey,text=await verseTextFull(key,currentPage);
+  if(!reading.selectedKey)return;
+  const key=reading.selectedKey,text=await verseTextFull(key,reading.currentPage);
   try{
     if(kind==="copy"){await copyText(ayahShareText(key,text));closeMenu();return}
     const message=ayahShareText(key,text,true);
@@ -410,7 +413,7 @@ function loadPageBookmarks(){
   if(list.length!==result.length)saveList(STORAGE_KEYS.pageBookmarks,result);
   return result;
 }
-function hasPageBookmark(page=currentPage){
+function hasPageBookmark(page=reading.currentPage){
   return loadPageBookmarks().some(x=>Number(x?.page)===Number(page));
 }
 function syncPageBookmarkButton(){
@@ -430,7 +433,7 @@ function setPageBookmark(page,marked){
 }
 function togglePageBookmark(){
   const marked=!hasPageBookmark();
-  if(setPageBookmark(currentPage,marked))showToast(marked?`أُضيفت علامة للصفحة ${ar(currentPage)}`:"أُزيلت العلامة");
+  if(setPageBookmark(reading.currentPage,marked))showToast(marked?`أُضيفت علامة للصفحة ${ar(reading.currentPage)}`:"أُزيلت العلامة");
 }
 /* One stopping mark uses the existing storage key. */
 function renderPageBookmark(root){
@@ -471,19 +474,19 @@ async function focusVerseForTafsir(key){
   const p=await getVersePage(key).catch(()=>null);
   if(p){
     await ensurePage(p);
-    if(p!==currentPage){
-      currentPage=p;updatePage(true);
+    if(p!==reading.currentPage){
+      reading.currentPage=p;updatePage(true);
       prefetchAround(p).then(()=>trimPageDom(p));
     }
   }
-  let matches=[...document.querySelectorAll(`.page[data-page="${p||currentPage}"] .verse-segment[data-key="${key}"]`)];
+  let matches=[...document.querySelectorAll(`.page[data-page="${p||reading.currentPage}"] .verse-segment[data-key="${key}"]`)];
   if(!matches.length)matches=[...document.querySelectorAll(`.verse-segment[data-key="${key}"]`)];
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   matches.forEach(x=>x.classList.add("selected"));
-  selectedKey=key;selectedAnchor=matches[0]||null;
+  reading.selectedKey=key;reading.selectedAnchor=matches[0]||null;
 }
 async function openTafsir(){
-  if(!selectedKey){showToast("اختر آية أولًا");return}
+  if(!reading.selectedKey){showToast("اختر آية أولًا");return}
   const b=sheet("التفسير الوجيز",`<div class="tafsir-view"></div>`);
   const view=b.querySelector(".tafsir-view");
   let renderRequest=0;
@@ -527,7 +530,7 @@ async function openTafsir(){
     }
   }
 
-  await render(selectedKey);
+  await render(reading.selectedKey);
 }
 document.getElementById("tafsirBtn").onclick=openTafsir;
 document.getElementById("bookmarkBtn").onclick=togglePageBookmark;

@@ -261,23 +261,23 @@ async function syncPlaybackSelection(requestId){
   const whole=isSurahOnly();
   if(whole&&requestId===playbackRequestId)clearVerseSelection();
   const k=`${play.surah}:${play.current}`;
-  const p=whole?Number(chapterMap.get(Number(play.surah))?.pages?.[0]||0):await getVersePage(k);
+  const p=whole?Number(reading.chapterMap.get(Number(play.surah))?.pages?.[0]||0):await getVersePage(k);
   if(requestId!==playbackRequestId)return false;
   if(p){
     await ensurePage(p);
     if(requestId!==playbackRequestId)return false;
-    if(p!==currentPage){
-      currentPage=p;updatePage(true);
+    if(p!==reading.currentPage){
+      reading.currentPage=p;updatePage(true);
       prefetchAround(p).then(()=>trimPageDom(p));
     }
   }
   if(whole)return true;
-  let matches=[...document.querySelectorAll(`.page[data-page="${p||currentPage}"] .verse-segment[data-key="${k}"]`)];
+  let matches=[...document.querySelectorAll(`.page[data-page="${p||reading.currentPage}"] .verse-segment[data-key="${k}"]`)];
   if(!matches.length)matches=[...document.querySelectorAll(`.verse-segment[data-key="${k}"]`)];
   if(!matches.length)return false;
   document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
   matches.forEach(x=>x.classList.add("selected"));
-  selectedKey=k;selectedAnchor=matches[0];
-  revealVerse(selectedAnchor);
+  reading.selectedKey=k;reading.selectedAnchor=matches[0];
+  revealVerse(reading.selectedAnchor);
   return true;
 }

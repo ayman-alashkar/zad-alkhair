@@ -28,7 +28,7 @@ document.getElementById("reader").addEventListener("click",e=>{
 });
 document.querySelectorAll(".chrome,.audio-panel,.audio-fab").forEach(x=>x.addEventListener("click",e=>e.stopPropagation()));
 document.querySelectorAll(".chrome").forEach(x=>{
-  x.addEventListener("pointerdown",()=>clearTimeout(toolsTimer));
+  x.addEventListener("pointerdown",()=>clearTimeout(reading.toolsTimer));
   x.addEventListener("pointerup",()=>showToolsFor(2800));
 });
 document.addEventListener("pointerdown",e=>{if(!e.target.closest(".ayah-menu")&&!e.target.closest(".verse-segment"))closeMenu()},{capture:true});
@@ -46,7 +46,7 @@ function refitIfResized(delay){
     if(size===fittedSize)return;
     fittedSize=size;
     document.querySelectorAll('.page[data-loaded="1"]').forEach(x=>fitPage(Number(x.dataset.page)));
-    requestAnimationFrame(()=>{if(!document.body.classList.contains("hidden-tools"))placeReaderToolbar(selectedAnchor)});
+    requestAnimationFrame(()=>{if(!document.body.classList.contains("hidden-tools"))placeReaderToolbar(reading.selectedAnchor)});
   },delay);
 }
 window.addEventListener("resize",()=>refitIfResized(150));

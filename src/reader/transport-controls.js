@@ -166,7 +166,7 @@ function audioStartSelection(surah,value){
 }
 
 function playerSurahOptions(selected){
-  return [...chapterMap.values()]
+  return [...reading.chapterMap.values()]
     .sort((a,b)=>Number(a.id)-Number(b.id))
     .map(c=>`<option value="${Number(c.id)}" ${Number(c.id)===Number(selected)?"selected":""}>${ar(Number(c.id))} - ${escapeHtml(c.name_arabic||"")}</option>`)
     .join("");
@@ -197,7 +197,7 @@ document.getElementById("audioJump").onclick=()=>{
 };
 
 document.getElementById("audioSettings").onclick=()=>{
-  const s=selectedKey?verseParts(selectedKey).s:play.surah,max=maxAyah(s);
+  const s=reading.selectedKey?verseParts(reading.selectedKey).s:play.surah,max=maxAyah(s);
   const b=sheet("إعدادات الاستماع",`<div class="settings">
     <div class="field"><label>القارئ</label><select id="qari">${RECITERS.map(r=>`<option value="${escapeHtml(r.id)}" ${r.id===reciter.id?"selected":""}>${escapeHtml(r.name)}</option>`).join("")}</select></div>
     <p class="player-hint" id="surahOnlySettingsHint" hidden>${SURAH_ONLY_HINT}</p>
