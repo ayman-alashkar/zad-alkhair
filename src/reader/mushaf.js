@@ -256,15 +256,15 @@ function renderPage(data,engine,prepared){
   const host=root.querySelector(".mushaf");
   engine.renderLines(host,prepared,data);
 
-  if(reading.selectedKey)root.querySelectorAll(`.verse-segment[data-key="${reading.selectedKey}"]`).forEach(x=>x.classList.add("selected"));
+  if(reading.selectedKey)highlightAyah(reading.selectedKey,root);
   renderPageBookmark(root);
   requestAnimationFrame(()=>fitPage(data.page));
 }
 
 /* محرّك QCF (حفص): بيانات الصفحة هي بيانات QCF نفسها، والتحضير تحميل خط الصفحة.
-   الأسطر يبنيها engines/qcf.mjs؛ ما يحتاجه من هذا الملف يُمرَّر إليه. */
+   الأسطر يبنيها engines/qcf.mjs؛ ما يحتاجه من هذا الملف يُمرَّر إليه. رقم الكلمة الثابت
+   (wordGi) يُضاف حين يصل الفهرس الموحّد data/words/index.json. */
 const qcfLineEnv={
-  bindSegment:seg=>bindSegment(seg),
   surahName:sid=>reading.chapterMap.get(sid)?.name_arabic||"",
   headerGlyph:sid=>surahHeaderReady?SURAH_HEADER_GLYPHS[sid]:null,
 };

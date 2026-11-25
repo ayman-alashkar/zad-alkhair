@@ -1,6 +1,9 @@
 /* محرّك QCF V4 لرواية حفص: يبني أسطر الصفحة من بيانات data/qcf-v4، كل كلمة محرف
    من خط الصفحة. واجهة المحرّكات في page-engine.mjs؛ هذا الملف يبني الأسطر فقط.
-   env يمرّره المصحف: bindSegment (ربط الآية باللمس)، وsurahName، وheaderGlyph. */
+   env يمرّره المصحف: surahName، وheaderGlyph، وwordGi (اختياري).
+   علامات العناصر كما تطلبها ayah-marks.mjs: data-ayah على جامع كلمات الآية في السطر
+   (.verse-segment) وعلى كل كلمة، وdata-gi على الكلمة حين يعيد env.wordGi(page, line, word)
+   رقمها الثابت في الفهرس الموحّد. */
 
 /* لفظ الجلالة يُلوَّن بصنف allah */
 const normalize=s=>(s||"").replace(/[\u064B-\u065F\u0670\u06D6-\u06EDـ]/g,"");
@@ -16,20 +19,21 @@ function groupLineWords(words){
   return groups;
 }
 
-function makeWord(w){
+function makeWord(w,key,gi){
   const s=document.createElement("span");
+  if(key)s.dataset.ayah=key;
+  if(Number.isInteger(gi))s.dataset.gi=String(gi);
   s.className="word"+(w.type==="end"?" end":"")+(isAllah(w.text)?" allah":"");
   s.textContent=w.char;
   s.dataset.text=w.text||"";
   return s;
 }
 
-function makeVerseSegment(group,env){
+function makeVerseSegment(group,env,page,lineNo){
   const seg=document.createElement("span");
   seg.className="verse-segment";
-  if(group.key)seg.dataset.key=group.key;
-  for(const w of group.words)seg.appendChild(makeWord(w));
-  if(group.key)env.bindSegment(seg);
+  if(group.key)seg.dataset.ayah=group.key;
+  for(const w of group.words)seg.appendChild(makeWord(w,group.key,env.wordGi?.(page,lineNo,w)));
   return seg;
 }
 
@@ -93,7 +97,7 @@ export function qcfRenderLines(host,data,env){
       lineEl.appendChild(inner);host.appendChild(lineEl);continue;
     }
 
-    for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group,env));
+    for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group,env,data.page,lineIndex+1));
     lineEl.appendChild(inner);host.appendChild(lineEl);
   }
 }

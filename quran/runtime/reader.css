@@ -164,7 +164,7 @@ html[data-theme="dark"] .surah-line{color:#57b7a0}
   border-radius:.18em;box-shadow:0 0 0 1px transparent inset;
   transition:background .13s,box-shadow .13s;
 }
-.verse-segment.selected{background:var(--select);box-shadow:0 0 0 1px var(--select-line) inset}
+[data-ayah].selected{background:var(--select);box-shadow:0 0 0 1px var(--select-line) inset}
 .word{
   display:inline-block;direction:rtl;color:var(--quran);
   line-height:1.33;position:relative;

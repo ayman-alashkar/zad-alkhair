@@ -272,10 +272,11 @@ async function syncPlaybackSelection(requestId){
     }
   }
   if(whole)return true;
-  let matches=[...document.querySelectorAll(`.page[data-page="${p||reading.currentPage}"] .verse-segment[data-key="${k}"]`)];
-  if(!matches.length)matches=[...document.querySelectorAll(`.verse-segment[data-key="${k}"]`)];
+  const pageRoot=document.querySelector(`.page[data-page="${p||reading.currentPage}"]`);
+  let matches=pageRoot?ayahElements(k,pageRoot):[];
+  if(!matches.length)matches=ayahElements(k);
   if(!matches.length)return false;
-  document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
+  clearAyahHighlight();
   matches.forEach(x=>x.classList.add("selected"));
   reading.selectedKey=k;reading.selectedAnchor=matches[0];
   revealVerse(reading.selectedAnchor);

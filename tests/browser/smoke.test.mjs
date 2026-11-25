@@ -409,7 +409,7 @@ test("reader tools avoid low-page taps and require a separate tap to open tafsir
         const toolsBox = await toolbar.boundingBox(), headerBox = await page.locator(".topbar").boundingBox();
         assert.ok(toolsBox.y >= headerBox.y + headerBox.height + 3, "tools clear the header");
         assert.ok(toolsBox.y + toolsBox.height < point.y - 8, "tools clear the selecting finger and text");
-        assert.ok(await root.locator(`.verse-segment.selected[data-key="${lastLineVerse(9).key}"]`).count());
+        assert.ok(await root.locator(`[data-ayah="${lastLineVerse(9).key}"].selected`).count());
         assert.equal(await page.locator(".backdrop").count(), 0, "selecting does not open tafsir");
         assert.equal(await page.locator("body.player-on").count(), 0, "selecting does not open the player");
         assert.equal(await root.locator(".page-bookmark").count(), 0, "selecting does not add a bookmark");
