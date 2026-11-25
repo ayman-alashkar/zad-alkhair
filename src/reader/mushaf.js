@@ -157,7 +157,6 @@ function showToolsFor(ms=2800){
   },ms);
 }
 function normalizeArabic(s){return (s||"").replace(/[\u064B-\u065F\u0670\u06D6-\u06EDـ]/g,"")}
-function isAllah(t){const n=normalizeArabic(t);return n.includes("الله")||n.includes("لله")}
 
 async function fetchPage(p){
   const r=await fetch(PAGE_BASE+String(p).padStart(3,"0")+PAGE_SUFFIX,{cache:"force-cache"});
@@ -214,7 +213,9 @@ async function ensurePage(p){
   if(pageLoads.has(p))return pageLoads.get(p);
   const job=(async()=>{
     const data=await getPageData(p);
-    await ensureQcfFont(data.font);renderPage(data);return data;
+    const engine=activeEngine();
+    const prepared=await engine.prepare(p,data);
+    renderPage(data,engine,prepared);return data;
   })().finally(()=>pageLoads.delete(p));
   pageLoads.set(p,job);return job;
 }
@@ -236,44 +237,7 @@ async function getVersePage(k){
   }catch(_){return null}
 }
 
-function groupLineWords(words){
-  const groups=[];let g=null;
-  for(const w of words){
-    const key=w.verse_key||null;
-    if(key && g && g.key===key){g.words.push(w)}
-    else {g={key,words:[w]};groups.push(g)}
-  }
-  return groups;
-}
-
-function makeWord(w){
-  const s=document.createElement("span");
-  s.className="word"+(w.type==="end"?" end":"")+(isAllah(w.text)?" allah":"");
-  s.textContent=w.char;
-  s.dataset.text=w.text||"";
-  return s;
-}
-
-function makeVerseSegment(group){
-  const seg=document.createElement("span");
-  seg.className="verse-segment";
-  if(group.key)seg.dataset.key=group.key;
-  for(const w of group.words)seg.appendChild(makeWord(w));
-  if(group.key)bindSegment(seg);
-  return seg;
-}
-
-function surahIdForHeader(data,lineIndex){
-  for(let i=lineIndex+1;i<(data.lines||[]).length;i++){
-    for(const w of (data.lines[i].words||[])){
-      if(w.verse_key){const n=Number(String(w.verse_key).split(":")[0]);if(n)return n}
-    }
-  }
-  const fallback=Number(data.lines?.[lineIndex]?.words?.[0]?.sura||data.lines?.[lineIndex]?.words?.[0]?.surah||0);
-  return fallback||Number(data.surahs?.[0]?.id||0);
-}
-
-function renderPage(data){
+function renderPage(data,engine,prepared){
   const root=document.querySelector(`.page[data-page="${data.page}"]`);
   const surahId=surahIdFromPageData(data),juz=juzForPage(data.page);
   root.dataset.loaded="1";
@@ -287,64 +251,33 @@ function renderPage(data){
     e.stopPropagation();
     openQuranIndex(btn.dataset.indexTab||"s");
   }));
+  decoratePageHeader(root.querySelector(".page-meta"),data.page);
 
   const host=root.querySelector(".mushaf");
-  for(let lineIndex=0;lineIndex<data.lines.length;lineIndex++){
-    const line=data.lines[lineIndex];
-    const lineEl=document.createElement("div");
-    lineEl.className="line";
-    const inner=document.createElement("div");
-    inner.className="line-inner";
+  engine.renderLines(host,prepared,data);
 
-    const first=line.words[0];
-    inner.style.fontFamily=`"${data.font||"QCF4_Hafs_01"}"`;
-    if(first?.type==="surah_header"){
-      const sid=surahIdForHeader(data,lineIndex);
-      inner.classList.add("surah-line");
-      inner.style.fontFamily='"QCF4_QBSML"';
-      const glyph=SURAH_HEADER_GLYPHS[sid];
-      if(surahHeaderReady&&glyph){
-        inner.classList.add("banner-ready");
-        const metric=document.createElement("span");
-        metric.className="surah-metric";metric.textContent=first.char;
-        const banner=document.createElement("canvas");
-        banner.className="surah-banner";banner.dataset.glyph=glyph;
-        inner.append(metric,banner);
-      }else{
-        inner.textContent=first.char;
-      }
-      inner.setAttribute("aria-label",`سورة ${reading.chapterMap.get(sid)?.name_arabic||""}`);
-      lineEl.appendChild(inner);host.appendChild(lineEl);continue;
-    }
-    if(first?.type==="bismillah"){
-      inner.classList.add("bismillah-line");
-      // QCF4 encodes the Bismillah with the dedicated Hafs_01 glyph font.
-      // Do not inherit the current page font (e.g. Hafs_47), otherwise the
-      // glyph becomes blank on later pages. The source data itself omits the
-      // Bismillah before At-Tawbah, so the Mushaf convention is preserved.
-      inner.style.fontFamily=`"${first.font||"QCF4_Hafs_01"}"`;
-      const originalBasm=document.createElement("span");
-      originalBasm.className="bismillah-original";
-      originalBasm.textContent=first.char;
-      const desktopBasm=document.createElement("span");
-      desktopBasm.className="bismillah-desktop";
-      /* محرف مثبّت من منطقة الاستعمال الخاص، فيلزمه خطّه صراحةً. لو ورث خط
-         الصفحة (Hafs_47 مثلًا) لخرج فارغًا، وهي العلّة التي عولجت أعلاه
-         للبسملة الأصلية ولم تُعالَج لهذه. */
-      desktopBasm.style.fontFamily='"QCF4_Hafs_01"';
-      desktopBasm.textContent="";
-      inner.append(originalBasm,desktopBasm);
-      lineEl.appendChild(inner);host.appendChild(lineEl);continue;
-    }
-
-    for(const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group));
-    lineEl.appendChild(inner);host.appendChild(lineEl);
-  }
-
-  if(reading.selectedKey)root.querySelectorAll(`.verse-segment[data-key="${reading.selectedKey}"]`).forEach(x=>x.classList.add("selected"));
+  if(reading.selectedKey)highlightAyah(reading.selectedKey,root);
   renderPageBookmark(root);
   requestAnimationFrame(()=>fitPage(data.page));
 }
+
+/* محرّك QCF (حفص): بيانات الصفحة هي بيانات QCF نفسها، والتحضير تحميل خط الصفحة.
+   الأسطر يبنيها engines/qcf.mjs؛ ما يحتاجه من هذا الملف يُمرَّر إليه. رقم الكلمة الثابت
+   (wordGi) يُضاف حين يصل الفهرس الموحّد data/words/index.json. */
+const qcfLineEnv={
+  surahName:sid=>reading.chapterMap.get(sid)?.name_arabic||"",
+  headerGlyph:sid=>surahHeaderReady?SURAH_HEADER_GLYPHS[sid]:null,
+};
+registerEngine({
+  id:"qcf",
+  prepare:async(p,data)=>{await ensureQcfFont(data.font);return data},
+  renderLines:(host,prepared)=>qcfRenderLines(host,prepared,qcfLineEnv),
+});
+/* حين يتغيّر المحرّك (رواية أخرى) تُرسم الصفحات المحمّلة من جديد بالمحرّك الجديد. */
+onEngineChange(()=>{
+  document.querySelectorAll('.page[data-loaded="1"]').forEach(root=>{root.innerHTML="";delete root.dataset.loaded});
+  return ensurePage(reading.currentPage).then(()=>prefetchAround(reading.currentPage));
+});
 
 function renderSurahHeaderCanvas(canvas,glyph){
   if(!canvas||!glyph)return;

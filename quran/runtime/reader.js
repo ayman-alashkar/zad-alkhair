@@ -259,6 +259,201 @@ var reading = {
   /* انتقال بين الصفحات جارٍ */
 };
 
+// src/reader/page-engine.mjs
+var engines = /* @__PURE__ */ new Map();
+var activeId = "qcf";
+var engineListeners = [];
+var headerDecorators = [];
+function registerEngine(engine) {
+  engines.set(engine.id, engine);
+}
+function activeEngine() {
+  return engines.get(activeId) || engines.get("qcf");
+}
+function onEngineChange(listener) {
+  engineListeners.push(listener);
+}
+function decoratePageHeader(metaEl, page) {
+  if (!metaEl) return;
+  for (const decorate of headerDecorators) decorate(metaEl, page);
+}
+
+// src/reader/engines/qcf.mjs
+var normalize = (s) => (s || "").replace(/[\u064B-\u065F\u0670\u06D6-\u06EDـ]/g, "");
+function isAllah(t) {
+  const n = normalize(t);
+  return n.includes("الله") || n.includes("لله");
+}
+function groupLineWords(words) {
+  const groups = [];
+  let g = null;
+  for (const w of words) {
+    const key = w.verse_key || null;
+    if (key && g && g.key === key) {
+      g.words.push(w);
+    } else {
+      g = { key, words: [w] };
+      groups.push(g);
+    }
+  }
+  return groups;
+}
+function makeWord(w, key, gi) {
+  const s = document.createElement("span");
+  if (key) s.dataset.ayah = key;
+  if (Number.isInteger(gi)) s.dataset.gi = String(gi);
+  s.className = "word" + (w.type === "end" ? " end" : "") + (isAllah(w.text) ? " allah" : "");
+  s.textContent = w.char;
+  s.dataset.text = w.text || "";
+  return s;
+}
+function makeVerseSegment(group, env, page, lineNo) {
+  const seg = document.createElement("span");
+  seg.className = "verse-segment";
+  if (group.key) seg.dataset.ayah = group.key;
+  for (const w of group.words) seg.appendChild(makeWord(w, group.key, env.wordGi?.(page, lineNo, w)));
+  return seg;
+}
+function surahIdForHeader(data, lineIndex) {
+  for (let i = lineIndex + 1; i < (data.lines || []).length; i++) {
+    for (const w of data.lines[i].words || []) {
+      if (w.verse_key) {
+        const n = Number(String(w.verse_key).split(":")[0]);
+        if (n) return n;
+      }
+    }
+  }
+  const fallback = Number(data.lines?.[lineIndex]?.words?.[0]?.sura || data.lines?.[lineIndex]?.words?.[0]?.surah || 0);
+  return fallback || Number(data.surahs?.[0]?.id || 0);
+}
+function qcfRenderLines(host, data, env) {
+  for (let lineIndex = 0; lineIndex < data.lines.length; lineIndex++) {
+    const line = data.lines[lineIndex];
+    const lineEl = document.createElement("div");
+    lineEl.className = "line";
+    const inner = document.createElement("div");
+    inner.className = "line-inner";
+    const first = line.words[0];
+    inner.style.fontFamily = `"${data.font || "QCF4_Hafs_01"}"`;
+    if (first?.type === "surah_header") {
+      const sid = surahIdForHeader(data, lineIndex);
+      inner.classList.add("surah-line");
+      inner.style.fontFamily = '"QCF4_QBSML"';
+      const glyph = env.headerGlyph(sid);
+      if (glyph) {
+        inner.classList.add("banner-ready");
+        const metric = document.createElement("span");
+        metric.className = "surah-metric";
+        metric.textContent = first.char;
+        const banner = document.createElement("canvas");
+        banner.className = "surah-banner";
+        banner.dataset.glyph = glyph;
+        inner.append(metric, banner);
+      } else {
+        inner.textContent = first.char;
+      }
+      inner.setAttribute("aria-label", `سورة ${env.surahName(sid)}`);
+      lineEl.appendChild(inner);
+      host.appendChild(lineEl);
+      continue;
+    }
+    if (first?.type === "bismillah") {
+      inner.classList.add("bismillah-line");
+      inner.style.fontFamily = `"${first.font || "QCF4_Hafs_01"}"`;
+      const originalBasm = document.createElement("span");
+      originalBasm.className = "bismillah-original";
+      originalBasm.textContent = first.char;
+      const desktopBasm = document.createElement("span");
+      desktopBasm.className = "bismillah-desktop";
+      desktopBasm.style.fontFamily = '"QCF4_Hafs_01"';
+      desktopBasm.textContent = "";
+      inner.append(originalBasm, desktopBasm);
+      lineEl.appendChild(inner);
+      host.appendChild(lineEl);
+      continue;
+    }
+    for (const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group, env, data.page, lineIndex + 1));
+    lineEl.appendChild(inner);
+    host.appendChild(lineEl);
+  }
+}
+
+// src/reader/ayah-marks.mjs
+var outermost = (el, k) => !el.parentElement?.closest(`[data-ayah="${k}"]`);
+function ayahElements(k, root = document) {
+  if (!k) return [];
+  return [...root.querySelectorAll(`[data-ayah="${k}"]`)].filter((el) => outermost(el, k));
+}
+function ayahAt(node) {
+  const word = node?.closest?.("[data-ayah]");
+  if (!word) return null;
+  const k = word.dataset.ayah;
+  let anchor = word;
+  while (anchor.parentElement?.closest(`[data-ayah="${k}"]`)) anchor = anchor.parentElement.closest(`[data-ayah="${k}"]`);
+  const gi = node.closest("[data-gi]");
+  return { ayah: k, gi: gi ? Number(gi.dataset.gi) : null, anchor, word: gi || word };
+}
+function clearAyahHighlight(root = document) {
+  root.querySelectorAll("[data-ayah].selected").forEach((x) => x.classList.remove("selected"));
+}
+function highlightAyah(k, root = document) {
+  for (const el of ayahElements(k, root)) el.classList.add("selected");
+}
+
+// src/reader/gestures.mjs
+var LONG_PRESS_MS = 520;
+var DOUBLE_TAP_MS = 350;
+var MOVE_TOLERANCE = 10;
+var listeners = { tap: [], doubleTap: [], longPress: [] };
+function onGesture(type, fn) {
+  if (!listeners[type]) throw new Error("unknown gesture " + type);
+  listeners[type].push(fn);
+}
+function emit(type, detail) {
+  for (const fn of listeners[type]) fn(detail);
+}
+function bindGestures(root) {
+  let start = null, moved = false, longTriggered = false, longTimer = null, lastTap = null;
+  const hit = (e, point) => {
+    const at = ayahAt(e.target);
+    return at && { ...at, point, event: e };
+  };
+  root.addEventListener("pointerdown", (e) => {
+    const at = hit(e, { x: e.clientX, y: e.clientY });
+    clearTimeout(longTimer);
+    moved = false;
+    longTriggered = false;
+    start = at && at.point;
+    if (!at) return;
+    longTimer = setTimeout(() => {
+      if (moved) return;
+      longTriggered = true;
+      emit("longPress", at);
+    }, LONG_PRESS_MS);
+  });
+  root.addEventListener("pointermove", (e) => {
+    if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > MOVE_TOLERANCE) {
+      moved = true;
+      clearTimeout(longTimer);
+    }
+  });
+  root.addEventListener("pointerup", () => clearTimeout(longTimer));
+  root.addEventListener("pointercancel", () => clearTimeout(longTimer));
+  root.addEventListener("click", (e) => {
+    if (moved || longTriggered) return;
+    const at = hit(e, { x: e.clientX, y: e.clientY });
+    if (!at) return;
+    const now = Date.now();
+    if (listeners.doubleTap.length && lastTap && lastTap.ayah === at.ayah && now - lastTap.at < DOUBLE_TAP_MS) {
+      lastTap = null;
+      emit("doubleTap", at);
+      return;
+    }
+    lastTap = { ayah: at.ayah, at: now };
+    emit("tap", at);
+  });
+}
+
 // src/reader/search-text.mjs
 function searchNormalize(s) {
   return String(s || "").replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code))).replace(/#\d+/g, "").replace(/[يو]ٕ/g, "ء").replace(/ٰ/g, "ا").replace(/[ً-ٟۖ-ۭـ‍]/g, "").replace(/[أإآٱ]/g, "ا").replace(/[ؤئ]/g, "ء").replace(/ى/g, "ي").replace(/واة/g, "اة").replace(/\s+/g, " ").trim();
@@ -867,10 +1062,6 @@ async function tafsirFadlForSurah(surah) {
   function normalizeArabic(s) {
     return (s || "").replace(/[\u064B-\u065F\u0670\u06D6-\u06EDـ]/g, "");
   }
-  function isAllah(t) {
-    const n = normalizeArabic(t);
-    return n.includes("الله") || n.includes("لله");
-  }
   async function fetchPage(p) {
     const r = await fetch(PAGE_BASE + String(p).padStart(3, "0") + PAGE_SUFFIX, { cache: "force-cache" });
     if (!r.ok) throw new Error("page " + p);
@@ -944,8 +1135,9 @@ async function tafsirFadlForSurah(surah) {
     if (pageLoads.has(p)) return pageLoads.get(p);
     const job = (async () => {
       const data = await getPageData(p);
-      await ensureQcfFont(data.font);
-      renderPage(data);
+      const engine = activeEngine();
+      const prepared = await engine.prepare(p, data);
+      renderPage(data, engine, prepared);
       return data;
     })().finally(() => pageLoads.delete(p));
     pageLoads.set(p, job);
@@ -973,48 +1165,7 @@ async function tafsirFadlForSurah(surah) {
       return null;
     }
   }
-  function groupLineWords(words) {
-    const groups = [];
-    let g = null;
-    for (const w of words) {
-      const key = w.verse_key || null;
-      if (key && g && g.key === key) {
-        g.words.push(w);
-      } else {
-        g = { key, words: [w] };
-        groups.push(g);
-      }
-    }
-    return groups;
-  }
-  function makeWord(w) {
-    const s = document.createElement("span");
-    s.className = "word" + (w.type === "end" ? " end" : "") + (isAllah(w.text) ? " allah" : "");
-    s.textContent = w.char;
-    s.dataset.text = w.text || "";
-    return s;
-  }
-  function makeVerseSegment(group) {
-    const seg = document.createElement("span");
-    seg.className = "verse-segment";
-    if (group.key) seg.dataset.key = group.key;
-    for (const w of group.words) seg.appendChild(makeWord(w));
-    if (group.key) bindSegment(seg);
-    return seg;
-  }
-  function surahIdForHeader(data, lineIndex) {
-    for (let i = lineIndex + 1; i < (data.lines || []).length; i++) {
-      for (const w of data.lines[i].words || []) {
-        if (w.verse_key) {
-          const n = Number(String(w.verse_key).split(":")[0]);
-          if (n) return n;
-        }
-      }
-    }
-    const fallback = Number(data.lines?.[lineIndex]?.words?.[0]?.sura || data.lines?.[lineIndex]?.words?.[0]?.surah || 0);
-    return fallback || Number(data.surahs?.[0]?.id || 0);
-  }
-  function renderPage(data) {
+  function renderPage(data, engine, prepared) {
     const root = document.querySelector(`.page[data-page="${data.page}"]`);
     const surahId = surahIdFromPageData(data), juz = juzForPage(data.page);
     root.dataset.loaded = "1";
@@ -1028,60 +1179,32 @@ async function tafsirFadlForSurah(surah) {
       e.stopPropagation();
       openQuranIndex(btn.dataset.indexTab || "s");
     }));
+    decoratePageHeader(root.querySelector(".page-meta"), data.page);
     const host = root.querySelector(".mushaf");
-    for (let lineIndex = 0; lineIndex < data.lines.length; lineIndex++) {
-      const line = data.lines[lineIndex];
-      const lineEl = document.createElement("div");
-      lineEl.className = "line";
-      const inner = document.createElement("div");
-      inner.className = "line-inner";
-      const first = line.words[0];
-      inner.style.fontFamily = `"${data.font || "QCF4_Hafs_01"}"`;
-      if (first?.type === "surah_header") {
-        const sid = surahIdForHeader(data, lineIndex);
-        inner.classList.add("surah-line");
-        inner.style.fontFamily = '"QCF4_QBSML"';
-        const glyph = SURAH_HEADER_GLYPHS[sid];
-        if (surahHeaderReady && glyph) {
-          inner.classList.add("banner-ready");
-          const metric = document.createElement("span");
-          metric.className = "surah-metric";
-          metric.textContent = first.char;
-          const banner = document.createElement("canvas");
-          banner.className = "surah-banner";
-          banner.dataset.glyph = glyph;
-          inner.append(metric, banner);
-        } else {
-          inner.textContent = first.char;
-        }
-        inner.setAttribute("aria-label", `سورة ${reading.chapterMap.get(sid)?.name_arabic || ""}`);
-        lineEl.appendChild(inner);
-        host.appendChild(lineEl);
-        continue;
-      }
-      if (first?.type === "bismillah") {
-        inner.classList.add("bismillah-line");
-        inner.style.fontFamily = `"${first.font || "QCF4_Hafs_01"}"`;
-        const originalBasm = document.createElement("span");
-        originalBasm.className = "bismillah-original";
-        originalBasm.textContent = first.char;
-        const desktopBasm = document.createElement("span");
-        desktopBasm.className = "bismillah-desktop";
-        desktopBasm.style.fontFamily = '"QCF4_Hafs_01"';
-        desktopBasm.textContent = "";
-        inner.append(originalBasm, desktopBasm);
-        lineEl.appendChild(inner);
-        host.appendChild(lineEl);
-        continue;
-      }
-      for (const group of groupLineWords(line.words)) inner.appendChild(makeVerseSegment(group));
-      lineEl.appendChild(inner);
-      host.appendChild(lineEl);
-    }
-    if (reading.selectedKey) root.querySelectorAll(`.verse-segment[data-key="${reading.selectedKey}"]`).forEach((x) => x.classList.add("selected"));
+    engine.renderLines(host, prepared, data);
+    if (reading.selectedKey) highlightAyah(reading.selectedKey, root);
     renderPageBookmark(root);
     requestAnimationFrame(() => fitPage(data.page));
   }
+  const qcfLineEnv = {
+    surahName: (sid) => reading.chapterMap.get(sid)?.name_arabic || "",
+    headerGlyph: (sid) => surahHeaderReady ? SURAH_HEADER_GLYPHS[sid] : null
+  };
+  registerEngine({
+    id: "qcf",
+    prepare: async (p, data) => {
+      await ensureQcfFont(data.font);
+      return data;
+    },
+    renderLines: (host, prepared) => qcfRenderLines(host, prepared, qcfLineEnv)
+  });
+  onEngineChange(() => {
+    document.querySelectorAll('.page[data-loaded="1"]').forEach((root) => {
+      root.innerHTML = "";
+      delete root.dataset.loaded;
+    });
+    return ensurePage(reading.currentPage).then(() => prefetchAround(reading.currentPage));
+  });
   function renderSurahHeaderCanvas(canvas, glyph) {
     if (!canvas || !glyph) return;
     const sample = 260;
@@ -1339,7 +1462,7 @@ async function tafsirFadlForSurah(surah) {
   function cleanSimpleQuranText(text) {
     return String(text || "").replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code))).replace(/\s*#1969\b/g, " ۩").replace(/\s{2,}/g, " ").trim();
   }
-  let downX = 0, downY = 0, swipeActive = false, longTimer = null, longTriggered = false;
+  let downX = 0, downY = 0, swipeActive = false;
   function clearVerseContext() {
     const context = document.getElementById("readerContext");
     if (!context) return;
@@ -1360,7 +1483,7 @@ async function tafsirFadlForSurah(surah) {
   }
   function clearVerseSelection() {
     clearVerseContext();
-    document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
+    clearAyahHighlight();
     reading.selectedKey = null;
     reading.selectedAnchor = null;
     pendingReveal = null;
@@ -1421,8 +1544,8 @@ async function tafsirFadlForSurah(surah) {
     reading.selectedKey = k;
     reading.selectedAnchor = anchor || reading.selectedAnchor;
     uthmaniLoad(verseParts(k).s);
-    document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
-    document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach((x) => x.classList.add("selected"));
+    clearAyahHighlight();
+    highlightAyah(k);
     if (point) pendingReveal = null;
     else revealVerse(reading.selectedAnchor);
     placeReaderToolbar(reading.selectedAnchor, point);
@@ -1430,37 +1553,16 @@ async function tafsirFadlForSurah(surah) {
     showVerseContext(v);
     return true;
   }
-  function bindSegment(seg) {
-    let sx = 0, sy = 0, moved = false;
-    seg.addEventListener("pointerdown", (e) => {
-      sx = e.clientX;
-      sy = e.clientY;
-      moved = false;
-      longTriggered = false;
-      clearTimeout(longTimer);
-      longTimer = setTimeout(() => {
-        if (moved) return;
-        longTriggered = true;
-        clearTimeout(reading.toolsTimer);
-        selectVerse(seg.dataset.key, seg, true, { x: sx, y: sy });
-        openPrimaryMenu(seg);
-      }, 520);
-    });
-    seg.addEventListener("pointermove", (e) => {
-      if (Math.hypot(e.clientX - sx, e.clientY - sy) > 10) {
-        moved = true;
-        clearTimeout(longTimer);
-      }
-    });
-    seg.addEventListener("pointerup", () => clearTimeout(longTimer));
-    seg.addEventListener("click", (e) => {
-      if (!moved && !longTriggered) {
-        const on = selectVerse(seg.dataset.key, seg, false, { x: e.clientX, y: e.clientY });
-        if (on) showToolsFor(2800);
-      }
-    });
-    seg.addEventListener("pointercancel", () => clearTimeout(longTimer));
-  }
+  onGesture("tap", ({ ayah, anchor, point }) => {
+    const on = selectVerse(ayah, anchor, false, point);
+    if (on) showToolsFor(2800);
+  });
+  onGesture("longPress", ({ ayah, anchor, point }) => {
+    clearTimeout(reading.toolsTimer);
+    selectVerse(ayah, anchor, true, point);
+    openPrimaryMenu(anchor);
+  });
+  bindGestures(track);
   function loadList(key) {
     const x = storageJsonGet(key, []);
     return Array.isArray(x) ? x : [];
@@ -1887,9 +1989,10 @@ async function tafsirFadlForSurah(surah) {
         prefetchAround(p).then(() => trimPageDom(p));
       }
     }
-    let matches = [...document.querySelectorAll(`.page[data-page="${p || reading.currentPage}"] .verse-segment[data-key="${key}"]`)];
-    if (!matches.length) matches = [...document.querySelectorAll(`.verse-segment[data-key="${key}"]`)];
-    document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
+    const pageRoot = document.querySelector(`.page[data-page="${p || reading.currentPage}"]`);
+    let matches = pageRoot ? ayahElements(key, pageRoot) : [];
+    if (!matches.length) matches = ayahElements(key);
+    clearAyahHighlight();
     matches.forEach((x) => x.classList.add("selected"));
     reading.selectedKey = key;
     reading.selectedAnchor = matches[0] || null;
@@ -2457,7 +2560,7 @@ async function tafsirFadlForSurah(surah) {
           hp?.remove();
           await go(item.page);
           await ensurePage(item.page);
-          const a = document.querySelector(`.page[data-page="${item.page}"] .verse-segment[data-key="${item.key}"]`);
+          const a = ayahElements(item.key, document.querySelector(`.page[data-page="${item.page}"]`) || document)[0];
           if (a) selectVerse(item.key, a, true);
         };
         frag.appendChild(btn);
@@ -2498,7 +2601,7 @@ async function tafsirFadlForSurah(surah) {
       if (!p) return;
       await go(p);
       await ensurePage(p);
-      const anchor = document.querySelector(`.page[data-page="${p}"] .verse-segment[data-key="${key}"]`);
+      const anchor = ayahElements(key, document.querySelector(`.page[data-page="${p}"]`) || document)[0];
       if (anchor) selectVerse(key, anchor, true);
     };
   }
@@ -3310,10 +3413,11 @@ async function tafsirFadlForSurah(surah) {
       }
     }
     if (whole) return true;
-    let matches = [...document.querySelectorAll(`.page[data-page="${p || reading.currentPage}"] .verse-segment[data-key="${k}"]`)];
-    if (!matches.length) matches = [...document.querySelectorAll(`.verse-segment[data-key="${k}"]`)];
+    const pageRoot = document.querySelector(`.page[data-page="${p || reading.currentPage}"]`);
+    let matches = pageRoot ? ayahElements(k, pageRoot) : [];
+    if (!matches.length) matches = ayahElements(k);
     if (!matches.length) return false;
-    document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
+    clearAyahHighlight();
     matches.forEach((x) => x.classList.add("selected"));
     reading.selectedKey = k;
     reading.selectedAnchor = matches[0];
@@ -5368,7 +5472,7 @@ async function tafsirFadlForSurah(surah) {
   document.addEventListener("prerenderingchange", () => setTheme(storageGet(STORAGE_KEYS.theme, "light") === "dark" ? "dark" : "light"), { once: true });
   document.getElementById("reader").addEventListener("contextmenu", (e) => e.preventDefault());
   document.getElementById("reader").addEventListener("click", (e) => {
-    if (e.target.closest(".verse-segment")) return;
+    if (e.target.closest("[data-ayah]")) return;
     closeMenu();
     if (!document.body.classList.contains("hidden-tools")) {
       hideTools();
@@ -5383,7 +5487,7 @@ async function tafsirFadlForSurah(surah) {
     x.addEventListener("pointerup", () => showToolsFor(2800));
   });
   document.addEventListener("pointerdown", (e) => {
-    if (!e.target.closest(".ayah-menu") && !e.target.closest(".verse-segment")) closeMenu();
+    if (!e.target.closest(".ayah-menu") && !e.target.closest("[data-ayah]")) closeMenu();
   }, { capture: true });
   let fittedSize = `${innerWidth}x${innerHeight}`;
   function refitIfResized(delay) {
@@ -5606,7 +5710,7 @@ async function tafsirFadlForSurah(surah) {
       if (!wantsHome) saveReaderSurface("reader");
       if (!readerGoPending) loading.classList.add("hide");
       if (deepLinkedAyah) {
-        const anchor = document.querySelector(`.page[data-page="${reading.currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
+        const anchor = ayahElements(deepLinkedAyah, document.querySelector(`.page[data-page="${reading.currentPage}"]`) || document)[0];
         if (anchor) selectVerse(deepLinkedAyah, anchor, true);
       }
       if (!entry.direct && entry.autoplay && entry.surah) prepareSurahFromDeepLink(entry.surah);

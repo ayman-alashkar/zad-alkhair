@@ -32,7 +32,8 @@ jobs:
           fetch-depth: 0
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # إصدار مثبّت: latest يسأل GitHub عن آخر إصدار في كل تشغيل، وقد تجاوز حدّ الطلبات (#159)
+          version: 2.121.0
       - name: Link the project
         run: supabase link --project-ref "$PROJECT_REF"
       - name: Database reachable

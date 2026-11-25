@@ -20,7 +20,7 @@ document.addEventListener("prerenderingchange",()=>setTheme(storageGet(STORAGE_K
 
 document.getElementById("reader").addEventListener("contextmenu",e=>e.preventDefault());
 document.getElementById("reader").addEventListener("click",e=>{
-  if(e.target.closest(".verse-segment"))return;
+  if(e.target.closest("[data-ayah]"))return;
   closeMenu();
   if(!document.body.classList.contains("hidden-tools")){hideTools();return}
   placeReaderToolbar(null,{x:e.clientX,y:e.clientY});
@@ -31,7 +31,7 @@ document.querySelectorAll(".chrome").forEach(x=>{
   x.addEventListener("pointerdown",()=>clearTimeout(reading.toolsTimer));
   x.addEventListener("pointerup",()=>showToolsFor(2800));
 });
-document.addEventListener("pointerdown",e=>{if(!e.target.closest(".ayah-menu")&&!e.target.closest(".verse-segment"))closeMenu()},{capture:true});
+document.addEventListener("pointerdown",e=>{if(!e.target.closest(".ayah-menu")&&!e.target.closest("[data-ayah]"))closeMenu()},{capture:true});
 /* Refit the Mushaf only when the window has really changed size and settled.
    The Android share sheet (and similar system panels) shrinks the window for a
    moment and restores it; while it is up the page is in the background, so the

@@ -2,6 +2,10 @@
 import { zuDeviceId, zuPackFresh, zuPlatform, zuSurface, zuTrackAudio } from "../shared/usage.mjs";
 import { escapeHtml, pad3 } from "./util.mjs";
 import { reading } from "./reader-state.mjs";
+import { activeEngine, decoratePageHeader, onEngineChange, registerEngine } from "./page-engine.mjs";
+import { qcfRenderLines } from "./engines/qcf.mjs";
+import { ayahElements, clearAyahHighlight, highlightAyah } from "./ayah-marks.mjs";
+import { bindGestures, onGesture } from "./gestures.mjs";
 import { searchMatcher, searchNormalize } from "./search-text.mjs";
 import { TAFSIR_DATASET, loadTafsirIndex, tafsirAyahRecord, tafsirFadlForSurah } from "./tafsir.mjs";
 (()=>{
