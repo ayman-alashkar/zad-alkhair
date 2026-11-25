@@ -21,8 +21,9 @@ test("every word appears exactly once across the 604 layer pages, with meaning, 
   for(let p=1;p<=604;p++){
     const d=page(p);
     assert.equal(d.license,"CC BY 4.0");
-    assert.deepEqual(d.columns,["gi","meaning","irab","sarf"]);
-    for(const [g,m,i,s] of d.words){
+    assert.deepEqual(d.columns,["gi","text","meaning","irab","sarf"]);
+    for(const [g,t,m,i,s] of d.words){
+      assert.equal(t,H.words[g]);
       assert.equal(seen[g],0,`gi ${g} twice`);seen[g]=1;
       assert.ok(m&&i&&s,`gi ${g} missing text`);
       assert.ok(g>=idx.page_starts[p-1]&&(p===604||g<idx.page_starts[p]),`gi ${g} on wrong page ${p}`);
@@ -45,9 +46,9 @@ test("index arrays cover every word; known mapping exceptions are kept",()=>{
 
 test("spot checks: words line up with their meanings",()=>{
   const at=g=>{let p=1;while(p<604&&idx.page_starts[p]<=g)p++;return page(p).words.find(w=>w[0]===g)};
-  assert.match(at(29)[3],/\{الم\}/);
-  assert.match(at(H.words.length-1)[1],/بنو آدم/);
-  assert.match(at(gi(15,7,0))[3],/لَوْمَا/);
+  assert.match(at(29)[4],/\{الم\}/);
+  assert.match(at(H.words.length-1)[2],/بنو آدم/);
+  assert.match(at(gi(15,7,0))[4],/لَوْمَا/);
 });
 
 test("mutashabihat: every QUL occurrence maps to words inside its own ayah",()=>{

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>تجربة بطاقة الكلمة</title>
+<style>
+@font-face{font-family:Amiri;src:url(/fonts/amiri-arabic-400.woff2) format("woff2")}
+@font-face{font-family:Alexandria;src:url(/fonts/alexandria-arabic-400-800.woff2) format("woff2");font-weight:400 800}
+@font-face{font-family:"Aref Ruqaa";src:url(/fonts/aref-ruqaa-arabic-400.woff2) format("woff2")}
+body{margin:0;background:#F5F0E4;color:#18362F;font-family:Alexandria,sans-serif}
+header{display:flex;gap:8px;align-items:center;padding:10px 12px;flex-wrap:wrap;font-size:13px}
+select,input{font:inherit;padding:6px 8px;border:1px solid #DED3BD;border-radius:10px;background:#FFFCF4}
+#words{padding:6px 12px 40px;font:400 24px/2.2 Amiri,serif;text-align:justify}
+#words button{font:inherit;border:0;background:transparent;color:inherit;padding:0 3px;border-radius:8px;cursor:pointer}
+#words button:hover{background:#F4E8CA}
+</style>
+</head>
+<body>
+<header>
+  <label>الصفحة <input id="page" type="number" min="1" max="604" value="11" style="width:70px"></label>
+  <label>الرواية <select id="riwaya"></select></label>
+  <span>اضغط كلمة لفتح البطاقة (في القارئ: ضغط مطوّل)</span>
+</header>
+<div id="words"></div>
+<script type="module" src="/dev/card.mjs"></script>
+</body>
+</html>

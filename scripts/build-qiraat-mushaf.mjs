@@ -1,8 +1,7 @@
 // يبني مصحف القراءات: صفحات المدينة الـ604 بكل الروايات، مرسومة بمحرّك DigitalKhatt.
-//   node scripts/build-qiraat-mushaf.mjs                 الصفحات كلها إلى dist/qiraat-mushaf/
+//   node scripts/build-qiraat-mushaf.mjs                 الصفحات كلها إلى data/qiraat-mushaf/
 //   node scripts/build-qiraat-mushaf.mjs 11 54 204       صفحات بعينها
 //   --out=<مجلد>  --jobs=<عدد الخيوط>
-// الناتج لا يُحفظ في git (dist/ في .gitignore)؛ يُبنى عند النشر.
 //   pages/NNN.json   انظر scripts/qiraat/render.mjs
 //   meta.json        الألوان، ومسارات المحارف كلها، وفروق رؤوس الآي في كل سورة، ووصف عدّ كل رواية
 //   report.json      تقرير المراجعة: السطور المضغوطة مرتبةً من الأشد
@@ -30,7 +29,7 @@ if (!isMainThread) {
 } else {
   const args = process.argv.slice(2);
   const opt = (k, d) => (args.find(a => a.startsWith(`--${k}=`)) || "").split("=")[1] || d;
-  const OUT = path.resolve(root, opt("out", "dist/qiraat-mushaf"));
+  const OUT = path.resolve(root, opt("out", "data/qiraat-mushaf"));
   const JOBS = Math.max(1, +opt("jobs", os.availableParallelism ? os.availableParallelism() : os.cpus().length));
   const pages = args.filter(a => /^\d+$/.test(a)).map(Number);
   const PAGES = pages.length ? pages : Array.from({ length: 604 }, (_, i) => i + 1);

@@ -114,6 +114,8 @@ files.set('index.json', json({
   count: N,
   note: 'الموضع في كل مصفوفة هو رقم الكلمة العام gi في hafs.json. مفتاح المركز = آية الكلمة + (center_wno[gi] أو ترتيبها في الآية). صفحة QCF هي page إلا ما في qcf_page.',
   page_starts: H.page_starts,
+  surah_starts: H.surah_starts,
+  surah_names: H.surahs.map(s => s.name_ar),
   center_wno: centerWno,
   qcf_page: qcfPageDiff,
   qcf_line: qcf.map((q) => q[1]),
@@ -170,9 +172,9 @@ for (let p = 1; p <= 604; p++) {
   const words = [];
   for (let g = 0; g < N; g++) if (page[g] === p) {
     const r = centerRow[g];
-    words.push([g, r[COL.meaning], r[COL.irab], r[COL.sarf]]);
+    words.push([g, H.words[g], r[COL.meaning], r[COL.irab], r[COL.sarf]]);
   }
-  files.set(`pages/${pad(p)}.json`, json({ format: 1, page: p, ...ATTR, columns: ['gi', 'meaning', 'irab', 'sarf'], words }));
+  files.set(`pages/${pad(p)}.json`, json({ format: 1, page: p, ...ATTR, columns: ['gi', 'text', 'meaning', 'irab', 'sarf'], words }));
 }
 
 if (CHECK) {
