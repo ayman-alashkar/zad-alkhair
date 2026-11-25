@@ -42,6 +42,7 @@ export async function setRiwaya(r) {
   try { localStorage.setItem(KEY, r); } catch {}
   document.documentElement.dataset.riwaya = r;
   for (const b of document.querySelectorAll(".riwaya-btn")) b.innerHTML = label(r);
+  document.dispatchEvent(new CustomEvent("zad:riwaya", { detail: r }));
   if (activeEngineId() === engineFor(r)) await refreshEngine();
   else await setActiveEngine(engineFor(r));
 }

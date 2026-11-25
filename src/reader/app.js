@@ -6,7 +6,8 @@ import { activeEngine, decoratePageHeader, onEngineChange, registerEngine } from
 import { qcfRenderLines } from "./engines/qcf.mjs";
 import { loadWordIndex, wordGiAt } from "./word-gi.mjs";
 import { createDigitalKhattEngine } from "./engines/digitalkhatt.mjs";
-import { riwaya, initRiwaya } from "./riwaya.mjs";
+import { riwaya, riwayaName, initRiwaya } from "./riwaya.mjs";
+import { loadRiwayaAudio, riwayaAyahFiles } from "./riwaya-audio.mjs";
 import { openCard, reportTarget } from "./card/index.mjs";
 import { ayahAt, ayahElements, clearAyahHighlight, highlightAyah } from "./ayah-marks.mjs";
 import { bindGestures, onGesture } from "./gestures.mjs";
@@ -64,6 +65,7 @@ const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=tru
 
 /* @include audio-playback.js */
 /* @include transport-controls.js */
+/* @include riwaya-player.js */
 
 /* @include playlist.js */
 /* @include playlist-ui.js */

@@ -2741,3 +2741,6 @@ html[data-theme="dark"][data-qshade="on"] .dk-hl{opacity:.24}
 /* التجويد لحفص وحده */
 html[data-riwaya]:not([data-riwaya="hafs"]) #tajweedBtn{opacity:.38}
 html[data-riwaya]:not([data-riwaya="hafs"]) #tajweedStrip{display:none!important}
+
+/* قارئ الرواية وحده: لا اختيار للقارئ ولا تنزيل في غير حفص */
+html.riwaya-audio #panelQariBtn,html.riwaya-audio #panelQari{pointer-events:none}

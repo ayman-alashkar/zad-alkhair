@@ -621,6 +621,7 @@ async function setRiwaya(r) {
   }
   document.documentElement.dataset.riwaya = r;
   for (const b of document.querySelectorAll(".riwaya-btn")) b.innerHTML = label(r);
+  document.dispatchEvent(new CustomEvent("zad:riwaya", { detail: r }));
   if (activeEngineId() === engineFor(r)) await refreshEngine();
   else await setActiveEngine(engineFor(r));
 }
@@ -687,16 +688,64 @@ function openPicker() {
   sheet.querySelector(".rs-r.on")?.focus();
 }
 
+// src/reader/riwaya-audio.mjs
+var dataPromise = null;
+function loadRiwayaAudio() {
+  if (!dataPromise) dataPromise = fetch("/data/riwaya-audio.json", { cache: "force-cache" }).then((r) => {
+    if (!r.ok) throw new Error("riwaya-audio " + r.status);
+    return r.json();
+  }).catch((e) => {
+    dataPromise = null;
+    throw e;
+  });
+  return dataPromise;
+}
+function surahFiles(data, M, s) {
+  const ev = (data.events[M] || {})[s] || {};
+  const drop = new Set(ev.d || []), inner = ev.i || {}, count = data.hafs[s - 1];
+  const out = [];
+  let n = 0, open = false;
+  for (let a = 1; a <= count; a++) {
+    const files = [];
+    if (s === 1 && a === 1 && drop.has(1)) {
+      out.push(files);
+      continue;
+    }
+    if (!open) {
+      n++;
+      open = true;
+      files.push(n);
+    }
+    for (let k = 0; k < (inner[a] || 0); k++) {
+      n++;
+      files.push(n);
+    }
+    if (!drop.has(a)) open = false;
+    out.push(files);
+  }
+  return out;
+}
+var cache = /* @__PURE__ */ new Map();
+function riwayaAyahFiles(data, r, s, a) {
+  const rec = data.reciters[r];
+  if (!rec) return null;
+  const key = `${rec.count}:${s}`;
+  if (!cache.has(key)) cache.set(key, surahFiles(data, rec.count, s));
+  const files = cache.get(key)[a - 1] || [];
+  const p = (n) => String(n).padStart(3, "0");
+  return files.map((n) => `https://files.quranpedia.net/recitations/${rec.id}/${p(s)}${p(n)}.mp3`);
+}
+
 // src/reader/card/data.mjs
 var BASE = globalThis.ZAD_DATA_BASE || "/data/";
 var pad2 = (n) => String(n).padStart(3, "0");
-var cache = /* @__PURE__ */ new Map();
+var cache2 = /* @__PURE__ */ new Map();
 async function getJson(path) {
-  if (cache.has(path)) return cache.get(path);
+  if (cache2.has(path)) return cache2.get(path);
   const p = fetch(BASE + path, { cache: "force-cache" }).then((r) => r.ok ? r.json() : null).catch(() => null);
-  cache.set(path, p);
+  cache2.set(path, p);
   const v = await p;
-  if (v === null) cache.delete(path);
+  if (v === null) cache2.delete(path);
   return v;
 }
 var qiraatPage = (page) => getJson(`qiraat/pages/${pad2(page)}.json`);
@@ -3289,9 +3338,9 @@ async function tafsirFadlForSurah(surah) {
   async function audioPackageCached(pkg) {
     if (!pkg || !Array.isArray(pkg.urls) || !pkg.urls.length || !("caches" in window)) return false;
     try {
-      const cache2 = await caches.open(AUDIO_CACHE_NAME);
+      const cache3 = await caches.open(AUDIO_CACHE_NAME);
       for (let i = 0; i < pkg.urls.length; i += 24) {
-        const checks = await Promise.all(pkg.urls.slice(i, i + 24).map((url) => cache2.match(url, { ignoreVary: true })));
+        const checks = await Promise.all(pkg.urls.slice(i, i + 24).map((url) => cache3.match(url, { ignoreVary: true })));
         if (checks.some((hit) => !hit)) return false;
       }
       return true;
@@ -3456,8 +3505,8 @@ async function tafsirFadlForSurah(surah) {
     const remainingRefs = /* @__PURE__ */ new Set();
     for (const [key, pkg] of Object.entries(all)) if (!retired.includes(key)) for (const url of pkg?.urls || []) remainingRefs.add(url);
     try {
-      const cache2 = await caches.open(AUDIO_CACHE_NAME);
-      for (const key of retired) for (const url of all[key]?.ownedUrls || []) if (!remainingRefs.has(url)) await cache2.delete(url, { ignoreVary: true });
+      const cache3 = await caches.open(AUDIO_CACHE_NAME);
+      for (const key of retired) for (const url of all[key]?.ownedUrls || []) if (!remainingRefs.has(url)) await cache3.delete(url, { ignoreVary: true });
     } catch (_) {
     }
     for (const key of retired) delete all[key];
@@ -3474,12 +3523,12 @@ async function tafsirFadlForSurah(surah) {
       for (const url of pkg?.urls || []) remainingRefs.add(url);
     }
     try {
-      const cache2 = await caches.open(AUDIO_CACHE_NAME);
+      const cache3 = await caches.open(AUDIO_CACHE_NAME);
       for (const key of deleteKeys) {
         const pkg = all[key];
         if (!pkg) continue;
         for (const url of pkg.ownedUrls || []) {
-          if (!remainingRefs.has(url)) await cache2.delete(url, { ignoreVary: true });
+          if (!remainingRefs.has(url)) await cache3.delete(url, { ignoreVary: true });
         }
         delete all[key];
       }
@@ -3593,6 +3642,10 @@ async function tafsirFadlForSurah(surah) {
     btn.dataset.audioDownload = String(s);
     setAudioDownloadButton(btn, "available");
     btn.onclick = async () => {
+      if (reciter.riwaya) {
+        showToast("تنزيل تلاوات الروايات للاستماع دون اتصال لاحقًا");
+        return;
+      }
       const rows = await downloadedAudioPackagesForSurah(s, true);
       if (rows.length) await openDownloadedSurahAudio(s, btn);
       else await openAudioDownloadPicker(s, btn);
@@ -4059,11 +4112,13 @@ async function tafsirFadlForSurah(surah) {
   }
   document.getElementById("quranHomeBtn").onclick = () => openQuranIndex("s", { home: false });
   function ayahAudioSourceId(s, r = reciter) {
+    if (r.riwaya) return "riwaya-" + r.riwaya;
     if (r.provider === "ayah" && r.everyAyahId) return r.everyAyahId;
     if (r.id === "Husary_128kbps" && Number(s) === 1 && r.fatihaEveryAyahId) return r.fatihaEveryAyahId;
     return "";
   }
   function audioUrl(s, a) {
+    if (reciter.riwaya) return (riwayaFilesFor(s, a) || [])[0] || "";
     const sourceId = ayahAudioSourceId(s);
     if (!sourceId) throw new Error("ayah provider unavailable");
     return `https://everyayah.com/data/${sourceId}/${pad3(s)}${pad3(a)}.mp3`;
@@ -4595,7 +4650,7 @@ async function tafsirFadlForSurah(surah) {
       return;
     }
     const src2 = audioUrl(n.s, n.a);
-    if (src2 === primedEveryAyahSrc) return;
+    if (!src2 || src2 === primedEveryAyahSrc) return;
     primedEveryAyahSrc = src2;
     try {
       audioPreload.pause();
@@ -4789,9 +4844,30 @@ async function tafsirFadlForSurah(surah) {
         }
         activeSegment = null;
         activeTimingRows = null;
+        if (reciter.riwaya) {
+          if (riwayaSurahMissing(play.surah)) {
+            playbackWanted = false;
+            syncPlay();
+            showToast(`تلاوة هذه السورة غير متوفرة برواية ${riwayaName(reciter.riwaya)}`);
+            return;
+          }
+          let files = riwayaFilesFor(play.surah, play.current) || [];
+          if (!files.length) {
+            const alone = play.from === play.current && play.to === play.current;
+            const prev = play.current > 1 ? (riwayaFilesFor(play.surah, play.current - 1) || []).slice(-1) : [];
+            if (alone && prev.length) files = prev;
+            else {
+              if (alone) showToast(`البسملة ليست آية في عدّ رواية ${riwayaName(reciter.riwaya)}`);
+              await finishCurrentAyah();
+              return;
+            }
+          }
+          riwayaRest = files.slice(1);
+          riwayaFirst = files[0];
+        } else riwayaRest = [];
         audio.dataset.playMode = "ayah";
         audio.dataset.ref = playbackSourceRef();
-        const src2 = audioUrl(play.surah, play.current);
+        const src2 = reciter.riwaya ? riwayaFirst : audioUrl(play.surah, play.current);
         if (audio.dataset.source !== src2) {
           audio.dataset.source = src2;
           audio.src = src2;
@@ -5207,6 +5283,18 @@ async function tafsirFadlForSurah(surah) {
       }
       return;
     }
+    if (audio.dataset.playMode === "ayah" && riwayaRest.length) {
+      const src2 = riwayaRest.shift();
+      audio.dataset.source = src2;
+      audio.src = src2;
+      audio.playbackRate = play.speed;
+      try {
+        await audio.play();
+      } catch (e) {
+        handleAudioFailure(e, playbackRequestId);
+      }
+      return;
+    }
     reconcileTimedPosition(true);
     segmentAdvancing = true;
     try {
@@ -5458,6 +5546,48 @@ async function tafsirFadlForSurah(surah) {
       b.remove();
     };
   };
+  let riwayaAudioData = null, riwayaRest = [], riwayaFirst = "", hafsReciter = null;
+  function riwayaFilesFor(s, a, r = reciter) {
+    return r.riwaya && riwayaAudioData ? riwayaAyahFiles(riwayaAudioData, r.riwaya, s, a) : null;
+  }
+  function riwayaSurahMissing(s, r = reciter) {
+    return !!(r.riwaya && riwayaAudioData?.reciters[r.riwaya]?.missing?.includes(Number(s)));
+  }
+  const riwayaPlayerApplies = () => !location.pathname.startsWith("/quran-listen");
+  async function applyRiwayaReciter() {
+    if (!riwayaPlayerApplies()) return;
+    const r = riwaya();
+    const want = r === "hafs" ? null : r;
+    if ((reciter.riwaya || null) === want) return;
+    let next;
+    if (want) {
+      try {
+        riwayaAudioData = await loadRiwayaAudio();
+      } catch (_) {
+        showToast("تعذّر تحميل تلاوة الرواية");
+        return;
+      }
+      if (riwaya() !== want) return;
+      const rec = riwayaAudioData.reciters[want];
+      if (!reciter.riwaya) hafsReciter = reciter;
+      next = { id: "riwaya:" + want, name: `${rec.name} — برواية ${riwayaName(want)}`, provider: "ayah", riwaya: want };
+    } else next = hafsReciter || RECITERS.find((x) => x.id === storageJsonGet(STORAGE_KEYS.qari, null)?.id) || defaultReciter();
+    const wasPlaying = document.body.classList.contains("player-on") && !audio.paused;
+    playbackRequestId++;
+    audio.pause();
+    riwayaRest = [];
+    releaseAudioPreload();
+    delete audio.dataset.source;
+    delete audio.dataset.playMode;
+    audio.removeAttribute("src");
+    audio.load();
+    reciter = next;
+    document.documentElement.classList.toggle("riwaya-audio", !!want);
+    updateReciterMarquee();
+    if (wasPlaying) syncPlay();
+  }
+  document.addEventListener("zad:riwaya", () => applyRiwayaReciter());
+  applyRiwayaReciter();
   function syncQueueControls() {
     const button = document.getElementById("queueBtn"), toggle = document.getElementById("queueToggle");
     button.classList.toggle("active", queueActive);

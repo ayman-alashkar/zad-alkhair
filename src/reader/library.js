@@ -236,7 +236,7 @@ async function downloadSurahAudio(s,btn,r=reciter){
 }
 function bindSurahDownloadButton(btn,s){
   btn.dataset.audioDownload=String(s);setAudioDownloadButton(btn,"available");
-  btn.onclick=async()=>{const rows=await downloadedAudioPackagesForSurah(s,true);if(rows.length)await openDownloadedSurahAudio(s,btn);else await openAudioDownloadPicker(s,btn)};
+  btn.onclick=async()=>{if(reciter.riwaya){showToast("تنزيل تلاوات الروايات للاستماع دون اتصال لاحقًا");return}const rows=await downloadedAudioPackagesForSurah(s,true);if(rows.length)await openDownloadedSurahAudio(s,btn);else await openAudioDownloadPicker(s,btn)};
   refreshAudioDownloadButton(btn,s).catch(()=>{});
 }
 let quranSearchIndex=storageJsonGet(STORAGE_KEYS.searchIndex,null);

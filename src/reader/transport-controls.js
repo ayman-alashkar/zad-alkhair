@@ -141,6 +141,12 @@ audio.onended=async()=>{
   if(audio.dataset.playMode==="surah"){
     segmentAdvancing=true;try{await finishWholeSurah()}finally{segmentAdvancing=false}return;
   }
+  if(audio.dataset.playMode==="ayah"&&riwayaRest.length){
+    /* المذهب يعدّ رأس آية داخل آية حفص: الملف الثاني منها. */
+    const src=riwayaRest.shift();audio.dataset.source=src;audio.src=src;audio.playbackRate=play.speed;
+    try{await audio.play()}catch(e){handleAudioFailure(e,playbackRequestId)}
+    return;
+  }
   reconcileTimedPosition(true);
   segmentAdvancing=true;
   try{await finishCurrentAyah()}
