@@ -19,6 +19,17 @@ export const IMAMS = [
 const NAMES = Object.fromEntries(IMAMS.flatMap(([, rs]) => rs));
 export const riwayaName = r => NAMES[r] || "حفص";
 const CAT_LEGEND = [["#D1203A", "فرش"], ["#E86A00", "همز ونقل"], ["#6D28D9", "إمالة"], ["#C026D3", "تقليل"], ["#1D63ED", "صلة"], ["#0E9F8E", "مدّ"], ["#15A34A", "إدغام"], ["#8B5E34", "سكت"]];
+const MARK_LEGEND = [["u", "أداء"], ["wu", "عند الوقف"], ["ap", "رأس آية زائد"], ["ag", "رأس آية عند حفص وحده"]];
+
+/* «ألوان» أو «ألوان وتظليل» (الافتراضي كما في النموذج). */
+const SHADE_KEY = "zad:qiraat-shade";
+let shade = true;
+try { shade = localStorage.getItem(SHADE_KEY) !== "0"; } catch {}
+function setShade(on) {
+  shade = on;
+  document.documentElement.dataset.qshade = on ? "on" : "off";
+  try { localStorage.setItem(SHADE_KEY, on ? "1" : "0"); } catch {}
+}
 
 let current = "hafs";
 try { const v = localStorage.getItem(KEY); if (v && NAMES[v]) current = v; } catch {}
@@ -38,6 +49,7 @@ export async function setRiwaya(r) {
 /** يُستدعى عند الإقلاع بعد تسجيل المحرّكين. */
 export function initRiwaya() {
   document.documentElement.dataset.riwaya = current;
+  setShade(shade);
   selectEngineAtBoot(engineFor(current));
 }
 
@@ -66,11 +78,18 @@ function openPicker() {
   sheet.setAttribute("aria-label", "القراءات العشر");
   sheet.innerHTML = `<div class="rs-grip"></div><div class="rs-head"><h2>القراءات العشر</h2><span>الإمام وراوياه</span></div>
     ${IMAMS.map(([imam, rs]) => `<div class="rs-row"><span class="rs-imam">${imam}</span>${rs.map(([k, n]) => `<button type="button" class="rs-r${k === current ? " on" : ""}" data-r="${k}">${n}</button>`).join("")}</div>`).join("")}
-    <div class="rs-legend">${CAT_LEGEND.map(([c, n]) => `<span><i style="background:${c}"></i>${n}</span>`).join("")}</div>`;
+    <div class="rs-seg" role="group" aria-label="إظهار الخلاف">${[["0", "ألوان"], ["1", "ألوان وتظليل"]].map(([v, n]) => `<button type="button" data-shade="${v}" class="${(shade ? "1" : "0") === v ? "on" : ""}" aria-pressed="${(shade ? "1" : "0") === v}">${n}</button>`).join("")}</div>
+    <div class="rs-legend">${CAT_LEGEND.map(([c, n]) => `<span><i style="background:${c}"></i>${n}</span>`).join("")}${MARK_LEGEND.map(([k, n]) => `<span><i class="${k}"></i>${n}</span>`).join("")}</div>`;
   const close = () => { scrim.remove(); sheet.remove(); document.removeEventListener("keydown", onKey); };
   const onKey = e => { if (e.key === "Escape") close(); };
   scrim.addEventListener("click", close);
   sheet.addEventListener("click", e => {
+    const sb = e.target.closest("[data-shade]");
+    if (sb) {
+      setShade(sb.dataset.shade === "1");
+      for (const x of sheet.querySelectorAll("[data-shade]")) { const on = x === sb; x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on)); }
+      return;
+    }
     const b = e.target.closest("[data-r]");
     if (!b) return;
     close();

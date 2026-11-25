@@ -154,13 +154,13 @@ function zuCommitAudio(keepGoing) {
   }
   zuAdd(tayassar ? { listen_seconds: secs, tayassar_seconds: secs } : { listen_seconds: secs });
 }
-function zuTrackAudio(el2, isTayassar) {
-  if (!el2) return;
+function zuTrackAudio(el3, isTayassar) {
+  if (!el3) return;
   if (typeof isTayassar === "function") zuAudioTayassar = isTayassar;
-  el2.addEventListener("playing", () => {
+  el3.addEventListener("playing", () => {
     if (!zuAudioFrom) zuAudioFrom = Date.now();
   });
-  for (const type of ["pause", "ended", "waiting", "emptied", "error"]) el2.addEventListener(type, () => zuCommitAudio(false));
+  for (const type of ["pause", "ended", "waiting", "emptied", "error"]) el3.addEventListener(type, () => zuCommitAudio(false));
   setInterval(() => zuCommitAudio(true), 3e4);
 }
 var zuFlushing = false;
@@ -458,49 +458,79 @@ function installGlyphs(meta) {
   svg.appendChild(defs);
   document.body.appendChild(svg);
 }
-function lineSvg(L, P, meta, first) {
+function spans(L) {
+  const left = {};
+  for (let j = 0; j < L.t.length; j++) {
+    const t = L.t[j], x = L.g[3 * j + 1];
+    if (!(t in left) || x < left[t]) left[t] = x;
+  }
+  const out = [];
+  for (let k = 0; k < L.e.length; k += 2) {
+    const t = L.e[k];
+    out.push({ t, r: L.e[k + 1], l: left[t] ?? L.e[k + 1] });
+  }
+  return out;
+}
+var el = (name, attrs) => {
+  const n = document.createElementNS(SVGNS, name);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  return n;
+};
+function wordCat(R, i, cats) {
+  const segs = R.F && R.F[i];
+  if (segs) {
+    const c = segs.map((x) => x[1]).filter(Boolean).map((c2) => c2 === "naql" ? "hamz" : c2)[0];
+    return c ? cats.indexOf(c) : 0;
+  }
+  return R.U && R.U[i] ? 8 : 0;
+}
+function lineSvg(L, P, meta, first, R) {
   const W = Math.max(meta.lineUnits, L.n), MK = meta.mk;
-  const svg = document.createElementNS(SVGNS, "svg");
-  svg.setAttribute("class", "dk-line");
-  svg.setAttribute("viewBox", `${-W} ${-ASC} ${W} ${LH}`);
-  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-  const flip = document.createElementNS(SVGNS, "g");
-  flip.setAttribute("transform", "scale(1,-1)");
+  const svg = el("svg", { class: "dk-line", viewBox: `${-W} ${-ASC} ${W} ${LH}`, preserveAspectRatio: "xMidYMid meet" });
+  const flip = el("g", { transform: "scale(1,-1)" });
   svg.appendChild(flip);
   const groups = /* @__PURE__ */ new Map();
   const groupFor = (t) => {
     if (groups.has(t)) return groups.get(t);
     const g = document.createElementNS(SVGNS, "g");
     const i = t >= MK ? t - MK : t;
-    const key = `${P.data.surah[i]}:${P.data.ayah[i]}`;
-    g.dataset.ayah = key;
+    g.dataset.ayah = `${P.data.surah[i]}:${P.data.ayah[i]}`;
     if (t < MK) {
       g.dataset.gi = String(first + i);
       g.setAttribute("class", "dk-w");
-    } else g.setAttribute("class", "dk-end" + (P.ghost && P.ghost.has(i) ? " ghost" : "") + (P.added && P.added.has(i) ? " added" : ""));
+    } else g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
     flip.appendChild(g);
     groups.set(t, g);
     return g;
   };
-  for (let k = 0; k < L.e.length; k += 2) {
-    const t = L.e[k];
+  const sp = spans(L);
+  for (let k = 0; k < sp.length; k++) {
+    const { t, l, r } = sp[k];
     if (t < 0) continue;
-    const right = L.e[k + 1], left = k + 3 < L.e.length ? L.e[k + 3] : -L.n;
-    const rect = document.createElementNS(SVGNS, "rect");
-    rect.setAttribute("x", Math.min(left, right));
-    rect.setAttribute("y", -(LH - ASC));
-    rect.setAttribute("width", Math.abs(right - left));
-    rect.setAttribute("height", LH);
-    rect.setAttribute("class", "dk-hit");
-    groupFor(t).appendChild(rect);
+    const g = groupFor(t);
+    const nextR = k + 1 < sp.length ? sp[k + 1].r : -L.n;
+    g.appendChild(el("rect", { class: "dk-hit", x: Math.min(nextR, r), y: -(LH - ASC), width: Math.abs(r - nextR), height: LH }));
+    if (t >= MK) {
+      if (P.added.has(t - MK)) g.appendChild(el("rect", { class: "dk-hl dk-bap", x: l - 40, y: -(LH - ASC - 30), width: r - l + 80, height: LH - 120, rx: 300 }));
+      continue;
+    }
+    const cat = wordCat(R, t, meta.cats);
+    if (cat > 0) g.appendChild(el("rect", { class: `dk-hl dk-b${cat}`, x: l - 60, y: -(LH - ASC - 30), width: r - l + 120, height: LH - 120, rx: 120 }));
+    const segs = R.F && R.F[t], snd = R.S && R.S[t] && !segs;
+    if (snd) g.appendChild(el("line", { class: "dk-snd", x1: l + 60, x2: r - 60, y1: -(LH - ASC - 80), y2: -(LH - ASC - 80) }));
+    if (R.W && R.W[t]) {
+      const y = -(LH - ASC - (snd ? 10 : 80));
+      g.appendChild(el("line", { class: "dk-wq", x1: l + 50, x2: r - 50, y1: y, y2: y }));
+    }
   }
   for (let j = 0; j < L.t.length; j++) {
-    const u = document.createElementNS(SVGNS, "use");
-    u.setAttribute("href", "#dkg" + L.g[3 * j]);
-    u.setAttribute("x", L.g[3 * j + 1]);
-    u.setAttribute("y", L.g[3 * j + 2]);
-    if (L.c[j]) u.setAttribute("class", "dk-c" + L.c[j]);
-    groupFor(L.t[j]).appendChild(u);
+    const t = L.t[j], c = L.c[j];
+    let cls = c ? "dk-c" + c : "";
+    if (!cls && t >= 0 && t < MK && R.U && R.U[t] && !(R.F && R.F[t])) cls = "dk-c8";
+    if (t >= MK && P.added.has(t - MK)) cls = "dk-amp";
+    const u = el("use", { href: "#dkg" + L.g[3 * j], x: L.g[3 * j + 1], y: L.g[3 * j + 2] });
+    if (cls) u.setAttribute("class", cls);
+    groupFor(t).appendChild(u);
   }
   return svg;
 }
@@ -526,13 +556,14 @@ function createDigitalKhattEngine(env) {
       P.added = new Set(Object.entries(am).filter(([, v]) => v[2] === "+").map(([i]) => Number(i)));
       const own = P.lines[r] && !Array.isArray(P.lines[r]) ? P.lines[r] : {};
       const first = P.data.first;
+      const R = { F: P.data.F[r], S: P.data.S[r], U: P.data.U[r], W: P.data.W[r] };
       let li = 0;
       for (const inner of host.querySelectorAll(".line-inner")) {
         if (inner.classList.contains("surah-line") || inner.classList.contains("bismillah-line")) continue;
         const L = own[li] || P.lines.hafs[li];
         li++;
         if (!L) continue;
-        inner.replaceChildren(lineSvg(L, P, meta, first));
+        inner.replaceChildren(lineSvg(L, P, meta, first, R));
         inner.classList.add("dk");
         inner.style.fontFamily = "";
       }
@@ -558,6 +589,21 @@ var IMAMS = [
 var NAMES = Object.fromEntries(IMAMS.flatMap(([, rs]) => rs));
 var riwayaName = (r) => NAMES[r] || "حفص";
 var CAT_LEGEND = [["#D1203A", "فرش"], ["#E86A00", "همز ونقل"], ["#6D28D9", "إمالة"], ["#C026D3", "تقليل"], ["#1D63ED", "صلة"], ["#0E9F8E", "مدّ"], ["#15A34A", "إدغام"], ["#8B5E34", "سكت"]];
+var MARK_LEGEND = [["u", "أداء"], ["wu", "عند الوقف"], ["ap", "رأس آية زائد"], ["ag", "رأس آية عند حفص وحده"]];
+var SHADE_KEY = "zad:qiraat-shade";
+var shade = true;
+try {
+  shade = localStorage.getItem(SHADE_KEY) !== "0";
+} catch {
+}
+function setShade(on) {
+  shade = on;
+  document.documentElement.dataset.qshade = on ? "on" : "off";
+  try {
+    localStorage.setItem(SHADE_KEY, on ? "1" : "0");
+  } catch {
+  }
+}
 var current = "hafs";
 try {
   const v = localStorage.getItem(KEY);
@@ -580,6 +626,7 @@ async function setRiwaya(r) {
 }
 function initRiwaya() {
   document.documentElement.dataset.riwaya = current;
+  setShade(shade);
   selectEngineAtBoot(engineFor(current));
 }
 var label = (r) => `برواية ${riwayaName(r)}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`;
@@ -608,7 +655,8 @@ function openPicker() {
   sheet.setAttribute("aria-label", "القراءات العشر");
   sheet.innerHTML = `<div class="rs-grip"></div><div class="rs-head"><h2>القراءات العشر</h2><span>الإمام وراوياه</span></div>
     ${IMAMS.map(([imam, rs]) => `<div class="rs-row"><span class="rs-imam">${imam}</span>${rs.map(([k, n]) => `<button type="button" class="rs-r${k === current ? " on" : ""}" data-r="${k}">${n}</button>`).join("")}</div>`).join("")}
-    <div class="rs-legend">${CAT_LEGEND.map(([c, n]) => `<span><i style="background:${c}"></i>${n}</span>`).join("")}</div>`;
+    <div class="rs-seg" role="group" aria-label="إظهار الخلاف">${[["0", "ألوان"], ["1", "ألوان وتظليل"]].map(([v, n]) => `<button type="button" data-shade="${v}" class="${(shade ? "1" : "0") === v ? "on" : ""}" aria-pressed="${(shade ? "1" : "0") === v}">${n}</button>`).join("")}</div>
+    <div class="rs-legend">${CAT_LEGEND.map(([c, n]) => `<span><i style="background:${c}"></i>${n}</span>`).join("")}${MARK_LEGEND.map(([k, n]) => `<span><i class="${k}"></i>${n}</span>`).join("")}</div>`;
   const close = () => {
     scrim.remove();
     sheet.remove();
@@ -619,6 +667,16 @@ function openPicker() {
   };
   scrim.addEventListener("click", close);
   sheet.addEventListener("click", (e) => {
+    const sb = e.target.closest("[data-shade]");
+    if (sb) {
+      setShade(sb.dataset.shade === "1");
+      for (const x of sheet.querySelectorAll("[data-shade]")) {
+        const on = x === sb;
+        x.classList.toggle("on", on);
+        x.setAttribute("aria-pressed", String(on));
+      }
+      return;
+    }
     const b = e.target.closest("[data-r]");
     if (!b) return;
     close();
@@ -915,7 +973,7 @@ var ICONS = {
   play: '<path d="M8 5l11 7-11 7z"/>'
 };
 var icon = (k, size = 20) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]}</svg>`;
-var el = (tag, cls, html) => {
+var el2 = (tag, cls, html) => {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   if (html != null) e.innerHTML = html;
@@ -928,7 +986,7 @@ async function openCard(where, opts = {}) {
   if (!loc) return null;
   const ctx = { riwaya: "hafs", ...where, ...loc };
   closeCard();
-  const root = el("div", "zc-backdrop");
+  const root = el2("div", "zc-backdrop");
   root.setAttribute("role", "dialog");
   root.setAttribute("aria-modal", "true");
   root.setAttribute("aria-label", "بطاقة الكلمة");
@@ -959,10 +1017,10 @@ async function availableSections(level, ctx) {
 }
 async function render() {
   const C = current2, { ctx } = C;
-  const card = el("div", "zc-card");
-  const seg = el("div", "zc-levels");
+  const card = el2("div", "zc-card");
+  const seg = el2("div", "zc-levels");
   for (const L of LEVELS) {
-    const b = el("button", "zc-level" + (L.id === C.level ? " on" : ""), L.label);
+    const b = el2("button", "zc-level" + (L.id === C.level ? " on" : ""), L.label);
     b.type = "button";
     b.onclick = () => {
       C.level = L.id;
@@ -974,10 +1032,10 @@ async function render() {
   const secs = await availableSections(C.level, ctx);
   if (C !== current2) return;
   let active = secs.find((s) => s.id === C.tab[C.level]) || secs[0];
-  const tabs = el("div", "zc-tabs");
+  const tabs = el2("div", "zc-tabs");
   tabs.setAttribute("role", "tablist");
   for (const s of secs) {
-    const b = el("button", "zc-tab" + (s === active ? " on" : ""), s.label);
+    const b = el2("button", "zc-tab" + (s === active ? " on" : ""), s.label);
     b.type = "button";
     b.setAttribute("role", "tab");
     b.setAttribute("aria-selected", s === active ? "true" : "false");
@@ -988,18 +1046,18 @@ async function render() {
     tabs.appendChild(b);
   }
   card.appendChild(tabs);
-  const body = el("div", "zc-body" + (C.report ? " reporting" : ""));
+  const body = el2("div", "zc-body" + (C.report ? " reporting" : ""));
   card.appendChild(body);
   if (active) {
-    body.appendChild(el("div", "zc-loading", "…"));
+    body.appendChild(el2("div", "zc-loading", "…"));
     const node2 = await active.render(ctx);
     if (C !== current2) return;
     body.replaceChildren(node2);
     if (C.report) for (const t of body.querySelectorAll("[data-report]")) t.appendChild(reportButton(ctx, active, t));
-  } else body.appendChild(el("div", "zc-none", "لا شيء هنا لهذه الكلمة"));
-  const nav = el("div", "zc-nav");
+  } else body.appendChild(el2("div", "zc-none", "لا شيء هنا لهذه الكلمة"));
+  const nav = el2("div", "zc-nav");
   const btn = (k, label2, fn, on) => {
-    const b = el("button", "zc-icon" + (on ? " on" : ""), icon(k, 21));
+    const b = el2("button", "zc-icon" + (on ? " on" : ""), icon(k, 21));
     b.type = "button";
     b.setAttribute("aria-label", label2);
     b.onclick = fn;
@@ -1014,11 +1072,11 @@ async function render() {
     render();
   }, C.report);
   card.appendChild(nav);
-  if (C.report) card.appendChild(el("div", "zc-toast", "اضغط على العلامة بجانب النص للإبلاغ عن خطأ فيه"));
+  if (C.report) card.appendChild(el2("div", "zc-toast", "اضغط على العلامة بجانب النص للإبلاغ عن خطأ فيه"));
   if (C.level === "word") {
-    const tools = el("div", "zc-tools");
+    const tools = el2("div", "zc-tools");
     for (const [k, label2, kind] of [["pen", "تظليل", "highlight"], ["note", "تعليق", "note"], ["mark", "علامة", "bookmark"], ["play", "استماع", "listen"]]) {
-      const b = el("button", "zc-tool", icon(k, 19) + `<span>${label2}</span>`);
+      const b = el2("button", "zc-tool", icon(k, 19) + `<span>${label2}</span>`);
       b.type = "button";
       b.onclick = () => C.opts.onTool && C.opts.onTool(kind, ctx);
       tools.appendChild(b);
@@ -1392,10 +1450,10 @@ registerSection({
 });
 
 // src/reader/ayah-marks.mjs
-var outermost = (el2, k) => !el2.parentElement?.closest(`[data-ayah="${k}"]`);
+var outermost = (el3, k) => !el3.parentElement?.closest(`[data-ayah="${k}"]`);
 function ayahElements(k, root = document) {
   if (!k) return [];
-  return [...root.querySelectorAll(`[data-ayah="${k}"]`)].filter((el2) => outermost(el2, k));
+  return [...root.querySelectorAll(`[data-ayah="${k}"]`)].filter((el3) => outermost(el3, k));
 }
 function ayahAt(node2) {
   const word = node2?.closest?.("[data-ayah]");
@@ -1410,7 +1468,7 @@ function clearAyahHighlight(root = document) {
   root.querySelectorAll("[data-ayah].selected").forEach((x) => x.classList.remove("selected"));
 }
 function highlightAyah(k, root = document) {
-  for (const el2 of ayahElements(k, root)) el2.classList.add("selected");
+  for (const el3 of ayahElements(k, root)) el3.classList.add("selected");
 }
 
 // src/reader/gestures.mjs
@@ -2600,8 +2658,8 @@ async function tafsirFadlForSurah(surah) {
     }
     openWordCard(gi, anchor, "word");
   });
-  function pageOfElement(el2) {
-    return Number(el2?.closest?.(".page")?.dataset.page) || reading.currentPage;
+  function pageOfElement(el3) {
+    return Number(el3?.closest?.(".page")?.dataset.page) || reading.currentPage;
   }
   function openWordCard(gi, anchor, level) {
     closeMenu();
@@ -2609,11 +2667,11 @@ async function tafsirFadlForSurah(surah) {
       level,
       toast: showToast,
       onNavigate: (page, g) => go(page).then(() => {
-        const el2 = document.querySelector(`.page[data-page="${page}"] [data-gi="${g}"]`), at = el2 && ayahAt(el2);
+        const el3 = document.querySelector(`.page[data-page="${page}"] [data-gi="${g}"]`), at = el3 && ayahAt(el3);
         if (at) selectVerse(at.ayah, at.anchor, true);
       }),
       onTool: (kind, ctx) => {
-        const el2 = document.querySelector(`.page[data-page="${ctx.page}"] [data-gi="${ctx.gi}"]`), at = el2 && ayahAt(el2);
+        const el3 = document.querySelector(`.page[data-page="${ctx.page}"] [data-gi="${ctx.gi}"]`), at = el3 && ayahAt(el3);
         if (kind === "listen") {
           if (at) selectVerse(at.ayah, at.anchor, true);
           startSelected();
@@ -2629,9 +2687,9 @@ async function tafsirFadlForSurah(surah) {
   }
   function openAyahCard() {
     const page = reading.currentPage, root = document.querySelector(`.page[data-page="${page}"]`);
-    const el2 = reading.selectedKey ? root?.querySelector(`[data-ayah="${reading.selectedKey}"][data-gi]`) : root?.querySelector("[data-gi]");
-    if (!el2) return openTafsir();
-    return openWordCard(Number(el2.dataset.gi), el2, "ayah");
+    const el3 = reading.selectedKey ? root?.querySelector(`[data-ayah="${reading.selectedKey}"][data-gi]`) : root?.querySelector("[data-gi]");
+    if (!el3) return openTafsir();
+    return openWordCard(Number(el3.dataset.gi), el3, "ayah");
   }
   window.addEventListener("online", () => reportTarget.flush());
   bindGestures(track);
@@ -5228,9 +5286,9 @@ async function tafsirFadlForSurah(surah) {
     function syncSettingsCapabilities() {
       const chosen = RECITERS.find((r) => r.id === b.querySelector("#qari").value) || defaultReciter(), whole = isSurahOnly(chosen);
       b.querySelector("#surahOnlySettingsHint").hidden = !whole;
-      b.querySelectorAll(".audio-verse-settings").forEach((el2) => {
-        el2.hidden = whole;
-        el2.querySelectorAll("select").forEach((input) => input.disabled = whole);
+      b.querySelectorAll(".audio-verse-settings").forEach((el3) => {
+        el3.hidden = whole;
+        el3.querySelectorAll("select").forEach((input) => input.disabled = whole);
       });
     }
     b.querySelector("#qari").onchange = syncSettingsCapabilities;
@@ -5899,26 +5957,26 @@ async function tafsirFadlForSurah(surah) {
       if (!listenDrag) return;
       listenDrag.f = listenArcFraction(e, svg);
       listenPaintArc(listenDrag.f);
-      const el2 = label2();
-      if (el2 && !listenActive()) {
-        el2.textContent = listenIdleLabel(listenCardState(), listenDrag.f);
+      const el3 = label2();
+      if (el3 && !listenActive()) {
+        el3.textContent = listenIdleLabel(listenCardState(), listenDrag.f);
         return;
       }
-      if (el2 && tayassurActive()) {
+      if (el3 && tayassurActive()) {
         const seg = tayassurSegment(), a = tayassurAyahAt(listenDrag.f);
-        el2.textContent = listenDrag.f >= TAYASSUR_NEXT_AT ? "المقطع التالي" : `الآية ${ar(a)}، من ${ar(seg.from)} إلى ${ar(seg.to)}`;
+        el3.textContent = listenDrag.f >= TAYASSUR_NEXT_AT ? "المقطع التالي" : `الآية ${ar(a)}، من ${ar(seg.from)} إلى ${ar(seg.to)}`;
         return;
       }
-      if (el2) {
+      if (el3) {
         if (isSurahOnly() || audio.dataset.playMode === "surah") {
           const d = Number(audio.duration);
-          if (d > 0) el2.textContent = formatAudioTime(listenDrag.f * d);
+          if (d > 0) el3.textContent = formatAudioTime(listenDrag.f * d);
         } else if (audio.dataset.playMode === "gapless" && Number(audio.duration) > 0) {
           const row = timingRowAt(listenDrag.f * audio.duration);
-          if (row) el2.textContent = `الآية ${ar(row.ayah)} من ${ar(maxAyah(play.surah))}`;
+          if (row) el3.textContent = `الآية ${ar(row.ayah)} من ${ar(maxAyah(play.surah))}`;
         } else {
           const max = maxAyah(play.surah);
-          el2.textContent = `الآية ${ar(Math.min(max, Math.floor(listenDrag.f * max) + 1))} من ${ar(max)}`;
+          el3.textContent = `الآية ${ar(Math.min(max, Math.floor(listenDrag.f * max) + 1))} من ${ar(max)}`;
         }
       }
     });
