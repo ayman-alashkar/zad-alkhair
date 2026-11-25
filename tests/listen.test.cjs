@@ -50,7 +50,7 @@ test("sharing a verse, a juz or a recitation uses its direct Quran route",()=>{
     document:{getElementById:()=>eventTarget,querySelector:()=>null},
     track:eventTarget,window:eventTarget,audio:eventTarget,
     READER_APP_TABS:"",HUB_SHARE_ICON:"",
-    chapterMap:new Map([[112,{name_arabic:"الإخلاص"}]]),
+    reading:{chapterMap:new Map([[112,{name_arabic:"الإخلاص"}]])},
     shareHubPayload:payload=>shared.push(payload)
   });
   vm.runInContext(read("src/reader/reading-tools.js"),ctx);

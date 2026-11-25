@@ -267,8 +267,8 @@ async function playCurrent(expand=false){
   }
 }
 async function startSelected(){
-  if(!selectedKey){showToast("اختر آية أولًا");return}
-  const v=verseParts(selectedKey);
+  if(!reading.selectedKey){showToast("اختر آية أولًا");return}
+  const v=verseParts(reading.selectedKey);
   detachQueue();
   pendingSurahBasmala=false;basmalaFallbackTarget=null;
   continuousStopRef=null;

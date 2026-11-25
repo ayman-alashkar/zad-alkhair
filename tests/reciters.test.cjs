@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=name=>fs.readFileSync(__dirname+"/../src/reader/"+name+".js","utf8");
 function fixture(){
-  const ctx=vm.createContext({pad3:n=>String(n).padStart(3,'0'),normalizeArabic:s=>s,storageJsonGet:()=>null,STORAGE_KEYS:{searchIndex:"search"},chapterMap:new Map(),listenIsOpen:()=>false,listenPaint:()=>{},document:{getElementById:()=>({})},window:{addEventListener(){}},fetch:()=>{throw Error('unexpected fetch')}});
+  const ctx=vm.createContext({pad3:n=>String(n).padStart(3,'0'),normalizeArabic:s=>s,storageJsonGet:()=>null,STORAGE_KEYS:{searchIndex:"search"},reading:{chapterMap:new Map(),currentPage:1,pages:new Map(),selectedKey:null},listenIsOpen:()=>false,listenPaint:()=>{},document:{getElementById:()=>({})},window:{addEventListener(){}},fetch:()=>{throw Error('unexpected fetch')}});
   for(const name of ["reciters","audio-sources","library","player-ui"])vm.runInContext(source(name),ctx);
   return {ctx,run:s=>vm.runInContext(s,ctx)};
 }
@@ -65,7 +65,7 @@ test('offline packages for whole-surah and timed reciters retain independent res
   assert.equal(b.resources.length,3);assert.ok(b.urls.some(u=>u.includes('read=76')));assert.notEqual(a.key,b.key);
 });
 test('whole-surah selection never schedules an ayah highlight or a partial juz playback',async()=>{
-  const f=fixture();Object.assign(f.ctx,{reciter:{provider:'surah'},play:{surah:112,current:1},chapterMap:new Map(),playbackRequestId:7,cleared:0});
+  const f=fixture();Object.assign(f.ctx,{reciter:{provider:'surah'},play:{surah:112,current:1},playbackRequestId:7,cleared:0});
   f.run('function clearVerseSelection(){cleared++}');
   await f.run('syncPlaybackSelection(7)');assert.equal(f.ctx.cleared,1);
   await f.run('syncPlaybackSelection(6)');assert.equal(f.ctx.cleared,1);
@@ -73,14 +73,15 @@ test('whole-surah selection never schedules an ayah highlight or a partial juz p
   await f.run('playJuzFromHub(2,()=>{closed=true})');assert.equal(f.ctx.closed,false);
 });
 test('whole-surah playback opens the surah page without selecting a fabricated verse',async()=>{
-  const f=fixture();Object.assign(f.ctx,{reciter:{provider:'surah'},play:{surah:112,current:1},chapterMap:new Map([[112,{pages:[604,604]}]]),playbackRequestId:2,currentPage:1,cleared:0,ensured:[],pageUpdates:0,ensurePage:async p=>f.ctx.ensured.push(p),prefetchAround:async()=>{},trimPageDom(){}});
+  const f=fixture();Object.assign(f.ctx,{reciter:{provider:'surah'},play:{surah:112,current:1},playbackRequestId:2,cleared:0,ensured:[],pageUpdates:0,ensurePage:async p=>f.ctx.ensured.push(p),prefetchAround:async()=>{},trimPageDom(){}});
+  Object.assign(f.ctx.reading,{chapterMap:new Map([[112,{pages:[604,604]}]]),currentPage:1});
   f.run('function clearVerseSelection(){cleared++} function updatePage(){pageUpdates++}');
-  await f.run('syncPlaybackSelection(2)');assert.equal(f.ctx.currentPage,604);assert.equal(f.ctx.pageUpdates,1);assert.equal(f.ctx.cleared,1);assert.deepEqual(f.ctx.ensured,[604]);
+  await f.run('syncPlaybackSelection(2)');assert.equal(f.ctx.reading.currentPage,604);assert.equal(f.ctx.pageUpdates,1);assert.equal(f.ctx.cleared,1);assert.deepEqual(f.ctx.ensured,[604]);
 });
 test('Hudhaifi uses the verified per-ayah recording and independently caches its surah and basmala',async()=>{
   const f=fixture();f.ctx.reciter=f.run('RECITERS.find(r=>r.id==="Hudhaify_128kbps")');
   assert.equal(f.ctx.reciter.provider,'ayah');assert.equal(f.ctx.reciter.everyAyahId,'Hudhaify_128kbps');assert.equal(f.ctx.reciter.ayahBasmalaPrelude,true);
-  Object.assign(f.ctx,{chapterMap:new Map([[112,{verses_count:4}]]),audioPackageKey:(s,r)=>r.id+':'+s,getMp3Timing:()=>{throw Error('no timestamp substitution')}});
+  f.ctx.reading.chapterMap=new Map([[112,{verses_count:4}]]);Object.assign(f.ctx,{audioPackageKey:(s,r)=>r.id+':'+s,getMp3Timing:()=>{throw Error('no timestamp substitution')}});
   assert.equal(f.run('audioUrl(112,4)'),'https://everyayah.com/data/Hudhaify_128kbps/112004.mp3');
   const pkg=await f.run('buildSurahAudioPackage(112,reciter)');assert.equal(pkg.ownedUrls.length,4);assert.equal(pkg.sharedUrls.length,1);
   assert.ok(pkg.resources.every(x=>x.url.startsWith('https://everyayah.com/data/Hudhaify_128kbps/')));
