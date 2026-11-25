@@ -1,5 +1,7 @@
 import { appState } from "./app-state.mjs";
 import { GROUP_SEND_TIMEOUT, edge, onDeviceNotRecognised, postJSON, requestError, rpc } from "./api.mjs";
+import { activeKhatmahForget, activeKhatmahGet, activeKhatmahSet, cleanKhatmahCode, hashCode, linkFor, mineByPublicId, mineForget, mineGet, minePruneMissing, mineRemember, zkReplaceHash } from "./session.mjs";
+import { enqueueEdge, flushOutbox, outboxWake } from "./notification-outbox.mjs";
 import { cKey, deviceId, isOrganizer, memberOf, orgCode, vKey } from "./identity.mjs";
 import { BOT_USERNAME, SUPABASE_KEY, SUPABASE_URL } from "./config.mjs";
 import "./install.mjs";
@@ -22,8 +24,6 @@ import { JUZ_PAGES, SURAH_NAMES, SURAH_START_PAGES, surahForPage } from "./quran
 
 /* @include formatting-clock.js */
 
-/* @include session.js */
-/* @include notification-outbox.js */
 
 /* @include account.js */
 

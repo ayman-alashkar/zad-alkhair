@@ -1,7 +1,7 @@
 /* ===================== الإقلاع ===================== */
 async function boot(){
   flushOutbox();
-  minePruneMissing();
+  minePruneMissing().then(changed=>{ if(changed&&appState.screen==="home") render(); });
   appState.code=hashCode();
   closeLayer();
   clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false;
