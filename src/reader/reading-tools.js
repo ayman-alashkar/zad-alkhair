@@ -94,13 +94,46 @@ function selectVerse(k,anchor,force=false,point=null){
   return true;
 }
 
-/* ضغطة قصيرة: تحدد الآية أو تلغي تحديدها. ضغطة مطوّلة: تحددها وتفتح قائمتها. */
+/* ضغطة قصيرة: تحدد الآية أو تلغي تحديدها. ضغطتان سريعتان: تحددانها وتُظهران المشاركة.
+   ضغطة مطوّلة على كلمة: بطاقة الكلمة (src/reader/card). قبل أن يصل الفهرس الموحّد
+   (فلا رقم للكلمة) تبقى القائمة القديمة احتياطًا. */
 onGesture("tap",({ayah,anchor,point})=>{
   const on=selectVerse(ayah,anchor,false,point);if(on)showToolsFor(2800);
 });
-onGesture("longPress",({ayah,anchor,point})=>{
-  clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);openPrimaryMenu(anchor);
+onGesture("doubleTap",({ayah,anchor,point})=>{
+  clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);openShareMenu();
 });
+onGesture("longPress",({ayah,anchor,gi,point})=>{
+  if(gi==null){clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);openPrimaryMenu(anchor);return}
+  openWordCard(gi,anchor,"word");
+});
+function pageOfElement(el){return Number(el?.closest?.(".page")?.dataset.page)||reading.currentPage}
+function openWordCard(gi,anchor,level){
+  closeMenu();
+  return openCard({page:pageOfElement(anchor),gi,riwaya:riwaya()},{
+    level,
+    toast:showToast,
+    onNavigate:(page,g)=>go(page).then(()=>{
+      const el=document.querySelector(`.page[data-page="${page}"] [data-gi="${g}"]`),at=el&&ayahAt(el);
+      if(at)selectVerse(at.ayah,at.anchor,true);
+    }),
+    onTool:(kind,ctx)=>{
+      const el=document.querySelector(`.page[data-page="${ctx.page}"] [data-gi="${ctx.gi}"]`),at=el&&ayahAt(el);
+      if(kind==="listen"){if(at)selectVerse(at.ayah,at.anchor,true);startSelected();return}
+      if(kind==="bookmark"){togglePageBookmark();return}
+      showToast("التظليل والتعليق في الخطوة القادمة");
+    },
+  });
+}
+/* التفسير (زر الشريط وقائمة الآية): بطاقة الكلمة على مستوى الآية المختارة،
+   أو أول آية في الصفحة إن لم تُختر آية. */
+function openAyahCard(){
+  const page=reading.currentPage,root=document.querySelector(`.page[data-page="${page}"]`);
+  const el=reading.selectedKey?root?.querySelector(`[data-ayah="${reading.selectedKey}"][data-gi]`):root?.querySelector("[data-gi]");
+  if(!el)return openTafsir();
+  return openWordCard(Number(el.dataset.gi),el,"ayah");
+}
+window.addEventListener("online",()=>reportTarget.flush());
 bindGestures(track);
 
 /* ---------- paging: exactly one page per gesture ---------- */
@@ -256,7 +289,7 @@ function bindPrimaryMenu(){
     if(a==="share"){openShareMenu();return}
     closeMenu();
     if(a==="listen")startSelected();
-    if(a==="tafsir")openTafsir();
+    if(a==="tafsir")openAyahCard();
   });
 }
 
@@ -521,7 +554,7 @@ async function openTafsir(){
 
   await render(reading.selectedKey);
 }
-document.getElementById("tafsirBtn").onclick=openTafsir;
+document.getElementById("tafsirBtn").onclick=openAyahCard;
 document.getElementById("bookmarkBtn").onclick=togglePageBookmark;
 document.getElementById("readerSearchBtn").onclick=()=>openQuranSearch();
 document.getElementById("jumpBookmarkBtn").onclick=jumpToPageBookmark;

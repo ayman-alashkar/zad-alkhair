@@ -1,6 +1,6 @@
 /* أنماط البطاقة، تُضاف مرة واحدة. الألوان من متغيرات القارئ مع قيم احتياطية. */
 const CSS = `
-.zc-backdrop{position:fixed;inset:0;z-index:60;background:rgba(8,45,41,.42);display:flex;align-items:stretch;justify-content:center;padding:calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));font-family:Alexandria,system-ui,sans-serif;direction:rtl}
+.zc-backdrop{position:fixed;inset:0;z-index:148;background:rgba(8,45,41,.42);display:flex;align-items:stretch;justify-content:center;padding:calc(10px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));font-family:Alexandria,system-ui,sans-serif;direction:rtl}
 .zc-card{width:min(640px,100%);background:var(--chrome,#FFFCF4);color:var(--chrome-text,#18362F);border-radius:22px;box-shadow:0 12px 40px rgba(8,45,41,.3);display:flex;flex-direction:column;overflow:hidden}
 .zc-levels{margin:12px 12px 0;background:#EDE6D6;border-radius:14px;padding:3px;display:flex;gap:3px}
 .zc-level{flex:1;min-height:40px;border:0;border-radius:12px;background:transparent;color:#6E6656;font:inherit;font-size:13px;white-space:nowrap;padding:0 4px}
