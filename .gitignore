@@ -15,4 +15,3 @@ test-results/
 # Temporary input used by the sharing-card renderer.
 /social/cards/.render.html
 supabase/.temp/
-data/qiraat-mushaf/
