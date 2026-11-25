@@ -58,6 +58,8 @@ function public.share_purge() 6a17229be97d48c50a40b70258d6e8b7
 function public.share_submit(p_chat bigint) 32fa492b1c391ccc2cc4171d619acff6
 function public.sign_in(p_code text, p_id text, p_name text, p_device text, p_org_code text) 0b5ba8d6f3a0b782c1f5400a156a775f
 function public.start_tg_login(p_device text, p_code text, p_id text) 092322fd15b293593e74ea902ae06dca
+function public.submit_content_report(p_device text, p_section text, p_location text, p_page integer, p_word integer, p_surah integer, p_ayah integer, p_riwaya text, p_excerpt text, p_note text) 83ec3693cd8e7dfb77a3f2d70a90ade2
+function public.take_content_report(p_id uuid) 72fe6443dd8c72a3c9281a18ca3157de
 function public.transfer_organizer(p_code text, p_org_code text, p_device text, p_to text, p_new_code text) e3011aebc47710e20db9636b11d839a2
 function public.unlink_by_chat(p_chat bigint) ecd0cce3b537c58e85f02b514ac99056
 function public.unlink_telegram(p_code text, p_id text) 5a890ee52a0d2067d20e89d2e91330b4
@@ -65,6 +67,7 @@ function public.update_settings(p_code text, p_org_code text, p_title text, p_de
 sequence public.events_id_seq 81593569211c5a3d949894cf9145a31a
 sequence public.khatmah_creation_log_id_seq 81593569211c5a3d949894cf9145a31a
 table private.completed_khatmahs c428ae9279cc60c28d99e114220d1f9b
+table private.content_reports 95841e86bacde7222849af547d0f7422
 table private.login_links 2650a3bfa0fc6b92a8daed9494b70b96
 table private.organizer_code_attempts 79342cedda58cf55f775bfc48226a2fa
 table private.retired_domain_migration_rows d12f575d145371b064732fb1d5742836
