@@ -83,7 +83,7 @@
     if(!wantsHome)saveReaderSurface("reader");
     if(!readerGoPending)loading.classList.add("hide");
     if(deepLinkedAyah){
-      const anchor=document.querySelector(`.page[data-page="${reading.currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
+      const anchor=ayahElements(deepLinkedAyah,document.querySelector(`.page[data-page="${reading.currentPage}"]`)||document)[0];
       if(anchor)selectVerse(deepLinkedAyah,anchor,true);
     }
     if(!entry.direct&&entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);

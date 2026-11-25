@@ -295,7 +295,7 @@ async function openQuranSearch(){
     for(const item of matches){
       const btn=document.createElement("button");btn.type="button";btn.className="quran-search-result";
       btn.innerHTML=`<b>${escapeHtml(uthmaniVerseNow(item.key)||cleanSimpleQuranText(item.text))}</b><small>سورة ${escapeHtml(reading.chapterMap.get(item.s)?.name_arabic||ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
-      btn.onclick=async()=>{b.remove();const hp=document.querySelector(".quran-index");if(hp?.dataset.homeMode==="1")readerReturnToQuranHome=true;hp?.remove();await go(item.page);await ensurePage(item.page);const a=document.querySelector(`.page[data-page="${item.page}"] .verse-segment[data-key="${item.key}"]`);if(a)selectVerse(item.key,a,true)};
+      btn.onclick=async()=>{b.remove();const hp=document.querySelector(".quran-index");if(hp?.dataset.homeMode==="1")readerReturnToQuranHome=true;hp?.remove();await go(item.page);await ensurePage(item.page);const a=ayahElements(item.key,document.querySelector(`.page[data-page="${item.page}"]`)||document)[0];if(a)selectVerse(item.key,a,true)};
       frag.appendChild(btn);
     }
     results.appendChild(frag);
@@ -316,7 +316,7 @@ function openReaderJump(closeHub=()=>{}){
   ss.onchange=()=>{aa.innerHTML=opts(maxAyah(Number(ss.value)||1),1)};
   b.querySelector("#applyReaderJump").onclick=async()=>{
     const s=Number(ss.value)||1,a=Number(aa.value)||1,key=`${s}:${a}`;const p=await getVersePage(key);
-    b.remove();closeHub();if(!p)return;await go(p);await ensurePage(p);const anchor=document.querySelector(`.page[data-page="${p}"] .verse-segment[data-key="${key}"]`);if(anchor)selectVerse(key,anchor,true);
+    b.remove();closeHub();if(!p)return;await go(p);await ensurePage(p);const anchor=ayahElements(key,document.querySelector(`.page[data-page="${p}"]`)||document)[0];if(anchor)selectVerse(key,anchor,true);
   };
 }
 async function shareHubPayload(payload){

@@ -1,5 +1,6 @@
-/* حالة اللمس: موضع بدء الضغطة، والسحب، ومؤقت الضغطة الطويلة. خاصة بهذا الملف. */
-let downX=0,downY=0,swipeActive=false,longTimer=null,longTriggered=false;
+/* حالة السحب بين الصفحات: موضع بدء الإصبع. خاصة بهذا الملف.
+   الضغطات على الكلمات في gestures.mjs. */
+let downX=0,downY=0,swipeActive=false;
 
 function clearVerseContext(){
   const context=document.getElementById("readerContext");if(!context)return;
@@ -15,7 +16,7 @@ function showVerseContext(v){
 }
 function clearVerseSelection(){
   clearVerseContext();
-  document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
+  clearAyahHighlight();
   reading.selectedKey=null;reading.selectedAnchor=null;pendingReveal=null;closeMenu();
 }
 /* Choose once per tap; do not move a control while that tap is in progress. */
@@ -85,35 +86,22 @@ function selectVerse(k,anchor,force=false,point=null){
   }
   reading.selectedKey=k;reading.selectedAnchor=anchor||reading.selectedAnchor;
   uthmaniLoad(verseParts(k).s);
-  document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
-  document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach(x=>x.classList.add("selected"));
+  clearAyahHighlight();
+  highlightAyah(k);
   if(point)pendingReveal=null;else revealVerse(reading.selectedAnchor);
   placeReaderToolbar(reading.selectedAnchor,point);
   const v=verseParts(k);showVerseContext(v);
   return true;
 }
 
-function bindSegment(seg){
-  let sx=0,sy=0,moved=false;
-  seg.addEventListener("pointerdown",e=>{
-    sx=e.clientX;sy=e.clientY;moved=false;longTriggered=false;
-    clearTimeout(longTimer);
-    longTimer=setTimeout(()=>{
-      if(moved)return;
-      longTriggered=true;clearTimeout(reading.toolsTimer);selectVerse(seg.dataset.key,seg,true,{x:sx,y:sy});openPrimaryMenu(seg);
-    },520);
-  });
-  seg.addEventListener("pointermove",e=>{
-    if(Math.hypot(e.clientX-sx,e.clientY-sy)>10){moved=true;clearTimeout(longTimer)}
-  });
-  seg.addEventListener("pointerup",()=>clearTimeout(longTimer));
-  seg.addEventListener("click",e=>{
-    // The click's target is already fixed before the toolbar appears. The
-    // selecting tap can therefore never become a click on a new tool button.
-    if(!moved&&!longTriggered){const on=selectVerse(seg.dataset.key,seg,false,{x:e.clientX,y:e.clientY});if(on)showToolsFor(2800)}
-  });
-  seg.addEventListener("pointercancel",()=>clearTimeout(longTimer));
-}
+/* ضغطة قصيرة: تحدد الآية أو تلغي تحديدها. ضغطة مطوّلة: تحددها وتفتح قائمتها. */
+onGesture("tap",({ayah,anchor,point})=>{
+  const on=selectVerse(ayah,anchor,false,point);if(on)showToolsFor(2800);
+});
+onGesture("longPress",({ayah,anchor,point})=>{
+  clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);openPrimaryMenu(anchor);
+});
+bindGestures(track);
 
 /* ---------- paging: exactly one page per gesture ---------- */
 function loadList(key){
@@ -479,9 +467,10 @@ async function focusVerseForTafsir(key){
       prefetchAround(p).then(()=>trimPageDom(p));
     }
   }
-  let matches=[...document.querySelectorAll(`.page[data-page="${p||reading.currentPage}"] .verse-segment[data-key="${key}"]`)];
-  if(!matches.length)matches=[...document.querySelectorAll(`.verse-segment[data-key="${key}"]`)];
-  document.querySelectorAll(".verse-segment.selected").forEach(x=>x.classList.remove("selected"));
+  const pageRoot=document.querySelector(`.page[data-page="${p||reading.currentPage}"]`);
+  let matches=pageRoot?ayahElements(key,pageRoot):[];
+  if(!matches.length)matches=ayahElements(key);
+  clearAyahHighlight();
   matches.forEach(x=>x.classList.add("selected"));
   reading.selectedKey=key;reading.selectedAnchor=matches[0]||null;
 }
