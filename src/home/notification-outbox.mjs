@@ -1,3 +1,6 @@
+/* طابور رسائل الإشعار: يُحفظ في المتصفح إن انقطع الاتصال، ويُعاد إرساله لاحقًا. */
+import { edge } from "./api.mjs";
+
 const OUTBOX="zad:notification-outbox";
 let outboxBusy=false;
 
@@ -13,7 +16,7 @@ function outboxPut(jobs){
     else localStorage.removeItem(OUTBOX);
   }catch(e){}
 }
-function enqueueEdge(fn,body,id){
+export function enqueueEdge(fn,body,id){
   const jobs=outboxGet();
   if(!jobs.some(job=>job.id===id)){
     jobs.push({id,fn,body,createdAt:Date.now()});
@@ -47,7 +50,7 @@ function outboxPostpone(id,error){
   item.nextAttemptAt=Date.now()+outboxDelay(item.tries,error&&error.retryAfter);
   outboxPut(list);
 }
-async function flushOutbox(){
+export async function flushOutbox(){
   if(outboxBusy||navigator.onLine===false) return;
   outboxBusy=true;
   try{
@@ -87,7 +90,7 @@ async function flushOutbox(){
 }
 
 /* عودة الشبكة سبب كافٍ لإسقاط تأجيل المحاولة السابق وإيقاظ الطابور فورًا. */
-function outboxWake(){
+export function outboxWake(){
   const list=outboxGet();
   if(list.length){
     list.forEach(job=>{job.nextAttemptAt=0;job.tries=0;});

@@ -1,9 +1,12 @@
 /* ===================== الجلسة =====================
+   الختمة المفتوحة في الرابط، والختمة النشطة في هذا المتصفح، وقائمة «ختماتي».
    حالة التطبيق المشتركة في app-state.mjs (appState). */
+import { appState } from "./app-state.mjs";
+import { rpc } from "./api.mjs";
 
-const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
+export const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
 
-function zkReplaceHash(value=""){
+export function zkReplaceHash(value=""){
   try{
     const url=new URL(location.href);url.hash=value?String(value):"";
     history.replaceState(history.state,"",url.href);
@@ -15,43 +18,43 @@ function zkReplaceHash(value=""){
    عند وجود الاثنين، سياق الجلسة هو الأحدث والأولى بالفتح. */
 const LAST="zad:last";
 const ACTIVE_SESSION="zad:active-khatmah-session";
-function cleanKhatmahCode(value){
+export function cleanKhatmahCode(value){
   return String(value||"").trim().toUpperCase().slice(0,4);
 }
 function activeSessionGet(){
   try{return cleanKhatmahCode(sessionStorage.getItem(ACTIVE_SESSION));}catch(_){return ""}
 }
-function activeKhatmahGet(){
+export function activeKhatmahGet(){
   const session=activeSessionGet();
   if(session)return session;
   try{return cleanKhatmahCode(localStorage.getItem(LAST));}catch(_){return ""}
 }
-function activeKhatmahSet(value,persist=false){
+export function activeKhatmahSet(value,persist=false){
   const c=cleanKhatmahCode(value);if(!c)return "";
   try{sessionStorage.setItem(ACTIVE_SESSION,c);}catch(_){ }
   if(persist){try{localStorage.setItem(LAST,c);}catch(_){ }}
   return c;
 }
-function activeKhatmahForget(value=""){
+export function activeKhatmahForget(value=""){
   const c=cleanKhatmahCode(value),session=activeSessionGet();
   try{if(!c||session===c)sessionStorage.removeItem(ACTIVE_SESSION);}catch(_){ }
   try{const last=cleanKhatmahCode(localStorage.getItem(LAST));if(!c||last===c)localStorage.removeItem(LAST);}catch(_){ }
   /* حالة الختمة المحفوظة للعرض الفوري (state-sync.js) تُنسى معها. */
   try{const saved=JSON.parse(localStorage.getItem("zad:khatmah-state-v1")||"null");if(!c||saved?.code===c)localStorage.removeItem("zad:khatmah-state-v1");}catch(_){ }
 }
-const linkFor=c=>location.origin+location.pathname+"#"+c;
+export const linkFor=c=>location.origin+location.pathname+"#"+c;
 
 /* ختمات هذا الجهاز: يُبنى منها شريط «ختماتي» في الرئيسية،
    فيعود القارئ إلى ختمته بضغطة، بلا رمز ولا اسم. */
 const MINE="zad:mine";
-function mineGet(){
+export function mineGet(){
   try{ const v=JSON.parse(localStorage.getItem(MINE)); return Array.isArray(v)?v:[]; }
   catch(e){ return []; }
 }
 function minePut(list){
   try{ localStorage.setItem(MINE,JSON.stringify(list.slice(0,12))); }catch(e){}
 }
-function mineRemember(){
+export function mineRemember(){
   if(!appState.code||!appState.viewer||!appState.state) return;
   activeKhatmahSet(appState.code,true);
   const rest=mineGet().filter(x=>x.code!==appState.code);
@@ -60,16 +63,16 @@ function mineRemember(){
   minePut(rest);
 }
 /* ختمة من بطاقات «الختمات الجارية» يكون هذا الجهاز عضوًا فيها، فتُفتح دون رمز. */
-function mineByPublicId(publicId){
+export function mineByPublicId(publicId){
   return publicId?mineGet().find(x=>x.publicId===publicId&&x.code)||null:null;
 }
-function mineForget(c){ minePut(mineGet().filter(x=>x.code!==c)); }
+export function mineForget(c){ minePut(mineGet().filter(x=>x.code!==c)); }
 
 /* Remove legacy entries whose khatmahs were cancelled on another session.
    A network/RPC failure always keeps the entry; only an authoritative null
    response from get_state is allowed to remove it. */
 let minePrunePromise=null;
-function minePruneMissing(){
+export function minePruneMissing(){
   if(minePrunePromise||!navigator.onLine) return minePrunePromise||Promise.resolve(false);
   const snapshot=mineGet();
   if(!snapshot.length) return Promise.resolve(false);
@@ -90,8 +93,7 @@ function minePruneMissing(){
     });
     if(!missing.size&&!filled) return false;
     minePut(next);
-    if(appState.screen==="home") render();
-    return true;
+    return true;  /* تغيّرت القائمة: يعيد المستدعي رسم الرئيسية إن كانت ظاهرة */
   })().finally(()=>{minePrunePromise=null});
   return minePrunePromise;
 }
