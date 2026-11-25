@@ -1,4 +1,6 @@
 import { appState } from "./app-state.mjs";
+import { GROUP_SEND_TIMEOUT, edge, onDeviceNotRecognised, postJSON, requestError, rpc } from "./api.mjs";
+import { cKey, deviceId, isOrganizer, memberOf, orgCode, vKey } from "./identity.mjs";
 import { BOT_USERNAME, SUPABASE_KEY, SUPABASE_URL } from "./config.mjs";
 import "./install.mjs";
 import { readerLink } from "./reader-links.mjs";
@@ -17,7 +19,6 @@ import { JUZ_PAGES, SURAH_NAMES, SURAH_START_PAGES, surahForPage } from "./quran
 
 /* @include prayer.js */
 
-/* @include api.js */
 
 /* @include formatting-clock.js */
 

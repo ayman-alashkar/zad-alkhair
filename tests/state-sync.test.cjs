@@ -14,6 +14,7 @@ for (const fails of [false, true]) {
     const appState = { code: "ABCD", state: { title: "الختمة السابقة" }, screen: "main", viewer: null };
     const context = vm.createContext({
       appState,
+      onDeviceNotRecognised() {},
       rpc(method, { p_code }) {
         assert.equal(method, "get_state");
         assert.equal(p_code, "ABCD");

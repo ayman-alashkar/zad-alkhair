@@ -1887,6 +1887,131 @@ var SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
 var SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
 var BOT_USERNAME = "ZadAlkhair_Bot";
 
+// src/home/identity.mjs
+function deviceId() {
+  let d = localStorage.getItem("zad:device");
+  if (!d) {
+    d = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+    localStorage.setItem("zad:device", d);
+  }
+  return d;
+}
+var vKey = () => "zad:viewer:" + appState.code;
+var cKey = () => "zad:orgcode:" + appState.code;
+var orgCode = () => localStorage.getItem(cKey()) || null;
+var isOrganizer = () => !!(appState.viewer && appState.state && appState.state.organizerId === appState.viewer.id);
+var memberOf = (id) => (appState.state && appState.state.members || []).find((m) => m.id === id);
+
+// src/home/api.mjs
+var deviceNotRecognisedHandler = () => {
+};
+function onDeviceNotRecognised(handler) {
+  deviceNotRecognisedHandler = handler;
+}
+var pendingRequests = /* @__PURE__ */ new Map();
+async function postJSON(url, payload, options = {}) {
+  const key = options.key || "";
+  if (key && pendingRequests.has(key)) return pendingRequests.get(key);
+  const task = (async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), options.timeout || 15e3);
+    try {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...options.headers || {} },
+        body: JSON.stringify(payload || {}),
+        signal: controller.signal,
+        keepalive: !!options.keepalive
+      });
+      const text = await r.text();
+      let data = null;
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          if (r.ok) throw new Error("Invalid JSON");
+        }
+      }
+      if (!r.ok) {
+        const err = new Error(data && data.error || text || "HTTP " + r.status);
+        err.status = r.status;
+        const retryAfter = r.headers && r.headers.get ? r.headers.get("Retry-After") : null;
+        if (retryAfter) {
+          const seconds = Number(retryAfter), at = Date.parse(retryAfter);
+          err.retryAfter = Number.isFinite(seconds) ? Math.max(0, seconds * 1e3) : Number.isFinite(at) ? Math.max(0, at - Date.now()) : 0;
+        }
+        throw err;
+      }
+      return data;
+    } finally {
+      clearTimeout(timer);
+    }
+  })();
+  if (key) pendingRequests.set(key, task);
+  try {
+    return await task;
+  } finally {
+    if (key && pendingRequests.get(key) === task) pendingRequests.delete(key);
+  }
+}
+var RPC_HEADERS = { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY };
+var ORG_CODE_REJECTED = "الرمز أو الجهاز غير صحيح";
+var GROUP_SEND_TIMEOUT = 6e4;
+var DEVICE_LOCK_ERRS = ["مقفول على جهاز صاحبه", "هذا السجل لصاحب الحساب فقط"];
+var rebinding = null;
+async function rebindDevice() {
+  if (rebinding) return rebinding;
+  rebinding = (async () => {
+    try {
+      const r = await postJSON(
+        `${SUPABASE_URL}/rest/v1/rpc/sign_in`,
+        {
+          p_code: appState.code,
+          p_id: appState.viewer.id,
+          p_name: appState.viewer.name,
+          p_device: deviceId(),
+          p_org_code: orgCode()
+        },
+        { headers: RPC_HEADERS }
+      );
+      return !!(r && r.ok);
+    } catch (e) {
+      return false;
+    }
+  })();
+  const out = await rebinding;
+  rebinding = null;
+  return out;
+}
+async function rpc(fn, args) {
+  const body = args || {};
+  const call = () => postJSON(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, body, {
+    headers: RPC_HEADERS,
+    key: `rpc:${fn}:${JSON.stringify(body)}`
+  });
+  const r = await call();
+  const locked = r && r.ok === false && typeof r.error === "string" && DEVICE_LOCK_ERRS.some((m) => r.error.indexOf(m) !== -1);
+  if (r && r.ok === false && r.error === ORG_CODE_REJECTED && isOrganizer()) localStorage.removeItem(cKey());
+  if (locked && fn !== "sign_in" && appState.viewer && appState.code) {
+    if (await rebindDevice()) return call();
+    deviceNotRecognisedHandler();
+    r.handled = true;
+  }
+  return r;
+}
+var edge = (fn, body, options = {}) => postJSON(
+  `${SUPABASE_URL}/functions/v1/${fn}`,
+  body,
+  { ...options, key: options.key || `edge:${fn}:${JSON.stringify(body || {})}` }
+);
+function requestError(e) {
+  if (e && e.status >= 400 && e.status < 500 && e.message) {
+    if (e.message === ORG_CODE_REJECTED && isOrganizer()) localStorage.removeItem(cKey());
+    return e.message;
+  }
+  return "تعذّر الاتصال";
+}
+
 // src/shared/usage.mjs
 var ZU_ENDPOINT = "https://webqpbcijjbawatykoxe.supabase.co/rest/v1/rpc/record_usage";
 var ZU_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
@@ -2840,112 +2965,6 @@ function ptSetupDialog() {
   };
   draw();
 }
-var pendingRequests = /* @__PURE__ */ new Map();
-async function postJSON(url, payload, options = {}) {
-  const key = options.key || "";
-  if (key && pendingRequests.has(key)) return pendingRequests.get(key);
-  const task = (async () => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), options.timeout || 15e3);
-    try {
-      const r = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...options.headers || {} },
-        body: JSON.stringify(payload || {}),
-        signal: controller.signal,
-        keepalive: !!options.keepalive
-      });
-      const text = await r.text();
-      let data = null;
-      if (text) {
-        try {
-          data = JSON.parse(text);
-        } catch (e) {
-          if (r.ok) throw new Error("Invalid JSON");
-        }
-      }
-      if (!r.ok) {
-        const err = new Error(data && data.error || text || "HTTP " + r.status);
-        err.status = r.status;
-        const retryAfter = r.headers && r.headers.get ? r.headers.get("Retry-After") : null;
-        if (retryAfter) {
-          const seconds = Number(retryAfter), at = Date.parse(retryAfter);
-          err.retryAfter = Number.isFinite(seconds) ? Math.max(0, seconds * 1e3) : Number.isFinite(at) ? Math.max(0, at - Date.now()) : 0;
-        }
-        throw err;
-      }
-      return data;
-    } finally {
-      clearTimeout(timer);
-    }
-  })();
-  if (key) pendingRequests.set(key, task);
-  try {
-    return await task;
-  } finally {
-    if (key && pendingRequests.get(key) === task) pendingRequests.delete(key);
-  }
-}
-var RPC_HEADERS = { apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY };
-var ORG_CODE_REJECTED = "الرمز أو الجهاز غير صحيح";
-var GROUP_SEND_TIMEOUT = 6e4;
-var DEVICE_LOCK_ERRS = ["مقفول على جهاز صاحبه", "هذا السجل لصاحب الحساب فقط"];
-var rebinding = null;
-async function rebindDevice() {
-  if (rebinding) return rebinding;
-  rebinding = (async () => {
-    try {
-      const r = await postJSON(
-        `${SUPABASE_URL}/rest/v1/rpc/sign_in`,
-        {
-          p_code: appState.code,
-          p_id: appState.viewer.id,
-          p_name: appState.viewer.name,
-          p_device: deviceId(),
-          p_org_code: orgCode()
-        },
-        { headers: RPC_HEADERS }
-      );
-      return !!(r && r.ok);
-    } catch (e) {
-      return false;
-    }
-  })();
-  const out = await rebinding;
-  rebinding = null;
-  return out;
-}
-async function rpc(fn, args) {
-  const body = args || {};
-  const call = () => postJSON(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, body, {
-    headers: RPC_HEADERS,
-    key: `rpc:${fn}:${JSON.stringify(body)}`
-  });
-  const r = await call();
-  const locked = r && r.ok === false && typeof r.error === "string" && DEVICE_LOCK_ERRS.some((m) => r.error.indexOf(m) !== -1);
-  if (r && r.ok === false && r.error === ORG_CODE_REJECTED && isOrganizer()) localStorage.removeItem(cKey());
-  if (locked && fn !== "sign_in" && appState.viewer && appState.code) {
-    if (await rebindDevice()) return call();
-    deviceNotRecognised();
-    r.handled = true;
-  }
-  return r;
-}
-var edge = (fn, body, options = {}) => postJSON(
-  `${SUPABASE_URL}/functions/v1/${fn}`,
-  body,
-  { ...options, key: options.key || `edge:${fn}:${JSON.stringify(body || {})}` }
-);
-async function organizerCode() {
-  return orgCode() || await askOrganizerCode();
-}
-function requestError(e) {
-  if (e && e.status >= 400 && e.status < 500 && e.message) {
-    if (e.message === ORG_CODE_REJECTED && isOrganizer()) localStorage.removeItem(cKey());
-    return e.message;
-  }
-  return "تعذّر الاتصال";
-}
 function deadlineDialog() {
   if (!appState.state || !appState.state.endDate) return;
   modal(`<div class="deadline-dialog" role="dialog" aria-modal="true" aria-label="موعد انتهاء الختمة">
@@ -3041,7 +3060,6 @@ function activeKhatmahForget(value = "") {
   }
 }
 var linkFor = (c) => location.origin + location.pathname + "#" + c;
-var vKey = () => "zad:viewer:" + appState.code;
 var MINE = "zad:mine";
 function mineGet() {
   try {
@@ -3107,8 +3125,6 @@ function minePruneMissing() {
   });
   return minePrunePromise;
 }
-var cKey = () => "zad:orgcode:" + appState.code;
-var orgCode = () => localStorage.getItem(cKey()) || null;
 var OUTBOX = "zad:notification-outbox";
 var outboxBusy = false;
 function outboxGet() {
@@ -3213,14 +3229,6 @@ function outboxWake() {
   }
   flushOutbox();
 }
-function deviceId() {
-  let d = localStorage.getItem("zad:device");
-  if (!d) {
-    d = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
-    localStorage.setItem("zad:device", d);
-  }
-  return d;
-}
 function takeLoginToken() {
   try {
     const url = new URL(location.href);
@@ -3285,8 +3293,6 @@ function toast(m) {
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove("show"), 3e3);
 }
-var isOrganizer = () => !!(appState.viewer && appState.state && appState.state.organizerId === appState.viewer.id);
-var memberOf = (id) => (appState.state && appState.state.members || []).find((m) => m.id === id);
 var BOOK_ICON = `<svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M12 6.25C10.15 4.85 7.95 4.2 5.15 4.2v12.65c2.75.02 5.08.78 6.85 2.25 1.77-1.47 4.1-2.23 6.85-2.25V4.2c-2.8 0-5 .65-6.85 2.05Z"/>
@@ -3883,6 +3889,9 @@ function appConfirm(message, { title = "تأكيد", ok = "متابعة", cancel
     requestAnimationFrame(() => okBtn.focus({ preventScroll: true }));
   });
 }
+async function organizerCode() {
+  return orgCode() || await askOrganizerCode();
+}
 function askOrganizerCode() {
   return new Promise((resolve) => {
     const host = document.createElement("div");
@@ -4230,6 +4239,7 @@ function nameTaken(name, linked, id) {
     <div class="actions"><button class="btn gold" id="nt-ok">حسنًا</button></div>`);
   document.getElementById("nt-ok").onclick = closeLayer;
 }
+onDeviceNotRecognised(() => deviceNotRecognised());
 function deviceNotRecognised() {
   if (tgLoginTimer || document.getElementById("nt-tg") || document.getElementById("dn-ok")) return;
   const me = appState.viewer ? memberOf(appState.viewer.id) : null;

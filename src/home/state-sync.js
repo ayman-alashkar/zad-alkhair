@@ -108,6 +108,7 @@ function nameTaken(name,linked,id){
 /* القارئ داخل الختمة باسمه، لكن هذا المتصفح غير مسجّل لهذا الاسم (فُتح الاسم ثم
    أُقفل، أو مُسح تخزين المتصفح جزئيًا). المربوط بتيليغرام يؤكد من هناك ثم يعيد
    ما كان يفعله؛ وغيره يحتاج المنظّم. */
+onDeviceNotRecognised(()=>deviceNotRecognised());
 function deviceNotRecognised(){
   if(tgLoginTimer||document.getElementById("nt-tg")||document.getElementById("dn-ok")) return;
   const me=appState.viewer?memberOf(appState.viewer.id):null;

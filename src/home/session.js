@@ -40,7 +40,6 @@ function activeKhatmahForget(value=""){
   try{const saved=JSON.parse(localStorage.getItem("zad:khatmah-state-v1")||"null");if(!c||saved?.code===c)localStorage.removeItem("zad:khatmah-state-v1");}catch(_){ }
 }
 const linkFor=c=>location.origin+location.pathname+"#"+c;
-const vKey=()=>"zad:viewer:"+appState.code;
 
 /* ختمات هذا الجهاز: يُبنى منها شريط «ختماتي» في الرئيسية،
    فيعود القارئ إلى ختمته بضغطة، بلا رمز ولا اسم. */
@@ -96,5 +95,3 @@ function minePruneMissing(){
   })().finally(()=>{minePrunePromise=null});
   return minePrunePromise;
 }
-const cKey=()=>"zad:orgcode:"+appState.code;
-const orgCode=()=>localStorage.getItem(cKey())||null;

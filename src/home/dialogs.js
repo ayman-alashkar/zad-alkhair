@@ -90,6 +90,12 @@ function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغ
 
 /* رمز المنظّم لمن دخل دونه (برابط تيليغرام، أو بعد مسح تخزين المتصفح): يُطلب مرة واحدة
    فوق النافذة المفتوحة، فلا يضيع ما كتبه المنظّم فيها، ويُحفظ بعد أن تقبله القاعدة. */
+/* رمز المنظّم لأفعال الإشراف: المحفوظ في هذا المتصفح، وإلا يُطلب مرة واحدة.
+   null حين يلغي المنظّم، فيتوقف الفعل دون رسالة خطأ. */
+async function organizerCode(){
+  return orgCode()||await askOrganizerCode();
+}
+
 function askOrganizerCode(){
   return new Promise(resolve=>{
     const host=document.createElement("div");

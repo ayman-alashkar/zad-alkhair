@@ -1,7 +1,16 @@
-/* ===================== نداء قاعدة البيانات ===================== */
+/* ===================== نداء قاعدة البيانات =====================
+   الاتصال بالخادم وحده: postJSON وrpc وedge. ما يُعرض للمستخدم حين يرفض الخادم
+   الجهاز يأتي من الواجهة عبر onDeviceNotRecognised. */
+import { SUPABASE_KEY, SUPABASE_URL } from "./config.mjs";
+import { appState } from "./app-state.mjs";
+import { cKey, deviceId, isOrganizer, orgCode } from "./identity.mjs";
+
+let deviceNotRecognisedHandler=()=>{};
+export function onDeviceNotRecognised(handler){ deviceNotRecognisedHandler=handler; }
+
 const pendingRequests=new Map();
 
-async function postJSON(url,payload,options={}){
+export async function postJSON(url,payload,options={}){
   const key=options.key||"";
   if(key&&pendingRequests.has(key)) return pendingRequests.get(key);
 
@@ -48,7 +57,7 @@ const RPC_HEADERS={apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY};
 /* القاعدة ترفض بهذا كل فعل للمنظّم إن كان رمزه المحفوظ قديمًا (غيّره من جهاز آخر). */
 const ORG_CODE_REJECTED="الرمز أو الجهاز غير صحيح";
 /* الإرسال لكل المجموعة ينتظر تيليغرام لكل مشارك، فمهلته أطول من بقية الطلبات. */
-const GROUP_SEND_TIMEOUT=60000;
+export const GROUP_SEND_TIMEOUT=60000;
 const DEVICE_LOCK_ERRS=["مقفول على جهاز صاحبه","هذا السجل لصاحب الحساب فقط"];
 let rebinding=null;
 
@@ -72,7 +81,7 @@ async function rebindDevice(){
   return out;
 }
 
-async function rpc(fn, args){
+export async function rpc(fn, args){
   const body=args||{};
   const call=()=>postJSON(`${SUPABASE_URL}/rest/v1/rpc/${fn}`,body,{
     headers:RPC_HEADERS,
@@ -86,26 +95,21 @@ async function rpc(fn, args){
   if(locked&&fn!=="sign_in"&&appState.viewer&&appState.code){
     if(await rebindDevice()) return call();
     /* الاسم مقفول على أجهزة أخرى وهذا المتصفح ليس منها: يُعرض طريق الدخول
-       بدل رسالة خطأ لا يعرف القارئ ما يفعل بعدها. */
-    deviceNotRecognised();
+       بدل رسالة خطأ لا يعرف القارئ ما يفعل بعدها. الواجهة تسجّل ما تعرضه
+       بـ onDeviceNotRecognised، فلا يعرف الاتصال شيئًا عن الحوارات. */
+    deviceNotRecognisedHandler();
     r.handled=true;
   }
   return r;
 }
 
-const edge=(fn,body,options={})=>postJSON(
+export const edge=(fn,body,options={})=>postJSON(
   `${SUPABASE_URL}/functions/v1/${fn}`,body,
   {...options,key:options.key||`edge:${fn}:${JSON.stringify(body||{})}`});
 
-/* رمز المنظّم لأفعال الإشراف: المحفوظ في هذا المتصفح، وإلا يُطلب مرة واحدة.
-   null حين يلغي المنظّم، فيتوقف الفعل دون رسالة خطأ. */
-async function organizerCode(){
-  return orgCode()||await askOrganizerCode();
-}
-
 /* رسالة الخطأ للمستخدم: ما قاله الخادم إن ردّ برفض واضح، و«تعذّر الاتصال» إن لم يصل الطلب
    أو تعطل الخادم. */
-function requestError(e){
+export function requestError(e){
   if(e&&e.status>=400&&e.status<500&&e.message){
     if(e.message===ORG_CODE_REJECTED&&isOrganizer()) localStorage.removeItem(cKey());
     return e.message;
