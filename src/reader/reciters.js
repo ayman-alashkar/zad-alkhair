@@ -51,6 +51,10 @@ const RECITERS=[
   {
     id:"SaadAlGhamdi_Hafs",name:"فضيلة الشيخ سعد الغامدي",
     provider:"mp3quran-timed",timedNames:["سعد الغامدي"],timedRequireAny:["حفص"]
+  },
+  {
+    id:"YasserAlDosari_Hafs",name:"فضيلة الشيخ ياسر الدوسري",
+    provider:"mp3quran-timed",timedNames:["ياسر الدوسري"],timedRequireAny:["حفص"]
   }
 ].sort((a,b)=>a.name.replace(/^فضيلة الشيخ\s+/,"").localeCompare(b.name.replace(/^فضيلة الشيخ\s+/,""),"ar"));
 const DEFAULT_RECITER_ID="Husary_128kbps";
