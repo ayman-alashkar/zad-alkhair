@@ -29,7 +29,7 @@ let listenTarget=null,listenReturnUrl=null;
 let listenPanel=null,listenTab="s",listenObserver=null,listenDrag=null,listenLastSaved="";
 
 function listenIsOpen(){return !!listenPanel?.isConnected}
-function listenSurahName(s){return chapterMap.get(Number(s))?.name_arabic||ar(s)}
+function listenSurahName(s){return reading.chapterMap.get(Number(s))?.name_arabic||ar(s)}
 function listenActive(){return document.body.classList.contains("player-on")}
 function listenLast(){
   const v=storageJsonGet(LISTEN_LAST_KEY,null);
@@ -372,11 +372,11 @@ async function listenReadAlong(){
   if(st.kind==="now"){
     collapsePlayer();
     const k=`${play.surah}:${play.current}`;
-    const p=isSurahOnly()?Number(chapterMap.get(Number(play.surah))?.pages?.[0]||1):await getVersePage(k);
-    await go(p||currentPage);
+    const p=isSurahOnly()?Number(reading.chapterMap.get(Number(play.surah))?.pages?.[0]||1):await getVersePage(k);
+    await go(p||reading.currentPage);
     syncPlaybackSelectionInBackground(playbackRequestId);
   }else{
-    const p=isSurahOnly(st.r)?Number(chapterMap.get(st.s)?.pages?.[0]||1):await getVersePage(`${st.s}:${st.a}`);
+    const p=isSurahOnly(st.r)?Number(reading.chapterMap.get(st.s)?.pages?.[0]||1):await getVersePage(`${st.s}:${st.a}`);
     await go(p||1);
   }
   armReaderBackGuard();
@@ -400,7 +400,7 @@ function listenSurahRow(ch){
 }
 function listenDrawSurahs(host){
   const frag=document.createDocumentFragment();
-  [...chapterMap.values()].sort((a,b)=>a.id-b.id).forEach(ch=>frag.appendChild(listenSurahRow(ch)));
+  [...reading.chapterMap.values()].sort((a,b)=>a.id-b.id).forEach(ch=>frag.appendChild(listenSurahRow(ch)));
   host.replaceChildren(frag);
 }
 function listenDrawDownloaded(host){
@@ -413,7 +413,7 @@ function listenDrawDownloaded(host){
   if(!bySurah.size){host.innerHTML=`<div class="zl-empty"><b>لا توجد سور منزّلة بعد</b><span>اضغط زر التنزيل بجانب أي سورة لتسمعها دون اتصال.</span></div>`;return}
   const frag=document.createDocumentFragment();
   [...bySurah.keys()].sort((a,b)=>a-b).forEach(s=>{
-    const ch=chapterMap.get(s);if(!ch)return;
+    const ch=reading.chapterMap.get(s);if(!ch)return;
     const row=listenSurahRow(ch),list=bySurah.get(s);
     row.querySelector(".zl-row-main small").textContent=list.map(r=>r.name.replace(/^فضيلة\s+الشيخ\s+/,"")).join("، ");
     /* سورة منزّلة تُسمع بصوت من نُزّلت بصوته إن لم يكن القارئ الحالي منهم. */
@@ -427,7 +427,7 @@ function listenDrawFavorites(host){
   const list=listenFavorites();
   if(!list.length){host.innerHTML=`<div class="zl-empty"><b>لا توجد سور مفضلة بعد</b><span>اضغط القلب في المشغّل لتضيف السورة التي تُتلى إلى المفضلة.</span></div>`;return}
   const frag=document.createDocumentFragment();
-  list.forEach(s=>{const ch=chapterMap.get(s);if(ch)frag.appendChild(listenSurahRow(ch))});
+  list.forEach(s=>{const ch=reading.chapterMap.get(s);if(ch)frag.appendChild(listenSurahRow(ch))});
   host.replaceChildren(frag);
 }
 function listenRedrawLists(){

@@ -241,6 +241,24 @@ function pad3(n) {
   return String(Number(n) || 0).padStart(3, "0");
 }
 
+// src/reader/reader-state.mjs
+var reading = {
+  /* الصفحات المرسومة في المسار: رقم الصفحة ← عنصرها */
+  pages: /* @__PURE__ */ new Map(),
+  currentPage: 1,
+  /* الآية المحددة (سورة:آية) والكلمة التي حُددت منها، لقائمة الآية */
+  selectedKey: null,
+  selectedAnchor: null,
+  toolsTimer: null,
+  /* مؤقت إخفاء أدوات القراءة */
+  /* بيانات مصحف QCF: الفهرس، وخريطة السور، وفهرس الآيات */
+  qcfMeta: null,
+  chapterMap: /* @__PURE__ */ new Map(),
+  verseIndex: null,
+  navigationBusy: false
+  /* انتقال بين الصفحات جارٍ */
+};
+
 // src/reader/search-text.mjs
 function searchNormalize(s) {
   return String(s || "").replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code))).replace(/#\d+/g, "").replace(/[يو]ٕ/g, "ء").replace(/ٰ/g, "ا").replace(/[ً-ٟۖ-ۭـ‍]/g, "").replace(/[أإآٱ]/g, "ا").replace(/[ؤئ]/g, "ء").replace(/ى/g, "ي").replace(/واة/g, "اة").replace(/\s+/g, " ").trim();
@@ -567,9 +585,7 @@ async function tafsirFadlForSurah(surah) {
   audio.preload = "auto";
   audioPreload.preload = "auto";
   audioPreload.volume = 0;
-  let pages = /* @__PURE__ */ new Map(), currentPage = 1, selectedKey = null, selectedAnchor = null;
-  let toolsTimer = null, sleepTimerId = null, resizeTimer = null;
-  let downX = 0, downY = 0, swipeActive = false, longTimer = null, longTriggered = false;
+  let sleepTimerId = null, resizeTimer = null;
   const storedReciter = storageJsonGet(STORAGE_KEYS.qari, null);
   let reciter = RECITERS.find((r) => r.id === storedReciter?.id) || defaultReciter();
   let play = { surah: 1, from: 1, to: 1, current: 1, repeatAyah: 1, repeatAyahLeft: 1, repeatGroup: 1, repeatGroupLeft: 1, repeatSurah: 1, repeatSurahLeft: 1, speed: 1 };
@@ -586,7 +602,6 @@ async function tafsirFadlForSurah(surah) {
   const timedReadCache = /* @__PURE__ */ new Map(), mp3TimingCache = /* @__PURE__ */ new Map();
   const PAGE_DATA_CACHE_LIMIT = 12;
   const pageDataLoads = /* @__PURE__ */ new Map(), pageLoads = /* @__PURE__ */ new Map(), qcfFontLoads = /* @__PURE__ */ new Map();
-  let qcfMeta = null, chapterMap = /* @__PURE__ */ new Map(), verseIndex = null, navigationBusy = false;
   const JUZ_PAGES = [[1, 21], [22, 41], [42, 61], [62, 81], [82, 101], [102, 121], [122, 141], [142, 161], [162, 181], [182, 201], [202, 221], [222, 241], [242, 261], [262, 281], [282, 301], [302, 321], [322, 341], [342, 361], [362, 381], [382, 401], [402, 421], [422, 441], [442, 461], [462, 481], [482, 501], [502, 521], [522, 541], [542, 561], [562, 581], [582, 604]];
   const LOCAL_HIZB_QUARTERS = [[1, 1, 1], [2, 26, 5], [2, 44, 7], [2, 60, 9], [2, 75, 11], [2, 92, 14], [2, 106, 17], [2, 124, 19], [2, 142, 22], [2, 158, 24], [2, 177, 27], [2, 189, 29], [2, 203, 32], [2, 219, 34], [2, 233, 37], [2, 243, 39], [2, 253, 42], [2, 263, 44], [2, 272, 46], [2, 283, 49], [3, 15, 51], [3, 33, 54], [3, 52, 56], [3, 75, 59], [3, 93, 62], [3, 113, 64], [3, 133, 67], [3, 153, 69], [3, 171, 72], [3, 186, 74], [4, 1, 77], [4, 12, 79], [4, 24, 82], [4, 36, 84], [4, 58, 87], [4, 74, 89], [4, 88, 92], [4, 100, 94], [4, 114, 97], [4, 135, 100], [4, 148, 102], [4, 163, 104], [5, 1, 106], [5, 12, 109], [5, 27, 112], [5, 41, 114], [5, 51, 117], [5, 67, 119], [5, 82, 121], [5, 97, 124], [5, 109, 126], [6, 13, 129], [6, 36, 132], [6, 59, 134], [6, 74, 137], [6, 95, 140], [6, 111, 142], [6, 127, 144], [6, 141, 146], [6, 151, 148], [7, 1, 151], [7, 31, 154], [7, 47, 156], [7, 65, 158], [7, 88, 162], [7, 117, 164], [7, 142, 167], [7, 156, 170], [7, 171, 173], [7, 189, 175], [8, 1, 177], [8, 22, 179], [8, 41, 182], [8, 61, 184], [9, 1, 187], [9, 19, 189], [9, 34, 192], [9, 46, 194], [9, 60, 196], [9, 75, 199], [9, 93, 201], [9, 111, 204], [9, 122, 206], [10, 11, 209], [10, 26, 212], [10, 53, 214], [10, 71, 217], [10, 90, 219], [11, 6, 222], [11, 24, 224], [11, 41, 226], [11, 61, 228], [11, 84, 231], [11, 108, 233], [12, 7, 236], [12, 30, 238], [12, 53, 242], [12, 77, 244], [12, 101, 247], [13, 5, 249], [13, 19, 252], [13, 35, 254], [14, 10, 256], [14, 28, 259], [15, 1, 262], [15, 50, 264], [16, 1, 267], [16, 30, 270], [16, 51, 272], [16, 75, 275], [16, 90, 277], [16, 111, 280], [17, 1, 282], [17, 23, 284], [17, 50, 287], [17, 70, 289], [17, 99, 292], [18, 17, 295], [18, 32, 297], [18, 51, 299], [18, 75, 302], [18, 99, 304], [19, 22, 306], [19, 59, 309], [20, 1, 312], [20, 55, 315], [20, 83, 317], [20, 111, 319], [21, 1, 322], [21, 29, 324], [21, 51, 326], [21, 83, 329], [22, 1, 332], [22, 19, 334], [22, 38, 336], [22, 60, 339], [23, 1, 342], [23, 36, 344], [23, 75, 347], [24, 1, 350], [24, 21, 352], [24, 35, 354], [24, 53, 356], [25, 1, 359], [25, 21, 362], [25, 53, 364], [26, 1, 367], [26, 52, 369], [26, 111, 371], [26, 181, 374], [27, 1, 377], [27, 27, 379], [27, 56, 382], [27, 82, 384], [28, 12, 386], [28, 29, 389], [28, 51, 392], [28, 76, 394], [29, 1, 396], [29, 26, 399], [29, 46, 402], [30, 1, 404], [30, 31, 407], [30, 54, 410], [31, 22, 413], [32, 11, 415], [33, 1, 418], [33, 18, 420], [33, 31, 422], [33, 51, 425], [33, 60, 426], [34, 10, 429], [34, 24, 431], [34, 46, 433], [35, 15, 436], [35, 41, 439], [36, 28, 442], [36, 60, 444], [37, 22, 446], [37, 83, 449], [37, 145, 451], [38, 21, 454], [38, 52, 456], [39, 8, 459], [39, 32, 462], [39, 53, 464], [40, 1, 467], [40, 21, 469], [40, 41, 472], [40, 66, 474], [41, 9, 477], [41, 25, 479], [41, 47, 482], [42, 13, 484], [42, 27, 486], [42, 51, 488], [43, 24, 491], [43, 57, 493], [44, 17, 496], [45, 12, 499], [46, 1, 502], [46, 21, 505], [47, 10, 507], [47, 33, 510], [48, 18, 513], [49, 1, 515], [49, 14, 517], [50, 27, 519], [51, 31, 522], [52, 24, 524], [53, 26, 526], [54, 9, 529], [55, 1, 531], [56, 1, 534], [56, 75, 536], [57, 16, 539], [58, 1, 542], [58, 14, 544], [59, 11, 547], [60, 7, 550], [62, 1, 553], [63, 4, 554], [65, 1, 558], [66, 1, 560], [67, 1, 562], [68, 1, 564], [69, 1, 566], [70, 19, 569], [72, 1, 572], [73, 20, 575], [75, 1, 577], [76, 19, 579], [78, 1, 582], [80, 1, 585], [82, 1, 587], [84, 1, 589], [87, 1, 591], [90, 1, 594], [94, 1, 596], [100, 9, 599]];
   let indexExcerptCache = storageJsonGet(STORAGE_KEYS.indexExcerpts, {}) || {}, indexExcerptSaveTimer = null;
@@ -600,7 +615,7 @@ async function tafsirFadlForSurah(surah) {
   }
   function verseParts(k) {
     const [s, a] = k.split(":").map(Number);
-    return { s, a, sname: chapterMap.get(s)?.name_arabic || ({ 1: "الفاتحة", 2: "البقرة" }[s] || `السورة ${ar(s)}`) };
+    return { s, a, sname: reading.chapterMap.get(s)?.name_arabic || ({ 1: "الفاتحة", 2: "البقرة" }[s] || `السورة ${ar(s)}`) };
   }
   function juzForPage(p) {
     const i = JUZ_PAGES.findIndex(([a, b]) => p >= a && p <= b);
@@ -673,45 +688,45 @@ async function tafsirFadlForSurah(surah) {
     return map;
   }
   function validateMetadataConsistency() {
-    const map = chapterMapFromMeta(qcfMeta);
+    const map = chapterMapFromMeta(reading.qcfMeta);
     if (!map) throw new Error("chapter metadata integrity");
-    chapterMap = map;
+    reading.chapterMap = map;
   }
   function buildPageShells() {
     track.innerHTML = Array.from({ length: TOTAL_PAGES }, (_, i) => `<section class="page" data-page="${i + 1}"></section>`).join("");
     track.style.width = TOTAL_PAGES * 100 + "vw";
   }
   async function loadQcfMeta() {
-    if (qcfMeta) return qcfMeta;
+    if (reading.qcfMeta) return reading.qcfMeta;
     const cached = storageJsonGet(STORAGE_KEYS.meta, null), cachedMap = chapterMapFromMeta(cached);
     if (cachedMap) {
-      qcfMeta = cached;
-      chapterMap = cachedMap;
-      return qcfMeta;
+      reading.qcfMeta = cached;
+      reading.chapterMap = cachedMap;
+      return reading.qcfMeta;
     }
     const r = await fetch(INDEX_URL, { cache: "force-cache" });
     if (!r.ok) throw new Error("qcf index");
     const fresh = await r.json(), freshMap = chapterMapFromMeta(fresh);
     if (!freshMap) throw new Error("invalid qcf index");
-    qcfMeta = fresh;
-    chapterMap = freshMap;
-    storageJsonSet(STORAGE_KEYS.meta, qcfMeta);
-    return qcfMeta;
+    reading.qcfMeta = fresh;
+    reading.chapterMap = freshMap;
+    storageJsonSet(STORAGE_KEYS.meta, reading.qcfMeta);
+    return reading.qcfMeta;
   }
   async function loadVerseIndex() {
-    if (verseIndex) return verseIndex;
+    if (reading.verseIndex) return reading.verseIndex;
     const cached = storageJsonGet(STORAGE_KEYS.verseIndex, null);
     if (cached && typeof cached === "object" && !Array.isArray(cached)) {
-      verseIndex = cached;
-      return verseIndex;
+      reading.verseIndex = cached;
+      return reading.verseIndex;
     }
     const r = await fetch(VERSE_INDEX_URL, { cache: "force-cache" });
     if (!r.ok) throw new Error("verse index");
     const fresh = await r.json();
     if (!fresh || typeof fresh !== "object" || Array.isArray(fresh)) throw new Error("invalid verse index");
-    verseIndex = fresh;
-    storageJsonSet(STORAGE_KEYS.verseIndex, verseIndex);
-    return verseIndex;
+    reading.verseIndex = fresh;
+    storageJsonSet(STORAGE_KEYS.verseIndex, reading.verseIndex);
+    return reading.verseIndex;
   }
   function qcfFontUrl(name) {
     const n = Number(String(name).slice(7));
@@ -839,13 +854,13 @@ async function tafsirFadlForSurah(surah) {
     notice._t = setTimeout(() => notice.classList.remove("show"), 1500);
   }
   function hideTools() {
-    clearTimeout(toolsTimer);
+    clearTimeout(reading.toolsTimer);
     document.body.classList.add("hidden-tools");
   }
   function showToolsFor(ms = 2800) {
-    clearTimeout(toolsTimer);
+    clearTimeout(reading.toolsTimer);
     document.body.classList.remove("hidden-tools");
-    toolsTimer = setTimeout(() => {
+    reading.toolsTimer = setTimeout(() => {
       if (!menu.classList.contains("show") && !document.querySelector(".backdrop")) hideTools();
     }, ms);
   }
@@ -864,22 +879,22 @@ async function tafsirFadlForSurah(surah) {
     return data;
   }
   function touchPageData(p, data) {
-    pages.delete(p);
-    pages.set(p, data);
+    reading.pages.delete(p);
+    reading.pages.set(p, data);
     return data;
   }
-  function prunePageDataCache(center = currentPage) {
-    if (pages.size <= PAGE_DATA_CACHE_LIMIT) return;
+  function prunePageDataCache(center = reading.currentPage) {
+    if (reading.pages.size <= PAGE_DATA_CACHE_LIMIT) return;
     const protectedPages = new Set([center - 2, center - 1, center, center + 1, center + 2].filter((x) => x >= 1 && x <= TOTAL_PAGES));
-    for (const p of [...pages.keys()]) {
-      if (pages.size <= PAGE_DATA_CACHE_LIMIT) break;
-      if (!protectedPages.has(p)) pages.delete(p);
+    for (const p of [...reading.pages.keys()]) {
+      if (reading.pages.size <= PAGE_DATA_CACHE_LIMIT) break;
+      if (!protectedPages.has(p)) reading.pages.delete(p);
     }
   }
   async function getPageData(p) {
     p = Number(p);
     if (!Number.isFinite(p) || p < 1 || p > TOTAL_PAGES) return null;
-    if (pages.has(p)) return touchPageData(p, pages.get(p));
+    if (reading.pages.has(p)) return touchPageData(p, reading.pages.get(p));
     if (pageDataLoads.has(p)) return pageDataLoads.get(p);
     const job = fetchPage(p).then((data) => {
       touchPageData(p, data);
@@ -894,7 +909,7 @@ async function tafsirFadlForSurah(surah) {
     if (direct) return direct;
     const name = data?.surahs?.[0]?.name_arabic;
     if (name) {
-      for (const [id, ch] of chapterMap) if (ch?.name_arabic === name) return Number(id);
+      for (const [id, ch] of reading.chapterMap) if (ch?.name_arabic === name) return Number(id);
     }
     for (const line of data?.lines || []) for (const w of line.words || []) if (w.verse_key) return Number(w.verse_key.split(":")[0]);
     return 1;
@@ -902,7 +917,7 @@ async function tafsirFadlForSurah(surah) {
   function surahIdFromMetaPage(p) {
     p = Number(p);
     let best = 1, bestStart = 0;
-    for (const [id, ch] of chapterMap) {
+    for (const [id, ch] of reading.chapterMap) {
       const from = Number(ch?.pages?.[0]), to = Number(ch?.pages?.[1]);
       if (from <= p && p <= to && from >= bestStart) {
         best = Number(id);
@@ -913,19 +928,19 @@ async function tafsirFadlForSurah(surah) {
   }
   async function pageDisplayInfo(p) {
     p = Number(p);
-    let data = pages.get(p) || null;
+    let data = reading.pages.get(p) || null;
     if (!data) try {
       data = await getPageData(p);
     } catch (_) {
     }
     const sid = data ? surahIdFromPageData(data) : surahIdFromMetaPage(p);
-    return { page: p, juz: juzForPage(p), surah: sid, sname: chapterMap.get(sid)?.name_arabic || data?.surahs?.[0]?.name_arabic || "" };
+    return { page: p, juz: juzForPage(p), surah: sid, sname: reading.chapterMap.get(sid)?.name_arabic || data?.surahs?.[0]?.name_arabic || "" };
   }
   async function ensurePage(p) {
     p = Number(p);
     if (!Number.isFinite(p) || p < 1 || p > TOTAL_PAGES) return null;
     const root = document.querySelector(`.page[data-page="${p}"]`);
-    if (root?.dataset.loaded === "1" && pages.has(p)) return touchPageData(p, pages.get(p));
+    if (root?.dataset.loaded === "1" && reading.pages.has(p)) return touchPageData(p, reading.pages.get(p));
     if (pageLoads.has(p)) return pageLoads.get(p);
     const job = (async () => {
       const data = await getPageData(p);
@@ -1005,7 +1020,7 @@ async function tafsirFadlForSurah(surah) {
     root.dataset.loaded = "1";
     root.dataset.qfont = data.font || "";
     root.innerHTML = `<div class="page-stage ${data.page <= 2 ? "special" : "full"}">
-    <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(chapterMap.get(surahId)?.name_arabic || data.surahs[0]?.name_arabic || "")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
+    <div class="page-meta"><button class="page-meta-link" type="button" data-index-tab="s" aria-label="فتح فهرس السور">سورة ${escapeHtml(reading.chapterMap.get(surahId)?.name_arabic || data.surahs[0]?.name_arabic || "")}</button><button class="page-meta-link" type="button" data-index-tab="j" aria-label="فتح فهرس الأجزاء">الجزء ${ar(juz)}</button></div>
     <div class="mushaf" id="mushaf-${data.page}"></div>
     <div class="page-footer"><div class="page-no">${ar(data.page)}</div></div>
   </div>`;
@@ -1039,7 +1054,7 @@ async function tafsirFadlForSurah(surah) {
         } else {
           inner.textContent = first.char;
         }
-        inner.setAttribute("aria-label", `سورة ${chapterMap.get(sid)?.name_arabic || ""}`);
+        inner.setAttribute("aria-label", `سورة ${reading.chapterMap.get(sid)?.name_arabic || ""}`);
         lineEl.appendChild(inner);
         host.appendChild(lineEl);
         continue;
@@ -1063,7 +1078,7 @@ async function tafsirFadlForSurah(surah) {
       lineEl.appendChild(inner);
       host.appendChild(lineEl);
     }
-    if (selectedKey) root.querySelectorAll(`.verse-segment[data-key="${selectedKey}"]`).forEach((x) => x.classList.add("selected"));
+    if (reading.selectedKey) root.querySelectorAll(`.verse-segment[data-key="${reading.selectedKey}"]`).forEach((x) => x.classList.add("selected"));
     renderPageBookmark(root);
     requestAnimationFrame(() => fitPage(data.page));
   }
@@ -1324,6 +1339,7 @@ async function tafsirFadlForSurah(surah) {
   function cleanSimpleQuranText(text) {
     return String(text || "").replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code))).replace(/\s*#1969\b/g, " ۩").replace(/\s{2,}/g, " ").trim();
   }
+  let downX = 0, downY = 0, swipeActive = false, longTimer = null, longTriggered = false;
   function clearVerseContext() {
     const context = document.getElementById("readerContext");
     if (!context) return;
@@ -1345,8 +1361,8 @@ async function tafsirFadlForSurah(surah) {
   function clearVerseSelection() {
     clearVerseContext();
     document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
-    selectedKey = null;
-    selectedAnchor = null;
+    reading.selectedKey = null;
+    reading.selectedAnchor = null;
     pendingReveal = null;
     closeMenu();
   }
@@ -1394,22 +1410,22 @@ async function tafsirFadlForSurah(surah) {
     }
     const room = visibleBottom - visibleTop;
     stage.scrollTop += start < verse.top && verse.bottom - start + 8 <= room ? start - visibleTop - 4 : verse.top - visibleTop - room / 3;
-    if (selectedAnchor === anchor) placeReaderToolbar(anchor);
+    if (reading.selectedAnchor === anchor) placeReaderToolbar(anchor);
   }
   function selectVerse(k, anchor, force = false, point = null) {
-    if (!force && selectedKey === k) {
+    if (!force && reading.selectedKey === k) {
       clearVerseSelection();
       hideTools();
       return false;
     }
-    selectedKey = k;
-    selectedAnchor = anchor || selectedAnchor;
+    reading.selectedKey = k;
+    reading.selectedAnchor = anchor || reading.selectedAnchor;
     uthmaniLoad(verseParts(k).s);
     document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
     document.querySelectorAll(`.verse-segment[data-key="${k}"]`).forEach((x) => x.classList.add("selected"));
     if (point) pendingReveal = null;
-    else revealVerse(selectedAnchor);
-    placeReaderToolbar(selectedAnchor, point);
+    else revealVerse(reading.selectedAnchor);
+    placeReaderToolbar(reading.selectedAnchor, point);
     const v = verseParts(k);
     showVerseContext(v);
     return true;
@@ -1425,7 +1441,7 @@ async function tafsirFadlForSurah(surah) {
       longTimer = setTimeout(() => {
         if (moved) return;
         longTriggered = true;
-        clearTimeout(toolsTimer);
+        clearTimeout(reading.toolsTimer);
         selectVerse(seg.dataset.key, seg, true, { x: sx, y: sy });
         openPrimaryMenu(seg);
       }, 520);
@@ -1460,9 +1476,9 @@ async function tafsirFadlForSurah(surah) {
     saveList(key, list.slice(0, RECENT_VISITS_LIMIT));
   }
   function saveLastPosition() {
-    storageJsonSet(STORAGE_KEYS.lastPosition, { page: currentPage, savedAt: Date.now() });
-    recordJuzProgress(currentPage);
-    recordKahfVisit(currentPage);
+    storageJsonSet(STORAGE_KEYS.lastPosition, { page: reading.currentPage, savedAt: Date.now() });
+    recordJuzProgress(reading.currentPage);
+    recordKahfVisit(reading.currentPage);
   }
   const JUZ_PROGRESS_KEY = "zad:juz-progress-v1";
   const juzProgressEntry = (() => {
@@ -1507,14 +1523,14 @@ async function tafsirFadlForSurah(surah) {
     storageJsonSet(JUZ_PROGRESS_KEY, progress);
   }
   function saveReaderSurface(surface, extra = {}) {
-    storageJsonSet(STORAGE_KEYS.lastSurface, { surface, page: currentPage, savedAt: Date.now(), ...extra });
+    storageJsonSet(STORAGE_KEYS.lastSurface, { surface, page: reading.currentPage, savedAt: Date.now(), ...extra });
   }
   function cleanConsumedReaderTarget() {
     try {
       const url = new URL(location.href);
       for (const key of ["home", "listen", "juz", "page", "surah", "ayah"]) url.searchParams.delete(key);
       const direct = directQuranPath();
-      if (direct?.mode === "read" && !direct.surah) url.searchParams.set("page", String(currentPage));
+      if (direct?.mode === "read" && !direct.surah) url.searchParams.set("page", String(reading.currentPage));
       if (/^#ayah=/i.test(url.hash)) url.hash = "";
       history.replaceState(history.state, "", url.href);
     } catch (_) {
@@ -1532,15 +1548,15 @@ async function tafsirFadlForSurah(surah) {
   }
   function updatePage(animate = true, savePosition = true) {
     track.style.transition = animate ? "transform .31s cubic-bezier(.2,.78,.2,1)" : "none";
-    track.style.transform = `translateX(${-(TOTAL_PAGES - currentPage) * 100}vw)`;
-    document.getElementById("prevBtn").disabled = currentPage === 1;
-    document.getElementById("nextBtn").disabled = currentPage === TOTAL_PAGES;
-    document.getElementById("desktopPrevBtn").disabled = currentPage === 1;
-    document.getElementById("desktopNextBtn").disabled = currentPage === TOTAL_PAGES;
+    track.style.transform = `translateX(${-(TOTAL_PAGES - reading.currentPage) * 100}vw)`;
+    document.getElementById("prevBtn").disabled = reading.currentPage === 1;
+    document.getElementById("nextBtn").disabled = reading.currentPage === TOTAL_PAGES;
+    document.getElementById("desktopPrevBtn").disabled = reading.currentPage === 1;
+    document.getElementById("desktopNextBtn").disabled = reading.currentPage === TOTAL_PAGES;
     closeMenu();
     syncPageBookmarkButton();
     if (savePosition) saveLastPosition();
-    const milestone = pageMilestoneLabel(currentPage);
+    const milestone = pageMilestoneLabel(reading.currentPage);
     if (milestone) showNotice(milestone);
   }
   async function go(p) {
@@ -1549,18 +1565,18 @@ async function tafsirFadlForSurah(surah) {
       await readerBootReady;
     }
     const target = Math.max(1, Math.min(TOTAL_PAGES, Number(p) || 1));
-    if (navigationBusy || target === currentPage) {
+    if (reading.navigationBusy || target === reading.currentPage) {
       if (readerGoPending) {
         readerGoPending = false;
         loading.classList.add("hide");
       }
       return;
     }
-    navigationBusy = true;
+    reading.navigationBusy = true;
     try {
       await ensurePage(target);
       clearVerseSelection();
-      currentPage = target;
+      reading.currentPage = target;
       updatePage(true);
       enterReaderSurface({ consumeTarget: true });
       requestAnimationFrame(() => {
@@ -1572,7 +1588,7 @@ async function tafsirFadlForSurah(surah) {
       console.error("QCF page load failed", target, e);
       showToast("تعذّر تحميل الصفحة " + ar(target));
     } finally {
-      navigationBusy = false;
+      reading.navigationBusy = false;
       if (readerGoPending) {
         readerGoPending = false;
         loading.classList.add("hide");
@@ -1589,14 +1605,14 @@ async function tafsirFadlForSurah(surah) {
     swipeActive = false;
     const dx = e.clientX - downX, dy = e.clientY - downY;
     if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.15) return;
-    if (dx > 0) go(currentPage + 1);
-    else go(currentPage - 1);
+    if (dx > 0) go(reading.currentPage + 1);
+    else go(reading.currentPage - 1);
   });
   track.addEventListener("pointercancel", () => swipeActive = false);
-  document.getElementById("prevBtn").onclick = () => go(currentPage - 1);
-  document.getElementById("nextBtn").onclick = () => go(currentPage + 1);
-  document.getElementById("desktopPrevBtn").onclick = () => go(currentPage - 1);
-  document.getElementById("desktopNextBtn").onclick = () => go(currentPage + 1);
+  document.getElementById("prevBtn").onclick = () => go(reading.currentPage - 1);
+  document.getElementById("nextBtn").onclick = () => go(reading.currentPage + 1);
+  document.getElementById("desktopPrevBtn").onclick = () => go(reading.currentPage - 1);
+  document.getElementById("desktopNextBtn").onclick = () => go(reading.currentPage + 1);
   function placeMenu(anchor) {
     const r = anchor.getBoundingClientRect();
     const x = Math.max(128, Math.min(innerWidth - 128, r.left + r.width / 2));
@@ -1622,7 +1638,7 @@ async function tafsirFadlForSurah(surah) {
     <button type="button" class="menu-btn" data-share="share"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg><span class="menu-label">رابط</span></button>
     <button type="button" class="menu-btn" data-share="copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><span class="menu-label">نسخ</span></button>`;
     menu.querySelectorAll("[data-share]").forEach((b) => b.onclick = () => doShare(b.dataset.share));
-    if (selectedAnchor) placeMenu(selectedAnchor);
+    if (reading.selectedAnchor) placeMenu(reading.selectedAnchor);
   }
   function bindPrimaryMenu() {
     menu.querySelectorAll("[data-act]").forEach((b) => b.onclick = () => {
@@ -1638,7 +1654,7 @@ async function tafsirFadlForSurah(surah) {
   }
   function verseTextCached(k) {
     const out = [];
-    for (const data of pages.values()) for (const line of data.lines || []) for (const w of line.words || [])
+    for (const data of reading.pages.values()) for (const line of data.lines || []) for (const w of line.words || [])
       if (w.verse_key === k && w.type === "word" && w.text) out.push(w.text);
     return out.join(" ");
   }
@@ -1664,7 +1680,7 @@ async function tafsirFadlForSurah(surah) {
     if (hinted >= 1 && hinted <= TOTAL_PAGES) start = Math.max(1, hinted - 1);
     else {
       const indexedStart = await getVersePage(k).catch(() => null);
-      start = indexedStart || Math.max(1, currentPage - 1);
+      start = indexedStart || Math.max(1, reading.currentPage - 1);
     }
     let seen = false;
     for (let p = start; p <= Math.min(TOTAL_PAGES, start + 3); p++) {
@@ -1703,7 +1719,7 @@ async function tafsirFadlForSurah(surah) {
   function ayahFromHash() {
     const m = location.hash.match(/^#ayah=(\d{1,3}):(\d{1,3})$/);
     if (!m) return null;
-    const s = Number(m[1]), a = Number(m[2]), max = Number(chapterMap.get(s)?.verses_count || 0);
+    const s = Number(m[1]), a = Number(m[2]), max = Number(reading.chapterMap.get(s)?.verses_count || 0);
     return s >= 1 && s <= 114 && a >= 1 && a <= max ? `${s}:${a}` : null;
   }
   function readerEntryParams() {
@@ -1761,8 +1777,8 @@ async function tafsirFadlForSurah(surah) {
     return lines.join("\n");
   }
   async function doShare(kind) {
-    if (!selectedKey) return;
-    const key = selectedKey, text = await verseTextFull(key, currentPage);
+    if (!reading.selectedKey) return;
+    const key = reading.selectedKey, text = await verseTextFull(key, reading.currentPage);
     try {
       if (kind === "copy") {
         await copyText(ayahShareText(key, text));
@@ -1789,7 +1805,7 @@ async function tafsirFadlForSurah(surah) {
     if (list.length !== result.length) saveList(STORAGE_KEYS.pageBookmarks, result);
     return result;
   }
-  function hasPageBookmark(page = currentPage) {
+  function hasPageBookmark(page = reading.currentPage) {
     return loadPageBookmarks().some((x) => Number(x?.page) === Number(page));
   }
   function syncPageBookmarkButton() {
@@ -1813,7 +1829,7 @@ async function tafsirFadlForSurah(surah) {
   }
   function togglePageBookmark() {
     const marked = !hasPageBookmark();
-    if (setPageBookmark(currentPage, marked)) showToast(marked ? `أُضيفت علامة للصفحة ${ar(currentPage)}` : "أُزيلت العلامة");
+    if (setPageBookmark(reading.currentPage, marked)) showToast(marked ? `أُضيفت علامة للصفحة ${ar(reading.currentPage)}` : "أُزيلت العلامة");
   }
   function renderPageBookmark(root) {
     let pin = root.querySelector(".page-bookmark");
@@ -1865,21 +1881,21 @@ async function tafsirFadlForSurah(surah) {
     const p = await getVersePage(key).catch(() => null);
     if (p) {
       await ensurePage(p);
-      if (p !== currentPage) {
-        currentPage = p;
+      if (p !== reading.currentPage) {
+        reading.currentPage = p;
         updatePage(true);
         prefetchAround(p).then(() => trimPageDom(p));
       }
     }
-    let matches = [...document.querySelectorAll(`.page[data-page="${p || currentPage}"] .verse-segment[data-key="${key}"]`)];
+    let matches = [...document.querySelectorAll(`.page[data-page="${p || reading.currentPage}"] .verse-segment[data-key="${key}"]`)];
     if (!matches.length) matches = [...document.querySelectorAll(`.verse-segment[data-key="${key}"]`)];
     document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
     matches.forEach((x) => x.classList.add("selected"));
-    selectedKey = key;
-    selectedAnchor = matches[0] || null;
+    reading.selectedKey = key;
+    reading.selectedAnchor = matches[0] || null;
   }
   async function openTafsir() {
-    if (!selectedKey) {
+    if (!reading.selectedKey) {
       showToast("اختر آية أولًا");
       return;
     }
@@ -1939,7 +1955,7 @@ async function tafsirFadlForSurah(surah) {
         if (b.isConnected) showToast("تعذر فتح التفسير");
       }
     }
-    await render(selectedKey);
+    await render(reading.selectedKey);
   }
   document.getElementById("tafsirBtn").onclick = openTafsir;
   document.getElementById("bookmarkBtn").onclick = togglePageBookmark;
@@ -1994,7 +2010,7 @@ async function tafsirFadlForSurah(surah) {
   }
   async function verseExcerptForIndex(k, p) {
     if (indexExcerptCache[k]) return indexExcerptCache[k];
-    const data = pages.get(Number(p)) || await getPageData(Number(p)), out = [];
+    const data = reading.pages.get(Number(p)) || await getPageData(Number(p)), out = [];
     for (const line of data?.lines || []) for (const w of line.words || []) {
       if (w.verse_key === k && w.type === "word" && w.text) {
         out.push(w.text);
@@ -2331,7 +2347,7 @@ async function tafsirFadlForSurah(surah) {
       if (!worker) throw new Error("service worker");
       audioDownloadJobs.set(tag, { s, btn, pkg, r });
       worker.postMessage({ type: "CACHE_AUDIO_PACKAGE", resources: pkg.resources, tag });
-      showToast(`جارٍ تنزيل سورة ${chapterMap.get(Number(s))?.name_arabic || ar(s)} بصوت ${r.name}`);
+      showToast(`جارٍ تنزيل سورة ${reading.chapterMap.get(Number(s))?.name_arabic || ar(s)} بصوت ${r.name}`);
     } catch (e) {
       console.error(e);
       await refreshAudioDownloadButton(btn, s);
@@ -2433,7 +2449,7 @@ async function tafsirFadlForSurah(surah) {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "quran-search-result";
-        btn.innerHTML = `<b>${escapeHtml(uthmaniVerseNow(item.key) || cleanSimpleQuranText(item.text))}</b><small>سورة ${escapeHtml(chapterMap.get(item.s)?.name_arabic || ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
+        btn.innerHTML = `<b>${escapeHtml(uthmaniVerseNow(item.key) || cleanSimpleQuranText(item.text))}</b><small>سورة ${escapeHtml(reading.chapterMap.get(item.s)?.name_arabic || ar(item.s))} · الآية ${ar(item.a)}، الصفحة ${ar(item.page)}</small>`;
         btn.onclick = async () => {
           b.remove();
           const hp = document.querySelector(".quran-index");
@@ -2467,7 +2483,7 @@ async function tafsirFadlForSurah(surah) {
   }
   function openReaderJump(closeHub = () => {
   }) {
-    const currentChapter = [...chapterMap.values()].find((ch) => currentPage >= Number(ch.pages?.[0] || 1) && currentPage <= Number(ch.pages?.[1] || 1));
+    const currentChapter = [...reading.chapterMap.values()].find((ch) => reading.currentPage >= Number(ch.pages?.[0] || 1) && reading.currentPage <= Number(ch.pages?.[1] || 1));
     const initialS = Number(currentChapter?.id) || Number(play.surah) || 1;
     const b = sheet("انتقل إلى", `<div class="settings"><div class="field"><label>السورة</label><select id="readerJumpSurah">${playerSurahOptions(initialS)}</select></div><div class="field"><label>الآية</label><select id="readerJumpAyah">${opts(maxAyah(initialS), 1)}</select></div><button type="button" class="apply" id="applyReaderJump">انتقال</button></div>`);
     const ss = b.querySelector("#readerJumpSurah"), aa = b.querySelector("#readerJumpAyah");
@@ -2509,7 +2525,7 @@ async function tafsirFadlForSurah(surah) {
     pendingSurahBasmala = s !== 1 && s !== 9;
     basmalaFallbackTarget = null;
     closeHub();
-    const p = Number(chapterMap.get(s)?.pages?.[0] || 1);
+    const p = Number(reading.chapterMap.get(s)?.pages?.[0] || 1);
     await go(p);
     await playCurrent(true);
   }
@@ -2623,7 +2639,7 @@ async function tafsirFadlForSurah(surah) {
     panel.querySelector('[data-hub-action="resume"]').onclick = leaveHubForReader;
     panel.querySelector('[data-hub-action="search"]').onclick = openQuranSearch;
     panel.querySelector('[data-hub-action="more"]').onclick = () => openQuranHubMenu(leaveHubForReader);
-    const currentJuz = () => juzForPage(currentPage);
+    const currentJuz = () => juzForPage(reading.currentPage);
     function centerIndexItem(host, item) {
       if (!host || !item) return;
       requestAnimationFrame(() => {
@@ -2635,8 +2651,8 @@ async function tafsirFadlForSurah(surah) {
     function drawSurahs() {
       if (surahHost.dataset.ready === "1") return;
       const frag = document.createDocumentFragment();
-      for (const ch of qcfMeta?.chapters || []) {
-        const start = Number(ch.pages?.[0] || 1), end = Number(ch.pages?.[1] || start), isCurrent = currentPage >= start && currentPage <= end, row = document.createElement("div");
+      for (const ch of reading.qcfMeta?.chapters || []) {
+        const start = Number(ch.pages?.[0] || 1), end = Number(ch.pages?.[1] || start), isCurrent = reading.currentPage >= start && reading.currentPage <= end, row = document.createElement("div");
         row.className = "quran-index-row quran-index-row-with-actions" + (isCurrent ? " current" : "");
         row.innerHTML = `<span class="quran-index-surah-num">${ar(ch.id)}</span><button class="quran-index-row-main" type="button"><span class="quran-index-main"><span class="quran-index-name">سورة ${escapeHtml(ch.name_arabic)}</span><span class="quran-index-meta">${revelationArabic(ch.revelation_place)} - ${ar(ch.verses_count)} آية</span></span><span class="quran-index-page">${ar(start)}</span></button><span class="quran-index-actions"><button class="quran-index-action play" type="button" aria-label="تشغيل سورة ${escapeHtml(ch.name_arabic)}">${HUB_PLAY_ICON}</button><button class="quran-index-action share" type="button" aria-label="مشاركة سورة ${escapeHtml(ch.name_arabic)}">${HUB_SHARE_ICON}</button><button class="quran-index-action download" type="button" aria-label="تنزيل سورة ${escapeHtml(ch.name_arabic)} للاستماع دون اتصال">${HUB_DOWNLOAD_ICON}</button></span>`;
         row.querySelector(".quran-index-row-main").onclick = async () => {
@@ -2659,9 +2675,9 @@ async function tafsirFadlForSurah(surah) {
       row.className = "quran-index-row quran-index-quarter-row";
       row.dataset.verseKey = key;
       const next = LOCAL_HIZB_QUARTERS[info.rub] || null, nextPage = next ? Number(next[2]) : TOTAL_PAGES + 1;
-      if (currentPage >= info.page && currentPage < nextPage) row.classList.add("current");
+      if (reading.currentPage >= info.page && reading.currentPage < nextPage) row.classList.add("current");
       const ringClass = info.phase === 0 ? "start" : `q${info.phase}`, cached = indexExcerptCache[key] || "";
-      row.innerHTML = `<span class="hizb-ring ${ringClass}">${info.phase === 0 ? ar(info.hizb) : ""}</span><span class="quran-index-main"><span class="quran-index-quarter-title ${cached ? "" : "index-excerpt-placeholder"}" data-excerpt>${escapeHtml(cached || "بداية ربع الحزب")}</span><span class="quran-index-meta">سورة ${escapeHtml(chapterMap.get(info.surah)?.name_arabic || ar(info.surah))}، آية ${ar(info.ayah)}</span></span><span class="quran-index-page">${ar(info.page)}</span>`;
+      row.innerHTML = `<span class="hizb-ring ${ringClass}">${info.phase === 0 ? ar(info.hizb) : ""}</span><span class="quran-index-main"><span class="quran-index-quarter-title ${cached ? "" : "index-excerpt-placeholder"}" data-excerpt>${escapeHtml(cached || "بداية ربع الحزب")}</span><span class="quran-index-meta">سورة ${escapeHtml(reading.chapterMap.get(info.surah)?.name_arabic || ar(info.surah))}، آية ${ar(info.ayah)}</span></span><span class="quran-index-page">${ar(info.page)}</span>`;
       row.onclick = async () => {
         leaveHubForReader();
         await go(info.page);
@@ -2820,7 +2836,7 @@ async function tafsirFadlForSurah(surah) {
     return `https://everyayah.com/data/${sourceId}/${pad3(s)}${pad3(a)}.mp3`;
   }
   function maxAyah(s) {
-    return Number(chapterMap.get(Number(s))?.verses_count) || ({ 1: 7, 2: 286 }[Number(s)] || 286);
+    return Number(reading.chapterMap.get(Number(s))?.verses_count) || ({ 1: 7, 2: 286 }[Number(s)] || 286);
   }
   function compactArabic(s) {
     return normalizeArabic(s).replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/\s+/g, "");
@@ -3282,26 +3298,26 @@ async function tafsirFadlForSurah(surah) {
     const whole = isSurahOnly();
     if (whole && requestId === playbackRequestId) clearVerseSelection();
     const k = `${play.surah}:${play.current}`;
-    const p = whole ? Number(chapterMap.get(Number(play.surah))?.pages?.[0] || 0) : await getVersePage(k);
+    const p = whole ? Number(reading.chapterMap.get(Number(play.surah))?.pages?.[0] || 0) : await getVersePage(k);
     if (requestId !== playbackRequestId) return false;
     if (p) {
       await ensurePage(p);
       if (requestId !== playbackRequestId) return false;
-      if (p !== currentPage) {
-        currentPage = p;
+      if (p !== reading.currentPage) {
+        reading.currentPage = p;
         updatePage(true);
         prefetchAround(p).then(() => trimPageDom(p));
       }
     }
     if (whole) return true;
-    let matches = [...document.querySelectorAll(`.page[data-page="${p || currentPage}"] .verse-segment[data-key="${k}"]`)];
+    let matches = [...document.querySelectorAll(`.page[data-page="${p || reading.currentPage}"] .verse-segment[data-key="${k}"]`)];
     if (!matches.length) matches = [...document.querySelectorAll(`.verse-segment[data-key="${k}"]`)];
     if (!matches.length) return false;
     document.querySelectorAll(".verse-segment.selected").forEach((x) => x.classList.remove("selected"));
     matches.forEach((x) => x.classList.add("selected"));
-    selectedKey = k;
-    selectedAnchor = matches[0];
-    revealVerse(selectedAnchor);
+    reading.selectedKey = k;
+    reading.selectedAnchor = matches[0];
+    revealVerse(reading.selectedAnchor);
     return true;
   }
   function nextPlaybackRefForPriming() {
@@ -3607,11 +3623,11 @@ async function tafsirFadlForSurah(surah) {
     }
   }
   async function startSelected() {
-    if (!selectedKey) {
+    if (!reading.selectedKey) {
       showToast("اختر آية أولًا");
       return;
     }
-    const v = verseParts(selectedKey);
+    const v = verseParts(reading.selectedKey);
     detachQueue();
     pendingSurahBasmala = false;
     basmalaFallbackTarget = null;
@@ -3988,7 +4004,7 @@ async function tafsirFadlForSurah(surah) {
     return { ayah: Math.max(1, Number(value) || 1), basmala: false };
   }
   function playerSurahOptions(selected) {
-    return [...chapterMap.values()].sort((a, b) => Number(a.id) - Number(b.id)).map((c) => `<option value="${Number(c.id)}" ${Number(c.id) === Number(selected) ? "selected" : ""}>${ar(Number(c.id))} - ${escapeHtml(c.name_arabic || "")}</option>`).join("");
+    return [...reading.chapterMap.values()].sort((a, b) => Number(a.id) - Number(b.id)).map((c) => `<option value="${Number(c.id)}" ${Number(c.id) === Number(selected) ? "selected" : ""}>${ar(Number(c.id))} - ${escapeHtml(c.name_arabic || "")}</option>`).join("");
   }
   document.getElementById("audioJump").onclick = () => {
     const initialS = Number(play.surah) || 1, initialA = Number(play.current) || 1;
@@ -4024,7 +4040,7 @@ async function tafsirFadlForSurah(surah) {
     };
   };
   document.getElementById("audioSettings").onclick = () => {
-    const s = selectedKey ? verseParts(selectedKey).s : play.surah, max = maxAyah(s);
+    const s = reading.selectedKey ? verseParts(reading.selectedKey).s : play.surah, max = maxAyah(s);
     const b = sheet("إعدادات الاستماع", `<div class="settings">
     <div class="field"><label>القارئ</label><select id="qari">${RECITERS.map((r) => `<option value="${escapeHtml(r.id)}" ${r.id === reciter.id ? "selected" : ""}>${escapeHtml(r.name)}</option>`).join("")}</select></div>
     <p class="player-hint" id="surahOnlySettingsHint" hidden>${SURAH_ONLY_HINT}</p>
@@ -4409,7 +4425,7 @@ async function tafsirFadlForSurah(surah) {
     return !!listenPanel?.isConnected;
   }
   function listenSurahName(s) {
-    return chapterMap.get(Number(s))?.name_arabic || ar(s);
+    return reading.chapterMap.get(Number(s))?.name_arabic || ar(s);
   }
   function listenActive() {
     return document.body.classList.contains("player-on");
@@ -4845,11 +4861,11 @@ async function tafsirFadlForSurah(surah) {
     if (st.kind === "now") {
       collapsePlayer();
       const k = `${play.surah}:${play.current}`;
-      const p = isSurahOnly() ? Number(chapterMap.get(Number(play.surah))?.pages?.[0] || 1) : await getVersePage(k);
-      await go(p || currentPage);
+      const p = isSurahOnly() ? Number(reading.chapterMap.get(Number(play.surah))?.pages?.[0] || 1) : await getVersePage(k);
+      await go(p || reading.currentPage);
       syncPlaybackSelectionInBackground(playbackRequestId);
     } else {
-      const p = isSurahOnly(st.r) ? Number(chapterMap.get(st.s)?.pages?.[0] || 1) : await getVersePage(`${st.s}:${st.a}`);
+      const p = isSurahOnly(st.r) ? Number(reading.chapterMap.get(st.s)?.pages?.[0] || 1) : await getVersePage(`${st.s}:${st.a}`);
       await go(p || 1);
     }
     armReaderBackGuard();
@@ -4875,7 +4891,7 @@ async function tafsirFadlForSurah(surah) {
   }
   function listenDrawSurahs(host) {
     const frag = document.createDocumentFragment();
-    [...chapterMap.values()].sort((a, b) => a.id - b.id).forEach((ch) => frag.appendChild(listenSurahRow(ch)));
+    [...reading.chapterMap.values()].sort((a, b) => a.id - b.id).forEach((ch) => frag.appendChild(listenSurahRow(ch)));
     host.replaceChildren(frag);
   }
   function listenDrawDownloaded(host) {
@@ -4892,7 +4908,7 @@ async function tafsirFadlForSurah(surah) {
     }
     const frag = document.createDocumentFragment();
     [...bySurah.keys()].sort((a, b) => a - b).forEach((s) => {
-      const ch = chapterMap.get(s);
+      const ch = reading.chapterMap.get(s);
       if (!ch) return;
       const row = listenSurahRow(ch), list = bySurah.get(s);
       row.querySelector(".zl-row-main small").textContent = list.map((r) => r.name.replace(/^فضيلة\s+الشيخ\s+/, "")).join("، ");
@@ -4914,7 +4930,7 @@ async function tafsirFadlForSurah(surah) {
     }
     const frag = document.createDocumentFragment();
     list.forEach((s) => {
-      const ch = chapterMap.get(s);
+      const ch = reading.chapterMap.get(s);
       if (ch) frag.appendChild(listenSurahRow(ch));
     });
     host.replaceChildren(frag);
@@ -5363,7 +5379,7 @@ async function tafsirFadlForSurah(surah) {
   });
   document.querySelectorAll(".chrome,.audio-panel,.audio-fab").forEach((x) => x.addEventListener("click", (e) => e.stopPropagation()));
   document.querySelectorAll(".chrome").forEach((x) => {
-    x.addEventListener("pointerdown", () => clearTimeout(toolsTimer));
+    x.addEventListener("pointerdown", () => clearTimeout(reading.toolsTimer));
     x.addEventListener("pointerup", () => showToolsFor(2800));
   });
   document.addEventListener("pointerdown", (e) => {
@@ -5379,7 +5395,7 @@ async function tafsirFadlForSurah(surah) {
       fittedSize = size;
       document.querySelectorAll('.page[data-loaded="1"]').forEach((x) => fitPage(Number(x.dataset.page)));
       requestAnimationFrame(() => {
-        if (!document.body.classList.contains("hidden-tools")) placeReaderToolbar(selectedAnchor);
+        if (!document.body.classList.contains("hidden-tools")) placeReaderToolbar(reading.selectedAnchor);
       });
     }, delay);
   }
@@ -5516,7 +5532,7 @@ async function tafsirFadlForSurah(surah) {
           await loadQcfMeta();
           validateMetadataConsistency();
           const saved = Number(storageJsonGet(STORAGE_KEYS.lastPosition, null)?.page);
-          if (saved >= 1 && saved <= TOTAL_PAGES) currentPage = saved;
+          if (saved >= 1 && saved <= TOTAL_PAGES) reading.currentPage = saved;
           loading.classList.add("hide");
           if (early.surah) listenTarget = { surah: early.surah, reciter: RECITERS.find((r) => r.id === early.qari) || reciter };
           openListenPage();
@@ -5525,7 +5541,7 @@ async function tafsirFadlForSurah(surah) {
           await loadQcfMeta();
           validateMetadataConsistency();
           const saved = Number(storageJsonGet(STORAGE_KEYS.lastPosition, null)?.page);
-          if (saved >= 1 && saved <= TOTAL_PAGES) currentPage = saved;
+          if (saved >= 1 && saved <= TOTAL_PAGES) reading.currentPage = saved;
           const tab = stored?.surface === "quran-home" && ["s", "j", "m"].includes(stored?.tab) ? stored.tab : "s";
           loading.classList.add("hide");
           openQuranIndex(tab, { home: true });
@@ -5544,11 +5560,11 @@ async function tafsirFadlForSurah(surah) {
       }
       await loadQcfMeta();
       validateMetadataConsistency();
-      currentPage = 1;
+      reading.currentPage = 1;
       let previousVisit = null;
       const m = storageJsonGet(STORAGE_KEYS.lastPosition, null), savedPage = Number(m?.page);
       if (savedPage >= 1 && savedPage <= TOTAL_PAGES) {
-        currentPage = savedPage;
+        reading.currentPage = savedPage;
         previousVisit = { ...m, page: savedPage };
       }
       if (!passiveDirectEntry) archivePreviousVisit(previousVisit);
@@ -5559,10 +5575,10 @@ async function tafsirFadlForSurah(surah) {
       }
       let deepLinkedAyah = entry.direct ? null : ayahFromHash();
       if (entry.direct === "read" && entry.surah) {
-        const max = Number(chapterMap.get(entry.surah)?.verses_count || 0);
+        const max = Number(reading.chapterMap.get(entry.surah)?.verses_count || 0);
         deepLinkedAyah = `${entry.surah}:${entry.ayah && entry.ayah <= max ? entry.ayah : 1}`;
       } else if (!entry.direct && !deepLinkedAyah && entry.surah && entry.ayah) {
-        const max = Number(chapterMap.get(entry.surah)?.verses_count || 0);
+        const max = Number(reading.chapterMap.get(entry.surah)?.verses_count || 0);
         if (entry.ayah <= max) deepLinkedAyah = `${entry.surah}:${entry.ayah}`;
       }
       const noDeepTarget = !deepLinkedAyah && !entry.page && !entry.juz && !entry.surah;
@@ -5575,26 +5591,26 @@ async function tafsirFadlForSurah(surah) {
       if (deepLinkedAyah) {
         let p = await getVersePage(deepLinkedAyah);
         if (!p && entry.direct === "read") {
-          if (deepLinkedAyah.endsWith(":1")) p = Number(chapterMap.get(entry.surah)?.pages?.[0]);
+          if (deepLinkedAyah.endsWith(":1")) p = Number(reading.chapterMap.get(entry.surah)?.pages?.[0]);
           if (!p) throw Error("Reading target unavailable");
         }
-        if (p) currentPage = p;
+        if (p) reading.currentPage = p;
       } else if (entry.page) {
-        currentPage = entry.page;
+        reading.currentPage = entry.page;
       } else if (entry.juz) {
-        currentPage = juzStartPage(entry.juz);
+        reading.currentPage = juzStartPage(entry.juz);
       }
-      await ensurePage(currentPage);
+      await ensurePage(reading.currentPage);
       updatePage(false, false);
       if (!passiveDirectEntry) saveLastPosition();
       if (!wantsHome) saveReaderSurface("reader");
       if (!readerGoPending) loading.classList.add("hide");
       if (deepLinkedAyah) {
-        const anchor = document.querySelector(`.page[data-page="${currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
+        const anchor = document.querySelector(`.page[data-page="${reading.currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
         if (anchor) selectVerse(deepLinkedAyah, anchor, true);
       }
       if (!entry.direct && entry.autoplay && entry.surah) prepareSurahFromDeepLink(entry.surah);
-      prefetchAround(currentPage).then(() => trimPageDom(currentPage));
+      prefetchAround(reading.currentPage).then(() => trimPageDom(reading.currentPage));
       loadTafsirIndex().catch((err) => console.warn("tafsir index unavailable", err));
       pruneRetiredAudioPackages().catch((err) => console.warn("retired audio cleanup failed", err));
       readerBootDone();

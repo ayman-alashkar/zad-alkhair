@@ -15,7 +15,7 @@
         await loadQcfMeta();
         validateMetadataConsistency();
         const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
-        if(saved>=1&&saved<=TOTAL_PAGES)currentPage=saved;
+        if(saved>=1&&saved<=TOTAL_PAGES)reading.currentPage=saved;
         loading.classList.add("hide");
         if(early.surah)listenTarget={surah:early.surah,reciter:RECITERS.find(r=>r.id===early.qari)||reciter};
         openListenPage();
@@ -24,7 +24,7 @@
         await loadQcfMeta();
         validateMetadataConsistency();
         const saved=Number(storageJsonGet(STORAGE_KEYS.lastPosition,null)?.page);
-        if(saved>=1&&saved<=TOTAL_PAGES)currentPage=saved;
+        if(saved>=1&&saved<=TOTAL_PAGES)reading.currentPage=saved;
         const tab=stored?.surface==="quran-home"&&["s","j","m"].includes(stored?.tab)?stored.tab:"s";
         loading.classList.add("hide");
         openQuranIndex(tab,{home:true});
@@ -41,9 +41,9 @@
     }catch(_){surahHeaderReady=false}
     await loadQcfMeta();
     validateMetadataConsistency();
-    currentPage=1;let previousVisit=null;
+    reading.currentPage=1;let previousVisit=null;
     const m=storageJsonGet(STORAGE_KEYS.lastPosition,null),savedPage=Number(m?.page);
-    if(savedPage>=1&&savedPage<=TOTAL_PAGES){currentPage=savedPage;previousVisit={...m,page:savedPage}}
+    if(savedPage>=1&&savedPage<=TOTAL_PAGES){reading.currentPage=savedPage;previousVisit={...m,page:savedPage}}
     if(!passiveDirectEntry)archivePreviousVisit(previousVisit);
 
     /* Integration deep links. Specific ayah wins, then page, then juz, then saved position. */
@@ -54,10 +54,10 @@
     }
     let deepLinkedAyah=entry.direct?null:ayahFromHash();
     if(entry.direct==="read"&&entry.surah){
-      const max=Number(chapterMap.get(entry.surah)?.verses_count||0);
+      const max=Number(reading.chapterMap.get(entry.surah)?.verses_count||0);
       deepLinkedAyah=`${entry.surah}:${entry.ayah&&entry.ayah<=max?entry.ayah:1}`;
     }else if(!entry.direct&&!deepLinkedAyah&&entry.surah&&entry.ayah){
-      const max=Number(chapterMap.get(entry.surah)?.verses_count||0);
+      const max=Number(reading.chapterMap.get(entry.surah)?.verses_count||0);
       if(entry.ayah<=max)deepLinkedAyah=`${entry.surah}:${entry.ayah}`;
     }
     const noDeepTarget=!deepLinkedAyah&&!entry.page&&!entry.juz&&!entry.surah;
@@ -68,26 +68,26 @@
     if(deepLinkedAyah){
       let p=await getVersePage(deepLinkedAyah);
       if(!p&&entry.direct==="read"){
-        if(deepLinkedAyah.endsWith(":1"))p=Number(chapterMap.get(entry.surah)?.pages?.[0]);
+        if(deepLinkedAyah.endsWith(":1"))p=Number(reading.chapterMap.get(entry.surah)?.pages?.[0]);
         if(!p)throw Error("Reading target unavailable");
       }
-      if(p)currentPage=p;
+      if(p)reading.currentPage=p;
     }else if(entry.page){
-      currentPage=entry.page;
+      reading.currentPage=entry.page;
     }else if(entry.juz){
-      currentPage=juzStartPage(entry.juz);
+      reading.currentPage=juzStartPage(entry.juz);
     }
-    await ensurePage(currentPage);
+    await ensurePage(reading.currentPage);
     updatePage(false,false);
     if(!passiveDirectEntry)saveLastPosition();
     if(!wantsHome)saveReaderSurface("reader");
     if(!readerGoPending)loading.classList.add("hide");
     if(deepLinkedAyah){
-      const anchor=document.querySelector(`.page[data-page="${currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
+      const anchor=document.querySelector(`.page[data-page="${reading.currentPage}"] .verse-segment[data-key="${deepLinkedAyah}"]`);
       if(anchor)selectVerse(deepLinkedAyah,anchor,true);
     }
     if(!entry.direct&&entry.autoplay&&entry.surah)prepareSurahFromDeepLink(entry.surah);
-    prefetchAround(currentPage).then(()=>trimPageDom(currentPage));
+    prefetchAround(reading.currentPage).then(()=>trimPageDom(reading.currentPage));
     loadTafsirIndex().catch(err=>console.warn("tafsir index unavailable",err));
     pruneRetiredAudioPackages().catch(err=>console.warn("retired audio cleanup failed",err));
     readerBootDone();
