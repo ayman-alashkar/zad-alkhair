@@ -1,13 +1,3 @@
-/* معرّف عشوائي ثابت لهذا المتصفح، به يُقفل الاسم على صاحبه */
-function deviceId(){
-  let d=localStorage.getItem("zad:device");
-  if(!d){
-    d=(crypto.randomUUID?crypto.randomUUID():
-       Date.now().toString(36)+Math.random().toString(36).slice(2,12));
-    localStorage.setItem("zad:device",d);
-  }
-  return d;
-}
 
 /* رابط الدخول في أزرار رسائل البوت (?login=…): على الآيفون لكل مكان يُفتح منه
    الموقع تخزين منفصل، فيبدو المتصفح جديدًا. الرمز يضيف هذا المتصفح إلى أجهزة
@@ -61,8 +51,6 @@ function goHome(){
 }
 function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),3000);}
-const isOrganizer=()=>!!(appState.viewer&&appState.state&&appState.state.organizerId===appState.viewer.id);
-const memberOf=id=>((appState.state&&appState.state.members)||[]).find(m=>m.id===id);
 const BOOK_ICON=`<svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
   stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <path d="M12 6.25C10.15 4.85 7.95 4.2 5.15 4.2v12.65c2.75.02 5.08.78 6.85 2.25 1.77-1.47 4.1-2.23 6.85-2.25V4.2c-2.8 0-5 .65-6.85 2.05Z"/>
