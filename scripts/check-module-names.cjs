@@ -18,7 +18,7 @@ const BROWSER_ONLY = new Set([
 ]);
 
 const root = path.join(__dirname, "..");
-const files = ["src/home", "src/shared", "src/reader"]
+const files = ["src/home", "src/shared", "src/reader", "src/reader/engines"]
   .flatMap(dir => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith(".mjs")).map(f => `${dir}/${f}`));
 let out;
 try {
