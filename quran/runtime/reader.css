@@ -2717,3 +2717,7 @@ html[data-theme="dark"] .zl-upnext{color:#6B6350}
 .dk-hit{fill:transparent}
 .dk-line g[data-ayah].selected .dk-hit{fill:var(--select)}
 html[data-theme="dark"] .dk-c1{fill:#B794F4}html[data-theme="dark"] .dk-c2{fill:#F08AE6}html[data-theme="dark"] .dk-c3{fill:#7FA8FF}html[data-theme="dark"] .dk-c4{fill:#4FD1C5}html[data-theme="dark"] .dk-c5{fill:#FFA05C}html[data-theme="dark"] .dk-c6{fill:#5EDB8A}html[data-theme="dark"] .dk-c7{fill:#D9A574}html[data-theme="dark"] .dk-c8{fill:#FF7A8A}
+
+/* التجويد لحفص وحده */
+html[data-riwaya]:not([data-riwaya="hafs"]) #tajweedBtn{opacity:.38}
+html[data-riwaya]:not([data-riwaya="hafs"]) #tajweedStrip{display:none!important}

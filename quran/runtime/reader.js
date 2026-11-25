@@ -2352,7 +2352,14 @@ async function tafsirFadlForSurah(surah) {
     if (strip) strip.innerHTML = TAJWEED_LEGEND.map(([title, items]) => `<div class="tj-col"><b>${title}</b>${items.map(([c, name]) => `<span><i class="tj-swatch ${c}"></i>${name}</span>`).join("")}</div>`).join("");
     if (btn) {
       btn.hidden = false;
-      btn.onclick = () => setTajweed(document.documentElement.dataset.tajweed !== "on", true);
+      btn.onclick = () => {
+        const r = document.documentElement.dataset.riwaya;
+        if (r && r !== "hafs") {
+          showToast("ألوان التجويد لرواية حفص فقط");
+          return;
+        }
+        setTajweed(document.documentElement.dataset.tajweed !== "on", true);
+      };
     }
     setTajweed(storageGet(TAJWEED_KEY, "0") === "1");
   }
