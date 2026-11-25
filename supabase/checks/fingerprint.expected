@@ -1,0 +1,91 @@
+function private.attach_device(p_chat bigint, p_device text) b5909153253c40832739da375813d6cc
+function private.broadcast_khatmah_change() 6f334352a085ea6b2cd735523d704b94
+function private.capture_khatmah_completion() e5a640ac481c15e9ab38a74f8e859af8
+function private.dispatch_completion_notifications() 13c763da32ea4f7cad93c99cbc984f37
+function private.hash_organizer_code(p_code text) 4c2d675395f31c9659e11b9b95f97b17
+function private.khatmah_live_send(p_topic text) 17ff63fc3fb291891e33523035e4118e
+function private.memberships_of(p_chat bigint) 41b03aeccfba60b385e1fa484df79626
+function private.organizer_code_ok(p_khatmah_id uuid, p_org_code text, p_device text) 6ab18189d3da972e74570df384a39e68
+function public._member_device_ok(p_khatmah_id uuid, p_member_id text, p_device text) 3e057fe74a52070db207f7f1f3f5122d
+function public._organizer_device_ok(p_khatmah_id uuid, p_org_code text, p_device text) 1b850a56dce786070fbf4d57d1fef970
+function public.add_member(p_code text, p_org_code text, p_id text, p_name text, p_device text) 16bdb35302590b256da81770901c218b
+function public.assign_juz(p_code text, p_org_code text, p_num integer, p_to text, p_device text) 4b3c14086275c732d3d18701604f1660
+function public.change_organizer_code(p_code text, p_org_code text, p_device text, p_new_code text) bf9c93be2ba98d8c4adb7e8a0a0eff99
+function public.chat_for_done(p_code text, p_id text, p_num integer) 00c1dd1b3b8fdc9f308f292695b78566
+function public.chat_linked(p_chat bigint) 6cc30fa2ffa7ed4360e9e2b626ccd408
+function public.chat_of(p_code text, p_org_code text, p_id text, p_device text) a8d2b5eb9a85b2a699a26e50402a6120
+function public.chats_all(p_code text, p_org_code text, p_device text) 646529750ac37bd8750e66a1e1eef41f
+function public.claim_completion_notifications() 8159242b2452e2cc56236c2bd71bc0be
+function public.claim_juz(p_code text, p_id text, p_num integer, p_device text) f55095f82f8fe305c77bf68384b33d9c
+function public.confirm_tg_login(p_nonce text, p_chat bigint, p_confirm boolean) c2b44cd1f169041b1587a11484f7fdad
+function public.create_khatmah(p_title text, p_dedication text, p_end date, p_hour integer, p_minute integer, p_org_id text, p_org_name text, p_org_code text, p_device text, p_access_type text) 8ae56573cc9352c003662233d6f9e975
+function public.delete_khatmah(p_code text, p_org_code text, p_device text) c98c3b0c7733f265cd708ad8a14ddf44
+function public.due_reminders(p_local_date date, p_hour integer, p_minute integer) d01ebcb916dfc01686aa0b9c24dd2382
+function public.events_purge() fdc0bd8b32d603efa3c9f86d18d735c3
+function public.finish_tg_login(p_nonce text, p_device text) 73f8cf5bd2aa9ac5917f75ab74104d49
+function public.gen_code(p_len integer) f8e19ff60d740baee595c5cbca6e0cec
+function public.get_my_history(p_code text, p_id text, p_device text) 70c2638554405aece77fb3a9eaad47d0
+function public.get_state(p_code text) b1b36a646705a1fbe46ee1b40ac3227a
+function public.issue_login_link(p_chat bigint) d29089bd51085074dc2dcf3571e1a730
+function public.khatmah_done_info(p_code text) 4771657514e49c49f0b9dfd02d3e48e0
+function public.leave_khatmah(p_code text, p_id text, p_device text) f4be18b22a37e8a9fa65fb2602b86372
+function public.link_telegram(p_code text, p_chat bigint) 4ddd29338437c07e51f9ad936f5f6977
+function public.list_active_khatmahs() 22b168ce82739fcf641dfc558f09f996
+function public.log_event(p_kind text, p_device text, p_code text, p_source text) 0afe92b057f49d3eecc3a6539fe2bb9c
+function public.make_link_code(p_code text, p_id text, p_device text) 07c54e446e0ec061a77ae74d7255151b
+function public.match_khatmah_code(p_public_id text, p_code text) c1f2ca15fd2293dbed575ec4e8e3b7b9
+function public.merge_members(p_code text, p_org_code text, p_from text, p_to text, p_device text) 2aa1f6f6f60ff0156cf7acd115da8ae4
+function public.new_round_info(p_code text, p_org_code text, p_end date, p_device text, p_request text) 81b34b055a35594adc7dcedd74a5c8cc
+function public.notification_finish(p_delivery uuid, p_ok boolean, p_permanent boolean) 377ab624f5dee567ee8198e990d227fa
+function public.open_public_khatmah(p_public_id text) 1c4c79bb99225d3fd6f5ed2f5f1258f8
+function public.purge_abandoned() df32df3722333352e611ae08f8e46b60
+function public.record_pwa_install(p_device_id uuid, p_platform text, p_event text, p_app_version text) 80dbb25ae3f86eea4041d4bba0306693
+function public.record_usage(p_device uuid, p_day date, p_platform text, p_installed boolean, p_counts jsonb, p_tz text, p_bot text, p_persisted boolean) d8b1b03fd9c0694948c256f301bed712
+function public.redeem_login_link(p_token text, p_device text) daa13da813373ab2d5f4aa5088fac96a
+function public.release_juz(p_code text, p_id text, p_num integer, p_org_code text, p_device text) cec0c8940f0ba71142d8b972400f7a20
+function public.release_name(p_code text, p_org_code text, p_id text, p_device text) 0e47d10ed5fc7d26b08e6326d3af8681
+function public.remove_member(p_code text, p_org_code text, p_id text, p_device text) b54e03fe20cb2f4495eee038158e11fa
+function public.rest_in(p_chat bigint, p_code text) b016b470c54fa120e8aedd1248a34ce2
+function public.set_done(p_code text, p_id text, p_num integer, p_done boolean, p_org_code text, p_device text) b647aac8f7c6c9c3738e44acb5c6e951
+function public.set_exempt(p_code text, p_org_code text, p_id text, p_on boolean, p_device text) a043ddaf1d5830d0d09d938ec25d8e10
+function public.set_my_reminder(p_code text, p_id text, p_device text, p_wants boolean, p_hour integer, p_minute integer) c2005bed47a8e114a1d02f3fddaff4ad
+function public.set_name_access(p_code text, p_org_code text, p_id text, p_device text, p_mode text) 4998daa4b19f7f2ea6add609ce6a6e04
+function public.share_clear(p_chat bigint, p_keep boolean) f2cdfb70df46715957efc895483e2fe5
+function public.share_decide(p_id uuid, p_chat bigint, p_ok boolean) a16cf265a7a64aca34528a06ee4b4343
+function public.share_draft(p_chat bigint, p_text text) 8ecf855dfb16551156d431ebc09eaa6c
+function public.share_open(p_chat bigint, p_code text, p_juz integer) 2eff657707f8f1d7a0fd998ac399c8bf
+function public.share_purge() 6a17229be97d48c50a40b70258d6e8b7
+function public.share_submit(p_chat bigint) 32fa492b1c391ccc2cc4171d619acff6
+function public.sign_in(p_code text, p_id text, p_name text, p_device text, p_org_code text) 0b5ba8d6f3a0b782c1f5400a156a775f
+function public.start_tg_login(p_device text, p_code text, p_id text) 092322fd15b293593e74ea902ae06dca
+function public.transfer_organizer(p_code text, p_org_code text, p_device text, p_to text, p_new_code text) e3011aebc47710e20db9636b11d839a2
+function public.unlink_by_chat(p_chat bigint) ecd0cce3b537c58e85f02b514ac99056
+function public.unlink_telegram(p_code text, p_id text) 5a890ee52a0d2067d20e89d2e91330b4
+function public.update_settings(p_code text, p_org_code text, p_title text, p_dedication text, p_end date, p_hour integer, p_minute integer, p_device text, p_access_type text) 61c2e7476b31549a5128749f4634cd87
+sequence public.events_id_seq 81593569211c5a3d949894cf9145a31a
+sequence public.khatmah_creation_log_id_seq 81593569211c5a3d949894cf9145a31a
+table private.completed_khatmahs c428ae9279cc60c28d99e114220d1f9b
+table private.login_links 2650a3bfa0fc6b92a8daed9494b70b96
+table private.organizer_code_attempts 79342cedda58cf55f775bfc48226a2fa
+table private.retired_domain_migration_rows d12f575d145371b064732fb1d5742836
+table private.tg_login_requests 999dfb862bbe8139e7bd05dc5160c2df
+table public.events 11ea16f9057740775d6c3032f3fde73b
+table public.juz 7c75877bbe27b34e1f8b5873b7974be5
+table public.khatmah 01f823789033d1cd28246fc208acbe2f
+table public.khatmah_creation_log 787b1429d3b8691d1194ac2862a8794d
+table public.members d329e0662cac44771d506d83ced273ab
+table public.notification_deliveries 660a109a70d89cddf42afb902b55d892
+table public.pwa_installs 4398888f4d1f675e44fd771f4866375a
+table public.reading_history 28ddaf5698be962978824a101fde8202
+table public.round_requests 6b3e4b7bcd745c05af2fc13ca19bd1eb
+table public.share_pending 8010706c019124cec682a62ee1da3c8a
+table public.share_wait b113859e830d98401b02123d4077ea94
+table public.usage_daily e9bdffbb5d938518532a6628cfe49dd4
+view private.usage_active 50bd9fff73479a0468af39b3f1ed903e
+view private.usage_countries 8c8588a1eeb9c741fcca3e4c33878565
+view private.usage_human 35c9208687dd3ade79ffe348553c099c
+view private.usage_listening b423d91b9d95a8f7b9fe530cd3cd4fff
+view private.usage_reach edec847026af1b8f5fa8a959096304f9
+view private.usage_retention 4efde7444eb9ab0a47c16ed9d23945d0
+view private.usage_storage 946a734150d4812122eea8ce7152708e
+view private.usage_summary acd22757bdb806404dbc22eb4fc741dc

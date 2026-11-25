@@ -1,0 +1,99 @@
+/* ===================== الجلسة =====================
+   الختمة المفتوحة في الرابط، والختمة النشطة في هذا المتصفح، وقائمة «ختماتي».
+   حالة التطبيق المشتركة في app-state.mjs (appState). */
+import { appState } from "./app-state.mjs";
+import { rpc } from "./api.mjs";
+
+export const hashCode=()=>(location.hash||"").replace(/^#/,"").trim().toUpperCase().slice(0,4);
+
+export function zkReplaceHash(value=""){
+  try{
+    const url=new URL(location.href);url.hash=value?String(value):"";
+    history.replaceState(history.state,"",url.href);
+  }catch(_){location.hash=value?String(value):""}
+}
+/* الختمة النشطة:
+   - LAST: آخر ختمة مؤكدة لهذا الجهاز، وتبقى بعد إغلاق التطبيق.
+   - ACTIVE_SESSION: سياق الرابط/الاختيار الحالي في هذا التبويب.
+   عند وجود الاثنين، سياق الجلسة هو الأحدث والأولى بالفتح. */
+const LAST="zad:last";
+const ACTIVE_SESSION="zad:active-khatmah-session";
+export function cleanKhatmahCode(value){
+  return String(value||"").trim().toUpperCase().slice(0,4);
+}
+function activeSessionGet(){
+  try{return cleanKhatmahCode(sessionStorage.getItem(ACTIVE_SESSION));}catch(_){return ""}
+}
+export function activeKhatmahGet(){
+  const session=activeSessionGet();
+  if(session)return session;
+  try{return cleanKhatmahCode(localStorage.getItem(LAST));}catch(_){return ""}
+}
+export function activeKhatmahSet(value,persist=false){
+  const c=cleanKhatmahCode(value);if(!c)return "";
+  try{sessionStorage.setItem(ACTIVE_SESSION,c);}catch(_){ }
+  if(persist){try{localStorage.setItem(LAST,c);}catch(_){ }}
+  return c;
+}
+export function activeKhatmahForget(value=""){
+  const c=cleanKhatmahCode(value),session=activeSessionGet();
+  try{if(!c||session===c)sessionStorage.removeItem(ACTIVE_SESSION);}catch(_){ }
+  try{const last=cleanKhatmahCode(localStorage.getItem(LAST));if(!c||last===c)localStorage.removeItem(LAST);}catch(_){ }
+  /* حالة الختمة المحفوظة للعرض الفوري (state-sync.js) تُنسى معها. */
+  try{const saved=JSON.parse(localStorage.getItem("zad:khatmah-state-v1")||"null");if(!c||saved?.code===c)localStorage.removeItem("zad:khatmah-state-v1");}catch(_){ }
+}
+export const linkFor=c=>location.origin+location.pathname+"#"+c;
+
+/* ختمات هذا الجهاز: يُبنى منها شريط «ختماتي» في الرئيسية،
+   فيعود القارئ إلى ختمته بضغطة، بلا رمز ولا اسم. */
+const MINE="zad:mine";
+export function mineGet(){
+  try{ const v=JSON.parse(localStorage.getItem(MINE)); return Array.isArray(v)?v:[]; }
+  catch(e){ return []; }
+}
+function minePut(list){
+  try{ localStorage.setItem(MINE,JSON.stringify(list.slice(0,12))); }catch(e){}
+}
+export function mineRemember(){
+  if(!appState.code||!appState.viewer||!appState.state) return;
+  activeKhatmahSet(appState.code,true);
+  const rest=mineGet().filter(x=>x.code!==appState.code);
+  rest.unshift({code: appState.code,name:appState.viewer.name,title:appState.state.title||"",
+                publicId:appState.state.publicId||null,at:Date.now()});
+  minePut(rest);
+}
+/* ختمة من بطاقات «الختمات الجارية» يكون هذا الجهاز عضوًا فيها، فتُفتح دون رمز. */
+export function mineByPublicId(publicId){
+  return publicId?mineGet().find(x=>x.publicId===publicId&&x.code)||null:null;
+}
+export function mineForget(c){ minePut(mineGet().filter(x=>x.code!==c)); }
+
+/* Remove legacy entries whose khatmahs were cancelled on another session.
+   A network/RPC failure always keeps the entry; only an authoritative null
+   response from get_state is allowed to remove it. */
+let minePrunePromise=null;
+export function minePruneMissing(){
+  if(minePrunePromise||!navigator.onLine) return minePrunePromise||Promise.resolve(false);
+  const snapshot=mineGet();
+  if(!snapshot.length) return Promise.resolve(false);
+  minePrunePromise=(async()=>{
+    const checks=await Promise.all(snapshot.map(async item=>{
+      try{
+        const remote=await rpc("get_state",{p_code:item.code});
+        return {code:item.code,missing:remote===null,publicId:(remote&&remote.publicId)||null};
+      }catch(_){ return {code:item.code,missing:false,publicId:null}; }
+    }));
+    const missing=new Set(checks.filter(x=>x.missing).map(x=>x.code));
+    /* السجلات القديمة حُفظت قبل publicId؛ يُكمَل من get_state لتعرفها البطاقات. */
+    const ids=new Map(checks.filter(x=>x.publicId).map(x=>[x.code,x.publicId]));
+    let filled=false;
+    const next=mineGet().filter(item=>!missing.has(item.code)).map(item=>{
+      if(item.publicId||!ids.has(item.code)) return item;
+      filled=true; return {...item,publicId:ids.get(item.code)};
+    });
+    if(!missing.size&&!filled) return false;
+    minePut(next);
+    return true;  /* تغيّرت القائمة: يعيد المستدعي رسم الرئيسية إن كانت ظاهرة */
+  })().finally(()=>{minePrunePromise=null});
+  return minePrunePromise;
+}

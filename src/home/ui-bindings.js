@@ -13,7 +13,7 @@ function bind(){
   document.querySelectorAll("[data-mine]").forEach(b=>b.onclick=()=>{
     zkReplaceHash(b.dataset.mine); boot();
   });
-  if($("btn-new")) $("btn-new").onclick=()=>{screen="create";render();};
+  if($("btn-new")) $("btn-new").onclick=()=>{appState.screen="create";render();};
   document.querySelectorAll("[data-khatmah-card]").forEach(button=>
     button.onclick=()=>joinKhatmahCard(button.dataset.khatmahCard));
   /* ثلاث شاشات فيها زرّ الرئيسية، فالربط بالسمة لا بمعرّف يتكرّر */
@@ -49,15 +49,15 @@ function bind(){
         p_org_id:keyOf(org), p_org_name:org, p_org_code:oc, p_device:deviceId(),
         p_access_type:access});
       if(!r.ok) return toast(r.error||"تعذّر الإنشاء");
-      code=r.code;
-      zkReplaceHash(code);
-      viewer={id:keyOf(org),name:org};
-      localStorage.setItem(vKey(),JSON.stringify(viewer));
-      activeKhatmahSet(code,true);
+      appState.code=r.code;
+      zkReplaceHash(appState.code);
+      appState.viewer={id:keyOf(org),name:org};
+      localStorage.setItem(vKey(),JSON.stringify(appState.viewer));
+      activeKhatmahSet(appState.code,true);
       localStorage.setItem(cKey(),oc);
       /* لا يرى الرمز ولا الرابط حتى يربط تذكيره، فلا تُستعمل ختمة بلا مشرف مربوط */
       await refresh(true);
-      justCreated=true;
+      appState.justCreated=true;
       startLinking();
     }catch(e){ toast("تعذّر الاتصال"); }
   };
@@ -70,14 +70,14 @@ function bind(){
       const name=norm($("f-name").value);
       if(!name) return toast("اكتب اسمك أولًا");
       await refresh(true);
-      if(!state) return;
+      if(!appState.state) return;
       const id=keyOf(name);
-      const exact=(state.members||[]).find(m=>m.id===id);
+      const exact=(appState.state.members||[]).find(m=>m.id===id);
       if(!exact){
-        const near=similarTo(name,state.members);
+        const near=similarTo(name,appState.state.members);
         if(near.length) return askSimilar(near,name);
       }
-      if(id===state.organizerId){ gateName=name; render(); return; }
+      if(id===appState.state.organizerId){ appState.gateName=name; render(); return; }
       await doSignIn(id,name,null);
     };
     $("btn-login").onclick=go;
@@ -91,14 +91,14 @@ function bind(){
     const go=async()=>{
       const c=norm($("f-code").value);
       if(!c) return toast("أدخل الرمز");
-      const before=gateName;
+      const before=appState.gateName;
       await doSignIn(keyOf(before),before,c);
-      if(gateName) toast("الرمز غير صحيح");
+      if(appState.gateName) toast("الرمز غير صحيح");
     };
     $("btn-code").onclick=go;
     $("f-code").onkeydown=e=>{if(e.key==="Enter")go();};
     $("f-code").focus();
-    $("btn-back").onclick=()=>{gateName="";render();};
+    $("btn-back").onclick=()=>{appState.gateName="";render();};
   }
 
   document.querySelectorAll(".cell").forEach(el=>el.onclick=()=>openSheet(+el.dataset.i));
@@ -110,16 +110,16 @@ function bind(){
   });
   /* الفلتر يبدّل صنفًا على الشبكة فقط، دون إعادة رسم الصفحة. */
   document.querySelectorAll("[data-jf]").forEach(b=>b.onclick=()=>{
-    juzFilter=b.dataset.jf;
-    $("juz-grid")?.classList.toggle("only-free",juzFilter==="free");
-    document.querySelectorAll("[data-jf]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.jf===juzFilter)));
+    appState.juzFilter=b.dataset.jf;
+    $("juz-grid")?.classList.toggle("only-free",appState.juzFilter==="free");
+    document.querySelectorAll("[data-jf]").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.jf===appState.juzFilter)));
   });
-  if($("people-panel")) $("people-panel").ontoggle=e=>{peopleOpen=e.target.open;};
+  if($("people-panel")) $("people-panel").ontoggle=e=>{appState.peopleOpen=e.target.open;};
   document.querySelectorAll("[data-member]").forEach(b=>b.onclick=()=>memberDialog(b.dataset.member));
 
 
   if($("btn-link-big")) $("btn-link-big").onclick=()=>{
-    if(state&&state.accessType==="public") askReminderHour();
+    if(appState.state&&appState.state.accessType==="public") askReminderHour();
     else linkTelegram();
   };
 
@@ -129,10 +129,11 @@ function bind(){
   if($("btn-extend")) $("btn-extend").onclick=()=>datePicker(
     "تمديد الموعد","تبقى الحجوزات كما هي، ويعود التذكير إلى العمل.","مدّد",
     async(d)=>{
-      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
-        p_title:state.title,p_dedication:state.dedication||"",
-        p_end:d,p_hour:state.reminderHour,p_minute:0,p_device:deviceId(),
-        p_access_type:state.accessType||"private"});
+      const oc=await organizerCode(); if(!oc) return;
+      const r=await rpc("update_settings",{p_code:appState.code,p_org_code:oc,
+        p_title:appState.state.title,p_dedication:appState.state.dedication||"",
+        p_end:d,p_hour:appState.state.reminderHour,p_minute:0,p_device:deviceId(),
+        p_access_type:appState.state.accessType||"private"});
       if(!r.ok) return toast("تعذّر التمديد");
       closeLayer(); await refresh(); toast("مُدّد الموعد");
     });
@@ -146,21 +147,21 @@ function settings(){
 
     <div class="field-row" style="margin-top:1rem;margin-bottom:.7rem">
       <label for="s-title">اسم الختمة</label>
-      <input id="s-title" class="field" value="${esc(state.title)}"></div>
+      <input id="s-title" class="field" value="${esc(appState.state.title)}"></div>
     <div class="field-row" style="margin-bottom:.9rem">
       <label for="s-ded">على نية:</label>
-      <input id="s-ded" class="field" value="${esc(state.dedication||"")}"></div>
+      <input id="s-ded" class="field" value="${esc(appState.state.dedication||"")}"></div>
 
     <fieldset class="access-picker">
       <legend>نوع الختمة</legend>
       <div class="access-options">
         <label class="access-option">
-          <input type="radio" name="s-access" value="private"${state.accessType==="public"?"":" checked"}>
+          <input type="radio" name="s-access" value="private"${appState.state.accessType==="public"?"":" checked"}>
           <span class="access-option-body"><b>خاصة</b>
             <small>تتطلب رمز الختمة عند الدخول من بطاقتها.</small></span>
         </label>
         <label class="access-option">
-          <input type="radio" name="s-access" value="public"${state.accessType==="public"?" checked":""}>
+          <input type="radio" name="s-access" value="public"${appState.state.accessType==="public"?" checked":""}>
           <span class="access-option-body"><b>عامة</b>
             <small>مفتوحة للانضمام مباشرة من الصفحة الرئيسية.</small></span>
         </label>
@@ -169,10 +170,10 @@ function settings(){
 
     <div class="dtgrid">
       <div class="dtcell"><label for="s-end">تنتهي في</label>
-        <input id="s-end" class="field" type="date" value="${state.endDate}">
+        <input id="s-end" class="field" type="date" value="${appState.state.endDate}">
         <p class="dtprev" id="p-end"></p></div>
       <div class="dtcell"><label for="s-hour">التذكير عند</label>
-        <select id="s-hour" class="field">${hourOptions(state.reminderHour)}</select>
+        <select id="s-hour" class="field">${hourOptions(appState.state.reminderHour)}</select>
         <p class="dtprev">كل يوم</p></div>
     </div>
 
@@ -197,8 +198,9 @@ function settings(){
 
   document.getElementById("s-save").onclick=async()=>{
     if(!eEnd.value) return toast("اختر تاريخ الانتهاء");
+    const oc=await organizerCode(); if(!oc) return;
     try{
-      const r=await rpc("update_settings",{p_code:code,p_org_code:orgCode(),
+      const r=await rpc("update_settings",{p_code:appState.code,p_org_code:oc,
         p_title:norm(document.getElementById("s-title").value),
         p_dedication:norm(document.getElementById("s-ded").value),
         p_end:eEnd.value,p_hour:+document.getElementById("s-hour").value,p_minute:0,
@@ -212,9 +214,22 @@ function settings(){
   document.getElementById("s-next").onclick=()=>datePicker(
     "ختمة جديدة","تُفرَّغ الأجزاء الثلاثون، ويبقى المشاركون وتذكيراتهم. ويصلهم إشعار بالبداية.","ابدأ",
     async(d)=>{
-      const requestId=`${code}:${state.roundNo||1}:${d}`;
-      const body={kind:"round",code,orgCode:orgCode(),device:deviceId(),end:d,requestId};
-      const r=await edge("announce",body,{key:`round:${requestId}`});
+      const oc=await organizerCode(); if(!oc) return;
+      const round=appState.state.roundNo||1;
+      const requestId=`${appState.code}:${round}:${d}`;
+      const body={kind:"round",code: appState.code,orgCode:oc,device:deviceId(),end:d,requestId};
+      toast("جارٍ البدء وإبلاغ المشاركين…");
+      let r;
+      try{
+        r=await edge("announce",body,{key:`round:${requestId}`,timeout:GROUP_SEND_TIMEOUT});
+      }catch(err){
+        /* إن انقطع الرد بعد أن بدأت الختمة في الخادم فقد تمّ الأمر؛ نتحقق قبل أن نقول تعذّر. */
+        if(err&&err.status) throw err;
+        await refresh();
+        if(!appState.state||(appState.state.roundNo||1)<=round) throw err;
+        closeLayer();
+        return toast("بدأت ختمة جديدة");
+      }
       if(!r.ok) return toast(r.error||"تعذّر البدء");
       if(r.failed) enqueueEdge("announce",body,`round-notify:${requestId}`);
       closeLayer(); await refresh();
@@ -243,7 +258,7 @@ function datePicker(title,note,okLabel,onOk){
   document.getElementById("d-no").onclick=closeLayer;
   document.getElementById("d-go").onclick=async()=>{
     if(!e.value) return toast("اختر التاريخ");
-    try{ await onOk(e.value); }catch(err){ toast("تعذّر الاتصال"); }
+    try{ await onOk(e.value); }catch(err){ toast(requestError(err)); }
   };
 }
 
@@ -251,15 +266,16 @@ async function cancelKhatmah(){
   if(!await appConfirm(`سيُحذف كل شيء نهائيًا: المشاركون وتذكيراتهم ورمز الختمة، ويتعطّل الرابط الذي شاركته، وتصل المجموعة رسالة بالإلغاء.
 
 لبدء ختمة جديدة بنفس المجموعة استعمل «ابدأ ختمة جديدة» بدلًا من هذا.`,{title:"إلغاء الختمة",ok:"نعم، ألغِ الختمة",danger:true})) return;
+  const oc=await organizerCode(); if(!oc) return;
   try{
-    const body={code,orgCode:orgCode(),device:deviceId()};
-    const r=await edge("cancel-khatmah",body,{key:`cancel:${code}`});
+    const body={code: appState.code,orgCode:oc,device:deviceId()};
+    const r=await edge("cancel-khatmah",body,{key:`cancel:${appState.code}`});
     if(!r.ok) return toast(r.error||"الرمز غير صحيح");
-    mineForget(code);
+    mineForget(appState.code);
     localStorage.removeItem(vKey()); localStorage.removeItem(cKey());
-    activeKhatmahForget(code);
-    zkReplaceHash(""); code=""; state=null; viewer=null; screen="home"; closeLayer(); render();
+    activeKhatmahForget(appState.code);
+    zkReplaceHash(""); appState.code=""; appState.state=null; appState.viewer=null; appState.screen="home"; closeLayer(); render();
     loadPublicKhatmahs(true);
     toast("أُلغيت الختمة");
-  }catch(e){ toast("تعذّر الاتصال"); }
+  }catch(e){ toast(requestError(e)); }
 }

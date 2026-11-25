@@ -1,36 +1,34 @@
 /* ===================== تلغرام ===================== */
-let lkTimer=null;
 
-/* يفتح البوت ويظلّ يراقب حتى يتمّ التفعيل */
-let linking=false;   /* حارس: عملية ربط جارية، فلا يُولَّد رمز ثانٍ */
+/* يفتح البوت ويظلّ يراقب حتى يتمّ التفعيل (appState.linking يمنع رمزًا ثانيًا) */
 
 async function startLinking(force){
   /* كل رمز جديد يمحو ما قبله، فتولّد رمزين على ضغطة واحدة
      يُفشل الربط ويُظهر اعتذارًا بلا سبب. */
-  if(linking && !force){ if(screen!=="linking"){ screen="linking"; render(); } return; }
-  linking=true;
-  screen="linking"; render();
+  if(appState.linking && !force){ if(appState.screen!=="linking"){ appState.screen="linking"; render(); } return; }
+  appState.linking=true;
+  appState.screen="linking"; render();
   const opened=await openBot();
   if(!opened) showFallback();
   /* بعد ثوانٍ نعرض المخرج على كل حال، فقد يفشل الفتح صامتًا */
   setTimeout(showFallback,5000);
-  clearInterval(lkTimer);
+  clearInterval(appState.lkTimer);
   let tries=0,checking=false;
-  lkTimer=setInterval(async()=>{
-    if(screen!=="linking"||!viewer){ clearInterval(lkTimer); lkTimer=null; linking=false; return; }
+  appState.lkTimer=setInterval(async()=>{
+    if(appState.screen!=="linking"||!appState.viewer){ clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false; return; }
     if(checking) return;
     checking=true;
     tries++;
     try{
       if(!await refresh(true)) return;
-      if(!state){ clearInterval(lkTimer); lkTimer=null; linking=false; render(); return; }
-      const m=memberOf(viewer.id);
+      if(!appState.state){ clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false; render(); return; }
+      const m=memberOf(appState.viewer.id);
       if(m&&(m.linked||m.exempt)){
-        clearInterval(lkTimer); lkTimer=null; linking=false;
-        if(justCreated){ justCreated=false; screen="share"; render(); toast("بدأت الختمة"); return; }
-        screen="main"; render();
+        clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false;
+        if(appState.justCreated){ appState.justCreated=false; appState.screen="share"; render(); toast("بدأت الختمة"); return; }
+        appState.screen="main"; render();
         toast(m.linked?"تم تفعيل التذكير، تقبّل الله":"أذن لك المنظّم بالدخول");
-      } else if(tries>=100){ clearInterval(lkTimer); lkTimer=null; linking=false; showFallback(); }
+      } else if(tries>=100){ clearInterval(appState.lkTimer); appState.lkTimer=null; appState.linking=false; showFallback(); }
     }finally{ checking=false; }
   },3000);
 }
@@ -46,7 +44,7 @@ async function openBot(){
   const w=window.open("about:blank","_blank");
   if(w) w.opener=null;
   let lc;
-  try{ lc=await rpc("make_link_code",{p_code:code,p_id:viewer.id,p_device:deviceId()}); }
+  try{ lc=await rpc("make_link_code",{p_code:appState.code,p_id:appState.viewer.id,p_device:deviceId()}); }
   catch(e){ if(w) w.close(); return false; }
   if(!lc){ if(w) w.close(); return false; }
   const url=`https://t.me/${BOT_USERNAME}?start=${lc}`;
@@ -69,8 +67,8 @@ async function linkTelegram(){
     n++;
     try{
       if(!await refresh(true)) return;
-      if(!state){ clearInterval(t); linkBusy=false; render(); return; }
-      const m=memberOf(viewer.id);
+      if(!appState.state){ clearInterval(t); linkBusy=false; render(); return; }
+      const m=memberOf(appState.viewer.id);
       if(m&&m.linked){
         clearInterval(t); linkBusy=false; render(); toast("تم تفعيل التذكير");
       }else if(n>=20){ clearInterval(t); linkBusy=false; }
@@ -83,33 +81,61 @@ async function linkTelegram(){
    دون أن يحتاج المشرف. الطلب صالح عشر دقائق، ولا ينهيه إلا هذا المتصفح. */
 let tgLoginTimer=null;
 let tgLoginWake=()=>{};
+/* الطلب المعلّق يُحفظ في التخزين: على الآيفون قد يُعاد تحميل الصفحة عند الرجوع من
+   تيليغرام فيضيع الانتظار، فيُستأنف عند فتح الصفحة بدل أن يبدأ المستخدم من جديد. */
+const TG_PENDING_KEY="zad:tglogin";
+const TG_PENDING_MS=15*60*1000;
+function tgPendingSave(p){ try{ localStorage.setItem(TG_PENDING_KEY,JSON.stringify(p)); }catch(_){ } }
+function tgPendingClear(){ try{ localStorage.removeItem(TG_PENDING_KEY); }catch(_){ } }
+function tgPendingGet(){
+  try{
+    const p=JSON.parse(localStorage.getItem(TG_PENDING_KEY)||"null");
+    if(p&&/^[0-9a-f]{32}$/.test(p.nonce)&&Date.now()-p.at<TG_PENDING_MS) return p;
+  }catch(_){ }
+  tgPendingClear();
+  return null;
+}
 function tgLoginStop(){
   clearInterval(tgLoginTimer); tgLoginTimer=null;
   document.removeEventListener("visibilitychange",tgLoginWake);
+  window.removeEventListener("pageshow",tgLoginWake);
+  window.removeEventListener("focus",tgLoginWake);
 }
 async function tgLogin(wantedId){
   if(tgLoginTimer) return;
   /* فتح النافذة داخل ضغطة المستخدم، كما في تفعيل التذكير. */
   const w=window.open("about:blank","_blank");
   if(w) w.opener=null;
+  const wanted=typeof wantedId==="string"?wantedId:null;
   let nonce=null;
-  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:code||null,p_id:typeof wantedId==="string"?wantedId:null}); }catch(_){ }
+  try{ nonce=await rpc("start_tg_login",{p_device:deviceId(),p_code:appState.code||null,p_id:wanted}); }catch(_){ }
   if(typeof nonce!=="string"||!/^[0-9a-f]{32}$/.test(nonce)){
     if(w) w.close();
     return toast("تعذّر الآن، حاول بعد قليل");
   }
-  const url=`https://t.me/${BOT_USERNAME}?start=login_${nonce}`;
-  if(w) w.location.replace(url);
+  const pending={nonce,code:appState.code||null,wanted,at:Date.now()};
+  tgPendingSave(pending);
+  if(w) w.location.replace(tgLoginUrl(nonce));
+  tgLoginWait(pending);
+}
+function tgLoginUrl(nonce){ return `https://t.me/${BOT_USERNAME}?start=login_${nonce}`; }
+/* عند فتح الصفحة: إن كان طلب دخول عبر تيليغرام معلّقًا من هذا المتصفح، يُكمَل. */
+function resumeTgLogin(){
+  if(tgLoginTimer) return;
+  const p=tgPendingGet();
+  if(p) tgLoginWait(p);
+}
+function tgLoginWait(p){
+  const nonce=p.nonce, wantedId=p.wanted;
   modal(`<div class="display" style="font-size:1.35rem">أكمل الدخول في تيليغرام</div>
     <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
       في محادثة بوت زاد الخير اضغط «ابدأ»، ثم «نعم، أدخلني»، وارجع إلى هنا.</p>
     <div class="actions">
-      <a class="btn tg-login" id="tl-open" href="${url}" target="_blank" rel="noopener">${TG_ICON}<span>افتح تيليغرام</span></a>
+      <a class="btn tg-login" id="tl-open" href="${tgLoginUrl(nonce)}" target="_blank" rel="noopener">${TG_ICON}<span>افتح تيليغرام</span></a>
       <button class="btn quiet" id="tl-cancel">إلغاء</button></div>`);
-  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();closeLayer();};
+  document.getElementById("tl-cancel").onclick=()=>{tgLoginStop();tgPendingClear();closeLayer();};
 
   let checking=false;
-  const started=Date.now();
   const check=async()=>{
     if(checking) return;
     checking=true;
@@ -117,24 +143,27 @@ async function tgLogin(wantedId){
       let r=null;
       try{ r=await rpc("finish_tg_login",{p_nonce:nonce,p_device:deviceId()}); }catch(_){ return; }
       if(r&&r.pending){
-        if(Date.now()-started>15*60*1000){ tgLoginStop(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
+        if(Date.now()-p.at>TG_PENDING_MS){ tgLoginStop(); tgPendingClear(); closeLayer(); toast("انتهت مدة الطلب، حاول من جديد"); }
         return;
       }
-      tgLoginStop(); closeLayer();
+      tgLoginStop(); tgPendingClear(); closeLayer();
       if(!r||!r.ok) return toast("انتهت مدة الطلب، حاول من جديد");
       storeMemberships(r.memberships);
-      if(!code){ toast("أهلًا بك"); return; }
+      if(!appState.code){ toast("أهلًا بك"); return; }
       loadViewer();
-      if(!viewer){ screen="gate"; render(); return toast("حساب تيليغرام هذا ليس في هذه الختمة"); }
-      activeKhatmahSet(code,true);
-      gateName="";
+      if(!appState.viewer){ appState.screen="gate"; render(); return toast("حساب تيليغرام هذا ليس في هذه الختمة"); }
+      activeKhatmahSet(appState.code,true);
+      appState.gateName="";
       await refresh();
       /* إن أكّد حساب صاحبه اسم آخر، يُقال له باسم من دخل. */
-      toast(typeof wantedId==="string"&&viewer.id!==wantedId?`دخلت باسم «${viewer.name}»`:"أهلًا بك");
+      toast(typeof wantedId==="string"&&appState.viewer.id!==wantedId?`دخلت باسم «${appState.viewer.name}»`:"أهلًا بك");
     }finally{ checking=false; }
   };
   /* العودة من تيليغرام تُظهر الصفحة، فيُسأل فورًا بدل انتظار الدورة التالية. */
   tgLoginWake=()=>{ if(document.visibilityState==="visible") check(); };
   document.addEventListener("visibilitychange",tgLoginWake);
+  window.addEventListener("pageshow",tgLoginWake);
+  window.addEventListener("focus",tgLoginWake);
   tgLoginTimer=setInterval(check,2500);
+  check();
 }

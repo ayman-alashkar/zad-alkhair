@@ -1,39 +1,39 @@
 /* ===================== البيانات ===================== */
 let refreshSeq=0;
 async function refresh(silent=false){
-  const requestedCode=code;
+  const requestedCode=appState.code;
   if(!requestedCode) return false;
   const seq=++refreshSeq;
   let nextState;
   try{ nextState=await rpc("get_state",{p_code:requestedCode}); }
   catch(e){
-    if(seq===refreshSeq&&code===requestedCode&&!silent) toast("تعذّر الاتصال بقاعدة البيانات");
+    if(seq===refreshSeq&&appState.code===requestedCode&&!silent) toast("تعذّر الاتصال بقاعدة البيانات");
     return false;
   }
   /* تُهمل الاستجابة إذا بدأ جلب أحدث أو غادر المستخدم الختمة. */
-  if(seq!==refreshSeq||code!==requestedCode) return false;
-  state=nextState;
-  if(!state){ mineForget(code); activeKhatmahForget(code); khatmahStateForget(); screen="notfound"; if(!silent) render(); return true; }
-  if(viewer && !memberOf(viewer.id)){ /* حُذف أو دُمج */ viewer=null; localStorage.removeItem(vKey()); }
-  if(screen!=="linking"){
-    const me=viewer?memberOf(viewer.id):null;
+  if(seq!==refreshSeq||appState.code!==requestedCode) return false;
+  appState.state=nextState;
+  if(!appState.state){ mineForget(appState.code); activeKhatmahForget(appState.code); khatmahStateForget(); appState.screen="notfound"; if(!silent) render(); return true; }
+  if(appState.viewer && !memberOf(appState.viewer.id)){ /* حُذف أو دُمج */ appState.viewer=null; localStorage.removeItem(vKey()); }
+  if(appState.screen!=="linking"){
+    const me=appState.viewer?memberOf(appState.viewer.id):null;
     /* الربط شرط للدخول، ويُستثنى المنظّم ومن أُذن له */
     /* الربط شرط للدخول، ويلزم المشرف كما يلزم غيره */
     if(me && !me.linked && !me.exempt){
       /* في الختمة العامة لا يعرف القارئ مشرفها ليأذن له،
          فيُسأل بنفسه بدل أن يُساق إلى تلغرام سوقًا. */
       if(!silent){
-        if(state.accessType==="public" && !isOrganizer()) askReminder();
+        if(appState.state.accessType==="public" && !isOrganizer()) askReminder();
         else startLinking();
         return;
       }
-      screen="main";
+      appState.screen="main";
     } else {
-      screen = viewer ? "main" : "gate";
+      appState.screen = appState.viewer ? "main" : "gate";
     }
   }
-  if(viewer&&state) mineRemember();
-  if(viewer&&state&&screen==="main") khatmahStateSave();
+  if(appState.viewer&&appState.state) mineRemember();
+  if(appState.viewer&&appState.state&&appState.screen==="main") khatmahStateSave();
   if(!silent) render();
   return true;
 }
@@ -42,7 +42,7 @@ async function refresh(silent=false){
    server answer only corrects it. Every action still goes to the server. */
 const KHATMAH_STATE_KEY="zad:khatmah-state-v1";
 function khatmahStateSave(){
-  try{localStorage.setItem(KHATMAH_STATE_KEY,JSON.stringify({code,state}))}catch(_){}
+  try{localStorage.setItem(KHATMAH_STATE_KEY,JSON.stringify({code: appState.code,state: appState.state}))}catch(_){}
 }
 function khatmahStateSaved(c){
   try{
@@ -54,25 +54,25 @@ function khatmahStateForget(){try{localStorage.removeItem(KHATMAH_STATE_KEY)}cat
 
 async function doSignIn(id,name,ocode){
   let r;
-  try{ r=await rpc("sign_in",{p_code:code,p_id:id,p_name:name,
+  try{ r=await rpc("sign_in",{p_code:appState.code,p_id:id,p_name:name,
         p_device:deviceId(),p_org_code:ocode}); }
   catch(e){ return toast("تعذّر الاتصال"); }
   if(!r||!r.ok){
-    if(r&&r.needCode){ gateName=name; screen="gate"; render(); return; }
+    if(r&&r.needCode){ appState.gateName=name; appState.screen="gate"; render(); return; }
     if(r&&r.taken) return nameTaken(r.name,r.linked,id);
     return toast((r&&r.error)||"تعذّر الدخول");
   }
-  viewer={id:r.id,name:r.name};
-  localStorage.setItem(vKey(),JSON.stringify(viewer));
-  activeKhatmahSet(code,true);
+  appState.viewer={id:r.id,name:r.name};
+  localStorage.setItem(vKey(),JSON.stringify(appState.viewer));
+  activeKhatmahSet(appState.code,true);
   if(ocode) localStorage.setItem(cKey(),ocode);
-  gateName="";
+  appState.gateName="";
   if(!await refresh(true)){
-    screen="gate"; render(); toast("تعذّر الاتصال بقاعدة البيانات"); return;
+    appState.screen="gate"; render(); toast("تعذّر الاتصال بقاعدة البيانات"); return;
   }
-  const me=memberOf(viewer.id);
+  const me=memberOf(appState.viewer.id);
   if(me&&!me.linked&&!me.exempt){
-    if(state.accessType==="public"&&!isOrganizer()) askReminder();
+    if(appState.state.accessType==="public"&&!isOrganizer()) askReminder();
     else startLinking();
     return;
   }
@@ -108,9 +108,10 @@ function nameTaken(name,linked,id){
 /* القارئ داخل الختمة باسمه، لكن هذا المتصفح غير مسجّل لهذا الاسم (فُتح الاسم ثم
    أُقفل، أو مُسح تخزين المتصفح جزئيًا). المربوط بتيليغرام يؤكد من هناك ثم يعيد
    ما كان يفعله؛ وغيره يحتاج المنظّم. */
+onDeviceNotRecognised(()=>deviceNotRecognised());
 function deviceNotRecognised(){
   if(tgLoginTimer||document.getElementById("nt-tg")||document.getElementById("dn-ok")) return;
-  const me=viewer?memberOf(viewer.id):null;
+  const me=appState.viewer?memberOf(appState.viewer.id):null;
   if(me&&me.linked){
     modal(`<div class="display" style="font-size:1.35rem">هذا المتصفح غير مسجَّل باسمك</div>
       <p class="hint" style="margin:.7rem 0 1.1rem;line-height:2">
@@ -118,7 +119,7 @@ function deviceNotRecognised(){
       <div class="actions">
         <button class="btn tg-login" id="nt-tg">${TG_ICON}<span>تأكيد عبر تيليغرام</span></button>
         <button class="btn quiet" id="dn-ok">لاحقًا</button></div>`);
-    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin(viewer&&viewer.id);};
+    document.getElementById("nt-tg").onclick=()=>{closeLayer();tgLogin(appState.viewer&&appState.viewer.id);};
     document.getElementById("dn-ok").onclick=closeLayer;
     return;
   }
@@ -131,7 +132,7 @@ function deviceNotRecognised(){
 
 function askSimilar(list,typed){
   const rows=list.map(m=>{
-    const n=state.juz.filter(j=>j.ownerId===m.id).length;
+    const n=appState.state.juz.filter(j=>j.ownerId===m.id).length;
     return `<button class="asg-row" data-pick="${esc(m.id)}">
       <span class="avatar">${esc(norm(m.name).charAt(0)||"؟")}</span>
       <span class="asg-name">${esc(m.name)}</span>
@@ -150,14 +151,14 @@ function askSimilar(list,typed){
   document.querySelectorAll("[data-pick]").forEach(b=>b.onclick=async()=>{
     const m=list.find(x=>x.id===b.dataset.pick);
     closeLayer();
-    if(m.id===state.organizerId){ gateName=m.name; screen="gate"; render(); return; }
+    if(m.id===appState.state.organizerId){ appState.gateName=m.name; appState.screen="gate"; render(); return; }
     await doSignIn(m.id,m.name,null);
   });
 
   document.getElementById("sim-no").onclick=async()=>{
     closeLayer();
     const id=keyOf(typed);
-    if(id===state.organizerId){ gateName=typed; screen="gate"; render(); return; }
+    if(id===appState.state.organizerId){ appState.gateName=typed; appState.screen="gate"; render(); return; }
     await doSignIn(id,typed,null);
   };
 }

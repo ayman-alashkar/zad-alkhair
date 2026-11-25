@@ -4,8 +4,8 @@ const root=path.join(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 
 /* بيئة صغيرة: مخزن محلي، ومؤقتات تُشغَّل يدويًا، وساعة يضبطها الاختبار، وfetch يسجّل الطلبات. */
-function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=200,userAgent="Mozilla/5.0 (Linux; Android 14)",webdriver=false}={}){
-  const store=new Map(),timers=[],sent=[],listeners={};
+function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=200,userAgent="Mozilla/5.0 (Linux; Android 14)",webdriver=false,installed=false,persisted,saved={}}={}){
+  const store=new Map(Object.entries(saved)),timers=[],sent=[],listeners={};
   const clock={now};
   const RealDate=Date;
   class FakeDate extends RealDate{constructor(...a){super(...(a.length?a:[clock.now]))}static now(){return clock.now}}
@@ -15,15 +15,17 @@ function usageEnv({search="",now=Date.parse("2026-11-11T10:00:00Z"),fetchStatus=
     crypto:{randomUUID:()=>"0b8f2c1e-1111-4222-8333-444455556666"},
     localStorage:{getItem:k=>store.has(k)?store.get(k):null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)},
     location:{search},
-    navigator:{userAgent,webdriver,onLine:true,platform:"Linux armv8l",maxTouchPoints:5},
+    navigator:{userAgent,webdriver,onLine:true,platform:"Linux armv8l",maxTouchPoints:5,
+      ...(persisted===undefined?{}:{storage:{persisted:async()=>persisted}})},
     document:{hidden:false,addEventListener:(t,f)=>(listeners[t]=listeners[t]||[]).push(f)},
-    window:{matchMedia:()=>({matches:false}),addEventListener:(t,f)=>(listeners[t]=listeners[t]||[]).push(f)},
+    window:{matchMedia:()=>({matches:installed}),addEventListener:(t,f)=>(listeners[t]=listeners[t]||[]).push(f)},
     setTimeout:(f,ms)=>{timers.push({f,ms});return timers.length},clearTimeout:id=>{if(timers[id-1])timers[id-1].f=null},
     setInterval:()=>0,
     fetch:async(url,opt)=>{sent.push({url,body:JSON.parse(opt.body)});return {ok:fetchStatus<300,status:fetchStatus}}
   };
   vm.createContext(ctx);
-  vm.runInContext(read("src/shared/usage.js")+";this.api={zuDay,zuSurface,zuTrackAudio,zuFlush,zuRead,zuAdd,zuDeviceId};",ctx);
+  // وحدة ES: تُشغَّل هنا في سياق معزول بعد حذف كلمة export، لتتحكم البيئة بالساعة والتخزين والمؤقتات
+  vm.runInContext(read("src/shared/usage.mjs").replace(/^export /gm,"")+";this.api={zuDay,zuSurface,zuTrackAudio,zuFlush,zuRead,zuAdd,zuDeviceId,zuPackFresh};",ctx);
   const runTimers=()=>{const due=timers.splice(0);due.forEach(t=>t.f&&t.f())};
   return {api:ctx.api,store,sent,clock,runTimers};
 }
@@ -65,7 +67,7 @@ test("flush sends one request per day and keeps what arrived meanwhile",async()=
   await flushing;
   assert.equal(env.sent.length,2);
   assert.match(env.sent[0].url,/\/rest\/v1\/rpc\/record_usage$/);
-  assert.deepEqual(env.sent[0].body,{p_device:"0b8f2c1e-1111-4222-8333-444455556666",p_day:"2026-11-11",p_platform:"android",p_installed:false,p_tz:"Asia/Damascus",p_counts:{home:2,listen_seconds:30}});
+  assert.deepEqual(env.sent[0].body,{p_device:"0b8f2c1e-1111-4222-8333-444455556666",p_day:"2026-11-11",p_platform:"android",p_installed:false,p_tz:"Asia/Damascus",p_persisted:null,p_counts:{home:2,listen_seconds:30}});
   assert.deepEqual(JSON.parse(JSON.stringify(env.api.zuRead())),{"2026-11-12":{reader:1}});
 });
 
@@ -79,12 +81,12 @@ test("a server error keeps the counts for next time; ?nostats stops counting",as
   assert.equal(off.sent.length,0);
 });
 
-test("both apps carry the usage section, sharing the install analytics identity",()=>{
-  assert.match(read("src/home/app.js"),/@include \.\.\/shared\/usage\.js/);
-  assert.match(read("src/reader/app.js"),/@include \.\.\/shared\/usage\.js/);
+test("both apps import the usage module, sharing the install analytics identity",()=>{
+  assert.match(read("src/home/app.js"),/from "\.\.\/shared\/usage\.mjs"/);
+  assert.match(read("src/reader/app.js"),/from "\.\.\/shared\/usage\.mjs"/);
   assert.match(read("index.html"),/record_usage/);
   assert.match(read("quran/runtime/reader.js"),/record_usage/);
-  assert.match(read("src/home/install-navigation.js"),/function pwaInstallId\(\)\{return zuDeviceId\(\)\}/);
+  assert.match(read("src/home/install.mjs"),/function pwaInstallId\(\)\{return zuDeviceId\(\)\}/);
   // The analytics check must not end ما تيسّر: tayassurActive() clears the mode as a side effect.
   assert.doesNotMatch(read("src/reader/bootstrap.js"),/zuTrackAudio\(audio,tayassurActive\)/);
 });
@@ -96,4 +98,27 @@ test("automated browsers are not counted",async()=>{
     assert.deepEqual(JSON.parse(JSON.stringify(env.api.zuRead())),{});
     assert.equal(env.sent.length,0);
   }
+});
+
+test("storage diagnostics: an installed Android app without its saved id counts a storage reset",async()=>{
+  const ID="zad:pwa-install-id",id="0b8f2c1e-1111-4222-8333-444455556666";
+  const wiped=usageEnv({installed:true});
+  assert.deepEqual(JSON.parse(JSON.stringify(wiped.api.zuRead())),{"2026-11-11":{storage_reset:1}});
+  assert.equal(wiped.store.get(ID),id);
+  const kept=usageEnv({installed:true,saved:{[ID]:id}});
+  assert.deepEqual(JSON.parse(JSON.stringify(kept.api.zuRead())),{});
+  const browser=usageEnv({installed:false});
+  assert.deepEqual(JSON.parse(JSON.stringify(browser.api.zuRead())),{});
+  // On iOS the home-screen app starts with its own empty storage: not a reset.
+  const ios=usageEnv({installed:true,userAgent:"Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"});
+  assert.deepEqual(JSON.parse(JSON.stringify(ios.api.zuRead())),{});
+});
+
+test("storage diagnostics: fresh Quran pack downloads and the persistence answer are sent",async()=>{
+  const env=usageEnv({persisted:true});
+  env.api.zuPackFresh();
+  await env.api.zuFlush();
+  assert.equal(env.sent.length,1);
+  assert.equal(env.sent[0].body.p_persisted,true);
+  assert.deepEqual(env.sent[0].body.p_counts,{pack_fresh:1});
 });

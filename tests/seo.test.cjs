@@ -5,6 +5,8 @@ const test=require("node:test");
 
 const root=path.resolve(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
+const {readAppScript}=require("../scripts/app-source.cjs");
+const appSource=name=>readAppScript(path.join(root,"src",name));
 const {reciters}=require("../src/discovery/catalog.json");
 const {readerRoutes,shareOrigin}=require("../scripts/quran-routes.cjs");
 const reciterName=({display})=>display.replace(/^فضيلة الشيخ\s+/,"");
@@ -86,9 +88,12 @@ test("reciter honorifics are consistent in the public index and the reader UI",(
   const index=read("quran-index/index.html");
   const reader=read("quran-read/index.html");
   for(const name of honorifics)assert.ok(index.includes(name),name);
-  for(const name of honorifics)assert.match(reader,new RegExp(`name:"${name}`));
-  assert.match(reader,/name:"فضيلة الشيخ محمد صديق المنشاوي — مجود"/);
-  assert.match(reader,/name:"فضيلة الشيخ محمد صديق المنشاوي — مرتل"/);
+  // الشيفرة في الصفحات المولّدة يعيد esbuild تنسيقها، فالفحص على المصدر
+  const readerSource=appSource("reader");
+  assert.ok(reader.includes("فضيلة الشيخ محمد صديق المنشاوي"));
+  for(const name of honorifics)assert.match(readerSource,new RegExp(`name:"${name}`));
+  assert.match(readerSource,/name:"فضيلة الشيخ محمد صديق المنشاوي — مجود"/);
+  assert.match(readerSource,/name:"فضيلة الشيخ محمد صديق المنشاوي — مرتل"/);
 });
 
 test("homepage gives Google real links without changing app actions",()=>{
@@ -98,7 +103,7 @@ test("homepage gives Google real links without changing app actions",()=>{
   assert.match(home,/<a class="zk-tab" id="zk-launch-quran" href="\/quran-index\/">/);
   assert.match(home,/<a class="zk-tab" id="zk-launch-zad" href="khatmahs\/">/);
   assert.match(home,/<a class="zk-launch-install zt-menu-install" id="zk-launch-install" href="install\/" role="menuitem" hidden>/);
-  assert.match(home,/event=>\{event\.preventDefault\(\);zkHideLaunch\(\);boot\(\)\}/);
+  assert.match(appSource("home"),/event=>\{event\.preventDefault\(\);zkHideLaunch\(\);boot\(\)\}/);
   assert.match(home,/القرآن العظيم، ختمات جماعية ومواقيت الصلاة/);
   assert.match(home,/<div class="zt-menu-label">دليل زاد الخير<\/div>/);
   assert.match(home,/<a href="\/quran-index\/" role="menuitem">.*?<span>الفهرس والقراء<\/span><\/a>/);
@@ -132,9 +137,10 @@ test("reader accepts a validated reciter deep link",()=>{
   assert.match(reader,/<link rel="canonical" href="https:\/\/zad-alkhair\.net\/quran-read\/">/);
   assert.match(reader,/<meta property="og:url" content="https:\/\/zad-alkhair\.net\/quran-read\/">/);
   assert.match(reader,/<meta property="og:image" content="https:\/\/zad-alkhair\.net\/social\/zad-alkhair-reader-share-v2\.jpg">/);
-  assert.match(reader,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
-  assert.match(reader,/if\(entry\.qari&&!entry\.direct\)\{/);
-  assert.match(reader,/if\(!entry\.direct&&entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
+  const readerSource=appSource("reader");
+  assert.match(readerSource,/qari:RECITERS\.some\(r=>r\.id===qari\)\?qari:null/);
+  assert.match(readerSource,/if\(entry\.qari&&!entry\.direct\)\{/);
+  assert.match(readerSource,/if\(!entry\.direct&&entry\.autoplay&&entry\.surah\)prepareSurahFromDeepLink/);
 });
 
 test("direct Quran pages boot the same reader and carry their own sharing card",()=>{
@@ -277,9 +283,9 @@ test("the Quran index carries Zad's four section tabs; reading pages do not",()=
   assert.doesNotMatch(read("src/reader/index.html"),/reader-app-tabs/);
   assert.doesNotMatch(library,/data-hub="zad"/);   /* the tabs lead home now */
 });
-test("the Quran index opens before the surah-title font, and reading waits for it",()=>{
+test("the Quran index opens before the mushaf fonts, and reading waits for them",()=>{
   const boot=read("src/reader/bootstrap.js"),tools=read("src/reader/reading-tools.js");
-  const early=boot.indexOf("openQuranIndex(tab,{home:true})"),fonts=boot.indexOf('document.fonts.load(\'64px "QUL_SurahHeader"\'');
+  const early=boot.indexOf("openQuranIndex(tab,{home:true})"),fonts=boot.indexOf('document.fonts.load(\'48px "QCF4_QBSML"\')');
   assert.ok(early>0&&fonts>early,"the index opens before the font wait");
   assert.match(boot,/if\(wantsHome&&!earlyIndexOpened\)/);
   assert.match(tools,/async function go\(p\)\{[\s\S]{0,200}if\(!readerBooted\)\{readerGoPending=true;await readerBootReady\}/);

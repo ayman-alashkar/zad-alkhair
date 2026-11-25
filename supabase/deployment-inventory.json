@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-14",
+  "captured_at": "2026-11-23",
   "project_ref": "webqpbcijjbawatykoxe",
   "edge_functions": [
     {
@@ -28,27 +28,15 @@
     },
     {
       "slug": "send-message",
-      "version": 11,
+      "version": 12,
       "verify_jwt": false,
-      "bundle_sha256": "d4e7c9f142422777cd7c7843f80635af9e4a618ddb23b12888af1e2afc965a6e"
+      "bundle_sha256": "1f92f7c63098007998dc096056119dfe346906d24209c6398c9d0dd35d199786"
     },
     {
       "slug": "announce",
-      "version": 12,
+      "version": 13,
       "verify_jwt": false,
-      "bundle_sha256": "efb9bf07e07a9829168e57553e06bd19a566c454eafb6a8454a5906f8fa50b52"
-    },
-    {
-      "slug": "migration-handoff",
-      "version": 4,
-      "verify_jwt": false,
-      "bundle_sha256": "69f475422b849ac8e9a51b7fadc9b59ce6b4a6f73580ad05100ab7a454fb01c9"
-    },
-    {
-      "slug": "telegram-migration",
-      "version": 3,
-      "verify_jwt": false,
-      "bundle_sha256": "001c257af4ab3d6e530eaf0ca1ab9ba5a3a208e2136a85649a5225039e4a57b1"
+      "bundle_sha256": "a7048423b8185d72ec70554876dd4731c6f0fe68d94cbe8bac3983e28d62ccc0"
     },
     {
       "slug": "send-completions",
@@ -137,12 +125,42 @@
     {
       "version": "20261114040520",
       "name": "telegram_login_wanted_name"
+    },
+    {
+      "version": "20261120092415",
+      "name": "usage_storage_diagnostics"
+    },
+    {
+      "version": "20261121005330",
+      "name": "retire_permanent_name_open"
+    },
+    {
+      "version": "20261123014710",
+      "name": "retire_domain_migration_leftovers"
     }
   ],
   "tables": [
     {
       "schema": "private",
       "name": "completed_khatmahs",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "private",
+      "name": "login_links",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "private",
+      "name": "retired_domain_migration_rows",
+      "rls_enabled": true,
+      "policies": 0
+    },
+    {
+      "schema": "private",
+      "name": "tg_login_requests",
       "rls_enabled": true,
       "policies": 0
     },
@@ -172,12 +190,6 @@
     },
     {
       "schema": "public",
-      "name": "member_domain_migrations",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "public",
       "name": "members",
       "rls_enabled": true,
       "policies": 0
@@ -185,12 +197,6 @@
     {
       "schema": "public",
       "name": "notification_deliveries",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "public",
-      "name": "origin_migration_handoffs",
       "rls_enabled": true,
       "policies": 0
     },
@@ -221,18 +227,6 @@
     {
       "schema": "public",
       "name": "share_wait",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "private",
-      "name": "login_links",
-      "rls_enabled": true,
-      "policies": 0
-    },
-    {
-      "schema": "private",
-      "name": "tg_login_requests",
       "rls_enabled": true,
       "policies": 0
     }

@@ -18,7 +18,7 @@ let zlHeartbeatTimer=null,zlRetryTimer=null,zlRetry=0,zlDebounceTimer=null,zlPen
 
 /* الختمة التي تهمّ الشاشة الآن: المفتوحة، أو النشطة على هذا الجهاز للرئيسية. */
 function zlWantedCode(){
-  const open=typeof code==="string"&&code&&typeof zkLaunchVisible==="function"&&!zkLaunchVisible()?code:"";
+  const open=typeof appState.code==="string"&&appState.code&&typeof zkLaunchVisible==="function"&&!zkLaunchVisible()?appState.code:"";
   return String(open||(typeof activeKhatmahGet==="function"?activeKhatmahGet():"")||"").trim().toUpperCase();
 }
 /* هل الاتصال الفوري سليم؟ يُبطئ السؤال الدوري حين يكون كذلك. */
@@ -119,9 +119,9 @@ async function zlApply(){
     if(typeof ztView==="undefined"||ztView==="today")ztReadingRender();
     return;
   }
-  if(typeof screen!=="undefined"&&screen==="main"){
+  if(typeof appState.screen!=="undefined"&&appState.screen==="main"){
     /* مع نافذة مفتوحة أو جزء محدد لا يُعاد الرسم تحت يد المستخدم؛ نعيد المحاولة بعد قليل. */
-    if(selected!==null||document.getElementById("layer")?.innerHTML){zlPendingTimer=setTimeout(zlApply,1500);return}
+    if(appState.selected!==null||document.getElementById("layer")?.innerHTML){zlPendingTimer=setTimeout(zlApply,1500);return}
     await syncState();
   }
 }

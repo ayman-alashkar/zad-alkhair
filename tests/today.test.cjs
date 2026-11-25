@@ -3,8 +3,9 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const root=path.join(__dirname,"..");
 const read=relative=>fs.readFileSync(path.join(root,relative),"utf8");
 
-test("surah map matches the catalogue and names the right surah for a page",()=>{
-  const ctx={};vm.createContext(ctx);vm.runInContext(read("src/home/quran-map.js")+";this.SURAH_NAMES=SURAH_NAMES;this.SURAH_START_PAGES=SURAH_START_PAGES;this.surahForPage=surahForPage",ctx);
+test("surah map matches the catalogue and names the right surah for a page",async()=>{
+  // وحدة ES حقيقية: تُستورد كما يستوردها التطبيق
+  const ctx=await import(path.join(root,"src/home/quran-map.mjs"));
   const catalog=JSON.parse(read("src/discovery/catalog.json")).surahs.map(s=>s.name);
   assert.deepEqual([...ctx.SURAH_NAMES],catalog);
   const pages=[...ctx.SURAH_START_PAGES];
@@ -21,17 +22,14 @@ test("home screen keeps the shared theme, real crawlable tabs and offline patter
   assert.match(home,/<nav class="zk-tabs" id="zk-tabs" aria-label="الأقسام">/);
   assert.match(sw,/"\.\/icons\/zad-rosette\.svg"/);
   assert.ok(fs.existsSync(path.join(root,"icons/zad-rosette.svg")));
-  // The Today screen reads the khatmah into its own variables; it must never assign the app's globals.
-  // (A statement-position assignment; a query string such as "&code=" in a URL is not one.)
-  assert.doesNotMatch(today.replace(/(&amp;|[?&])(code|state|viewer)=/g,""),/(^|[\s;{(,])(code|viewer|state)\s*=[^=]/m);
+  // The Today screen reads the open khatmah; it must never change the app's shared state.
+  assert.doesNotMatch(today,/appState\.(code|viewer|state|screen)\s*=[^=]/);
   // Opening and closing the home screen keeps the tabs and browser colour in step.
   assert.equal((read("src/home/bootstrap.js").match(/ztOnLaunchChange\(\);/g)||[]).length,2);
 });
 
-test("midday prayers read as ظهرًا, not عصرًا",()=>{
-  const src=read("src/home/formatting-clock.js");
-  const ctx={};vm.createContext(ctx);
-  vm.runInContext(src.slice(0,src.indexOf("const hourOptions"))+";this.fmtTime=fmtTime",ctx);
+test("midday prayers read as ظهرًا, not عصرًا",async()=>{
+  const ctx=await import(path.join(root,"src/home/format.mjs"));
   assert.match(ctx.fmtTime(12,19),/ظهرًا$/);assert.match(ctx.fmtTime(15,18),/عصرًا$/);
   assert.match(ctx.fmtTime(5,31),/صباحًا$/);assert.match(ctx.fmtTime(19,1),/مساءً$/);
 });
@@ -49,7 +47,7 @@ test("khatmah screens rely on the bottom tabs: no duplicate brand, Quran link or
 
 test("juz page ranges on the home screen match the reader's",()=>{
   const grab=(file)=>{const m=read(file).match(/const JUZ_PAGES=(\[\[.*?\]\]);/);assert.ok(m,file);return JSON.parse(m[1])};
-  assert.deepEqual(grab("src/home/quran-map.js"),grab("src/reader/state.js"));
+  assert.deepEqual(grab("src/home/quran-map.mjs"),grab("src/reader/state.js"));
 });
 
 test("the reader records the furthest page only inside the user's unfinished juz",()=>{
@@ -147,4 +145,11 @@ test("guide pages carry the home menu beside the theme button, sharing the insta
   assert.match(read("seo-install.js"),/url=location\.origin\+'\/install\/'/);
   assert.match(read("src/home/today.js"),/new URL\("\/install\/",location\.origin\)/);
   assert.match(read("src/home/bootstrap.js"),/zkArmRootGuard\(\);\n\/\* «تعليمات»/);
+});
+
+test("name matching finds the same name written with or without diacritics and hamzas",async()=>{
+  const {nameScore,similarTo}=await import(path.join(root,"src/home/name-matching.mjs"));
+  assert.equal(nameScore("أيمن الأشقر","ايمن الاشقر"),1);
+  assert.deepEqual(similarTo("محمد",[{id:"a",name:"محمّد"},{id:"b",name:"سالم"}]).map(m=>m.id),["a"]);
+  assert.deepEqual(similarTo("خالد",[{id:"b",name:"سالم"}]),[]);
 });

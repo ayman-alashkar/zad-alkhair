@@ -54,6 +54,7 @@ if("serviceWorker" in navigator){
         if(lastOfflinePercent>0||Number(data.failed)>0)showToast("لم يكتمل التجهيز؛ ستُستكمل الملفات الناقصة عند المحاولة مجدداً");
       }
     }else if(data.type==="OFFLINE_LIBRARY_PROGRESS"){
+      if(data.kind==="library"&&data.fresh===true&&Number(data.done)===0)zuPackFresh();
       paintOfflineProgress(data.done,data.total);
     }else if(data.type==="AUDIO_OFFLINE_PROGRESS"){
       const job=audioDownloadJobs.get(String(data.tag||""));

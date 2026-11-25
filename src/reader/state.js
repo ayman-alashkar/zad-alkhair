@@ -81,7 +81,7 @@ let queueActive=false,queueIndex=-1;
 let mp3ReadsPromise=null;
 const timedReadCache=new Map(),mp3TimingCache=new Map();
 const PAGE_DATA_CACHE_LIMIT=12;
-const pageDataLoads=new Map(),pageLoads=new Map();
+const pageDataLoads=new Map(),pageLoads=new Map(),qcfFontLoads=new Map();
 let qcfMeta=null,chapterMap=new Map(),verseIndex=null,navigationBusy=false;
 const JUZ_PAGES=[[1,21],[22,41],[42,61],[62,81],[82,101],[102,121],[122,141],[142,161],[162,181],[182,201],[202,221],[222,241],[242,261],[262,281],[282,301],[302,321],[322,341],[342,361],[362,381],[382,401],[402,421],[422,441],[442,461],[462,481],[482,501],[502,521],[522,541],[542,561],[562,581],[582,604]];
 // Local structural index data — 240 Rubʿ al-Hizb starts [surah, ayah, page].
@@ -94,7 +94,6 @@ function scheduleIndexExcerptSave(){
 }
 
 function ar(n){return String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[+d])}
-function pad3(n){return String(Number(n)||0).padStart(3,"0")}
 function verseParts(k){
   const [s,a]=k.split(":").map(Number);
   return {s,a,sname:chapterMap.get(s)?.name_arabic||({1:"الفاتحة",2:"البقرة"}[s]||`السورة ${ar(s)}`)};

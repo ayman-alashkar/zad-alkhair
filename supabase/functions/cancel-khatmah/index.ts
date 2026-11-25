@@ -1,49 +1,11 @@
-const TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+/* ============================================================
+   cancel-khatmah — إنهاء الختمة بأمر منظّمها، وإبلاغ المشاركين.
+   ============================================================ */
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const esc = (value: unknown) => String(value ?? "")
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;");
-
-async function rpc(fn: string, args: unknown = {}) {
-  const response = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(args),
-  });
-  const raw = await response.text();
-  if (!response.ok) throw new Error(`${fn}: ${response.status} ${raw}`);
-  return raw ? JSON.parse(raw) : null;
-}
-
-async function send(chat: number, text: string) {
-  const response = await fetch(
-    `https://api.telegram.org/bot${TOKEN}/sendMessage`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chat,
-        text,
-        parse_mode: "HTML",
-        disable_web_page_preview: true,
-      }),
-    },
-  );
-  return response.ok;
-}
+import { CORS } from "../_shared/config.ts";
+import { rpc } from "../_shared/supabase.ts";
+import { pause, sendMessage } from "../_shared/telegram.ts";
+import { esc } from "../_shared/text.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -88,9 +50,9 @@ Deno.serve(async (req) => {
   let notified = 0;
   let failed = 0;
   for (const chat of result.chats ?? []) {
-    if (await send(chat.chatId, text)) notified++;
+    if ((await sendMessage(chat.chatId, text)).ok) notified++;
     else failed++;
-    await new Promise((resolve) => setTimeout(resolve, 60));
+    await pause(60);
   }
 
   return Response.json({ ok: true, notified, failed }, { headers: CORS });

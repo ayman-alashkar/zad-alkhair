@@ -3,143 +3,18 @@
    أرسلت لكل من فعّل التذكير وله جزء لم يُتمّه
    ============================================================ */
 
-const TOKEN  = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+import { CRON_SECRET } from "../_shared/config.ts";
+import { navRows, readerLink } from "../_shared/links.ts";
+import { loginToken, rpc } from "../_shared/supabase.ts";
+import { pause, sendMessage } from "../_shared/telegram.ts";
+import { ar, esc, JUZ } from "../_shared/text.ts";
+
 const APP_TIME_ZONE = Deno.env.get("APP_TIME_ZONE") ?? "Asia/Damascus";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
-const FINAL_ORIGIN = "https://zad-alkhair.net";
-const CONFIGURED_APP_URL = Deno.env.get("APP_URL") ?? "";
-const APP_URL = (() => {
-  try {
-    const configured = new URL(CONFIGURED_APP_URL);
-    if (configured.origin === FINAL_ORIGIN) return configured.href;
-  } catch { /**/ }
-  return `${FINAL_ORIGIN}/`;
-})();
 
-async function rpc(fn: string, args: unknown = {}) {
-  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(args),
-  });
-  const t = await r.text();
-  if (!r.ok) throw new Error(`${fn}: ${r.status} ${t}`);
-  return t ? JSON.parse(t) : null;
+/* رسالة بزرّي «افتح زاد الخير» (على الختمة) و«افتح المصحف» */
+async function send(chat: number, text: string, code: string) {
+  return sendMessage(chat, text, navRows(code, await loginToken(chat)));
 }
-
-function appRoot() {
-  if (!APP_URL) return null;
-  try {
-    const root = new URL(APP_URL);
-    root.hash = "";
-    root.search = "";
-    if (!root.pathname.endsWith("/")) {
-      const last = root.pathname.split("/").pop() ?? "";
-      root.pathname = last.includes(".")
-        ? root.pathname.replace(/[^/]*$/, "")
-        : root.pathname + "/";
-    }
-    return root;
-  } catch {
-    return null;
-  }
-}
-
-function appLink(code?: string, login?: string) {
-  const root = appRoot();
-  if (!root) return APP_URL;
-  if (login) root.searchParams.set("login", login);
-  if (code) root.hash = String(code).trim().toUpperCase();
-  return root.href;
-}
-
-function generalReaderLink() {
-  const root = appRoot();
-  return root ? new URL("quran-read/", root).href : APP_URL;
-}
-
-function navigationRows(sourceUrl: string, login = "") {
-  let code = "";
-  try {
-    code = (new URL(sourceUrl).searchParams.get("code") ?? "").trim().toUpperCase();
-  } catch { /**/ }
-  const app = appLink(code || undefined, login || undefined);
-  const reader = generalReaderLink();
-  const row: Array<{ text: string; url: string }> = [];
-  if (app) row.push({ text: "افتح زاد الخير", url: app });
-  if (reader) row.push({ text: "افتح المصحف", url: reader });
-  return row.length ? [row] : [];
-}
-
-/* رابط دخول شخصي في زر «افتح زاد الخير»: يضيف المتصفح الذي يُفتح منه الزر
-   إلى أجهزة صاحب الرسالة، فلا يُطلب منه اسمه من جديد. إن تعذّر إصداره يبقى
-   الزر رابطًا عاديًا كما كان. */
-async function loginToken(chat: number) {
-  try {
-    const token = await rpc("issue_login_link", { p_chat: chat });
-    return typeof token === "string" && /^[0-9a-f]{36}$/.test(token) ? token : "";
-  } catch {
-    return "";
-  }
-}
-
-/* إرسال رسالة. يعيد blocked إذا حظر المستخدم البوت */
-async function send(chat: number, text: string, url?: string) {
-  const body: Record<string, unknown> = {
-    chat_id: chat,
-    text,
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-  };
-  if (url) {
-    body.reply_markup = { inline_keyboard: navigationRows(url, await loginToken(chat)) };
-  }
-  const r = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (r.ok) return { ok: true, blocked: false };
-  const j = await r.json().catch(() => ({}));
-  const blocked = r.status === 403 ||
-    /blocked|deactivated|chat not found/i.test(j?.description ?? "");
-  return { ok: false, blocked, error: j?.description ?? r.status };
-}
-
-/* الأرقام العربية الهندية */
-const AR = "٠١٢٣٤٥٦٧٨٩";
-const ar = (n: number | string) =>
-  String(n).replace(/\d/g, (d) => AR[+d]);
-const esc = (value: unknown) => String(value ?? "")
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;");
-
-function readerLink(code?: string, juz?: number) {
-  const root = appRoot();
-  if (!root) return APP_URL;
-  const validJuz = Number.isInteger(juz) && Number(juz) >= 1 && Number(juz) <= 30;
-  const url = new URL("quran-read/", root);
-  if (validJuz) url.searchParams.set("juz", String(juz));
-  if (code) url.searchParams.set("code", String(code).trim().toUpperCase());
-  return url.href;
-}
-
-const JUZ=[
- "الفاتحة ١ – البقرة ١٤١","البقرة ١٤٢ – ٢٥٢","البقرة ٢٥٣ – آل عمران ٩٢","آل عمران ٩٣ – النساء ٢٣",
- "النساء ٢٤ – ١٤٧","النساء ١٤٨ – المائدة ٨١","المائدة ٨٢ – الأنعام ١١٠","الأنعام ١١١ – الأعراف ٨٧",
- "الأعراف ٨٨ – الأنفال ٤٠","الأنفال ٤١ – التوبة ٩٢","التوبة ٩٣ – هود ٥","هود ٦ – يوسف ٥٢",
- "يوسف ٥٣ – إبراهيم ٥٢","الحجر ١ – النحل ١٢٨","الإسراء ١ – الكهف ٧٤","الكهف ٧٥ – طه ١٣٥",
- "الأنبياء ١ – الحج ٧٨","المؤمنون ١ – الفرقان ٢٠","الفرقان ٢١ – النمل ٥٥","النمل ٥٦ – العنكبوت ٤٥",
- "العنكبوت ٤٦ – الأحزاب ٣٠","الأحزاب ٣١ – يس ٢٧","يس ٢٨ – الزمر ٣١","الزمر ٣٢ – فصلت ٤٦",
- "فصلت ٤٧ – الجاثية ٣٧","الأحقاف ١ – الذاريات ٣٠","الذاريات ٣١ – الحديد ٢٩","المجادلة ١ – التحريم ١٢",
- "الملك ١ – المرسلات ٥٠","النبأ ١ – الناس ٦"];
 
 const MOTIV=[
  {t:"تذكّر أن كل حرف تقرؤه سيقف عنك يوم القيامة شافعًا.",q:"اقْرَؤُوا الْقُرْآنَ؛ فَإِنَّهُ يَأْتِي يَوْمَ الْقِيَامَةِ شَفِيعًا لِأَصْحَابِهِ",s:"رواه مسلم",k:"h"},
@@ -305,8 +180,7 @@ Deno.serve(async (req) => {
     group.juz.sort((a, b) => a - b);
     const text = group.daysLeft < 0 ? overdue(group)
       : group.daysLeft <= 1 ? lastDay(group) : daily(group);
-    const link = readerLink(group.code, group.juz[0]) || undefined;
-    const result = await send(group.chatId, text, link);
+    const result = await send(group.chatId, text, group.code);
     if (result.ok) sent++;
     else if (result.blocked) {
       blocked++;
@@ -322,7 +196,7 @@ Deno.serve(async (req) => {
     } catch {
       failed++;
     }
-    await new Promise((resolve) => setTimeout(resolve, 60));
+    await pause(60);
   }
 
   return Response.json({

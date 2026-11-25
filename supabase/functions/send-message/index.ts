@@ -4,123 +4,15 @@
    معرّفات محادثات تلغرام إلى المتصفح.
    ============================================================ */
 
-const TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
-const SB_URL = Deno.env.get("SUPABASE_URL")!;
-const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const FINAL_ORIGIN = "https://zad-alkhair.net";
-const APP_URL = FINAL_ORIGIN;
+import { CORS } from "../_shared/config.ts";
+import { navRows } from "../_shared/links.ts";
+import { loginToken, rpc } from "../_shared/supabase.ts";
+import { eachConcurrently, pause, SEND_LANES, sendMessage } from "../_shared/telegram.ts";
+import { esc } from "../_shared/text.ts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-const esc = (value: unknown) => String(value ?? "")
-  .replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;")
-  .replace(/>/g, "&gt;");
-
-function readerLink(code?: string, juz?: number) {
-  if (!APP_URL) return "";
-  try {
-    const root = new URL(APP_URL);
-    root.hash = "";
-    root.search = "";
-    if (!root.pathname.endsWith("/")) {
-      const last = root.pathname.split("/").pop() ?? "";
-      root.pathname = last.includes(".")
-        ? root.pathname.replace(/[^/]*$/, "")
-        : root.pathname + "/";
-    }
-    const url = new URL("quran-read/", root);
-    if (Number.isInteger(juz) && Number(juz) >= 1 && Number(juz) <= 30) {
-      url.searchParams.set("juz", String(juz));
-    }
-    if (code) url.searchParams.set("code", String(code).trim().toUpperCase());
-    return url.href;
-  } catch {
-    return APP_URL;
-  }
-}
-
-function navigationRows(sourceUrl: string, login = "") {
-  try {
-    const source = new URL(sourceUrl);
-    const code = (source.searchParams.get("code") ?? "").trim().toUpperCase();
-    const root = new URL(APP_URL || source.origin);
-    root.hash = "";
-    root.search = "";
-    if (!root.pathname.endsWith("/")) {
-      const last = root.pathname.split("/").pop() ?? "";
-      root.pathname = last.includes(".")
-        ? root.pathname.replace(/[^/]*$/, "")
-        : root.pathname + "/";
-    }
-    const app = new URL(root.href);
-    if (login) app.searchParams.set("login", login);
-    if (code) app.hash = code;
-    const reader = new URL("quran-read/", root);
-    return [[
-      { text: "افتح زاد الخير", url: app.href },
-      { text: "افتح المصحف", url: reader.href },
-    ]];
-  } catch {
-    return [[{ text: "افتح زاد الخير", url: sourceUrl }]];
-  }
-}
-
-async function rpc(fn: string, args: unknown = {}) {
-  const response = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: {
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(args),
-  });
-  const raw = await response.text();
-  if (!response.ok) throw new Error(`${fn}: ${response.status} ${raw}`);
-  return raw ? JSON.parse(raw) : null;
-}
-
-/* رابط دخول شخصي في زر «افتح زاد الخير»: يضيف المتصفح الذي يُفتح منه الزر
-   إلى أجهزة صاحب الرسالة، فلا يُطلب منه اسمه من جديد. إن تعذّر إصداره يبقى
-   الزر رابطًا عاديًا كما كان. */
-async function loginToken(chat: number) {
-  try {
-    const token = await rpc("issue_login_link", { p_chat: chat });
-    return typeof token === "string" && /^[0-9a-f]{36}$/.test(token) ? token : "";
-  } catch {
-    return "";
-  }
-}
-
-async function send(chat: number, text: string, url?: string) {
-  const body: Record<string, unknown> = {
-    chat_id: chat,
-    text,
-    parse_mode: "HTML",
-    disable_web_page_preview: true,
-  };
-  if (url) {
-    body.reply_markup = { inline_keyboard: navigationRows(url, await loginToken(chat)) };
-  }
-  const response = await fetch(
-    `https://api.telegram.org/bot${TOKEN}/sendMessage`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-  );
-  if (response.ok) return { ok: true, blocked: false };
-  const result = await response.json().catch(() => ({}));
-  const description = String(result?.description ?? response.status);
-  const blocked = response.status === 403 ||
-    /blocked|deactivated|chat not found/i.test(description);
-  return { ok: false, blocked, error: description };
+/* رسالة بزرّي «افتح زاد الخير» (على الختمة) و«افتح المصحف» */
+async function send(chat: number, text: string, code: string) {
+  return sendMessage(chat, text, navRows(code, await loginToken(chat)));
 }
 
 const LIMIT = 3800;
@@ -177,13 +69,15 @@ Deno.serve(async (req) => {
   const cut = message.length > LIMIT;
   const safeMessage = cut ? `${message.slice(0, LIMIT)}…` : message;
   const text = `🕌 <b>${esc(target.title)}</b>\n\n${esc(safeMessage)}`;
-  const link = readerLink(body.code) || undefined;
 
   let sent = 0;
   let blocked = 0;
   let failed = 0;
-  for (const chat of target.chats ?? []) {
-    const result = await send(chat.chatId, text, link);
+  /* كل مشارك يكلف نحو ثانية (رابط الدخول ثم تيليغرام)، والواجهة تنتظر الرد، فيُرسل
+     إلى عدة مشاركين معًا بدل واحد بعد واحد. أربعة مسارات تبقى بعيدة عن حدود تيليغرام. */
+  const code = body.code;
+  await eachConcurrently<{ chatId: number }>(target.chats ?? [], SEND_LANES, async (chat) => {
+    const result = await send(chat.chatId, text, code);
     if (result.ok) sent++;
     else if (result.blocked) {
       blocked++;
@@ -193,8 +87,8 @@ Deno.serve(async (req) => {
         /* لا يفشل الإرسال كله بسبب تنظيف الربط. */
       }
     } else failed++;
-    await new Promise((resolve) => setTimeout(resolve, 60));
-  }
+    await pause(60);
+  });
 
   return Response.json({ ok: true, sent, blocked, failed, cut },
     { headers: CORS });

@@ -1,8 +1,8 @@
 /* ===================== لوح الجزء ===================== */
 function openSheet(i){
-  selected=i;
-  const j=state.juz[i];
-  const o=j.ownerId?memberOf(j.ownerId):null, mine=j.ownerId===viewer.id;
+  appState.selected=i;
+  const j=appState.state.juz[i];
+  const o=j.ownerId?memberOf(j.ownerId):null, mine=j.ownerId===appState.viewer.id;
   let acts="", note="";
   if(j.status==="free") acts=`<button class="btn green" data-act="take" data-i="${i}">احجز هذا الجزء</button>`
     + (isOrganizer()?`<button class="btn" id="s-assign" data-i="${i}">أسنده إلى مشارك</button>`:"");
@@ -45,31 +45,33 @@ function openSheet(i){
   if(asg) asg.onclick=()=>assignDialog(i);
   document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>act(b.dataset.act,+b.dataset.i));
 }
-function closeLayer(){document.getElementById("layer").innerHTML="";document.body.classList.remove("zk-launch-prayer");selected=null;}
-function modal(html,kind=""){
-  document.getElementById("layer").innerHTML=`<div class="modal${kind?` ${kind}`:""}" id="m-back"><div class="frame">${html}</div></div>`;
-  document.getElementById("m-back").onclick=e=>{if(e.target.id==="m-back")closeLayer();};
+
+/* رمز المنظّم لأفعال الإشراف: المحفوظ في هذا المتصفح، وإلا يُطلب مرة واحدة.
+   null حين يلغي المنظّم، فيتوقف الفعل دون رسالة خطأ. */
+async function organizerCode(){
+  return orgCode()||await askOrganizerCode();
 }
 
-
-/* نافذة تأكيد موحّدة: نفس modal/frame والعناوين والأزرار المستعملة في التطبيق. */
-function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغاء",danger=false}={}){
+/* رمز المنظّم لمن دخل دونه (برابط تيليغرام، أو بعد مسح تخزين المتصفح): يُطلب مرة واحدة
+   فوق النافذة المفتوحة، فلا يضيع ما كتبه المنظّم فيها، ويُحفظ بعد أن تقبله القاعدة. */
+function askOrganizerCode(){
   return new Promise(resolve=>{
     const host=document.createElement("div");
     host.className="modal app-confirm-overlay";
     host.setAttribute("role","presentation");
-    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
-      <div class="display" id="app-confirm-title" style="font-size:1.4rem">${esc(title)}</div>
-      <p class="hint app-confirm-copy" style="margin:.7rem 0 1.1rem;line-height:2">${esc(message)}</p>
+    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="org-code-title">
+      <div class="display" id="org-code-title" style="font-size:1.4rem">رمز المنظّم</div>
+      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">دخلت من هذا الجهاز دون رمز المنظّم. اكتبه مرة واحدة ليُحفظ هنا.</p>
+      <div class="field-row"><input id="org-code-input" class="field" type="password" autocomplete="off" placeholder="الرمز الذي اخترته"></div>
       <div class="actions">
-        <button class="btn ${danger?"danger":"gold"}" data-confirm-ok>${esc(ok)}</button>
-        <button class="btn quiet" data-confirm-cancel>${esc(cancel)}</button>
+        <button class="btn gold" data-code-ok>متابعة</button>
+        <button class="btn quiet" data-code-cancel>إلغاء</button>
       </div>
     </div>`;
     document.body.appendChild(host);
-    const okBtn=host.querySelector("[data-confirm-ok]");
-    const cancelBtn=host.querySelector("[data-confirm-cancel]");
-    let settled=false;
+    const input=host.querySelector("#org-code-input");
+    const okBtn=host.querySelector("[data-code-ok]");
+    let settled=false,busy=false;
     const done=value=>{
       if(settled) return;
       settled=true;
@@ -77,67 +79,59 @@ function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغ
       host.remove();
       resolve(value);
     };
-    const onKey=e=>{
-      if(e.key==="Escape"){e.preventDefault();done(false);}
+    const submit=async()=>{
+      if(busy) return;
+      const oc=norm(input.value);
+      if(!oc) return toast("أدخل الرمز");
+      busy=true;okBtn.disabled=true;
+      try{
+        const r=await rpc("sign_in",{p_code:appState.code,p_id:appState.viewer.id,p_name:appState.viewer.name,
+          p_device:deviceId(),p_org_code:oc});
+        if(r&&r.ok){ localStorage.setItem(cKey(),oc); return done(oc); }
+        toast(r&&r.needCode?"الرمز غير صحيح":(r&&r.error)||"تعذّر التحقق");
+      }catch(e){ toast("تعذّر الاتصال"); }
+      finally{ busy=false;okBtn.disabled=false; }
     };
-    okBtn.onclick=()=>done(true);
-    cancelBtn.onclick=()=>done(false);
-    host.onclick=e=>{if(e.target===host)done(false);};
+    const onKey=e=>{
+      if(e.key==="Escape"){e.preventDefault();done(null);}
+      else if(e.key==="Enter"&&e.target===input){e.preventDefault();submit();}
+    };
+    okBtn.onclick=submit;
+    host.querySelector("[data-code-cancel]").onclick=()=>done(null);
+    host.onclick=e=>{if(e.target===host)done(null);};
     document.addEventListener("keydown",onKey,true);
-    requestAnimationFrame(()=>okBtn.focus({preventScroll:true}));
-  });
-}
-
-/* بديل داخلي لـ prompt، بنفس نافذة التطبيق القياسية. */
-function appCopyFallback(title,value){
-  return new Promise(resolve=>{
-    const host=document.createElement("div");
-    host.className="modal app-confirm-overlay";
-    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-copy-title">
-      <div class="display" id="app-copy-title" style="font-size:1.4rem">${esc(title)}</div>
-      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">تعذّر النسخ التلقائي. حدّد النص وانسخه من هنا.</p>
-      <textarea class="app-copy-box" readonly>${esc(value)}</textarea>
-      <div class="actions" style="margin-top:1rem">
-        <button class="btn gold" data-copy-close>حسنًا</button>
-      </div>
-    </div>`;
-    document.body.appendChild(host);
-    const ta=host.querySelector("textarea");
-    const close=()=>{host.remove();resolve();};
-    host.querySelector("[data-copy-close]").onclick=close;
-    host.onclick=e=>{if(e.target===host)close();};
-    requestAnimationFrame(()=>{ta.focus({preventScroll:true});ta.select();});
+    requestAnimationFrame(()=>input.focus({preventScroll:true}));
   });
 }
 
 async function loadPublicKhatmahs(force=false){
-  if(publicKhatmahsLoading||(!force&&publicKhatmahsLoaded)) return;
-  publicKhatmahsLoading=true;publicKhatmahsError=false;
-  if(screen==="home") render();
+  if(appState.publicKhatmahsLoading||(!force&&appState.publicKhatmahsLoaded)) return;
+  appState.publicKhatmahsLoading=true;appState.publicKhatmahsError=false;
+  if(appState.screen==="home") render();
   try{
     const rows=await rpc("list_active_khatmahs",{});
-    publicKhatmahs=Array.isArray(rows)?rows:[];
-    publicKhatmahsLoaded=true;
+    appState.publicKhatmahs=Array.isArray(rows)?rows:[];
+    appState.publicKhatmahsLoaded=true;
   }catch(e){
     /* بيانات عرض داخل بيئة المعاينة وحدها؛ لا تُستعمل على الموقع الحقيقي. */
     if(location.hostname==="terminal.local"){
-      publicKhatmahs=[
+      appState.publicKhatmahs=[
         {publicId:"preview-1",title:"ختمة أهل القرآن",accessType:"public",participantCount:12,reservedCount:23,doneCount:14,endDate:plusDays(5)},
         {publicId:"preview-2",title:"ختمة المحبة",accessType:"public",participantCount:8,reservedCount:17,doneCount:9,endDate:plusDays(8)},
         {publicId:"preview-3",title:"رفقة النور",accessType:"private",participantCount:21,reservedCount:30,doneCount:26,endDate:plusDays(2)},
         {publicId:"preview-4",title:"ختمة العائلة",accessType:"private",participantCount:6,reservedCount:11,doneCount:4,endDate:plusDays(10)}
       ];
-      publicKhatmahsLoaded=true;
-    }else publicKhatmahsError=true;
+      appState.publicKhatmahsLoaded=true;
+    }else appState.publicKhatmahsError=true;
   }
   finally{
-    publicKhatmahsLoading=false;
-    if(screen==="home") render();
+    appState.publicKhatmahsLoading=false;
+    if(appState.screen==="home") render();
   }
 }
 
 async function joinKhatmahCard(publicId){
-  const item=publicKhatmahs.find(k=>k.publicId===publicId);
+  const item=appState.publicKhatmahs.find(k=>k.publicId===publicId);
   if(!item) return;
   const mine=mineByPublicId(publicId);
   if(mine){zkReplaceHash(mine.code);boot();return;}
@@ -177,7 +171,7 @@ async function historyDialog(){
   let result;
   try{
     result=await rpc("get_my_history",{
-      p_code:code,p_id:viewer.id,p_device:deviceId()
+      p_code:appState.code,p_id:appState.viewer.id,p_device:deviceId()
     });
   }catch(e){
     modal(`<div class="display" style="font-size:1.35rem">سجلي في هذه الختمة</div>

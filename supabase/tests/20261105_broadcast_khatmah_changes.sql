@@ -5,7 +5,12 @@
 -- فيُستبدل هنا private.khatmah_live_send بسجلٍّ مؤقت يُحصي الإشارات ومواضيعها.
 
 -- الإرسال الحقيقي لا يرفع خطأ حتى إن لم تكن الخدمة نشطة (realtime.send تلتقط أخطاءها).
-select private.khatmah_live_send('khatmah:TEST');
+-- (قاعدة الاختبار في CI بلا خدمة Realtime، فيُتجاوز هذا الفحص فيها.)
+do $$ begin
+  if to_regprocedure('realtime.send(jsonb,text,text,boolean)') is not null then
+    perform private.khatmah_live_send('khatmah:TEST');
+  end if;
+end $$;
 
 create temp table live_log(topic text) on commit drop;
 create or replace function private.khatmah_live_send(p_topic text)

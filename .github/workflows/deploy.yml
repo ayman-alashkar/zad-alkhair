@@ -1,0 +1,63 @@
+name: Deploy Supabase
+# PR: يتحقق من الوصول، ويعرض الترحيلات المعلّقة، ويقارن الإنتاج ببصمة main.
+# الدمج في main: يطبّق الترحيلات الجديدة، ويتحقق من البصمة، وينشر الوظائف التي تغيّرت.
+on:
+  pull_request:
+    paths: ['supabase/**', 'scripts/db-*.sh', 'scripts/functions-changed.sh', '.github/workflows/deploy.yml']
+  push:
+    branches: [main]
+    paths: ['supabase/**', 'scripts/db-*.sh', 'scripts/functions-changed.sh', '.github/workflows/deploy.yml']
+permissions:
+  contents: read
+concurrency:
+  group: supabase-production
+  cancel-in-progress: false
+env:
+  PROJECT_REF: webqpbcijjbawatykoxe
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+  PGPASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+  # مُجمِّع الاتصال (Supavisor) بنمط الجلسة: الاتصال المباشر بالقاعدة IPv6 فقط، وأجهزة GitHub لا تدعمه.
+  PGHOST: aws-0-ap-southeast-2.pooler.supabase.com
+  PGPORT: '5432'
+  PGUSER: postgres.webqpbcijjbawatykoxe
+  PGDATABASE: postgres
+  PGSSLMODE: require
+jobs:
+  supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Link the project
+        run: supabase link --project-ref "$PROJECT_REF"
+      - name: Database reachable
+        run: psql -X -tA -c "select 'connected as ' || current_user"
+      - name: Pending migrations
+        run: scripts/db-deploy.sh --dry-run
+      - name: Production matches main before this change
+        if: github.event_name == 'pull_request'
+        run: |
+          # بصمة main واستعلامها معًا، لأن هذا الـPR قد يغيّر أيهما
+          git show "origin/${{ github.base_ref }}:supabase/checks/fingerprint.expected" > /tmp/main.expected
+          git show "origin/${{ github.base_ref }}:supabase/checks/fingerprint.sql" > /tmp/main.sql
+          scripts/db-drift.sh /tmp/main.expected /tmp/main.sql
+      - name: Apply migrations
+        if: github.event_name == 'push'
+        run: scripts/db-deploy.sh
+      - name: Production matches the repo
+        if: github.event_name == 'push'
+        run: scripts/db-drift.sh
+      - name: Deploy changed functions
+        if: github.event_name == 'push'
+        run: |
+          fns=$(scripts/functions-changed.sh "${{ github.event.before }}" "${{ github.sha }}")
+          if [ -z "$fns" ]; then echo "no function changes"; exit 0; fi
+          for fn in $fns; do
+            echo "deploy $fn"
+            supabase functions deploy "$fn" --no-verify-jwt --use-api --yes
+          done
