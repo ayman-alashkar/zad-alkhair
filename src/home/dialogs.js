@@ -45,57 +45,15 @@ function openSheet(i){
   if(asg) asg.onclick=()=>assignDialog(i);
   document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>act(b.dataset.act,+b.dataset.i));
 }
-function closeLayer(){document.getElementById("layer").innerHTML="";document.body.classList.remove("zk-launch-prayer");appState.selected=null;}
-function modal(html,kind=""){
-  document.getElementById("layer").innerHTML=`<div class="modal${kind?` ${kind}`:""}" id="m-back"><div class="frame">${html}</div></div>`;
-  document.getElementById("m-back").onclick=e=>{if(e.target.id==="m-back")closeLayer();};
-}
 
-
-/* نافذة تأكيد موحّدة: نفس modal/frame والعناوين والأزرار المستعملة في التطبيق. */
-function appConfirm(message,{title="تأكيد",ok="متابعة",cancel="إلغاء",danger=false}={}){
-  return new Promise(resolve=>{
-    const host=document.createElement("div");
-    host.className="modal app-confirm-overlay";
-    host.setAttribute("role","presentation");
-    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
-      <div class="display" id="app-confirm-title" style="font-size:1.4rem">${esc(title)}</div>
-      <p class="hint app-confirm-copy" style="margin:.7rem 0 1.1rem;line-height:2">${esc(message)}</p>
-      <div class="actions">
-        <button class="btn ${danger?"danger":"gold"}" data-confirm-ok>${esc(ok)}</button>
-        <button class="btn quiet" data-confirm-cancel>${esc(cancel)}</button>
-      </div>
-    </div>`;
-    document.body.appendChild(host);
-    const okBtn=host.querySelector("[data-confirm-ok]");
-    const cancelBtn=host.querySelector("[data-confirm-cancel]");
-    let settled=false;
-    const done=value=>{
-      if(settled) return;
-      settled=true;
-      document.removeEventListener("keydown",onKey,true);
-      host.remove();
-      resolve(value);
-    };
-    const onKey=e=>{
-      if(e.key==="Escape"){e.preventDefault();done(false);}
-    };
-    okBtn.onclick=()=>done(true);
-    cancelBtn.onclick=()=>done(false);
-    host.onclick=e=>{if(e.target===host)done(false);};
-    document.addEventListener("keydown",onKey,true);
-    requestAnimationFrame(()=>okBtn.focus({preventScroll:true}));
-  });
-}
-
-/* رمز المنظّم لمن دخل دونه (برابط تيليغرام، أو بعد مسح تخزين المتصفح): يُطلب مرة واحدة
-   فوق النافذة المفتوحة، فلا يضيع ما كتبه المنظّم فيها، ويُحفظ بعد أن تقبله القاعدة. */
 /* رمز المنظّم لأفعال الإشراف: المحفوظ في هذا المتصفح، وإلا يُطلب مرة واحدة.
    null حين يلغي المنظّم، فيتوقف الفعل دون رسالة خطأ. */
 async function organizerCode(){
   return orgCode()||await askOrganizerCode();
 }
 
+/* رمز المنظّم لمن دخل دونه (برابط تيليغرام، أو بعد مسح تخزين المتصفح): يُطلب مرة واحدة
+   فوق النافذة المفتوحة، فلا يضيع ما كتبه المنظّم فيها، ويُحفظ بعد أن تقبله القاعدة. */
 function askOrganizerCode(){
   return new Promise(resolve=>{
     const host=document.createElement("div");
@@ -143,28 +101,6 @@ function askOrganizerCode(){
     host.onclick=e=>{if(e.target===host)done(null);};
     document.addEventListener("keydown",onKey,true);
     requestAnimationFrame(()=>input.focus({preventScroll:true}));
-  });
-}
-
-/* بديل داخلي لـ prompt، بنفس نافذة التطبيق القياسية. */
-function appCopyFallback(title,value){
-  return new Promise(resolve=>{
-    const host=document.createElement("div");
-    host.className="modal app-confirm-overlay";
-    host.innerHTML=`<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-copy-title">
-      <div class="display" id="app-copy-title" style="font-size:1.4rem">${esc(title)}</div>
-      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">تعذّر النسخ التلقائي. حدّد النص وانسخه من هنا.</p>
-      <textarea class="app-copy-box" readonly>${esc(value)}</textarea>
-      <div class="actions" style="margin-top:1rem">
-        <button class="btn gold" data-copy-close>حسنًا</button>
-      </div>
-    </div>`;
-    document.body.appendChild(host);
-    const ta=host.querySelector("textarea");
-    const close=()=>{host.remove();resolve();};
-    host.querySelector("[data-copy-close]").onclick=close;
-    host.onclick=e=>{if(e.target===host)close();};
-    requestAnimationFrame(()=>{ta.focus({preventScroll:true});ta.select();});
   });
 }
 

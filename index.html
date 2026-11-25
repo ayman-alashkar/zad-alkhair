@@ -1882,6 +1882,152 @@ var appState = {
   peopleOpen: false
 };
 
+// src/home/format.mjs
+var AR = "٠١٢٣٤٥٦٧٨٩";
+var ar = (n) => String(n).replace(/\d/g, (d) => AR[+d]);
+var esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+var norm = (s) => String(s || "").normalize("NFC").trim().replace(/\s+/g, " ");
+var araNorm = (s) => norm(s).replace(/[\u064B-\u0652\u0670\u0640]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ؤ/g, "و").replace(/ئ/g, "ي").replace(/ء/g, "").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase();
+var keyOf = (s) => araNorm(s).replace(/\s+/g, "");
+var MONTHS = ["كانون الثاني", "شباط", "آذار", "نيسان", "أيار", "حزيران", "تموز", "آب", "أيلول", "تشرين الأول", "تشرين الثاني", "كانون الأول"];
+var daysLeft = (e) => Math.max(0, Math.ceil((/* @__PURE__ */ new Date(e + "T23:59:59") - /* @__PURE__ */ new Date()) / 864e5));
+var isoParts = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+var todayISO = () => isoParts(/* @__PURE__ */ new Date());
+var plusDays = (n) => {
+  const d = /* @__PURE__ */ new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + n);
+  return isoParts(d);
+};
+var fmtG = (iso) => {
+  const d = /* @__PURE__ */ new Date(iso + "T12:00:00");
+  return `${ar(d.getDate())} ${MONTHS[d.getMonth()]}`;
+};
+var fmtTime = (h, m, withPeriod = true) => {
+  const per = h < 12 ? "صباحًا" : h < 15 ? "ظهرًا" : h < 17 ? "عصرًا" : "مساءً";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  const clock = `${ar(h12)}:${ar(String(m).padStart(2, "0"))}`;
+  return withPeriod ? `${clock} ${per}` : clock;
+};
+var hourOptions = (sel) => Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === sel ? "selected" : ""}>${fmtTime(h, 0)}</option>`).join("");
+var fmtH = (iso) => {
+  try {
+    return (/* @__PURE__ */ new Date(iso + "T12:00:00")).toLocaleDateString("ar-SA-u-ca-islamic-umalqura", { day: "numeric", month: "long" });
+  } catch (e) {
+    return "";
+  }
+};
+var WEEKDAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+var fmtClockG = (iso) => {
+  const d = /* @__PURE__ */ new Date(iso + "T12:00:00");
+  return `${WEEKDAYS[d.getDay()]} ${ar(d.getDate())} ${MONTHS[d.getMonth()]} ${ar(d.getFullYear())}`;
+};
+var fmtClockH = (iso) => {
+  try {
+    return (/* @__PURE__ */ new Date(iso + "T12:00:00")).toLocaleDateString("ar-SA-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" });
+  } catch (e) {
+    return "";
+  }
+};
+var dayWord = (n) => n === 1 ? "يوم" : n === 2 ? "يومان" : n <= 10 ? `${ar(n)} أيام` : `${ar(n)} يومًا`;
+
+// src/home/ui.mjs
+function closeLayer() {
+  document.getElementById("layer").innerHTML = "";
+  document.body.classList.remove("zk-launch-prayer");
+  appState.selected = null;
+}
+function modal(html, kind = "") {
+  document.getElementById("layer").innerHTML = `<div class="modal${kind ? ` ${kind}` : ""}" id="m-back"><div class="frame">${html}</div></div>`;
+  document.getElementById("m-back").onclick = (e) => {
+    if (e.target.id === "m-back") closeLayer();
+  };
+}
+function appConfirm(message, { title = "تأكيد", ok = "متابعة", cancel = "إلغاء", danger = false } = {}) {
+  return new Promise((resolve) => {
+    const host = document.createElement("div");
+    host.className = "modal app-confirm-overlay";
+    host.setAttribute("role", "presentation");
+    host.innerHTML = `<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
+      <div class="display" id="app-confirm-title" style="font-size:1.4rem">${esc(title)}</div>
+      <p class="hint app-confirm-copy" style="margin:.7rem 0 1.1rem;line-height:2">${esc(message)}</p>
+      <div class="actions">
+        <button class="btn ${danger ? "danger" : "gold"}" data-confirm-ok>${esc(ok)}</button>
+        <button class="btn quiet" data-confirm-cancel>${esc(cancel)}</button>
+      </div>
+    </div>`;
+    document.body.appendChild(host);
+    const okBtn = host.querySelector("[data-confirm-ok]");
+    const cancelBtn = host.querySelector("[data-confirm-cancel]");
+    let settled = false;
+    const done = (value) => {
+      if (settled) return;
+      settled = true;
+      document.removeEventListener("keydown", onKey, true);
+      host.remove();
+      resolve(value);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        done(false);
+      }
+    };
+    okBtn.onclick = () => done(true);
+    cancelBtn.onclick = () => done(false);
+    host.onclick = (e) => {
+      if (e.target === host) done(false);
+    };
+    document.addEventListener("keydown", onKey, true);
+    requestAnimationFrame(() => okBtn.focus({ preventScroll: true }));
+  });
+}
+function appCopyFallback(title, value) {
+  return new Promise((resolve) => {
+    const host = document.createElement("div");
+    host.className = "modal app-confirm-overlay";
+    host.innerHTML = `<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-copy-title">
+      <div class="display" id="app-copy-title" style="font-size:1.4rem">${esc(title)}</div>
+      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">تعذّر النسخ التلقائي. حدّد النص وانسخه من هنا.</p>
+      <textarea class="app-copy-box" readonly>${esc(value)}</textarea>
+      <div class="actions" style="margin-top:1rem">
+        <button class="btn gold" data-copy-close>حسنًا</button>
+      </div>
+    </div>`;
+    document.body.appendChild(host);
+    const ta = host.querySelector("textarea");
+    const close = () => {
+      host.remove();
+      resolve();
+    };
+    host.querySelector("[data-copy-close]").onclick = close;
+    host.onclick = (e) => {
+      if (e.target === host) close();
+    };
+    requestAnimationFrame(() => {
+      ta.focus({ preventScroll: true });
+      ta.select();
+    });
+  });
+}
+function toast(m) {
+  const t = document.getElementById("toast");
+  t.textContent = m;
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove("show"), 3e3);
+}
+var BOOK_ICON = `<svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <path d="M12 6.25C10.15 4.85 7.95 4.2 5.15 4.2v12.65c2.75.02 5.08.78 6.85 2.25 1.77-1.47 4.1-2.23 6.85-2.25V4.2c-2.8 0-5 .65-6.85 2.05Z"/>
+  <path d="M12 6.25V19.1"/><path d="M7.25 7.55c1.2.1 2.15.38 2.9.84M16.75 7.55c-1.2.1-2.15.38-2.9.84"/>
+  <path d="M4 6.25v12.8c3.15-.15 5.82.55 8 2 2.18-1.45 4.85-2.15 8-2V6.25"/>
+</svg>`;
+var TG_ICON = `<svg class="tgicon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path fill="currentColor" d="M21.35 3.32 18.2 18.18c-.24 1.05-.86 1.31-1.75.82l-4.8-3.54-2.31 2.23c-.26.25-.47.46-.97.46l.34-4.89 8.9-8.04c.39-.34-.08-.54-.6-.2L6.02 11.95l-4.73-1.48c-1.03-.32-1.05-1.03.22-1.52L19.99 1.83c.86-.32 1.61.2 1.36 1.49Z"/>
+</svg>`;
+var rule = () => `<div class="rule"><i>◆ ◆ ◆</i></div>`;
+
 // src/home/config.mjs
 var SUPABASE_URL = "https://webqpbcijjbawatykoxe.supabase.co";
 var SUPABASE_KEY = "sb_publishable_51JPJ2XgwWW5l66bwqHN3Q_CJrEtyZv";
@@ -2791,55 +2937,6 @@ var MOTIV = [
   }
 ];
 
-// src/home/format.mjs
-var AR = "٠١٢٣٤٥٦٧٨٩";
-var ar = (n) => String(n).replace(/\d/g, (d) => AR[+d]);
-var esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-var norm = (s) => String(s || "").normalize("NFC").trim().replace(/\s+/g, " ");
-var araNorm = (s) => norm(s).replace(/[\u064B-\u0652\u0670\u0640]/g, "").replace(/[أإآٱ]/g, "ا").replace(/ؤ/g, "و").replace(/ئ/g, "ي").replace(/ء/g, "").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase();
-var keyOf = (s) => araNorm(s).replace(/\s+/g, "");
-var MONTHS = ["كانون الثاني", "شباط", "آذار", "نيسان", "أيار", "حزيران", "تموز", "آب", "أيلول", "تشرين الأول", "تشرين الثاني", "كانون الأول"];
-var daysLeft = (e) => Math.max(0, Math.ceil((/* @__PURE__ */ new Date(e + "T23:59:59") - /* @__PURE__ */ new Date()) / 864e5));
-var isoParts = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-var todayISO = () => isoParts(/* @__PURE__ */ new Date());
-var plusDays = (n) => {
-  const d = /* @__PURE__ */ new Date();
-  d.setHours(12, 0, 0, 0);
-  d.setDate(d.getDate() + n);
-  return isoParts(d);
-};
-var fmtG = (iso) => {
-  const d = /* @__PURE__ */ new Date(iso + "T12:00:00");
-  return `${ar(d.getDate())} ${MONTHS[d.getMonth()]}`;
-};
-var fmtTime = (h, m, withPeriod = true) => {
-  const per = h < 12 ? "صباحًا" : h < 15 ? "ظهرًا" : h < 17 ? "عصرًا" : "مساءً";
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  const clock = `${ar(h12)}:${ar(String(m).padStart(2, "0"))}`;
-  return withPeriod ? `${clock} ${per}` : clock;
-};
-var hourOptions = (sel) => Array.from({ length: 24 }, (_, h) => `<option value="${h}" ${h === sel ? "selected" : ""}>${fmtTime(h, 0)}</option>`).join("");
-var fmtH = (iso) => {
-  try {
-    return (/* @__PURE__ */ new Date(iso + "T12:00:00")).toLocaleDateString("ar-SA-u-ca-islamic-umalqura", { day: "numeric", month: "long" });
-  } catch (e) {
-    return "";
-  }
-};
-var WEEKDAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-var fmtClockG = (iso) => {
-  const d = /* @__PURE__ */ new Date(iso + "T12:00:00");
-  return `${WEEKDAYS[d.getDay()]} ${ar(d.getDate())} ${MONTHS[d.getMonth()]} ${ar(d.getFullYear())}`;
-};
-var fmtClockH = (iso) => {
-  try {
-    return (/* @__PURE__ */ new Date(iso + "T12:00:00")).toLocaleDateString("ar-SA-u-ca-islamic-umalqura", { day: "numeric", month: "long", year: "numeric" });
-  } catch (e) {
-    return "";
-  }
-};
-var dayWord = (n) => n === 1 ? "يوم" : n === 2 ? "يومان" : n <= 10 ? `${ar(n)} أيام` : `${ar(n)} يومًا`;
-
 // src/home/name-matching.mjs
 function jaro(a, b) {
   if (a === b) return 1;
@@ -3289,23 +3386,6 @@ function goHome() {
   render();
   loadPublicKhatmahs(true);
 }
-function toast(m) {
-  const t = document.getElementById("toast");
-  t.textContent = m;
-  t.classList.add("show");
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove("show"), 3e3);
-}
-var BOOK_ICON = `<svg class="zk-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-  stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <path d="M12 6.25C10.15 4.85 7.95 4.2 5.15 4.2v12.65c2.75.02 5.08.78 6.85 2.25 1.77-1.47 4.1-2.23 6.85-2.25V4.2c-2.8 0-5 .65-6.85 2.05Z"/>
-  <path d="M12 6.25V19.1"/><path d="M7.25 7.55c1.2.1 2.15.38 2.9.84M16.75 7.55c-1.2.1-2.15.38-2.9.84"/>
-  <path d="M4 6.25v12.8c3.15-.15 5.82.55 8 2 2.18-1.45 4.85-2.15 8-2V6.25"/>
-</svg>`;
-var TG_ICON = `<svg class="tgicon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-  <path fill="currentColor" d="M21.35 3.32 18.2 18.18c-.24 1.05-.86 1.31-1.75.82l-4.8-3.54-2.31 2.23c-.26.25-.47.46-.97.46l.34-4.89 8.9-8.04c.39-.34-.08-.54-.6-.2L6.02 11.95l-4.73-1.48c-1.03-.32-1.05-1.03.22-1.52L19.99 1.83c.86-.32 1.61.2 1.36 1.49Z"/>
-</svg>`;
-var rule = () => `<div class="rule"><i>◆ ◆ ◆</i></div>`;
 function shamsa() {
   const cx = 100, cy = 100, r1 = 66, r2 = 90, step = 12, gap = 1.6;
   const pt = (r, d) => {
@@ -3842,56 +3922,6 @@ function openSheet(i) {
   if (asg) asg.onclick = () => assignDialog(i);
   document.querySelectorAll("[data-act]").forEach((b) => b.onclick = () => act(b.dataset.act, +b.dataset.i));
 }
-function closeLayer() {
-  document.getElementById("layer").innerHTML = "";
-  document.body.classList.remove("zk-launch-prayer");
-  appState.selected = null;
-}
-function modal(html, kind = "") {
-  document.getElementById("layer").innerHTML = `<div class="modal${kind ? ` ${kind}` : ""}" id="m-back"><div class="frame">${html}</div></div>`;
-  document.getElementById("m-back").onclick = (e) => {
-    if (e.target.id === "m-back") closeLayer();
-  };
-}
-function appConfirm(message, { title = "تأكيد", ok = "متابعة", cancel = "إلغاء", danger = false } = {}) {
-  return new Promise((resolve) => {
-    const host = document.createElement("div");
-    host.className = "modal app-confirm-overlay";
-    host.setAttribute("role", "presentation");
-    host.innerHTML = `<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
-      <div class="display" id="app-confirm-title" style="font-size:1.4rem">${esc(title)}</div>
-      <p class="hint app-confirm-copy" style="margin:.7rem 0 1.1rem;line-height:2">${esc(message)}</p>
-      <div class="actions">
-        <button class="btn ${danger ? "danger" : "gold"}" data-confirm-ok>${esc(ok)}</button>
-        <button class="btn quiet" data-confirm-cancel>${esc(cancel)}</button>
-      </div>
-    </div>`;
-    document.body.appendChild(host);
-    const okBtn = host.querySelector("[data-confirm-ok]");
-    const cancelBtn = host.querySelector("[data-confirm-cancel]");
-    let settled = false;
-    const done = (value) => {
-      if (settled) return;
-      settled = true;
-      document.removeEventListener("keydown", onKey, true);
-      host.remove();
-      resolve(value);
-    };
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        done(false);
-      }
-    };
-    okBtn.onclick = () => done(true);
-    cancelBtn.onclick = () => done(false);
-    host.onclick = (e) => {
-      if (e.target === host) done(false);
-    };
-    document.addEventListener("keydown", onKey, true);
-    requestAnimationFrame(() => okBtn.focus({ preventScroll: true }));
-  });
-}
 async function organizerCode() {
   return orgCode() || await askOrganizerCode();
 }
@@ -3962,34 +3992,6 @@ function askOrganizerCode() {
     };
     document.addEventListener("keydown", onKey, true);
     requestAnimationFrame(() => input.focus({ preventScroll: true }));
-  });
-}
-function appCopyFallback(title, value) {
-  return new Promise((resolve) => {
-    const host = document.createElement("div");
-    host.className = "modal app-confirm-overlay";
-    host.innerHTML = `<div class="frame app-confirm-card" role="dialog" aria-modal="true" aria-labelledby="app-copy-title">
-      <div class="display" id="app-copy-title" style="font-size:1.4rem">${esc(title)}</div>
-      <p class="hint" style="margin:.7rem 0 .9rem;line-height:2">تعذّر النسخ التلقائي. حدّد النص وانسخه من هنا.</p>
-      <textarea class="app-copy-box" readonly>${esc(value)}</textarea>
-      <div class="actions" style="margin-top:1rem">
-        <button class="btn gold" data-copy-close>حسنًا</button>
-      </div>
-    </div>`;
-    document.body.appendChild(host);
-    const ta = host.querySelector("textarea");
-    const close = () => {
-      host.remove();
-      resolve();
-    };
-    host.querySelector("[data-copy-close]").onclick = close;
-    host.onclick = (e) => {
-      if (e.target === host) close();
-    };
-    requestAnimationFrame(() => {
-      ta.focus({ preventScroll: true });
-      ta.select();
-    });
   });
 }
 async function loadPublicKhatmahs(force = false) {
