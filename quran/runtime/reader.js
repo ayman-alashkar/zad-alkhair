@@ -2768,6 +2768,7 @@ function searchMatcher(query) {
   }
   function addQcfPalettes(fam) {
     removeQcfPalettes(fam);
+    return;
     const n = fam.slice(7), page = `.page[data-qfont="${fam}"]`, css = [];
     for (const theme of ["l", "d"]) for (const mode of ["t", "a", "j"]) {
       const colors = qcfPalette(theme, mode).map((x, i) => i + " " + x).join(",");
