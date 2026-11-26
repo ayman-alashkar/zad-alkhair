@@ -94,13 +94,65 @@ function selectVerse(k,anchor,force=false,point=null){
   return true;
 }
 
-/* ضغطة قصيرة: تحدد الآية أو تلغي تحديدها. ضغطة مطوّلة: تحددها وتفتح قائمتها. */
-onGesture("tap",({ayah,anchor,point})=>{
+/* ضغطة قصيرة: تحدد الآية أو تلغي تحديدها؛ وعلى كلمة لها تعليق تفتح التعليق مباشرة.
+   ضغطة مطوّلة: القائمة العائمة، وفيها سطر للآية (استماع، تفسير، مشاركة) وسطر للكلمة التي تحت
+   الإصبع (القراءات، المعنى، تظليل، تعليق، والمتشابهات إن وُجدت). كل زر يفتح نافذة لموضوعه،
+   وفي كل نافذة «المزيد» لبقية الأقسام (src/reader/card). */
+onGesture("tap",({ayah,anchor,gi,point})=>{
+  if(gi!=null&&markOf(gi)?.n){openNote(gi,anchor);return}
   const on=selectVerse(ayah,anchor,false,point);if(on)showToolsFor(2800);
 });
-onGesture("longPress",({ayah,anchor,point})=>{
-  clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);openPrimaryMenu(anchor);
+onGesture("longPress",({ayah,anchor,gi,point})=>{
+  clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);
+  openPrimaryMenu(anchor,gi);
 });
+function pageOfElement(el){return Number(el?.closest?.(".page")?.dataset.page)||reading.currentPage}
+function wordElement(page,gi){return document.querySelector(`.page[data-page="${page}"] [data-gi="${gi}"]`)}
+function openWordCard(gi,anchor,section){
+  closeMenu();
+  return openCard({page:pageOfElement(anchor),gi,riwaya:riwaya()},{
+    section,
+    toast:showToast,
+    onNavigate:(page,g)=>go(page).then(()=>{
+      const el=wordElement(page,g),at=el&&ayahAt(el);
+      if(at)selectVerse(at.ayah,at.anchor,true);
+    }),
+  });
+}
+/* التفسير (زر الشريط وقائمة الآية): نافذة التفسير للآية المختارة، أو أول آية في الصفحة. */
+function openAyahCard(){
+  const page=reading.currentPage,root=document.querySelector(`.page[data-page="${page}"]`);
+  const el=reading.selectedKey?root?.querySelector(`[data-ayah="${reading.selectedKey}"][data-gi]`):root?.querySelector("[data-gi]");
+  if(!el)return openTafsir();
+  return openWordCard(Number(el.dataset.gi),el,"tafsir");
+}
+window.addEventListener("zad:tafsir-author",()=>openAuthorInfo());
+
+/* ---------- تظليل الكلمة وتعليقها (hafiz.mjs) ---------- */
+function openHighlightPicker(gi,anchor){
+  const cur=markOf(gi)?.c||0;
+  menu.classList.remove("word");
+  menu.innerHTML=HIGHLIGHTS.map(h=>`<button type="button" class="menu-btn hz-pick${cur===h.id?" on":""}" data-hz="${h.id}" aria-label="تظليل ${h.name}"><i class="hz-sw hz-c${h.id}"></i><span class="menu-label">${h.name}</span></button>`).join("")+
+    (cur?`<button type="button" class="menu-btn" data-hz="0"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span class="menu-label">إزالة</span></button>`:"");
+  menu.querySelectorAll("[data-hz]").forEach(b=>b.onclick=()=>{setHighlight(gi,Number(b.dataset.hz));closeMenu()});
+  placeMenu(anchor);
+}
+function openNote(gi,anchor){
+  closeMenu();
+  const page=pageOfElement(anchor);
+  const cur=markOf(gi)?.n||"";
+  const b=sheet("تعليق",`<div class="hz-note-view">
+    <div class="hz-note-word"></div>
+    <textarea class="hz-note-text" rows="5" maxlength="2000" placeholder="اكتب ملاحظتك على هذه الكلمة">${escapeHtml(cur)}</textarea>
+    <div class="hz-note-actions"><button type="button" class="hz-note-save">حفظ</button>${cur?`<button type="button" class="hz-note-del">حذف التعليق</button>`:""}</div>
+    <div class="hz-note-hint">التعليق محفوظ في هذا المتصفح، والضغط على الكلمة يفتحه.</div></div>`);
+  wordText(page,gi).then(t=>{const w=b.querySelector(".hz-note-word");if(w)w.textContent=t});
+  const ta=b.querySelector("textarea");
+  b.querySelector(".hz-note-save").onclick=()=>{setNote(gi,ta.value);b.remove();showToast(ta.value.trim()?"حُفظ التعليق":"حُذف التعليق")};
+  const del=b.querySelector(".hz-note-del");if(del)del.onclick=()=>{setNote(gi,"");b.remove();showToast("حُذف التعليق")};
+  if(!cur)setTimeout(()=>ta.focus(),60);
+}
+window.addEventListener("online",()=>reportTarget.flush());
 bindGestures(track);
 
 /* ---------- paging: exactly one page per gesture ---------- */
@@ -231,19 +283,47 @@ document.getElementById("desktopNextBtn").onclick=()=>go(reading.currentPage+1);
 /* ---------- floating ayah menu ---------- */
 function placeMenu(anchor){
   const r=anchor.getBoundingClientRect();
-  const x=Math.max(128,Math.min(innerWidth-128,r.left+r.width/2));
-  const y=Math.max(100,r.top);
-  menu.style.left=x+"px";menu.style.top=y+"px";menu.classList.add("show");
+  menu.classList.add("show");
+  const half=Math.max(128,menu.offsetWidth/2+8),tall=Math.max(100,menu.offsetHeight+24);
+  const x=Math.max(half,Math.min(innerWidth-half,r.left+r.width/2));
+  const y=Math.max(tall,r.top);
+  menu.style.left=x+"px";menu.style.top=y+"px";
 }
-function closeMenu(){menu.classList.remove("show");if(!document.body.classList.contains("hidden-tools"))showToolsFor(2800)}
-function openPrimaryMenu(anchor){
-  menu.innerHTML=`
+function closeMenu(){menu.classList.remove("show","word");if(!document.body.classList.contains("hidden-tools"))showToolsFor(2800)}
+const WORD_ICONS={
+  qiraat:'<path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18" cy="16" r="3"/>',
+  meaning:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',
+  mutashabihat:'<rect x="3" y="5" width="10" height="6" rx="1.5"/><rect x="11" y="13" width="10" height="6" rx="1.5"/>',
+  highlight:'<path d="M9 15l-4 4h6l1-1"/><path d="M8.5 14.5l8-8 3 3-8 8z"/>',
+  note:'<path d="M5 5h14v10H9l-4 4z"/>',
+};
+function openPrimaryMenu(anchor,gi=null){
+  const ayahRow=`<div class="menu-row">
     <button type="button" class="menu-btn play" data-act="listen"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg><span class="menu-label">${isSurahOnly()?"استماع للسورة":"استماع"}</span></button>
-    <button type="button" class="menu-btn" data-act="tafsir"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M5.333 3c2.46-.003 4.836.887 6.667 2.5V21a10.07 10.07 0 0 0-6.667-2.5c-1.562 0-2.343 0-2.688-.22a1.16 1.16 0 0 1-.424-.425C2 17.51 2 16.895 2 15.663v-9.26c0-1.428 0-2.141.549-2.72c.548-.579 1.11-.609 2.234-.668Q5.056 3 5.333 3m13.334 0A10.07 10.07 0 0 0 12 5.5V21a10.07 10.07 0 0 1 6.667-2.5c1.562 0 2.343 0 2.688-.22c.207-.133.291-.218.424-.425c.221-.345.221-.96.221-2.192v-9.26c0-1.428 0-2.141-.549-2.72s-1.11-.609-2.234-.668Q18.944 3 18.667 3"/><path d="M19 7.326a10.4 10.4 0 0 0-2 .13m2 3.55q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.681m4 2.819q-.166-.005-.333-.005a10.1 10.1 0 0 0-3.667.68M5 7.326a10.4 10.4 0 0 1 2 .13m-2 3.55q.166-.005.333-.005A10.1 10.1 0 0 1 9 11.682m-4 2.819q.166-.005.333-.005a10.1 10.1 0 0 1 3.667.68"/></g></svg><span class="menu-label">التفسير</span></button>
-    <button type="button" class="menu-btn" data-act="share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg><span class="menu-label">مشاركة</span></button>`;
-  bindPrimaryMenu();placeMenu(anchor);
+    <button type="button" class="menu-btn" data-act="tafsir"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"><path d="M5.333 3c2.46-.003 4.836.887 6.667 2.5V21a10.07 10.07 0 0 0-6.667-2.5c-1.562 0-2.343 0-2.688-.22a1.160 1.160 0 0 1-.424-.425C2 17.51 2 16.895 2 15.663v-9.26c0-1.428 0-2.141.549-2.72c.548-.579 1.11-.609 2.234-.668Q5.056 3 5.333 3m13.334 0A10.07 10.07 0 0 0 12 5.5V21a10.07 10.07 0 0 1 6.667-2.5c1.562 0 2.343 0 2.688-.22c.207-.133.291-.218.424-.425c.221-.345.221-.96.221-2.192v-9.26c0-1.428 0-2.141-.549-2.72s-1.11-.609-2.234-.668Q18.944 3 18.667 3"/></g></svg><span class="menu-label">التفسير</span></button>
+    <button type="button" class="menu-btn" data-act="share"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.4"/><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="19" r="2.4"/><path d="M8.2 10.9l7.6-4.7M8.2 13.1l7.6 4.7"/></svg><span class="menu-label">مشاركة</span></button></div>`;
+  const wordBtn=(k,label)=>`<button type="button" class="menu-btn" data-word="${k}"><svg viewBox="0 0 24 24">${WORD_ICONS[k]}</svg><span class="menu-label">${label}</span></button>`;
+  const wordRow=gi==null?"":`<div class="menu-row word-row">${wordBtn("qiraat","القراءات")}${wordBtn("meaning","المعنى")}${wordBtn("highlight","تظليل")}${wordBtn("note","تعليق")}</div>`;
+  menu.classList.toggle("word",gi!=null);
+  menu.innerHTML=ayahRow+wordRow;
+  bindPrimaryMenu();
+  menu.querySelectorAll("[data-word]").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.word;
+    if(k==="highlight")return openHighlightPicker(gi,anchor);
+    if(k==="note")return openNote(gi,anchor);
+    openWordCard(gi,anchor,k);
+  });
+  placeMenu(anchor);
+  /* المتشابهات زر خامس حين تكون الكلمة في عبارة متشابهة. */
+  if(gi!=null)hasMutashabihat(gi).then(yes=>{
+    const row=menu.querySelector(".word-row");
+    if(!yes||!row||!menu.classList.contains("show"))return;
+    row.querySelector('[data-word="meaning"]').insertAdjacentHTML("afterend",wordBtn("mutashabihat","متشابهات"));
+    const nb=row.querySelector('[data-word="mutashabihat"]');nb.onclick=()=>openWordCard(gi,anchor,"mutashabihat");
+  });
 }
 function openShareMenu(){
+  menu.classList.remove("word");
   menu.innerHTML=`
     <button type="button" class="menu-btn" data-share="share"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/></svg><span class="menu-label">رابط</span></button>
     <button type="button" class="menu-btn" data-share="copy"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg><span class="menu-label">نسخ</span></button>`;
@@ -256,7 +336,7 @@ function bindPrimaryMenu(){
     if(a==="share"){openShareMenu();return}
     closeMenu();
     if(a==="listen")startSelected();
-    if(a==="tafsir")openTafsir();
+    if(a==="tafsir")openAyahCard();
   });
 }
 
@@ -456,7 +536,7 @@ function sheet(title,inner){
 function openAuthorInfo(){
   sheet("عن د. وهبة الزحيلي",`<div class="author-bio">
     د. وهبة الزحيلي عالم وفقيه سوري وأستاذ جامعي، عُرف بمؤلفاته في الفقه وأصوله والتفسير. ومن كتبه «التفسير الوجيز»، الذي يقدّم معاني الآيات بأسلوب مختصر وواضح.
-  </div><div class="author-note">اعتمدنا في إعداد هذا النص على النسخة المصوَّرة المتاحة من الكتاب، إذ لا تتوفر نسخة رقمية رسمية منشورة على الإنترنت. وقد نُقِّح النص بعناية قدر الإمكان، لكن الخطأ وارد، وجلَّ من لا يخطئ؛ فإذا لاحظت أي خطأ أو اختلاف بين النص هنا ونص كتاب «التفسير الوجيز»، فنرجو تنبيهنا إلى ذلك على <a href="mailto:support@zad-alkhair.net" dir="ltr">support@zad-alkhair.net</a>.</div>`);
+  </div><div class="author-note">اعتمدنا في إعداد هذا النص على النسخة المصوَّرة المتاحة من الكتاب، إذ لا تتوفر نسخة رقمية رسمية منشورة على الإنترنت. وقد نُقِّح النص بعناية قدر الإمكان، لكن الخطأ وارد، وجلَّ من لا يخطئ.</div>`);
 }
 async function focusVerseForTafsir(key){
   const p=await getVersePage(key).catch(()=>null);
@@ -521,7 +601,7 @@ async function openTafsir(){
 
   await render(reading.selectedKey);
 }
-document.getElementById("tafsirBtn").onclick=openTafsir;
+document.getElementById("tafsirBtn").onclick=openAyahCard;
 document.getElementById("bookmarkBtn").onclick=togglePageBookmark;
 document.getElementById("readerSearchBtn").onclick=()=>openQuranSearch();
 document.getElementById("jumpBookmarkBtn").onclick=jumpToPageBookmark;

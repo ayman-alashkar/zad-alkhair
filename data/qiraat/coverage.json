@@ -1,0 +1,169 @@
+{
+ "words": 77432,
+ "riwayat": {
+  "qalun": {
+   "diffs": 7687,
+   "coloured": 7281,
+   "sound": 7,
+   "waqf": 1,
+   "unknown": 398,
+   "silent": 248
+  },
+  "warsh": {
+   "diffs": 11906,
+   "coloured": 7970,
+   "sound": 3066,
+   "waqf": 243,
+   "unknown": 627,
+   "silent": 271
+  },
+  "bazzi": {
+   "diffs": 8585,
+   "coloured": 8035,
+   "sound": 10,
+   "waqf": 90,
+   "unknown": 450,
+   "silent": 261
+  },
+  "qunbul": {
+   "diffs": 8540,
+   "coloured": 7986,
+   "sound": 10,
+   "waqf": 63,
+   "unknown": 481,
+   "silent": 283
+  },
+  "duri": {
+   "diffs": 3248,
+   "coloured": 2728,
+   "sound": 5,
+   "waqf": 150,
+   "unknown": 365,
+   "silent": 215
+  },
+  "susi": {
+   "diffs": 5388,
+   "coloured": 4798,
+   "sound": 9,
+   "waqf": 140,
+   "unknown": 441,
+   "silent": 268
+  },
+  "hisham": {
+   "diffs": 2447,
+   "coloured": 716,
+   "sound": 70,
+   "waqf": 1238,
+   "unknown": 423,
+   "silent": 228
+  },
+  "dhakwan": {
+   "diffs": 1286,
+   "coloured": 918,
+   "sound": 9,
+   "waqf": 7,
+   "unknown": 352,
+   "silent": 223
+  },
+  "shubah": {
+   "diffs": 644,
+   "coloured": 424,
+   "sound": 2,
+   "waqf": 2,
+   "unknown": 216,
+   "silent": 137
+  },
+  "khalaf": {
+   "diffs": 17293,
+   "coloured": 7192,
+   "sound": 3225,
+   "waqf": 5829,
+   "unknown": 1047,
+   "silent": 591
+  },
+  "khallad": {
+   "diffs": 13610,
+   "coloured": 4272,
+   "sound": 48,
+   "waqf": 8248,
+   "unknown": 1042,
+   "silent": 633
+  },
+  "harith": {
+   "diffs": 5473,
+   "coloured": 2607,
+   "sound": 276,
+   "waqf": 2057,
+   "unknown": 533,
+   "silent": 193
+  },
+  "durik": {
+   "diffs": 5811,
+   "coloured": 2934,
+   "sound": 276,
+   "waqf": 2057,
+   "unknown": 544,
+   "silent": 201
+  },
+  "wardan": {
+   "diffs": 9116,
+   "coloured": 8328,
+   "sound": 228,
+   "waqf": 5,
+   "unknown": 555,
+   "silent": 266
+  },
+  "jammaz": {
+   "diffs": 9101,
+   "coloured": 8320,
+   "sound": 228,
+   "waqf": 5,
+   "unknown": 548,
+   "silent": 265
+  },
+  "ruwais": {
+   "diffs": 2720,
+   "coloured": 1354,
+   "sound": 75,
+   "waqf": 875,
+   "unknown": 416,
+   "silent": 222
+  },
+  "rawh": {
+   "diffs": 2262,
+   "coloured": 1051,
+   "sound": 5,
+   "waqf": 872,
+   "unknown": 334,
+   "silent": 160
+  },
+  "ishaq": {
+   "diffs": 3033,
+   "coloured": 2474,
+   "sound": 21,
+   "waqf": 253,
+   "unknown": 285,
+   "silent": 169
+  },
+  "idris": {
+   "diffs": 3033,
+   "coloured": 2474,
+   "sound": 21,
+   "waqf": 253,
+   "unknown": 285,
+   "silent": 169
+  }
+ },
+ "total": {
+  "diffs": 121183,
+  "coloured": 81862,
+  "sound": 7591,
+  "waqf": 22388,
+  "unknown": 9342,
+  "silent": 5003
+ },
+ "corrections": {
+  "entries": 116,
+  "words": 108
+ }
+}

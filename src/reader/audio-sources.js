@@ -1,10 +1,12 @@
 /* ---------- exact per-ayah audio + collapsible player ---------- */
 function ayahAudioSourceId(s,r=reciter){
+  if(r.riwaya)return "riwaya-"+r.riwaya;
   if(r.provider==="ayah"&&r.everyAyahId)return r.everyAyahId;
   if(r.id==="Husary_128kbps"&&Number(s)===1&&r.fatihaEveryAyahId)return r.fatihaEveryAyahId;
   return "";
 }
 function audioUrl(s,a){
+  if(reciter.riwaya)return (riwayaFilesFor(s,a)||[])[0]||"";
   const sourceId=ayahAudioSourceId(s);
   if(!sourceId)throw new Error("ayah provider unavailable");
   return `https://everyayah.com/data/${sourceId}/${pad3(s)}${pad3(a)}.mp3`;

@@ -32,7 +32,7 @@ function primeNextEveryAyah(){
   const nextSourceId=ayahAudioSourceId(n.s);
   if(!nextSourceId||nextSourceId!==currentSourceId){releaseAudioPreload();return}
   const src=audioUrl(n.s,n.a);
-  if(src===primedEveryAyahSrc)return;
+  if(!src||src===primedEveryAyahSrc)return;
   primedEveryAyahSrc=src;
   try{
     audioPreload.pause();
@@ -195,8 +195,21 @@ async function playCurrent(expand=false){
       }
 
       activeSegment=null;activeTimingRows=null;
+      if(reciter.riwaya){
+        if(riwayaSurahMissing(play.surah)){playbackWanted=false;syncPlay();showToast(`تلاوة هذه السورة غير متوفرة برواية ${riwayaName(reciter.riwaya)}`);return}
+        let files=riwayaFilesFor(play.surah,play.current)||[];
+        /* آية حفص داخلة في ملف الآية قبلها: في التلاوة المتصلة سُمعت معها فيُنتقل إلى ما بعدها،
+           وإن طُلبت وحدها يُشغَّل الملف الذي هي فيه. البسملة في الفاتحة لا ملف لها عند من لا يعدّها. */
+        if(!files.length){
+          const alone=play.from===play.current&&play.to===play.current;
+          const prev=play.current>1?(riwayaFilesFor(play.surah,play.current-1)||[]).slice(-1):[];
+          if(alone&&prev.length)files=prev;
+          else{if(alone)showToast(`البسملة ليست آية في عدّ رواية ${riwayaName(reciter.riwaya)}`);await finishCurrentAyah();return}
+        }
+        riwayaRest=files.slice(1);riwayaFirst=files[0];
+      }else riwayaRest=[];
       audio.dataset.playMode="ayah";audio.dataset.ref=playbackSourceRef();
-      const src=audioUrl(play.surah,play.current);
+      const src=reciter.riwaya?riwayaFirst:audioUrl(play.surah,play.current);
 
       if(audio.dataset.source!==src){
         audio.dataset.source=src;

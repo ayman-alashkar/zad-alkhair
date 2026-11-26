@@ -255,6 +255,7 @@ function renderPage(data,engine,prepared){
 
   const host=root.querySelector(".mushaf");
   engine.renderLines(host,prepared,data);
+  decorateMarks(root);
 
   if(reading.selectedKey)highlightAyah(reading.selectedKey,root);
   renderPageBookmark(root);
@@ -263,16 +264,26 @@ function renderPage(data,engine,prepared){
 
 /* محرّك QCF (حفص): بيانات الصفحة هي بيانات QCF نفسها، والتحضير تحميل خط الصفحة.
    الأسطر يبنيها engines/qcf.mjs؛ ما يحتاجه من هذا الملف يُمرَّر إليه. رقم الكلمة الثابت
-   (wordGi) يُضاف حين يصل الفهرس الموحّد data/words/index.json. */
+   (wordGi) من الفهرس الموحّد data/words/index.json عبر word-gi.mjs. */
 const qcfLineEnv={
   surahName:sid=>reading.chapterMap.get(sid)?.name_arabic||"",
   headerGlyph:sid=>surahHeaderReady?SURAH_HEADER_GLYPHS[sid]:null,
 };
 registerEngine({
   id:"qcf",
-  prepare:async(p,data)=>{await ensureQcfFont(data.font);return data},
-  renderLines:(host,prepared)=>qcfRenderLines(host,prepared,qcfLineEnv),
+  prepare:async(p,data)=>{await Promise.all([ensureQcfFont(data.font),loadWordIndex()]);return data},
+  renderLines:(host,prepared)=>qcfRenderLines(host,prepared,{...qcfLineEnv,
+    wordGi:(page,lineNo,w)=>wordGiAt(page,lineNo-1,prepared.lines[lineNo-1].words.indexOf(w))}),
 });
+/* محرّك DigitalKhatt (الروايات غير حفص): يرسم QCF أولًا لعنوان السورة والبسملة، ثم يستبدل أسطر النص. */
+registerEngine(createDigitalKhattEngine({
+  qcfPrepare:(p,data)=>Promise.all([ensureQcfFont(data.font),loadWordIndex()]),
+  qcfRender:(host,data)=>qcfRenderLines(host,data,qcfLineEnv),
+  riwaya,
+}));
+initRiwaya();
+/* تظليل الحافظ وتعليقه: يُعاد وضعه على الصفحات المرسومة عند كل تغيير. */
+onMarksChange(()=>document.querySelectorAll('.page[data-loaded="1"]').forEach(decorateMarks));
 /* حين يتغيّر المحرّك (رواية أخرى) تُرسم الصفحات المحمّلة من جديد بالمحرّك الجديد. */
 onEngineChange(()=>{
   document.querySelectorAll('.page[data-loaded="1"]').forEach(root=>{root.innerHTML="";delete root.dataset.loaded});

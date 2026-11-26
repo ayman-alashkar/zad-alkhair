@@ -2696,3 +2696,79 @@ html[data-theme="dark"] .zl-upnext{color:#6B6350}
 .zl-qrow:disabled{opacity:.45;cursor:default}
 /* التنزيل معطّل في «ما تيسّر»؛ setAudioDownloadButton قد يعيد تفعيل الزر نفسه، فاللمس يُمنع من الحاوية. */
 .zl-act-dl.off{opacity:.4;pointer-events:none}
+
+/* ---------- الروايات: زر رأس الصفحة، ونافذة الاختيار، وأسطر DigitalKhatt ---------- */
+.riwaya-btn{border:0;background:transparent;display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:999px;font:400 15px/1.2 "Aref Ruqaa",serif;color:var(--hd-gold,#8E6A28);cursor:pointer;white-space:nowrap}
+.riwaya-btn:active{background:var(--gold-soft,#F4E8CA)}
+.riwaya-scrim{position:fixed;inset:0;z-index:146;background:rgba(8,45,41,.42)}
+.riwaya-sheet{position:fixed;left:0;right:0;bottom:0;z-index:147;margin-inline:auto;max-width:640px;max-height:88vh;overflow-y:auto;background:var(--paper,#F5F0E4);color:var(--chrome-text,#18362F);border-radius:24px 24px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:9px;font-family:Alexandria,system-ui,sans-serif;direction:rtl}
+.rs-grip{width:40px;height:4px;border-radius:4px;background:#D4C9AF;align-self:center}
+.rs-head{display:flex;align-items:baseline;justify-content:space-between}.rs-head h2{margin:0;font:400 24px/1.3 "Aref Ruqaa",serif}.rs-head span{font-size:11.5px;opacity:.7}
+.rs-row{display:flex;align-items:center;gap:8px}
+.rs-imam{width:84px;flex:none;font:400 17px/1.2 "Aref Ruqaa",serif;color:var(--hd-gold,#8E6A28)}
+.rs-r{flex:1;min-height:44px;border:1px solid var(--border,#DED3BD);border-radius:14px;background:var(--chrome,#FFFCF4);color:inherit;font:inherit;font-size:13.5px}
+.rs-r.on{background:var(--brand,#0F5C50);border-color:var(--brand,#0F5C50);color:#FFF9EA;font-weight:600}
+.rs-legend{display:flex;flex-wrap:wrap;gap:6px 12px;padding-top:6px;border-top:1px solid var(--border,#DED3BD);font-size:11px;opacity:.85}
+.rs-legend span{display:inline-flex;align-items:center;gap:5px}.rs-legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.line-inner.dk{display:inline-flex}
+.dk-line{display:block;height:1.33em;width:auto;overflow:visible;fill:var(--quran,#0B1611)}
+.dk-end{fill:var(--ayah-number,#634314)}.dk-end.ghost{opacity:.28}
+/* ألوان الخلاف: مشبعة ومتباعدة، والحرف الملوّن أثقل قليلًا ليُرى المختلف بمسح سريع.
+   تظليل الحافظ مختلف عنها تمامًا (ألوان فاتحة مستطيلة خلف الكلمة)، فلا يلتبسان. */
+.dk-line{--c1:#6D28D9;--c2:#C026D3;--c3:#1D63ED;--c4:#0E9F8E;--c5:#E86A00;--c6:#15A34A;--c7:#8B5E34;--c8:#D1203A;--snd:#B8913F;--waqf:#3F6E8C;--ayah-plus:#C2185B}
+html[data-theme="dark"] .dk-line{--c1:#B794F4;--c2:#F08AE6;--c3:#7FA8FF;--c4:#4FD1C5;--c5:#FFA05C;--c6:#5EDB8A;--c7:#D9A574;--c8:#FF7A8A;--snd:#D9B86A;--waqf:#8FB8D6;--ayah-plus:#F48FB1}
+.dk-c1{fill:var(--c1);stroke:var(--c1)}.dk-c2{fill:var(--c2);stroke:var(--c2)}.dk-c3{fill:var(--c3);stroke:var(--c3)}.dk-c4{fill:var(--c4);stroke:var(--c4)}
+.dk-c5{fill:var(--c5);stroke:var(--c5)}.dk-c6{fill:var(--c6);stroke:var(--c6)}.dk-c7{fill:var(--c7);stroke:var(--c7)}.dk-c8{fill:var(--c8);stroke:var(--c8)}
+.dk-line use[class^="dk-c"]{stroke-width:14;stroke-linejoin:round}
+.dk-amp{fill:var(--ayah-plus)}
+.dk-hit{fill:transparent}
+.dk-line g[data-ayah].selected .dk-hit{fill:var(--select)}
+/* «ألوان وتظليل»: خلفية بلون الخلاف نفسه */
+.dk-hl{opacity:0}
+html[data-qshade="on"] .dk-hl{opacity:.16}
+html[data-theme="dark"][data-qshade="on"] .dk-hl{opacity:.24}
+.dk-b1{fill:var(--c1)}.dk-b2{fill:var(--c2)}.dk-b3{fill:var(--c3)}.dk-b4{fill:var(--c4)}.dk-b5{fill:var(--c5)}.dk-b6{fill:var(--c6)}.dk-b7{fill:var(--c7)}.dk-b8{fill:var(--c8)}.dk-bap{fill:var(--ayah-plus)}
+.dk-snd{stroke:var(--snd);stroke-width:46;stroke-dasharray:60 70;stroke-linecap:round;fill:none}
+.dk-wq{stroke:var(--waqf);stroke-width:72;stroke-dasharray:1 105;stroke-linecap:round;fill:none}
+.rs-seg{display:flex;gap:4px;padding:3px;border-radius:999px;background:var(--chrome,#FFFCF4);border:1px solid var(--border,#DED3BD)}
+.rs-seg button{flex:1;min-height:36px;border:0;border-radius:999px;background:transparent;color:inherit;font:inherit;font-size:13px}
+.rs-seg button.on{background:var(--brand,#0F5C50);color:#FFF9EA;font-weight:600}
+.rs-legend i.u{background:none;height:0;border-bottom:3px dashed #B8913F;border-radius:0}
+.rs-legend i.wu{background:none;height:0;border-bottom:4px dotted #3F6E8C;border-radius:0}
+.rs-legend i.ap{background:#C2185B;border-radius:50%}
+.rs-legend i.ag{background:transparent;border:1.5px solid var(--ayah-number,#634314);opacity:.45;border-radius:50%}
+
+/* التجويد لحفص وحده */
+html[data-riwaya]:not([data-riwaya="hafs"]) #tajweedBtn{opacity:.38}
+html[data-riwaya]:not([data-riwaya="hafs"]) #tajweedStrip{display:none!important}
+
+/* قارئ الرواية وحده: لا اختيار للقارئ ولا تنزيل في غير حفص */
+html.riwaya-audio #panelQariBtn,html.riwaya-audio #panelQari{pointer-events:none}
+
+/* القائمة العائمة بسطرين: الآية، ثم الكلمة التي تحت الإصبع */
+.ayah-menu.word.show{flex-direction:column}
+.ayah-menu .menu-row{display:flex;justify-content:center}
+.ayah-menu .word-row{border-top:1px solid var(--reader-line,rgba(228,201,128,.28));margin-top:3px;padding-top:3px}
+.ayah-menu .hz-pick.on{background:var(--reader-selected,rgba(255,255,255,.12))}
+.hz-sw{display:block;width:22px;height:22px;border-radius:6px;border:1px solid rgba(0,0,0,.12)}
+
+/* تظليل الحافظ: ألوان فاتحة كقلم التظليل، مستطيلة على النصف السفلي من الكلمة، والحبر كما هو.
+   مختلفة تمامًا عن ألوان القراءات (مشبعة، تلوّن الحرف، وتظليلها مستدير بلون الخلاف). */
+:root{--hz1:#FBE27A;--hz2:#BFE8A6;--hz3:#B9DCF7;--hz4:#F7C6DA}
+html[data-theme="dark"]{--hz1:rgba(251,226,122,.38);--hz2:rgba(191,232,166,.32);--hz3:rgba(185,220,247,.32);--hz4:rgba(247,198,218,.32)}
+.hz-sw.hz-c1{background:var(--hz1)}.hz-sw.hz-c2{background:var(--hz2)}.hz-sw.hz-c3{background:var(--hz3)}.hz-sw.hz-c4{background:var(--hz4)}
+.word.hz-c1{background:linear-gradient(transparent 30%,var(--hz1) 30%,var(--hz1) 92%,transparent 92%)}
+.word.hz-c2{background:linear-gradient(transparent 30%,var(--hz2) 30%,var(--hz2) 92%,transparent 92%)}
+.word.hz-c3{background:linear-gradient(transparent 30%,var(--hz3) 30%,var(--hz3) 92%,transparent 92%)}
+.word.hz-c4{background:linear-gradient(transparent 30%,var(--hz4) 30%,var(--hz4) 92%,transparent 92%)}
+.dk-line g.hz-c1 .dk-hit{fill:var(--hz1)}.dk-line g.hz-c2 .dk-hit{fill:var(--hz2)}.dk-line g.hz-c3 .dk-hit{fill:var(--hz3)}.dk-line g.hz-c4 .dk-hit{fill:var(--hz4)}
+/* الكلمة التي عليها تعليق: نقطة ذهبية صغيرة فوقها */
+.word.hz-note::after{content:"";position:absolute;top:.02em;inset-inline-start:50%;width:.16em;height:.16em;border-radius:50%;background:var(--ui-gold,#C59A4A);transform:translateX(50%)}
+.dk-line g.hz-note .dk-hit{stroke:var(--ui-gold,#C59A4A);stroke-width:26;stroke-dasharray:4 70;stroke-linecap:round}
+.hz-note-view{display:flex;flex-direction:column;gap:10px;padding-top:10px}
+.hz-note-word{font:400 30px/1.4 Amiri,serif;color:var(--ui-accent);text-align:center}
+.hz-note-text{width:100%;box-sizing:border-box;border:1px solid var(--ui-line);border-radius:14px;background:var(--ui-surface-2);color:var(--ui-text);padding:10px 12px;font:15px/1.8 Alexandria,system-ui,sans-serif;resize:vertical}
+.hz-note-actions{display:flex;gap:8px}
+.hz-note-actions button{min-height:42px;border-radius:999px;padding:0 18px;font:600 12px Alexandria,system-ui,sans-serif;border:1px solid var(--ui-line);background:var(--ui-surface-2);color:var(--ui-text)}
+.hz-note-actions .hz-note-save{background:var(--ui-accent);border-color:var(--ui-accent);color:#FFF9EA}
+.hz-note-hint{font-size:11px;color:var(--ui-muted)}

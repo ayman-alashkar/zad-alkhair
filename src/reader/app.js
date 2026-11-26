@@ -4,7 +4,13 @@ import { escapeHtml, pad3 } from "./util.mjs";
 import { reading } from "./reader-state.mjs";
 import { activeEngine, decoratePageHeader, onEngineChange, registerEngine } from "./page-engine.mjs";
 import { qcfRenderLines } from "./engines/qcf.mjs";
-import { ayahElements, clearAyahHighlight, highlightAyah } from "./ayah-marks.mjs";
+import { loadWordIndex, wordGiAt } from "./word-gi.mjs";
+import { createDigitalKhattEngine } from "./engines/digitalkhatt.mjs";
+import { riwaya, riwayaName, initRiwaya } from "./riwaya.mjs";
+import { loadRiwayaAudio, riwayaAyahFiles } from "./riwaya-audio.mjs";
+import { openCard, reportTarget, hasMutashabihat, wordText } from "./card/index.mjs";
+import { HIGHLIGHTS, decorateMarks, markOf, onMarksChange, setHighlight, setNote } from "./hafiz.mjs";
+import { ayahAt, ayahElements, clearAyahHighlight, highlightAyah } from "./ayah-marks.mjs";
 import { bindGestures, onGesture } from "./gestures.mjs";
 import { searchMatcher, searchNormalize } from "./search-text.mjs";
 import { TAFSIR_DATASET, loadTafsirIndex, tafsirAyahRecord, tafsirFadlForSurah } from "./tafsir.mjs";
@@ -60,6 +66,7 @@ const readerBootReady=new Promise(resolve=>{readerBootDone=()=>{readerBooted=tru
 
 /* @include audio-playback.js */
 /* @include transport-controls.js */
+/* @include riwaya-player.js */
 
 /* @include playlist.js */
 /* @include playlist-ui.js */

@@ -26,6 +26,14 @@ export async function setActiveEngine(id){
 
 export function onEngineChange(listener){ engineListeners.push(listener); }
 
+/* يختار المحرّك عند الإقلاع قبل رسم أي صفحة، دون إعادة رسم */
+export function selectEngineAtBoot(id){ if(engines.has(id))activeId=id; }
+
+/* يعيد رسم الصفحات المحمّلة بالمحرّك نفسه (حين تتغيّر الرواية بين روايتين يرسمهما محرّك واحد) */
+export async function refreshEngine(){
+  for(const listener of engineListeners)await listener(activeId);
+}
+
 /* يضيف عنصرًا إلى رأس كل صفحة حين تُرسم (اختيار الرواية في منتصفه مثلًا).
    decorator(metaEl, page) يُستدعى بعد بناء رأس الصفحة. */
 export function onPageHeader(decorator){ headerDecorators.push(decorator); }
