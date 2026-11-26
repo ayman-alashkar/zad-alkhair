@@ -1,8 +1,10 @@
-/* أقسام مستوى الكلمة: القراءات، المعنى، التصريف، الإعراب. */
+/* أقسام مستوى الكلمة: القراءات، والمعنى والإعراب (المعنى والتصريف والإعراب معًا). */
 import { registerSection } from "../card.mjs";
 import { qiraatIndex, statements, wordLayers } from "../data.mjs";
 import { formElement } from "../forms.mjs";
-import { esc, node, para, src, ref, shareBlock, RIWAYA_NAMES, SOURCE_CENTER } from "./util.mjs";
+import { esc, node, para, ref, shareBlock, RIWAYA_NAMES, SOURCE_CENTER } from "./util.mjs";
+
+const NO_DIFF = "لا خلاف بين القراء العشرة في هذه الكلمة";
 
 /* ---------- القراءات: بطاقة النموذج كما راجعتها المجموعة ---------- */
 async function qiraatData(ctx) {
@@ -19,17 +21,18 @@ async function qiraatData(ctx) {
 }
 
 registerSection({
-  id: "qiraat", level: "word", label: "القراءات", order: 10,
+  id: "qiraat", level: "word", label: "القراءات", order: 10, nav: "word",
   available: () => true,
+  source: () => SOURCE_CENTER,
   async render(ctx) {
     const D = await qiraatData(ctx);
     const meKey = D.IDX.riwayat.indexOf(ctx.riwaya);
     const all = D.inw.concat(D.wasl);
-    const box = node(`<div style="display:contents"></div>`);
+    const box = node(`<div class="zc-stack"></div>`);
     const big = node(`<div class="zc-form"></div>`);
-    big.appendChild(await formElement(ctx.page, D.word, { height: 60, ink: "var(--brand,#0F5C50)" }));
+    big.appendChild(await formElement(ctx.page, D.word, { height: 60, ink: "var(--ui-accent)" }));
     box.appendChild(big);
-    box.appendChild(node(`<div class="zc-sub">${esc(await ref(ctx))} · برواية ${esc(RIWAYA_NAMES[ctx.riwaya] || ctx.riwaya)}</div>`));
+    box.appendChild(node(`<div class="ref">${esc(await ref(ctx))} · برواية ${esc(RIWAYA_NAMES[ctx.riwaya] || ctx.riwaya)}</div>`));
     const group = async (title, rows) => {
       if (!rows.length) return;
       box.appendChild(node(`<div class="zc-h">${title}</div>`));
@@ -42,33 +45,31 @@ registerSection({
     };
     await group("الخلاف في الكلمة", D.inw);
     await group("عند وصلها بما بعدها", D.wasl);
-    if (!all.length) box.appendChild(node(`<div class="zc-none">لا خلاف بين القراء العشرة في هذه الكلمة</div>`));
-    box.appendChild(node(src(`نص الخلاف من ${SOURCE_CENTER} (tafsir.net)${all.some(r => r.fix) ? "، وما عليه «قاعدة» مصحَّح بنص المركز من نظائر الكلمة" : ""}`)));
+    if (!all.length) box.appendChild(node(para(NO_DIFF, "القراءات: لا خلاف", "zc-none")));
+    if (all.some(r => r.fix)) box.appendChild(node(`<div class="zc-note">ما عليه «قاعدة» صُحِّح بنص المركز نفسه من نظائر الكلمة.</div>`));
     return box;
   },
   async shareText(ctx) {
     const D = await qiraatData(ctx), all = D.inw.concat(D.wasl);
-    const body = all.length ? all.map(r => `${r.who}: ${r.d}`).join("\n") : "لا خلاف بين القراء العشرة في هذه الكلمة.";
-    return shareBlock(`القراءات — «${D.word.map(s => s[0]).join("")}»`, body, SOURCE_CENTER, ctx);
+    const body = all.length ? all.map(r => `${r.who}: ${r.d}`).join("\n") : NO_DIFF + ".";
+    return shareBlock(`القراءات في «${D.word.map(s => s[0]).join("")}»`, body, SOURCE_CENTER, ctx);
   },
 });
 
-/* ---------- المعنى والتصريف والإعراب: نص واحد من مركز تفسير ---------- */
-for (const [id, label, field, order] of [["meaning", "المعنى", "meaning", 20], ["sarf", "التصريف", "sarf", 30], ["irab", "الإعراب", "irab", 40]]) {
-  registerSection({
-    id, level: "word", label, order,
-    async available(ctx) { const L = await wordLayers(ctx.page, ctx.gi); return !!(L && L[field]); },
-    async render(ctx) {
-      const L = await wordLayers(ctx.page, ctx.gi);
-      return node(`<div style="display:contents">
-        <div class="zc-word">${esc(L.text)}</div>
-        <div class="zc-sub">${esc(await ref(ctx))}</div>
-        ${para(esc(L[field]), label)}
-        ${src(`من ${SOURCE_CENTER}`)}</div>`);
-    },
-    async shareText(ctx) {
-      const L = await wordLayers(ctx.page, ctx.gi);
-      return shareBlock(`${label} — «${L.text}»`, L[field], SOURCE_CENTER, ctx);
-    },
-  });
-}
+/* ---------- المعنى والإعراب: المعنى ثم التصريف ثم الإعراب، من مركز تفسير ---------- */
+const PARTS = [["meaning", "المعنى"], ["sarf", "التصريف"], ["irab", "الإعراب"]];
+registerSection({
+  id: "meaning", level: "word", label: "المعنى والإعراب", order: 20, nav: "word",
+  async available(ctx) { const L = await wordLayers(ctx.page, ctx.gi); return !!(L && (L.meaning || L.sarf || L.irab)); },
+  source: () => SOURCE_CENTER,
+  async render(ctx) {
+    const L = await wordLayers(ctx.page, ctx.gi);
+    const parts = PARTS.filter(([f]) => L[f]).map(([f, label]) => `<div class="zc-h">${label}</div>${para(esc(L[f]), label)}`).join("");
+    return node(`<div class="zc-stack"><div class="zc-word">${esc(L.text)}</div><div class="ref">${esc(await ref(ctx))}</div>${parts}</div>`);
+  },
+  async shareText(ctx) {
+    const L = await wordLayers(ctx.page, ctx.gi);
+    const body = PARTS.filter(([f]) => L[f]).map(([f, label]) => `${label}: ${L[f]}`).join("\n");
+    return shareBlock(`«${L.text}»`, body, SOURCE_CENTER, ctx);
+  },
+});

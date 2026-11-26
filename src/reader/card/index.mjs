@@ -5,3 +5,8 @@ import "./sections/mutashabihat.mjs";
 import "./sections/ayah.mjs";
 import "./sections/page.mjs";
 export { openCard, closeCard, reportTarget } from "./card.mjs";
+import { mutashabihatFor, wordLayers } from "./data.mjs";
+/** نص الكلمة بالرسم العثماني (لنافذة التعليق). */
+export const wordText = async (page, gi) => (await wordLayers(page, gi))?.text || "";
+/** هل الكلمة في عبارة متشابهة؟ (لزر «متشابهات» في القائمة العائمة) */
+export const hasMutashabihat = async gi => (await mutashabihatFor(gi)).length > 0;

@@ -255,6 +255,7 @@ function renderPage(data,engine,prepared){
 
   const host=root.querySelector(".mushaf");
   engine.renderLines(host,prepared,data);
+  decorateMarks(root);
 
   if(reading.selectedKey)highlightAyah(reading.selectedKey,root);
   renderPageBookmark(root);
@@ -281,6 +282,8 @@ registerEngine(createDigitalKhattEngine({
   riwaya,
 }));
 initRiwaya();
+/* تظليل الحافظ وتعليقه: يُعاد وضعه على الصفحات المرسومة عند كل تغيير. */
+onMarksChange(()=>document.querySelectorAll('.page[data-loaded="1"]').forEach(decorateMarks));
 /* حين يتغيّر المحرّك (رواية أخرى) تُرسم الصفحات المحمّلة من جديد بالمحرّك الجديد. */
 onEngineChange(()=>{
   document.querySelectorAll('.page[data-loaded="1"]').forEach(root=>{root.innerHTML="";delete root.dataset.loaded});

@@ -61,21 +61,57 @@ export async function ayahWords(page, surah, ayah) {
   return out.sort((a, b) => a.gi - b.gi);
 }
 
+/** أول كلمة في الآية السابقة (d = -1) أو التالية (d = 1) لآية ctx، أو null عند طرف المصحف. */
+export async function ayahFirstGi(ctx, d) {
+  const key = w => w[1] * 1000 + w[2], here = ctx.surah * 1000 + ctx.ayah;
+  if (d > 0) {
+    for (let p = ctx.page; p <= Math.min(604, ctx.page + 2); p++) {
+      const Q = await qiraatPage(p);
+      const w = Q && Q.words.find(w => key(w) > here);
+      if (w) return w[0];
+    }
+    return null;
+  }
+  // السابقة: آخر كلمة قبل الآية الحالية، ثم أول كلمة في آيتها
+  let prev = null;
+  for (let p = ctx.page; p >= Math.max(1, ctx.page - 2) && !prev; p--) {
+    const Q = await qiraatPage(p);
+    if (Q) prev = [...Q.words].reverse().find(w => key(w) < here) || null;
+  }
+  if (!prev) return null;
+  const words = await ayahWords(ctx.page, prev[1], prev[2]);
+  return words.length ? words[0].gi : prev[0];
+}
+
 /* ---------- المتشابهات ---------- */
-let mutIndex = null;
-/** العبارات التي تقع فيها الكلمة، ولكل عبارة مواضعها كلها [[أول gi، آخر gi]…]. */
-export async function mutashabihatFor(gi) {
-  if (!mutIndex) {
+let mut = null;
+async function mutData() {
+  if (!mut) {
     const M = await getJson("words/mutashabihat.json");
-    if (!M) return [];
-    mutIndex = { phrases: M.phrases, byWord: new Map() };
+    if (!M) return null;
+    mut = { ...M, byWord: new Map() };
     for (const [id, occ] of Object.entries(M.phrases))
       for (const [a, b] of occ) for (let g = a; g <= b; g++) {
-        if (!mutIndex.byWord.has(g)) mutIndex.byWord.set(g, []);
-        mutIndex.byWord.get(g).push(id);
+        if (!mut.byWord.has(g)) mut.byWord.set(g, []);
+        mut.byWord.get(g).push(id);
       }
   }
-  return (mutIndex.byWord.get(gi) || []).map(id => ({ id, occ: mutIndex.phrases[id] }));
+  return mut;
+}
+/** العبارات التي تقع فيها الكلمة، ولكل عبارة مواضعها كلها:
+    [{id, occ: [{a, b, page, surah, ayah, words: [نص كل كلمة]}…]}…]، من ملف واحد صغير. */
+export async function mutashabihatFor(gi) {
+  const M = await mutData();
+  if (!M) return [];
+  return (M.byWord.get(gi) || []).map(id => ({
+    id,
+    occ: M.phrases[id].map(([a, b]) => {
+      const [page, surah, ayah] = M.at[a];
+      const words = [];
+      for (let g = a; g <= b; g++) words.push(M.words[g]);
+      return { a, b, page, surah, ayah, words };
+    }),
+  }));
 }
 
 /* ---------- الآية ---------- */

@@ -1,40 +1,49 @@
-/* المتشابهات: العبارات التي تقع فيها الكلمة، ومواضع كل عبارة. الضغط على موضع ينقل إليه.
-   تُبرز في كل موضع الكلمات التي تخالف الموضع الحالي في رسمها. */
+/* المتشابهات: العبارات التي تقع فيها الكلمة، ومواضع كل عبارة. الضغط على موضع ينقل إليه،
+   والسهمان ينقلان إلى الموضع السابق والتالي. تُبرز في كل موضع الكلمات التي تخالف الموضع الحالي. */
 import { registerSection, goTo } from "../card.mjs";
-import { mutashabihatFor, wordIndex, wordLayers, qiraatPage } from "../data.mjs";
-import { esc, node, src, AR, surahName } from "./util.mjs";
+import { mutashabihatFor } from "../data.mjs";
+import { esc, node, AR, surahName, ayahLink } from "./util.mjs";
 
-const bare = s => String(s).replace(/[ً-ٰٟۖ-ۭـ]/g, "").replace(/[ٱأإآ]/g, "ا");
-const pageOf = (I, g) => { let p = 1; while (p < 604 && I.page_starts[p] <= g) p++; return p; };
-
-async function occurrence(I, a, b) {
-  const words = [];
-  for (let g = a; g <= b; g++) { const L = await wordLayers(pageOf(I, g), g); words.push(L ? L.text : ""); }
-  const page = pageOf(I, a), Q = await qiraatPage(page), w = Q && Q.words[a - Q.words[0][0]];
-  return { a, b, page, words, surah: w ? w[1] : 0, ayah: w ? w[2] : 0 };
-}
+const SOURCE = "ترتيل (Tarteel)، مكتبة QUL";
+const bare = s => String(s).replace(/[ً-ٰٟۖ-ۭـ]/g, "").replace(/[ٱأإآ]/g, "ا");
+const hereOf = (ph, gi) => ph.occ.find(o => gi >= o.a && gi <= o.b) || ph.occ[0];
 
 registerSection({
-  id: "mutashabihat", level: "word", label: "المتشابهات", order: 50,
+  id: "mutashabihat", level: "word", label: "المتشابهات", order: 30, nav: "occ",
   async available(ctx) { return (await mutashabihatFor(ctx.gi)).length > 0; },
+  source: () => SOURCE,
   async render(ctx) {
-    const I = await wordIndex(), phrases = await mutashabihatFor(ctx.gi);
-    const box = node(`<div style="display:contents"></div>`);
+    const phrases = await mutashabihatFor(ctx.gi);
+    const box = node(`<div class="zc-stack"></div>`);
     for (const ph of phrases) {
-      const occ = [];
-      for (const [a, b] of ph.occ) occ.push(await occurrence(I, a, b));
-      const here = occ.find(o => ctx.gi >= o.a && ctx.gi <= o.b) || occ[0];
-      const differs = occ.filter(o => o.words.map(bare).join(" ") !== here.words.map(bare).join(" ")).length;
-      box.appendChild(node(`<div class="zc-sub" style="text-align:start">«${esc(here.words.join(" "))}» في ${AR(occ.length)} مواضع${differs ? `، ويخالف ${AR(differs)} منها` : ""}. اضغط موضعًا للانتقال إليه.</div>`));
-      for (const o of occ) {
+      const here = hereOf(ph, ctx.gi);
+      const differs = ph.occ.filter(o => o.words.map(bare).join(" ") !== here.words.map(bare).join(" ")).length;
+      box.appendChild(node(`<div class="ref">«${esc(here.words.join(" "))}» في ${AR(ph.occ.length)} مواضع${differs ? `، ويخالف ${AR(differs)} منها` : ""}</div>`));
+      for (const o of ph.occ) {
         const isHere = o === here;
-        const text = o.words.map((w, k) => (here.words[k] !== undefined && bare(w) !== bare(here.words[k]) ? `<span style="color:#C2185B">${esc(w)}</span>` : esc(w))).join(" ");
-        const b = node(`<button type="button" class="zc-occ${isHere ? " here" : ""}"><span class="r"><b>${esc(await surahName(o.surah))} ${AR(o.ayah)}</b><span>${isHere ? "هنا" : "ص " + AR(o.page)}</span></span><span class="t">${text}</span></button>`);
-        if (!isHere) b.onclick = () => goTo(o.page, o.a);
+        const text = o.words.map((w, k) => (here.words[k] !== undefined && bare(w) !== bare(here.words[k]) ? `<span class="zc-diff">${esc(w)}</span>` : esc(w))).join(" ");
+        const name = await surahName(o.surah);
+        const b = node(`<div class="zc-occ${isHere ? " here" : ""}" role="button" tabindex="0" data-report="المتشابهات: ${esc(name)} ${o.ayah}"><span class="r"><b>${esc(name)} ${AR(o.ayah)}</b><span>${isHere ? "هنا" : "ص " + AR(o.page)}</span></span><span class="t">${text}</span></div>`);
+        if (!isHere) b.onclick = e => { if (!e.target.closest(".zc-rep,.zc-repform")) goTo(o.page, o.a + Math.max(0, ctx.gi - here.a)); };
         box.appendChild(b);
       }
     }
-    box.appendChild(node(src("المتشابهات من ترتيل (Tarteel) — مكتبة QUL")));
     return box;
+  },
+  /* الموضع السابق أو التالي في العبارة الأولى، على الكلمة المقابلة للكلمة الحالية. */
+  async step(ctx, d) {
+    const [ph] = await mutashabihatFor(ctx.gi);
+    if (!ph) return null;
+    const here = hereOf(ph, ctx.gi), k = ph.occ.indexOf(here), o = ph.occ[k + d];
+    if (!o) return null;
+    return { page: o.page, gi: Math.min(o.b, o.a + (ctx.gi - here.a)) };
+  },
+  async shareText(ctx) {
+    const phrases = await mutashabihatFor(ctx.gi), out = [];
+    for (const ph of phrases) {
+      out.push(`«${hereOf(ph, ctx.gi).words.join(" ")}»`);
+      for (const o of ph.occ) out.push(`${await surahName(o.surah)} ${AR(o.ayah)}: ${o.words.join(" ")}`);
+    }
+    return `المتشابهات\n${out.join("\n")}\nالمصدر: ${SOURCE}\n${ayahLink(ctx.surah, ctx.ayah)}`;
   },
 });

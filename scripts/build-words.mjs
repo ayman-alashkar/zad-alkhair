@@ -160,11 +160,20 @@ const mutashabihat = {};
     mutashabihat[id] = occ;
   }
 }
+// نص كل كلمة في المواضع وموضع كل عبارة، لتُعرض المواضع دون فتح صفحاتها.
+const mutWords = {}, mutAt = {};
+for (const occ of Object.values(mutashabihat)) for (const [a, b] of occ) {
+  for (let g = a; g <= b; g++) mutWords[g] = H.words[g];
+  const [s, ay] = ayahOf[a].split(':').map(Number);
+  mutAt[a] = [page[a], s, ay];
+}
 files.set('mutashabihat.json', json({
-  format: 1,
+  format: 2,
   source: 'ترتيل (Tarteel) — مكتبة QUL، «Mutashabihat ul Quran»',
-  note: 'لكل عبارة (برقمها في QUL) مواضعها كلها مرتبة، كل موضع [أول gi، آخر gi] في hafs.json.',
+  note: 'لكل عبارة (برقمها في QUL) مواضعها كلها مرتبة، كل موضع [أول gi، آخر gi] في hafs.json. words: نص كل كلمة فيها، at: لأول كلمة في كل موضع [الصفحة، السورة، الآية].',
   phrases: mutashabihat,
+  words: mutWords,
+  at: mutAt,
 }));
 
 // طبقة المعنى والإعراب والتصريف: ملف لكل صفحة

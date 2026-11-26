@@ -42,3 +42,22 @@ test("ayah counts follow each riwaya, prints included",async()=>{
   assert.equal(duri3.riwaya.code,"A");assert.equal(duri3.riwaya.count,200);
   assert.equal((await D.ayahCounts(78,"bazzi")).riwaya.count,41);   // «قريبا» في مطبوع البزي
 });
+
+test("mutashabihat come with their words and places from one file",async()=>{
+  const D=await load();
+  const [ph]=await D.mutashabihatFor(1195);
+  assert.ok(ph&&ph.occ.length>=6);
+  const here=ph.occ.find(o=>1195>=o.a&&1195<=o.b);
+  assert.equal(here.surah,2);assert.equal(here.ayah,74);assert.equal(here.page,11);
+  assert.match(here.words.join(" "),/تَعۡمَلُونَ|تعملون/);
+});
+
+test("ayah navigation finds the first word of the next and previous ayah",async()=>{
+  const D=await load();
+  const ctx=await D.locate({page:11,gi:1195});
+  const next=await D.ayahFirstGi(ctx,1),prev=await D.ayahFirstGi(ctx,-1);
+  const at=async g=>{for(const p of [10,11,12]){const L=await D.locate({page:p,gi:g});if(L)return L}};
+  const n=await at(next),p=await at(prev);
+  assert.deepEqual([n.surah,n.ayah,n.pos],[2,75,1]);
+  assert.deepEqual([p.surah,p.ayah,p.pos],[2,73,1]);
+});

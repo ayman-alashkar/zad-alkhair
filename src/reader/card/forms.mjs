@@ -3,8 +3,9 @@
    إن لم تتوفر (قبل تنزيل حزمة القراءات) يُكتب الشكل نصًّا بخط Amiri، والحرف المختلف ملوّن. */
 import { drawnPage, drawnMeta } from "./data.mjs";
 
-export const CAT_COLORS = { imala: "#6D28D9", taqlil: "#C026D3", silah: "#1D63ED", madd: "#0E9F8E", hamz: "#E86A00", naql: "#E86A00", idgham: "#15A34A", sakt: "#8B5E34", farsh: "#D1203A" };
-const COL_BY_INDEX = [null, "#6D28D9", "#C026D3", "#1D63ED", "#0E9F8E", "#E86A00", "#15A34A", "#8B5E34", "#D1203A"];
+/* ألوان الخلاف من متغيرات --c1…--c8 (نفس ألوان المصحف، ولكل منها قيمة للوضع الليلي في style.mjs). */
+const CAT_INDEX = { imala: 1, taqlil: 2, silah: 3, madd: 4, hamz: 5, naql: 5, idgham: 6, sakt: 7, farsh: 8 };
+export const CAT_COLORS = Object.fromEntries(Object.entries(CAT_INDEX).map(([k, i]) => [k, `var(--c${i})`]));
 const SVGNS = "http://www.w3.org/2000/svg";
 
 /** segs: [[نص، فئة أو null]…] كما في بيانات القراءات بعد فكّها. */
@@ -22,7 +23,7 @@ export async function formElement(page, segs, { ink = "currentColor", height = 4
       const path = document.createElementNS(SVGNS, "path");
       path.setAttribute("d", M.glyphs[shaped.g[3 * j]] || "");
       path.setAttribute("transform", `translate(${shaped.g[3 * j + 1]},${shaped.g[3 * j + 2]})`);
-      path.setAttribute("fill", COL_BY_INDEX[shaped.c[j]] || ink);
+      path.style.fill = shaped.c[j] ? `var(--c${shaped.c[j]})` : ink;
       g.appendChild(path);
     }
     svg.appendChild(g);

@@ -20,14 +20,13 @@ const wrap = frag => { const d = document.createElement("div"); d.style.display 
 
 /** فقرة قابلة للإبلاغ عنها. */
 export const para = (text, where, cls = "") => `<p data-report="${esc(where)}"${cls ? ` class="${cls}"` : ""}>${text}</p>`;
-export const src = s => `<div class="zc-src">${esc(s)}</div>`;
 
 export async function surahName(s) {
   const I = await wordIndex();
   return I && I.surah_names ? I.surah_names[s - 1] : `سورة ${AR(s)}`;
 }
 export async function ref(ctx) {
-  return `${await surahName(ctx.surah)} ${AR(ctx.ayah)}`;
+  return `سورة ${await surahName(ctx.surah)} · الآية ${AR(ctx.ayah)}`;
 }
 export const ayahLink = (s, a) => {
   const u = new URL(`/quran-read/${s}/`, location.origin);

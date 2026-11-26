@@ -2744,3 +2744,31 @@ html[data-riwaya]:not([data-riwaya="hafs"]) #tajweedStrip{display:none!important
 
 /* قارئ الرواية وحده: لا اختيار للقارئ ولا تنزيل في غير حفص */
 html.riwaya-audio #panelQariBtn,html.riwaya-audio #panelQari{pointer-events:none}
+
+/* القائمة العائمة بسطرين: الآية، ثم الكلمة التي تحت الإصبع */
+.ayah-menu.word.show{flex-direction:column}
+.ayah-menu .menu-row{display:flex;justify-content:center}
+.ayah-menu .word-row{border-top:1px solid var(--reader-line,rgba(228,201,128,.28));margin-top:3px;padding-top:3px}
+.ayah-menu .hz-pick.on{background:var(--reader-selected,rgba(255,255,255,.12))}
+.hz-sw{display:block;width:22px;height:22px;border-radius:6px;border:1px solid rgba(0,0,0,.12)}
+
+/* تظليل الحافظ: ألوان فاتحة كقلم التظليل، مستطيلة على النصف السفلي من الكلمة، والحبر كما هو.
+   مختلفة تمامًا عن ألوان القراءات (مشبعة، تلوّن الحرف، وتظليلها مستدير بلون الخلاف). */
+:root{--hz1:#FBE27A;--hz2:#BFE8A6;--hz3:#B9DCF7;--hz4:#F7C6DA}
+html[data-theme="dark"]{--hz1:rgba(251,226,122,.38);--hz2:rgba(191,232,166,.32);--hz3:rgba(185,220,247,.32);--hz4:rgba(247,198,218,.32)}
+.hz-sw.hz-c1{background:var(--hz1)}.hz-sw.hz-c2{background:var(--hz2)}.hz-sw.hz-c3{background:var(--hz3)}.hz-sw.hz-c4{background:var(--hz4)}
+.word.hz-c1{background:linear-gradient(transparent 30%,var(--hz1) 30%,var(--hz1) 92%,transparent 92%)}
+.word.hz-c2{background:linear-gradient(transparent 30%,var(--hz2) 30%,var(--hz2) 92%,transparent 92%)}
+.word.hz-c3{background:linear-gradient(transparent 30%,var(--hz3) 30%,var(--hz3) 92%,transparent 92%)}
+.word.hz-c4{background:linear-gradient(transparent 30%,var(--hz4) 30%,var(--hz4) 92%,transparent 92%)}
+.dk-line g.hz-c1 .dk-hit{fill:var(--hz1)}.dk-line g.hz-c2 .dk-hit{fill:var(--hz2)}.dk-line g.hz-c3 .dk-hit{fill:var(--hz3)}.dk-line g.hz-c4 .dk-hit{fill:var(--hz4)}
+/* الكلمة التي عليها تعليق: نقطة ذهبية صغيرة فوقها */
+.word.hz-note::after{content:"";position:absolute;top:.02em;inset-inline-start:50%;width:.16em;height:.16em;border-radius:50%;background:var(--ui-gold,#C59A4A);transform:translateX(50%)}
+.dk-line g.hz-note .dk-hit{stroke:var(--ui-gold,#C59A4A);stroke-width:26;stroke-dasharray:4 70;stroke-linecap:round}
+.hz-note-view{display:flex;flex-direction:column;gap:10px;padding-top:10px}
+.hz-note-word{font:400 30px/1.4 Amiri,serif;color:var(--ui-accent);text-align:center}
+.hz-note-text{width:100%;box-sizing:border-box;border:1px solid var(--ui-line);border-radius:14px;background:var(--ui-surface-2);color:var(--ui-text);padding:10px 12px;font:15px/1.8 Alexandria,system-ui,sans-serif;resize:vertical}
+.hz-note-actions{display:flex;gap:8px}
+.hz-note-actions button{min-height:42px;border-radius:999px;padding:0 18px;font:600 12px Alexandria,system-ui,sans-serif;border:1px solid var(--ui-line);background:var(--ui-surface-2);color:var(--ui-text)}
+.hz-note-actions .hz-note-save{background:var(--ui-accent);border-color:var(--ui-accent);color:#FFF9EA}
+.hz-note-hint{font-size:11px;color:var(--ui-muted)}
