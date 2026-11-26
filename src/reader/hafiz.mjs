@@ -20,8 +20,9 @@ function save(gi) {
   try { localStorage.setItem(KEY, JSON.stringify(marks)); } catch {}
   for (const fn of listeners) fn(gi);
 }
-function update(gi, patch) {
-  const m = load(), cur = { ...(m[gi] || {}), ...patch, t: Date.now() };
+/* meta: {p: الصفحة، k: «سورة:آية»، w: نص الكلمة} ليُعرض التظليل والتعليق في قائمتها دون حساب. */
+function update(gi, patch, meta = {}) {
+  const m = load(), cur = { ...(m[gi] || {}), ...meta, ...patch, t: Date.now() };
   if (!cur.c) delete cur.c;
   if (!cur.n) delete cur.n;
   if (cur.c || cur.n) m[gi] = cur; else delete m[gi];
@@ -29,8 +30,10 @@ function update(gi, patch) {
 }
 
 export const markOf = gi => load()[gi] || null;
-export const setHighlight = (gi, c) => update(gi, { c: c || 0 });
-export const setNote = (gi, text) => update(gi, { n: String(text || "").trim().slice(0, 2000) });
+export const setHighlight = (gi, c, meta) => update(gi, { c: c || 0 }, meta);
+export const setNote = (gi, text, meta) => update(gi, { n: String(text || "").trim().slice(0, 2000) }, meta);
+/** كل التظليل والتعليقات بترتيب المصحف: [{gi, c, n, p, k, w, t}…]. */
+export const allMarks = () => Object.entries(load()).map(([gi, v]) => ({ gi: Number(gi), ...v })).sort((a, b) => a.gi - b.gi);
 export const onMarksChange = fn => { listeners.add(fn); return () => listeners.delete(fn); };
 
 /** يضع أصناف التظليل والتعليق على كلمات العنصر (صفحة أو سطر)، في المحركين. */

@@ -27,6 +27,7 @@ html[data-theme="dark"] .zc-sheet{--c1:#B794F4;--c2:#F08AE6;--c3:#7FA8FF;--c4:#4
 .zc-hint{background:color-mix(in srgb,var(--ui-gold) 18%,transparent);color:var(--ui-text);border-radius:12px;padding:8px 12px;font-size:12px;margin:8px 0 4px}
 .zc-h{font:400 18px/1.3 "Aref Ruqaa",serif;color:var(--ui-gold);margin-top:4px}
 .zc-word{font:400 32px/1.4 Amiri,serif;color:var(--ui-accent);text-align:center}
+.zc-chips+.zc-word{margin-top:10px}
 .zc-form{display:flex;justify-content:center;padding-top:6px;color:var(--ui-accent)}
 .zc-form-text{font:400 26px/1.6 Amiri,serif}
 .zc-em{color:var(--ui-accent);font-weight:700}

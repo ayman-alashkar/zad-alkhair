@@ -184,7 +184,7 @@ function updateMediaSessionMetadata(){
   const v=verseParts(`${play.surah}:${play.current}`);
   try{
     navigator.mediaSession.metadata=new MediaMetadata({
-      title:isSurahOnly()?`سورة ${v.sname} · استماع للسورة كاملة`:`سورة ${v.sname} · الآية ${ar(play.current)}`,
+      title:isSurahOnly()?`سورة ${v.sname} · استماع للسورة كاملة`:`سورة ${v.sname} · الآية ${ar(shownAyah(play.surah,play.current))}`,
       artist:reciter.name,
       album:"القرآن العظيم · زاد الخير",
       artwork:[
@@ -228,7 +228,7 @@ function syncReciterCapabilities(){
 }
 function updatePlayer(){
   const v=verseParts(`${play.surah}:${play.current}`);
-  document.getElementById("audioNow").innerHTML=`<span class="audio-surah-title">سورة ${escapeHtml(v.sname)}</span><span class="audio-ayah-label">${isSurahOnly()?"استماع للسورة كاملة":"الآية "+ar(play.current)}</span>`;
+  document.getElementById("audioNow").innerHTML=`<span class="audio-surah-title">سورة ${escapeHtml(v.sname)}</span><span class="audio-ayah-label">${isSurahOnly()?"استماع للسورة كاملة":"الآية "+ar(shownAyah(play.surah,play.current))}</span>`;
   document.getElementById("speedBtn").textContent=(play.speed===1?"1.0":String(play.speed))+"×";
   const rb=document.getElementById("repeatBtn"),labels={off:"التكرار متوقف",one:"تكرار السورة باستمرار",all:queueActive?"تكرار قائمة التشغيل":"تكرار المصحف"};
   rb.classList.toggle("active",repeatMode!=="off");

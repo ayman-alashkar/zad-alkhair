@@ -9,6 +9,11 @@ function riwayaSurahMissing(s,r=reciter){
   return !!(r.riwaya&&riwayaAudioData?.reciters[r.riwaya]?.missing?.includes(Number(s)));
 }
 const riwayaPlayerApplies=()=>!location.pathname.startsWith("/quran-listen");
+/* رقم الآية كما في مصحف الرواية المعروضة (للشريط والمشغّل)؛ وفي حفص رقمها نفسه. */
+function shownAyah(s,a){
+  const r=riwaya();
+  return r!=="hafs"&&riwayaAudioData&&riwayaPlayerApplies()?riwayaAyahNumber(riwayaAudioData,r,Number(s),Number(a)):a;
+}
 async function applyRiwayaReciter(){
   if(!riwayaPlayerApplies())return;
   const r=riwaya();

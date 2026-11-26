@@ -43,3 +43,12 @@ export function riwayaAyahFiles(data, r, s, a) {
   const p = n => String(n).padStart(3, "0");
   return files.map(n => `https://files.quranpedia.net/recitations/${rec.id}/${p(s)}${p(n)}.mp3`);
 }
+
+/** رقم آية حفص s:a كما يُعرض في مصحف الرواية r (رقم آية الرواية التي تبدأ فيها). */
+export function riwayaAyahNumber(data, r, s, a) {
+  const spec = data.display && data.display.spec[r];
+  const changes = (spec && data.display.by[spec][s]) || [];
+  let d = 0;
+  for (const [from, off] of changes) { if (from > a) break; d = off; }
+  return a + d;
+}

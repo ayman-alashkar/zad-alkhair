@@ -498,7 +498,7 @@ function lineSvg(L, P, meta, first, R) {
     if (t < MK) {
       g.dataset.gi = String(first + i);
       g.setAttribute("class", "dk-w");
-    } else g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
+    } else g.dataset.head = String(first + i), g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
     flip.appendChild(g);
     groups.set(t, g);
     return g;
@@ -735,6 +735,16 @@ function riwayaAyahFiles(data, r, s, a) {
   const p = (n) => String(n).padStart(3, "0");
   return files.map((n) => `https://files.quranpedia.net/recitations/${rec.id}/${p(s)}${p(n)}.mp3`);
 }
+function riwayaAyahNumber(data, r, s, a) {
+  const spec = data.display && data.display.spec[r];
+  const changes = spec && data.display.by[spec][s] || [];
+  let d = 0;
+  for (const [from, off] of changes) {
+    if (from > a) break;
+    d = off;
+  }
+  return a + d;
+}
 
 // src/reader/card/data.mjs
 var BASE = globalThis.ZAD_DATA_BASE || "/data/";
@@ -849,6 +859,29 @@ async function surahGoals(surah) {
   const G = await getJson("surah-goals.json");
   return G && G.surahs[surah] || null;
 }
+async function headInfo(gi, riwaya2, surah, ayah) {
+  const A = await getJson("qiraat-src/ayah-count.json");
+  if (!A) return null;
+  if (!headInfo.map) headInfo.map = new Map(A.boundaries.map((b2) => [b2[0], b2]));
+  const b = headInfo.map.get(gi);
+  if (!b) return null;
+  const who = b[1], spec = A.riwayat[riwaya2] || "F";
+  let counts, base = spec, print = null;
+  if (spec.startsWith("print:")) {
+    print = A.prints[spec.slice(6)];
+    base = print.base;
+    counts = print.add.includes(gi) ? true : print.drop.includes(gi) ? false : who.includes(base);
+  } else counts = who.includes(spec);
+  const order = A.surah_totals.order.split("");
+  return {
+    word: b[3],
+    ref: b[2],
+    counts,
+    hafs: who.includes("F"),
+    print,
+    madhhabs: order.map((m) => ({ code: m, name: A.madhhabs[m], counts: who.includes(m), mine: m === base }))
+  };
+}
 async function ayahCounts(surah, riwaya2) {
   const [A, I] = await Promise.all([getJson("qiraat-src/ayah-count.json"), wordIndex()]);
   if (!A) return null;
@@ -865,6 +898,7 @@ async function ayahCounts(surah, riwaya2) {
   } else count = totals[order.indexOf(code)];
   return { rows, riwaya: { code, name: A.madhhabs[code], count, print } };
 }
+var riwayaAudio = () => getJson("riwaya-audio.json");
 
 // src/reader/card/style.mjs
 var CSS = `
@@ -893,6 +927,7 @@ html[data-theme="dark"] .zc-sheet{--c1:#B794F4;--c2:#F08AE6;--c3:#7FA8FF;--c4:#4
 .zc-hint{background:color-mix(in srgb,var(--ui-gold) 18%,transparent);color:var(--ui-text);border-radius:12px;padding:8px 12px;font-size:12px;margin:8px 0 4px}
 .zc-h{font:400 18px/1.3 "Aref Ruqaa",serif;color:var(--ui-gold);margin-top:4px}
 .zc-word{font:400 32px/1.4 Amiri,serif;color:var(--ui-accent);text-align:center}
+.zc-chips+.zc-word{margin-top:10px}
 .zc-form{display:flex;justify-content:center;padding-top:6px;color:var(--ui-accent)}
 .zc-form-text{font:400 26px/1.6 Amiri,serif}
 .zc-em{color:var(--ui-accent);font-weight:700}
@@ -1444,26 +1479,41 @@ registerSection({
   }
 });
 var PARTS = [["meaning", "المعنى"], ["sarf", "التصريف"], ["irab", "الإعراب"]];
+var part = "meaning";
+var partOf = (L) => L[part] ? part : (PARTS.find(([f]) => L[f]) || PARTS[0])[0];
 registerSection({
   id: "meaning",
   level: "word",
-  label: "المعنى والإعراب",
+  label: "المعنى",
   order: 20,
   nav: "word",
+  async title(ctx) {
+    const cur = partOf(await wordLayers(ctx.page, ctx.gi) || {});
+    return PARTS.find(([f]) => f === cur)[1];
+  },
   async available(ctx) {
     const L = await wordLayers(ctx.page, ctx.gi);
     return !!(L && (L.meaning || L.sarf || L.irab));
   },
   source: () => SOURCE_CENTER,
   async render(ctx) {
-    const L = await wordLayers(ctx.page, ctx.gi);
-    const parts = PARTS.filter(([f]) => L[f]).map(([f, label2]) => `<div class="zc-h">${label2}</div>${para(esc(L[f]), label2)}`).join("");
-    return node(`<div class="zc-stack"><div class="zc-word">${esc(L.text)}</div><div class="ref">${esc(await ref(ctx))}</div>${parts}</div>`);
+    const L = await wordLayers(ctx.page, ctx.gi), cur = partOf(L), label2 = PARTS.find(([f]) => f === cur)[1];
+    const box = node(`<div class="zc-stack"><div class="zc-chips"></div><div class="zc-word">${esc(L.text)}</div><div class="ref">${esc(await ref(ctx))}</div>${para(esc(L[cur]), label2)}</div>`);
+    const chips = box.querySelector(".zc-chips");
+    for (const [f, name] of PARTS) {
+      if (!L[f]) continue;
+      const b = node(`<button type="button" class="zc-chip${f === cur ? " on" : ""}">${name}</button>`);
+      b.onclick = () => {
+        part = f;
+        refresh();
+      };
+      chips.appendChild(b);
+    }
+    return box;
   },
   async shareText(ctx) {
-    const L = await wordLayers(ctx.page, ctx.gi);
-    const body = PARTS.filter(([f]) => L[f]).map(([f, label2]) => `${label2}: ${L[f]}`).join("\n");
-    return shareBlock(`«${L.text}»`, body, SOURCE_CENTER, ctx);
+    const L = await wordLayers(ctx.page, ctx.gi), cur = partOf(L);
+    return shareBlock(`${PARTS.find(([f]) => f === cur)[1]} «${L.text}»`, L[cur], SOURCE_CENTER, ctx);
   }
 });
 
@@ -1773,7 +1823,57 @@ ${ayahLink(ctx.surah, ctx.ayah)}`;
   }
 });
 
+// src/reader/card/sections/count.mjs
+var SOURCE3 = "البيان في عدّ آي القرآن للداني، والموسوعة القرآنية، ومصاحف المجمع";
+var join = (list) => list.length < 2 ? list.join("") : list.slice(0, -1).join("، ") + " و" + list[list.length - 1];
+async function info(ctx) {
+  const H = await headInfo(ctx.gi, ctx.riwaya, ctx.surah, ctx.ayah);
+  if (!H) return null;
+  const D = await riwayaAudio();
+  const n = D && ctx.riwaya !== "hafs" ? riwayaAyahNumber(D, ctx.riwaya, ctx.surah, ctx.ayah) : ctx.ayah;
+  return { ...H, n, name: RIWAYA_NAMES[ctx.riwaya] || ctx.riwaya };
+}
+function lines(H, ctx, sname) {
+  const yes = H.madhhabs.filter((m) => m.counts).map((m) => m.name), no = H.madhhabs.filter((m) => !m.counts).map((m) => m.name);
+  return {
+    mine: H.counts ? `«${H.word}» رأس الآية ${AR(H.n)} من سورة ${sname} في رواية ${H.name}.` : `«${H.word}» ليست رأس آية في رواية ${H.name}، فتتصل بما بعدها.`,
+    hafs: H.hafs ? `وهي عند حفص رأس الآية ${AR(ctx.ayah)}.` : "وليست رأس آية عند حفص.",
+    why: `اختلف علماء العدد في هذا الموضع: يعدّه ${join(yes)}، ولا يعدّه ${join(no)}.`
+  };
+}
+registerSection({
+  id: "ayah-count",
+  level: "ayah",
+  label: "عدّ الآي",
+  title: "عدّ الآي",
+  order: 50,
+  nav: "ayah",
+  async available(ctx) {
+    return ctx.riwaya !== "hafs" && !!await headInfo(ctx.gi, ctx.riwaya);
+  },
+  source: () => SOURCE3,
+  async render(ctx) {
+    const H = await info(ctx), sname = await surahName(ctx.surah), L = lines(H, ctx, sname);
+    return node(`<div class="zc-stack">
+      <div class="zc-word">${esc(H.word)}</div>
+      ${para(esc(L.mine) + " " + esc(L.hafs), "عدّ الآي: الرواية")}
+      ${para(esc(L.why), "عدّ الآي: المذاهب")}
+      <div class="zc-counts">${H.madhhabs.map((m) => `<div class="${m.mine ? "on" : ""}"><b>${m.counts ? "يعدّ" : "لا يعدّ"}</b>${esc(m.name)}</div>`).join("")}</div>
+      <div class="ref">رواية ${esc(H.name)} على العدّ ${esc(H.madhhabs.find((m) => m.mine).name)}${H.print ? "، كما في مصحف المجمع للرواية" : ""}.</div>
+    </div>`);
+  },
+  async shareText(ctx) {
+    const H = await info(ctx), sname = await surahName(ctx.surah), L = lines(H, ctx, sname);
+    return `عدّ الآي (سورة ${sname})
+${L.mine} ${L.hafs}
+${L.why}
+المصدر: ${SOURCE3}
+${ayahLink(ctx.surah, ctx.ayah)}`;
+  }
+});
+
 // src/reader/card/index.mjs
+var isDisputedHead = async (gi) => !!await headInfo(gi, "hafs");
 var wordText = async (page, gi) => (await wordLayers(page, gi))?.text || "";
 var hasMutashabihat = async (gi) => (await mutashabihatFor(gi)).length > 0;
 
@@ -1803,8 +1903,8 @@ function save(gi) {
   }
   for (const fn of listeners) fn(gi);
 }
-function update(gi, patch) {
-  const m = load(), cur = { ...m[gi] || {}, ...patch, t: Date.now() };
+function update(gi, patch, meta = {}) {
+  const m = load(), cur = { ...m[gi] || {}, ...meta, ...patch, t: Date.now() };
   if (!cur.c) delete cur.c;
   if (!cur.n) delete cur.n;
   if (cur.c || cur.n) m[gi] = cur;
@@ -1812,8 +1912,9 @@ function update(gi, patch) {
   save(gi);
 }
 var markOf = (gi) => load()[gi] || null;
-var setHighlight = (gi, c) => update(gi, { c: c || 0 });
-var setNote = (gi, text) => update(gi, { n: String(text || "").trim().slice(0, 2e3) });
+var setHighlight = (gi, c, meta) => update(gi, { c: c || 0 }, meta);
+var setNote = (gi, text, meta) => update(gi, { n: String(text || "").trim().slice(0, 2e3) }, meta);
+var allMarks = () => Object.entries(load()).map(([gi, v]) => ({ gi: Number(gi), ...v })).sort((a, b) => a.gi - b.gi);
 var onMarksChange = (fn) => {
   listeners.add(fn);
   return () => listeners.delete(fn);
@@ -2878,8 +2979,9 @@ function searchMatcher(query) {
     const context = document.getElementById("readerContext");
     if (!context) return;
     clearTimeout(context._t);
-    context.innerHTML = `<span class="context-surah">سورة ${escapeHtml(v.sname)}</span> <span class="context-ayah">الآية ${ar(v.a)}</span>`;
-    context.title = `سورة ${v.sname} · الآية ${ar(v.a)}`;
+    const shown = shownAyah(v.s, v.a);
+    context.innerHTML = `<span class="context-surah">سورة ${escapeHtml(v.sname)}</span> <span class="context-ayah">الآية ${ar(shown)}</span>`;
+    context.title = `سورة ${v.sname} · الآية ${ar(shown)}`;
     context.classList.add("show");
     showToolsFor(5400);
     context._t = setTimeout(clearVerseContext, 5e3);
@@ -2956,9 +3058,14 @@ function searchMatcher(query) {
     showVerseContext(v);
     return true;
   }
-  onGesture("tap", ({ ayah, anchor, gi, point }) => {
+  onGesture("tap", async ({ ayah, anchor, gi, point, event }) => {
     if (gi != null && markOf(gi)?.n) {
       openNote(gi, anchor);
+      return;
+    }
+    const end = event?.target?.closest?.(".dk-end[data-head]");
+    if (end && riwaya() !== "hafs" && await isDisputedHead(Number(end.dataset.head))) {
+      openWordCard(Number(end.dataset.head), end, "ayah-count");
       return;
     }
     const on = selectVerse(ayah, anchor, false, point);
@@ -2993,13 +3100,17 @@ function searchMatcher(query) {
     return openWordCard(Number(el3.dataset.gi), el3, "tafsir");
   }
   window.addEventListener("zad:tafsir-author", () => openAuthorInfo());
+  async function markMeta(gi, anchor) {
+    const page = pageOfElement(anchor), el3 = wordElement(page, gi) || anchor, at = el3 && ayahAt(el3);
+    return { p: page, k: at?.ayah || reading.selectedKey || "", w: await wordText(page, gi).catch(() => "") };
+  }
   function openHighlightPicker(gi, anchor) {
     const cur = markOf(gi)?.c || 0;
     menu.classList.remove("word");
     menu.innerHTML = HIGHLIGHTS.map((h) => `<button type="button" class="menu-btn hz-pick${cur === h.id ? " on" : ""}" data-hz="${h.id}" aria-label="تظليل ${h.name}"><i class="hz-sw hz-c${h.id}"></i><span class="menu-label">${h.name}</span></button>`).join("") + (cur ? `<button type="button" class="menu-btn" data-hz="0"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span class="menu-label">إزالة</span></button>` : "");
-    menu.querySelectorAll("[data-hz]").forEach((b) => b.onclick = () => {
-      setHighlight(gi, Number(b.dataset.hz));
+    menu.querySelectorAll("[data-hz]").forEach((b) => b.onclick = async () => {
       closeMenu();
+      setHighlight(gi, Number(b.dataset.hz), await markMeta(gi, anchor));
     });
     placeMenu(anchor);
   }
@@ -3017,10 +3128,11 @@ function searchMatcher(query) {
       if (w) w.textContent = t;
     });
     const ta = b.querySelector("textarea");
-    b.querySelector(".hz-note-save").onclick = () => {
-      setNote(gi, ta.value);
+    b.querySelector(".hz-note-save").onclick = async () => {
+      const v = ta.value;
       b.remove();
-      showToast(ta.value.trim() ? "حُفظ التعليق" : "حُذف التعليق");
+      setNote(gi, v, await markMeta(gi, anchor));
+      showToast(v.trim() ? "حُفظ التعليق" : "حُذف التعليق");
     };
     const del = b.querySelector(".hz-note-del");
     if (del) del.onclick = () => {
@@ -3369,9 +3481,9 @@ function searchMatcher(query) {
     }
   }
   function ayahShareText(k, text, withLink = false) {
-    const v = verseParts(k), lines = [`﴿${text}﴾`, `سورة ${v.sname}، الآية ${ar(v.a)}`];
-    if (withLink) lines.push(linkFor(k));
-    return lines.join("\n");
+    const v = verseParts(k), lines2 = [`﴿${text}﴾`, `سورة ${v.sname}، الآية ${ar(v.a)}`];
+    if (withLink) lines2.push(linkFor(k));
+    return lines2.join("\n");
   }
   async function doShare(kind) {
     if (!reading.selectedKey) return;
@@ -4271,20 +4383,20 @@ function searchMatcher(query) {
       const current3 = surahHost.querySelector(".quran-index-row.current");
       if (current3) centerIndexItem(surahHost, current3);
     }
-    function createQuarterRow(info) {
-      const key = `${info.surah}:${info.ayah}`, row = document.createElement("button");
+    function createQuarterRow(info2) {
+      const key = `${info2.surah}:${info2.ayah}`, row = document.createElement("button");
       row.type = "button";
       row.className = "quran-index-row quran-index-quarter-row";
       row.dataset.verseKey = key;
-      const next = LOCAL_HIZB_QUARTERS[info.rub] || null, nextPage = next ? Number(next[2]) : TOTAL_PAGES + 1;
-      if (reading.currentPage >= info.page && reading.currentPage < nextPage) row.classList.add("current");
-      const ringClass = info.phase === 0 ? "start" : `q${info.phase}`, cached = indexExcerptCache[key] || "";
-      row.innerHTML = `<span class="hizb-ring ${ringClass}">${info.phase === 0 ? ar(info.hizb) : ""}</span><span class="quran-index-main"><span class="quran-index-quarter-title ${cached ? "" : "index-excerpt-placeholder"}" data-excerpt>${escapeHtml(cached || "بداية ربع الحزب")}</span><span class="quran-index-meta">سورة ${escapeHtml(reading.chapterMap.get(info.surah)?.name_arabic || ar(info.surah))}، آية ${ar(info.ayah)}</span></span><span class="quran-index-page">${ar(info.page)}</span>`;
+      const next = LOCAL_HIZB_QUARTERS[info2.rub] || null, nextPage = next ? Number(next[2]) : TOTAL_PAGES + 1;
+      if (reading.currentPage >= info2.page && reading.currentPage < nextPage) row.classList.add("current");
+      const ringClass = info2.phase === 0 ? "start" : `q${info2.phase}`, cached = indexExcerptCache[key] || "";
+      row.innerHTML = `<span class="hizb-ring ${ringClass}">${info2.phase === 0 ? ar(info2.hizb) : ""}</span><span class="quran-index-main"><span class="quran-index-quarter-title ${cached ? "" : "index-excerpt-placeholder"}" data-excerpt>${escapeHtml(cached || "بداية ربع الحزب")}</span><span class="quran-index-meta">سورة ${escapeHtml(reading.chapterMap.get(info2.surah)?.name_arabic || ar(info2.surah))}، آية ${ar(info2.ayah)}</span></span><span class="quran-index-page">${ar(info2.page)}</span>`;
       row.onclick = async () => {
         leaveHubForReader();
-        await go(info.page);
-        await ensurePage(info.page);
-        const a = document.querySelector(`.page[data-page="${info.page}"] .verse-segment[data-key="${key}"]`);
+        await go(info2.page);
+        await ensurePage(info2.page);
+        const a = document.querySelector(`.page[data-page="${info2.page}"] .verse-segment[data-key="${key}"]`);
         if (a) selectVerse(key, a, true);
       };
       return row;
@@ -4295,9 +4407,9 @@ function searchMatcher(query) {
           if (!alive || !row.isConnected) break;
           const key = row.dataset.verseKey;
           if (indexExcerptCache[key]) continue;
-          const info = row._quarterInfo, target = row.querySelector("[data-excerpt]");
+          const info2 = row._quarterInfo, target = row.querySelector("[data-excerpt]");
           try {
-            const txt = await verseExcerptForIndex(key, info.page);
+            const txt = await verseExcerptForIndex(key, info2.page);
             if (txt && alive && target && target.isConnected) {
               target.textContent = txt;
               target.classList.remove("index-excerpt-placeholder");
@@ -4325,9 +4437,9 @@ function searchMatcher(query) {
       }
       if (inner.dataset.ready === "1") return;
       const j = Number(section.dataset.juz), rows = [], frag = document.createDocumentFragment();
-      for (const info of localQuarterRowsForJuz(j)) {
-        const row = createQuarterRow(info);
-        row._quarterInfo = info;
+      for (const info2 of localQuarterRowsForJuz(j)) {
+        const row = createQuarterRow(info2);
+        row._quarterInfo = info2;
         rows.push(row);
         frag.appendChild(row);
       }
@@ -4367,13 +4479,36 @@ function searchMatcher(query) {
       for (const [name, kind, items] of [["آخر الزيارات", "recent", recent], ["الانتقال إلى العلامة", "page", pagesList]]) {
         const rows = [];
         for (const x of items) {
-          const info = await pageDisplayInfo(x.page);
-          rows.push({ kind, page: info.page, title: `سورة ${info.sname}`, meta: `الصفحة ${ar(info.page)}، الجزء ${ar(info.juz)}` });
+          const info2 = await pageDisplayInfo(x.page);
+          rows.push({ kind, page: info2.page, title: `سورة ${info2.sname}`, meta: `الصفحة ${ar(info2.page)}، الجزء ${ar(info2.juz)}` });
         }
         groups.push({ name, kind, rows });
       }
       if (!alive) return;
       bookmarkHost.replaceChildren();
+      const marks2 = allMarks();
+      let marksSec = null;
+      if (marks2.length) {
+        const sec = document.createElement("section");
+        sec.className = "quran-bookmark-group ref-marks";
+        sec.innerHTML = `<h4>تظليلاتي وتعليقاتي</h4>`;
+        for (const m of marks2) {
+          const v = m.k ? verseParts(m.k) : null;
+          const row = document.createElement("div");
+          row.className = "quran-bookmark-row hz-row";
+          row.innerHTML = `<button type="button" class="quran-bookmark-open"><b>${m.c ? `<i class="hz-sw hz-c${m.c}"></i>` : ""}<span class="hz-row-word">${escapeHtml(m.w || "")}</span>${v ? `<span class="hz-row-ref">سورة ${escapeHtml(v.sname)} · الآية ${ar(shownAyah(v.s, v.a))}</span>` : ""}</b>${m.n ? `<small>${escapeHtml(m.n.length > 90 ? m.n.slice(0, 90) + "…" : m.n)}</small>` : ""}</button>`;
+          row.querySelector(".quran-bookmark-open").onclick = async () => {
+            leaveHubForReader();
+            if (m.p) await go(m.p);
+            if (m.n) {
+              const el3 = document.querySelector(`.page[data-page="${m.p}"] [data-gi="${m.gi}"]`);
+              openNote(m.gi, el3);
+            }
+          };
+          sec.appendChild(row);
+        }
+        marksSec = sec;
+      }
       for (const { name, kind, rows } of groups) {
         const sec = document.createElement("section");
         sec.className = `quran-bookmark-group ${kind === "recent" ? "ref-recent" : "ref-pages"}`;
@@ -4399,6 +4534,7 @@ function searchMatcher(query) {
         }
         bookmarkHost.appendChild(sec);
       }
+      if (marksSec) bookmarkHost.appendChild(marksSec);
     }
     function setTab(kind) {
       if (!["s", "j", "m"].includes(kind) || kind === activeTab) return;
@@ -4776,7 +4912,7 @@ function searchMatcher(query) {
     const v = verseParts(`${play.surah}:${play.current}`);
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: isSurahOnly() ? `سورة ${v.sname} · استماع للسورة كاملة` : `سورة ${v.sname} · الآية ${ar(play.current)}`,
+        title: isSurahOnly() ? `سورة ${v.sname} · استماع للسورة كاملة` : `سورة ${v.sname} · الآية ${ar(shownAyah(play.surah, play.current))}`,
         artist: reciter.name,
         album: "القرآن العظيم · زاد الخير",
         artwork: [
@@ -4862,7 +4998,7 @@ function searchMatcher(query) {
   }
   function updatePlayer() {
     const v = verseParts(`${play.surah}:${play.current}`);
-    document.getElementById("audioNow").innerHTML = `<span class="audio-surah-title">سورة ${escapeHtml(v.sname)}</span><span class="audio-ayah-label">${isSurahOnly() ? "استماع للسورة كاملة" : "الآية " + ar(play.current)}</span>`;
+    document.getElementById("audioNow").innerHTML = `<span class="audio-surah-title">سورة ${escapeHtml(v.sname)}</span><span class="audio-ayah-label">${isSurahOnly() ? "استماع للسورة كاملة" : "الآية " + ar(shownAyah(play.surah, play.current))}</span>`;
     document.getElementById("speedBtn").textContent = (play.speed === 1 ? "1.0" : String(play.speed)) + "×";
     const rb = document.getElementById("repeatBtn"), labels = { off: "التكرار متوقف", one: "تكرار السورة باستمرار", all: queueActive ? "تكرار قائمة التشغيل" : "تكرار المصحف" };
     rb.classList.toggle("active", repeatMode !== "off");
@@ -5870,6 +6006,10 @@ function searchMatcher(query) {
     return !!(r.riwaya && riwayaAudioData?.reciters[r.riwaya]?.missing?.includes(Number(s)));
   }
   const riwayaPlayerApplies = () => !location.pathname.startsWith("/quran-listen");
+  function shownAyah(s, a) {
+    const r = riwaya();
+    return r !== "hafs" && riwayaAudioData && riwayaPlayerApplies() ? riwayaAyahNumber(riwayaAudioData, r, Number(s), Number(a)) : a;
+  }
   async function applyRiwayaReciter() {
     if (!riwayaPlayerApplies()) return;
     const r = riwaya();

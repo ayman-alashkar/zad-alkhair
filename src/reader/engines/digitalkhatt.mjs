@@ -77,7 +77,7 @@ function lineSvg(L, P, meta, first, R) {
     const i = t >= MK ? t - MK : t;
     g.dataset.ayah = `${P.data.surah[i]}:${P.data.ayah[i]}`;
     if (t < MK) { g.dataset.gi = String(first + i); g.setAttribute("class", "dk-w"); }
-    else g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
+    else g.dataset.head = String(first + i), g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
     flip.appendChild(g);
     groups.set(t, g);
     return g;

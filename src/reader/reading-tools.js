@@ -9,8 +9,9 @@ function clearVerseContext(){
 function showVerseContext(v){
   const context=document.getElementById("readerContext");if(!context)return;
   clearTimeout(context._t);
-  context.innerHTML=`<span class="context-surah">سورة ${escapeHtml(v.sname)}</span> <span class="context-ayah">الآية ${ar(v.a)}</span>`;
-  context.title=`سورة ${v.sname} · الآية ${ar(v.a)}`;
+  const shown=shownAyah(v.s,v.a);
+  context.innerHTML=`<span class="context-surah">سورة ${escapeHtml(v.sname)}</span> <span class="context-ayah">الآية ${ar(shown)}</span>`;
+  context.title=`سورة ${v.sname} · الآية ${ar(shown)}`;
   context.classList.add("show");showToolsFor(5400);
   context._t=setTimeout(clearVerseContext,5000);
 }
@@ -98,8 +99,13 @@ function selectVerse(k,anchor,force=false,point=null){
    ضغطة مطوّلة: القائمة العائمة، وفيها سطر للآية (استماع، تفسير، مشاركة) وسطر للكلمة التي تحت
    الإصبع (القراءات، المعنى، تظليل، تعليق، والمتشابهات إن وُجدت). كل زر يفتح نافذة لموضوعه،
    وفي كل نافذة «المزيد» لبقية الأقسام (src/reader/card). */
-onGesture("tap",({ayah,anchor,gi,point})=>{
+onGesture("tap",async({ayah,anchor,gi,point,event})=>{
   if(gi!=null&&markOf(gi)?.n){openNote(gi,anchor);return}
+  /* علامة آية مختلف فيها في مصحف الرواية (زائدة، أو موضعها عند حفص وحده): نافذة عدّ الآي. */
+  const end=event?.target?.closest?.(".dk-end[data-head]");
+  if(end&&riwaya()!=="hafs"&&await isDisputedHead(Number(end.dataset.head))){
+    openWordCard(Number(end.dataset.head),end,"ayah-count");return;
+  }
   const on=selectVerse(ayah,anchor,false,point);if(on)showToolsFor(2800);
 });
 onGesture("longPress",({ayah,anchor,gi,point})=>{
@@ -129,12 +135,16 @@ function openAyahCard(){
 window.addEventListener("zad:tafsir-author",()=>openAuthorInfo());
 
 /* ---------- تظليل الكلمة وتعليقها (hafiz.mjs) ---------- */
+async function markMeta(gi,anchor){
+  const page=pageOfElement(anchor),el=wordElement(page,gi)||anchor,at=el&&ayahAt(el);
+  return {p:page,k:at?.ayah||reading.selectedKey||"",w:await wordText(page,gi).catch(()=>"")};
+}
 function openHighlightPicker(gi,anchor){
   const cur=markOf(gi)?.c||0;
   menu.classList.remove("word");
   menu.innerHTML=HIGHLIGHTS.map(h=>`<button type="button" class="menu-btn hz-pick${cur===h.id?" on":""}" data-hz="${h.id}" aria-label="تظليل ${h.name}"><i class="hz-sw hz-c${h.id}"></i><span class="menu-label">${h.name}</span></button>`).join("")+
     (cur?`<button type="button" class="menu-btn" data-hz="0"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span class="menu-label">إزالة</span></button>`:"");
-  menu.querySelectorAll("[data-hz]").forEach(b=>b.onclick=()=>{setHighlight(gi,Number(b.dataset.hz));closeMenu()});
+  menu.querySelectorAll("[data-hz]").forEach(b=>b.onclick=async()=>{closeMenu();setHighlight(gi,Number(b.dataset.hz),await markMeta(gi,anchor))});
   placeMenu(anchor);
 }
 function openNote(gi,anchor){
@@ -148,7 +158,7 @@ function openNote(gi,anchor){
     <div class="hz-note-hint">التعليق محفوظ في هذا المتصفح، والضغط على الكلمة يفتحه.</div></div>`);
   wordText(page,gi).then(t=>{const w=b.querySelector(".hz-note-word");if(w)w.textContent=t});
   const ta=b.querySelector("textarea");
-  b.querySelector(".hz-note-save").onclick=()=>{setNote(gi,ta.value);b.remove();showToast(ta.value.trim()?"حُفظ التعليق":"حُذف التعليق")};
+  b.querySelector(".hz-note-save").onclick=async()=>{const v=ta.value;b.remove();setNote(gi,v,await markMeta(gi,anchor));showToast(v.trim()?"حُفظ التعليق":"حُذف التعليق")};
   const del=b.querySelector(".hz-note-del");if(del)del.onclick=()=>{setNote(gi,"");b.remove();showToast("حُذف التعليق")};
   if(!cur)setTimeout(()=>ta.focus(),60);
 }
