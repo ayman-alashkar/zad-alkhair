@@ -130,7 +130,7 @@ async function render() {
   if (C.report) body.prepend(el("div", "zc-hint", "اضغط العلامة بجانب النص الذي فيه الخطأ"));
 
   const foot = el("div", "zc-foot");
-  if (active) {
+  if (active && active.nav !== "none") {
     const [p, n] = NAV[active.nav || active.level] || NAV.word;
     const nav = el("div", "tafsir-nav");
     for (const [d, label] of [[-1, "‹ " + p], [1, n + " ›"]]) {
@@ -209,6 +209,7 @@ async function moveTo(C, page, gi) {
   const loc = await locate({ page, gi });
   if (!loc || C !== current) return;
   Object.assign(C.ctx, { page, gi }, loc);
+  delete C.ctx.marker;   // نافذة علامة الآية لعلامتها وحدها
   if (C.opts.onNavigate) C.opts.onNavigate(page, gi);
   render();
 }

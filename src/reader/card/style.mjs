@@ -51,6 +51,7 @@ html[data-theme="dark"] .zc-sheet{--c1:#B794F4;--c2:#F08AE6;--c3:#7FA8FF;--c4:#4
 .zc-counts div{border:1px solid var(--ui-line);background:var(--ui-surface-2);border-radius:12px;padding:5px 4px;text-align:center;font-size:11px;color:var(--ui-muted);line-height:1.5}
 .zc-counts div.on{border-color:var(--ui-accent);background:var(--ui-accent-soft)}
 .zc-counts b{display:block;font-size:15px;color:var(--ui-text);font-weight:600}
+.zc-list{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.8}
 .zc-fawaed{display:flex;flex-direction:column;gap:6px}
 .zc-fawaed p{background:var(--ui-surface-2);border-radius:12px;padding:7px 12px;font-size:14px;line-height:1.85}
 .zc-foot{flex:none}

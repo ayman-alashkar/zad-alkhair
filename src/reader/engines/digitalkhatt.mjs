@@ -77,7 +77,12 @@ function lineSvg(L, P, meta, first, R) {
     const i = t >= MK ? t - MK : t;
     g.dataset.ayah = `${P.data.surah[i]}:${P.data.ayah[i]}`;
     if (t < MK) { g.dataset.gi = String(first + i); g.setAttribute("class", "dk-w"); }
-    else g.dataset.head = String(first + i), g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
+    else {
+      g.dataset.head = String(first + i);
+      const a = R.AM && R.AM[i];   // [رقمها في الرواية (0: ليست رأس آية)، رقمها عند حفص، "+" زائدة | "-" عند حفص وحده | ""]
+      if (a) { g.dataset.nr = String(a[0]); g.dataset.nh = String(a[1]); g.dataset.ty = a[2]; }
+      g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
+    }
     flip.appendChild(g);
     groups.set(t, g);
     return g;
@@ -133,7 +138,7 @@ export function createDigitalKhattEngine(env) {
       P.added = new Set(Object.entries(am).filter(([, v]) => v[2] === "+").map(([i]) => Number(i)));
       const own = (P.lines[r] && !Array.isArray(P.lines[r])) ? P.lines[r] : {};
       const first = P.data.first;
-      const R = { F: P.data.F[r], S: P.data.S[r], U: P.data.U[r], W: P.data.W[r] };
+      const R = { F: P.data.F[r], S: P.data.S[r], U: P.data.U[r], W: P.data.W[r], AM: P.data.AM[r] || {} };
       let li = 0;
       for (const inner of host.querySelectorAll(".line-inner")) {
         if (inner.classList.contains("surah-line") || inner.classList.contains("bismillah-line")) continue;

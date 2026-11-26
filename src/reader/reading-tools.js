@@ -99,24 +99,23 @@ function selectVerse(k,anchor,force=false,point=null){
    ضغطة مطوّلة: القائمة العائمة، وفيها سطر للآية (استماع، تفسير، مشاركة) وسطر للكلمة التي تحت
    الإصبع (القراءات، المعنى، تظليل، تعليق، والمتشابهات إن وُجدت). كل زر يفتح نافذة لموضوعه،
    وفي كل نافذة «المزيد» لبقية الأقسام (src/reader/card). */
-onGesture("tap",async({ayah,anchor,gi,point,event})=>{
+onGesture("tap",({ayah,anchor,gi,point})=>{
   if(gi!=null&&markOf(gi)?.n){openNote(gi,anchor);return}
-  /* علامة آية مختلف فيها في مصحف الرواية (زائدة، أو موضعها عند حفص وحده): نافذة عدّ الآي. */
-  const end=event?.target?.closest?.(".dk-end[data-head]");
-  if(end&&riwaya()!=="hafs"&&await isDisputedHead(Number(end.dataset.head))){
-    openWordCard(Number(end.dataset.head),end,"ayah-count");return;
-  }
+
   const on=selectVerse(ayah,anchor,false,point);if(on)showToolsFor(2800);
 });
-onGesture("longPress",({ayah,anchor,gi,point})=>{
+onGesture("longPress",({ayah,anchor,gi,point,event})=>{
   clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);
+  /* على علامة الآية: نافذة رقمها في عدّ الرواية وسبب اختلافه عن حفص. */
+  const end=event?.target?.closest?.(".dk-end,.word.end");
+  if(end&&openMarkerCard(end,ayah))return;
   openPrimaryMenu(anchor,gi);
 });
 function pageOfElement(el){return Number(el?.closest?.(".page")?.dataset.page)||reading.currentPage}
 function wordElement(page,gi){return document.querySelector(`.page[data-page="${page}"] [data-gi="${gi}"]`)}
-function openWordCard(gi,anchor,section){
+function openWordCard(gi,anchor,section,extra={}){
   closeMenu();
-  return openCard({page:pageOfElement(anchor),gi,riwaya:riwaya()},{
+  return openCard({page:pageOfElement(anchor),gi,riwaya:riwaya(),...extra},{
     section,
     toast:showToast,
     onNavigate:(page,g)=>go(page).then(()=>{
@@ -124,6 +123,19 @@ function openWordCard(gi,anchor,section){
       if(at)selectVerse(at.ayah,at.anchor,true);
     }),
   });
+}
+/* علامة الآية: في مصحف الرواية بياناتها على العلامة نفسها (digitalkhatt.mjs)، وفي حفص رقمها رقم الآية.
+   الكلمة المرجع آخر كلمة في الآية قبل العلامة. */
+function openMarkerCard(end,ayah){
+  const page=pageOfElement(end);
+  if(end.dataset.head!=null){
+    const nr=Number(end.dataset.nr||0),nh=Number(end.dataset.nh||0);
+    openWordCard(Number(end.dataset.head),end,"ayah-count",{marker:{nr,nh,ty:end.dataset.ty||""}});return true;
+  }
+  const a=Number(String(ayah).split(":")[1]),root=end.closest(".page");
+  const words=root?[...root.querySelectorAll(`[data-ayah="${ayah}"] [data-gi],[data-ayah="${ayah}"][data-gi]`)]:[];
+  if(!words.length||!a)return false;
+  openWordCard(Number(words[words.length-1].dataset.gi),end,"ayah-count",{marker:{nr:a,nh:a,ty:""}});return true;
 }
 /* التفسير (زر الشريط وقائمة الآية): نافذة التفسير للآية المختارة، أو أول آية في الصفحة. */
 function openAyahCard(){

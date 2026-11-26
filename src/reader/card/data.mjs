@@ -142,27 +142,6 @@ export async function surahGoals(surah) {
   const G = await getJson("surah-goals.json");
   return (G && G.surahs[surah]) || null;
 }
-/** رأس آية مختلف فيه عند الكلمة gi: المذاهب التي تعدّه، وهل تعدّه الرواية وحفص، ورقمه فيهما.
-    null إن لم يكن موضع خلاف. */
-export async function headInfo(gi, riwaya, surah, ayah) {
-  const A = await getJson("qiraat-src/ayah-count.json");
-  if (!A) return null;
-  if (!headInfo.map) headInfo.map = new Map(A.boundaries.map(b => [b[0], b]));
-  const b = headInfo.map.get(gi);
-  if (!b) return null;
-  const who = b[1], spec = A.riwayat[riwaya] || "F";
-  let counts, base = spec, print = null;
-  if (spec.startsWith("print:")) {
-    print = A.prints[spec.slice(6)]; base = print.base;
-    counts = print.add.includes(gi) ? true : print.drop.includes(gi) ? false : who.includes(base);
-  } else counts = who.includes(spec);
-  const order = A.surah_totals.order.split("");
-  return {
-    word: b[3], ref: b[2], counts, hafs: who.includes("F"), print,
-    madhhabs: order.map(m => ({ code: m, name: A.madhhabs[m], counts: who.includes(m), mine: m === base })),
-  };
-}
-
 /** عدد آيات السورة في المذاهب الستة، والعدّ الذي تتبعه الرواية. */
 export async function ayahCounts(surah, riwaya) {
   const [A, I] = await Promise.all([getJson("qiraat-src/ayah-count.json"), wordIndex()]);
@@ -179,6 +158,3 @@ export async function ayahCounts(surah, riwaya) {
   } else count = totals[order.indexOf(code)];
   return { rows, riwaya: { code, name: A.madhhabs[code], count, print } };
 }
-
-/* ---------- ترقيم آيات الرواية (data/riwaya-audio.json) ---------- */
-export const riwayaAudio = () => getJson("riwaya-audio.json");

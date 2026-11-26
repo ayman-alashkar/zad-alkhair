@@ -498,7 +498,16 @@ function lineSvg(L, P, meta, first, R) {
     if (t < MK) {
       g.dataset.gi = String(first + i);
       g.setAttribute("class", "dk-w");
-    } else g.dataset.head = String(first + i), g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
+    } else {
+      g.dataset.head = String(first + i);
+      const a = R.AM && R.AM[i];
+      if (a) {
+        g.dataset.nr = String(a[0]);
+        g.dataset.nh = String(a[1]);
+        g.dataset.ty = a[2];
+      }
+      g.setAttribute("class", "dk-end" + (P.ghost.has(i) ? " ghost" : "") + (P.added.has(i) ? " added" : ""));
+    }
     flip.appendChild(g);
     groups.set(t, g);
     return g;
@@ -556,7 +565,7 @@ function createDigitalKhattEngine(env) {
       P.added = new Set(Object.entries(am).filter(([, v]) => v[2] === "+").map(([i]) => Number(i)));
       const own = P.lines[r] && !Array.isArray(P.lines[r]) ? P.lines[r] : {};
       const first = P.data.first;
-      const R = { F: P.data.F[r], S: P.data.S[r], U: P.data.U[r], W: P.data.W[r] };
+      const R = { F: P.data.F[r], S: P.data.S[r], U: P.data.U[r], W: P.data.W[r], AM: P.data.AM[r] || {} };
       let li = 0;
       for (const inner of host.querySelectorAll(".line-inner")) {
         if (inner.classList.contains("surah-line") || inner.classList.contains("bismillah-line")) continue;
@@ -588,8 +597,33 @@ var IMAMS = [
 ];
 var NAMES = Object.fromEntries(IMAMS.flatMap(([, rs]) => rs));
 var riwayaName = (r) => NAMES[r] || "حفص";
-var CAT_LEGEND = [["#D1203A", "فرش"], ["#E86A00", "همز ونقل"], ["#6D28D9", "إمالة"], ["#C026D3", "تقليل"], ["#1D63ED", "صلة"], ["#0E9F8E", "مدّ"], ["#15A34A", "إدغام"], ["#8B5E34", "سكت"]];
+var CAT_LEGEND = [["farsh", "#D1203A", "فرش"], ["hamz", "#E86A00", "همز ونقل"], ["imala", "#6D28D9", "إمالة"], ["taqlil", "#C026D3", "تقليل"], ["silah", "#1D63ED", "صلة"], ["madd", "#0E9F8E", "مدّ"], ["idgham", "#15A34A", "إدغام"], ["sakt", "#8B5E34", "سكت"]];
 var MARK_LEGEND = [["u", "أداء"], ["wu", "عند الوقف"], ["ap", "رأس آية زائد"], ["ag", "رأس آية عند حفص وحده"]];
+var pad32 = (n) => String(n).padStart(3, "0");
+async function pageLegend(page, r) {
+  if (r === "hafs") return '<div class="rs-hint">اختر رواية لإظهار ما تخالف فيه حفصًا</div>';
+  let D = null;
+  try {
+    D = (await (await fetch(`/data/qiraat-mushaf/pages/${pad32(page)}.json`, { cache: "force-cache" })).json()).data;
+  } catch {
+  }
+  if (!D) return "";
+  const F = D.F[r] || [], S = D.S[r] || [], U = D.U[r] || [], W = D.W[r] || [], c = {};
+  F.forEach((s) => {
+    if (s) new Set(s.map((x) => x[1] === "naql" ? "hamz" : x[1]).filter(Boolean)).forEach((k) => c[k] = (c[k] || 0) + 1);
+  });
+  const am = Object.values(D.AM[r] || {}), n = {
+    u: S.filter((v, i) => v && !F[i]).length,
+    wu: W.filter(Boolean).length,
+    ap: am.filter((a) => a[2] === "+").length,
+    ag: am.filter((a) => a[2] === "-").length
+  };
+  const other = U.filter((v, i) => v && !F[i]).length;
+  const AR2 = (x) => String(x).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[d]);
+  const items = CAT_LEGEND.filter(([k]) => c[k]).map(([k, col, name]) => `<span><i style="background:${col}"></i>${name} ${AR2(c[k])}</span>`).concat(MARK_LEGEND.filter(([k]) => n[k]).map(([k, name]) => `<span><i class="${k}"></i>${name} ${AR2(n[k])}</span>`));
+  if (other) items.push(`<span><i style="background:#D1203A"></i>خلاف آخر ${AR2(other)}</span>`);
+  return items.length ? `<div class="rs-legend-h">في هذه الصفحة (${AR2(page)})</div><div class="rs-legend">${items.join("")}</div>` : '<div class="rs-hint">لا خلاف في هذه الصفحة</div>';
+}
 var SHADE_KEY = "zad:qiraat-shade";
 var shade = true;
 try {
@@ -657,7 +691,11 @@ function openPicker() {
   sheet.innerHTML = `<div class="rs-grip"></div><div class="rs-head"><h2>القراءات العشر</h2><span>الإمام وراوياه</span></div>
     ${IMAMS.map(([imam, rs]) => `<div class="rs-row"><span class="rs-imam">${imam}</span>${rs.map(([k, n]) => `<button type="button" class="rs-r${k === current ? " on" : ""}" data-r="${k}">${n}</button>`).join("")}</div>`).join("")}
     <div class="rs-seg" role="group" aria-label="إظهار الخلاف">${[["0", "ألوان"], ["1", "ألوان وتظليل"]].map(([v, n]) => `<button type="button" data-shade="${v}" class="${(shade ? "1" : "0") === v ? "on" : ""}" aria-pressed="${(shade ? "1" : "0") === v}">${n}</button>`).join("")}</div>
-    <div class="rs-legend">${CAT_LEGEND.map(([c, n]) => `<span><i style="background:${c}"></i>${n}</span>`).join("")}${MARK_LEGEND.map(([k, n]) => `<span><i class="${k}"></i>${n}</span>`).join("")}</div>`;
+    <div class="rs-legend-box"></div>`;
+  pageLegend(reading.currentPage, current).then((html) => {
+    const box = sheet.querySelector(".rs-legend-box");
+    if (box) box.innerHTML = html;
+  });
   const close = () => {
     scrim.remove();
     sheet.remove();
@@ -859,29 +897,6 @@ async function surahGoals(surah) {
   const G = await getJson("surah-goals.json");
   return G && G.surahs[surah] || null;
 }
-async function headInfo(gi, riwaya2, surah, ayah) {
-  const A = await getJson("qiraat-src/ayah-count.json");
-  if (!A) return null;
-  if (!headInfo.map) headInfo.map = new Map(A.boundaries.map((b2) => [b2[0], b2]));
-  const b = headInfo.map.get(gi);
-  if (!b) return null;
-  const who = b[1], spec = A.riwayat[riwaya2] || "F";
-  let counts, base = spec, print = null;
-  if (spec.startsWith("print:")) {
-    print = A.prints[spec.slice(6)];
-    base = print.base;
-    counts = print.add.includes(gi) ? true : print.drop.includes(gi) ? false : who.includes(base);
-  } else counts = who.includes(spec);
-  const order = A.surah_totals.order.split("");
-  return {
-    word: b[3],
-    ref: b[2],
-    counts,
-    hafs: who.includes("F"),
-    print,
-    madhhabs: order.map((m) => ({ code: m, name: A.madhhabs[m], counts: who.includes(m), mine: m === base }))
-  };
-}
 async function ayahCounts(surah, riwaya2) {
   const [A, I] = await Promise.all([getJson("qiraat-src/ayah-count.json"), wordIndex()]);
   if (!A) return null;
@@ -898,7 +913,6 @@ async function ayahCounts(surah, riwaya2) {
   } else count = totals[order.indexOf(code)];
   return { rows, riwaya: { code, name: A.madhhabs[code], count, print } };
 }
-var riwayaAudio = () => getJson("riwaya-audio.json");
 
 // src/reader/card/style.mjs
 var CSS = `
@@ -951,6 +965,7 @@ html[data-theme="dark"] .zc-sheet{--c1:#B794F4;--c2:#F08AE6;--c3:#7FA8FF;--c4:#4
 .zc-counts div{border:1px solid var(--ui-line);background:var(--ui-surface-2);border-radius:12px;padding:5px 4px;text-align:center;font-size:11px;color:var(--ui-muted);line-height:1.5}
 .zc-counts div.on{border-color:var(--ui-accent);background:var(--ui-accent-soft)}
 .zc-counts b{display:block;font-size:15px;color:var(--ui-text);font-weight:600}
+.zc-list{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.8}
 .zc-fawaed{display:flex;flex-direction:column;gap:6px}
 .zc-fawaed p{background:var(--ui-surface-2);border-radius:12px;padding:7px 12px;font-size:14px;line-height:1.85}
 .zc-foot{flex:none}
@@ -1215,7 +1230,7 @@ async function render() {
   } else body.appendChild(el2("div", "zc-none", "لا شيء هنا لهذه الكلمة"));
   if (C.report) body.prepend(el2("div", "zc-hint", "اضغط العلامة بجانب النص الذي فيه الخطأ"));
   const foot = el2("div", "zc-foot");
-  if (active) {
+  if (active && active.nav !== "none") {
     const [p, n] = NAV[active.nav || active.level] || NAV.word;
     const nav = el2("div", "tafsir-nav");
     for (const [d, label2] of [[-1, "‹ " + p], [1, n + " ›"]]) {
@@ -1303,6 +1318,7 @@ async function moveTo(C, page, gi) {
   const loc = await locate({ page, gi });
   if (!loc || C !== current2) return;
   Object.assign(C.ctx, { page, gi }, loc);
+  delete C.ctx.marker;
   if (C.opts.onNavigate) C.opts.onNavigate(page, gi);
   render();
 }
@@ -1824,56 +1840,51 @@ ${ayahLink(ctx.surah, ctx.ayah)}`;
 });
 
 // src/reader/card/sections/count.mjs
-var SOURCE3 = "البيان في عدّ آي القرآن للداني، والموسوعة القرآنية، ومصاحف المجمع";
-var join = (list) => list.length < 2 ? list.join("") : list.slice(0, -1).join("، ") + " و" + list[list.length - 1];
-async function info(ctx) {
-  const H = await headInfo(ctx.gi, ctx.riwaya, ctx.surah, ctx.ayah);
-  if (!H) return null;
-  const D = await riwayaAudio();
-  const n = D && ctx.riwaya !== "hafs" ? riwayaAyahNumber(D, ctx.riwaya, ctx.surah, ctx.ayah) : ctx.ayah;
-  return { ...H, n, name: RIWAYA_NAMES[ctx.riwaya] || ctx.riwaya };
-}
-function lines(H, ctx, sname) {
-  const yes = H.madhhabs.filter((m) => m.counts).map((m) => m.name), no = H.madhhabs.filter((m) => !m.counts).map((m) => m.name);
-  return {
-    mine: H.counts ? `«${H.word}» رأس الآية ${AR(H.n)} من سورة ${sname} في رواية ${H.name}.` : `«${H.word}» ليست رأس آية في رواية ${H.name}، فتتصل بما بعدها.`,
-    hafs: H.hafs ? `وهي عند حفص رأس الآية ${AR(ctx.ayah)}.` : "وليست رأس آية عند حفص.",
-    why: `اختلف علماء العدد في هذا الموضع: يعدّه ${join(yes)}، ولا يعدّه ${join(no)}.`
-  };
+var SOURCE3 = "الموسوعة القرآنية عن «البيان» للداني و«الفرائد الحسان»، ومصاحف مجمع الملك فهد";
+var clean = (w) => String(w).replace(/[ۖۗۚۛۙۘ]/g, "");
+async function lines(ctx) {
+  const { nr, nh, ty } = ctx.marker, r = ctx.riwaya;
+  const M = r === "hafs" ? null : await drawnMeta();
+  const nm = r === "hafs" ? "حفص" : RIWAYA_NAMES[r] || r;
+  const head = `سورة ${await surahName(ctx.surah)} · ${nr ? `الآية ${AR(nr)}` : "ليست رأس آية"}`;
+  const out = [], prev = [];
+  if (r === "hafs") out.push("عدّ حفص: الكوفي (٦٢٣٦ آية).");
+  else {
+    if (ty === "+") out.push(`هنا رأس آية عند ${nm}، وليس رأس آية عند حفص.`);
+    else if (ty === "-") out.push(`هنا رأس الآية ${AR(nh)} عند حفص، وليس رأس آية عند ${nm}؛ الآية عنده تكمل بعده.`);
+    else if (nr !== nh) out.push(`هي الآية ${AR(nh)} عند حفص.`);
+    else out.push(`رقمها عند ${nm} وحفص واحد.`);
+    const diffs = ((M && M.sdiff[r] || {})[ctx.surah] || []).filter((d) => d[0] < ctx.gi);
+    if (nr && nr !== nh) for (const [, h, w, t] of diffs) prev.push(`«${clean(w)}» (الآية ${AR(h)} عند حفص): ${t === "+" ? "رأس آية عنده" : "ليست رأس آية عنده"}`);
+    out.push(`عدّ ${nm}: ${M ? M.count[r] : ""}.`);
+  }
+  return { head, out, prev };
 }
 registerSection({
   id: "ayah-count",
   level: "ayah",
-  label: "عدّ الآي",
-  title: "عدّ الآي",
+  label: "علامة الآية",
+  title: "علامة الآية",
   order: 50,
-  nav: "ayah",
-  async available(ctx) {
-    return ctx.riwaya !== "hafs" && !!await headInfo(ctx.gi, ctx.riwaya);
-  },
+  nav: "none",
+  available: (ctx) => !!ctx.marker,
   source: () => SOURCE3,
   async render(ctx) {
-    const H = await info(ctx), sname = await surahName(ctx.surah), L = lines(H, ctx, sname);
-    return node(`<div class="zc-stack">
-      <div class="zc-word">${esc(H.word)}</div>
-      ${para(esc(L.mine) + " " + esc(L.hafs), "عدّ الآي: الرواية")}
-      ${para(esc(L.why), "عدّ الآي: المذاهب")}
-      <div class="zc-counts">${H.madhhabs.map((m) => `<div class="${m.mine ? "on" : ""}"><b>${m.counts ? "يعدّ" : "لا يعدّ"}</b>${esc(m.name)}</div>`).join("")}</div>
-      <div class="ref">رواية ${esc(H.name)} على العدّ ${esc(H.madhhabs.find((m) => m.mine).name)}${H.print ? "، كما في مصحف المجمع للرواية" : ""}.</div>
-    </div>`);
+    const L = await lines(ctx);
+    const [first, ...rest] = L.out, last = rest.pop();
+    let html = `<div class="ref">${esc(L.head)}</div>${para(esc(first), "علامة الآية")}`;
+    for (const t of rest) html += para(esc(t), "علامة الآية");
+    if (L.prev.length) html += `<div class="zc-h">سبب اختلاف الرقم عن حفص في السورة قبل هذا الموضع</div><ul class="zc-list" data-report="علامة الآية: مواضع الخلاف قبلها">${L.prev.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>`;
+    if (last) html += para(esc(last), "علامة الآية: عدّ الرواية");
+    return node(`<div class="zc-stack">${html}</div>`);
   },
   async shareText(ctx) {
-    const H = await info(ctx), sname = await surahName(ctx.surah), L = lines(H, ctx, sname);
-    return `عدّ الآي (سورة ${sname})
-${L.mine} ${L.hafs}
-${L.why}
-المصدر: ${SOURCE3}
-${ayahLink(ctx.surah, ctx.ayah)}`;
+    const L = await lines(ctx);
+    return [L.head, ...L.out.slice(0, -1), ...L.prev.map((t) => "• " + t), ...L.out.slice(-1), `المصدر: ${SOURCE3}`, ayahLink(ctx.surah, ctx.ayah)].filter(Boolean).join("\n");
   }
 });
 
 // src/reader/card/index.mjs
-var isDisputedHead = async (gi) => !!await headInfo(gi, "hafs");
 var wordText = async (page, gi) => (await wordLayers(page, gi))?.text || "";
 var hasMutashabihat = async (gi) => (await mutashabihatFor(gi)).length > 0;
 
@@ -3058,22 +3069,19 @@ function searchMatcher(query) {
     showVerseContext(v);
     return true;
   }
-  onGesture("tap", async ({ ayah, anchor, gi, point, event }) => {
+  onGesture("tap", ({ ayah, anchor, gi, point }) => {
     if (gi != null && markOf(gi)?.n) {
       openNote(gi, anchor);
-      return;
-    }
-    const end = event?.target?.closest?.(".dk-end[data-head]");
-    if (end && riwaya() !== "hafs" && await isDisputedHead(Number(end.dataset.head))) {
-      openWordCard(Number(end.dataset.head), end, "ayah-count");
       return;
     }
     const on = selectVerse(ayah, anchor, false, point);
     if (on) showToolsFor(2800);
   });
-  onGesture("longPress", ({ ayah, anchor, gi, point }) => {
+  onGesture("longPress", ({ ayah, anchor, gi, point, event }) => {
     clearTimeout(reading.toolsTimer);
     selectVerse(ayah, anchor, true, point);
+    const end = event?.target?.closest?.(".dk-end,.word.end");
+    if (end && openMarkerCard(end, ayah)) return;
     openPrimaryMenu(anchor, gi);
   });
   function pageOfElement(el3) {
@@ -3082,9 +3090,9 @@ function searchMatcher(query) {
   function wordElement(page, gi) {
     return document.querySelector(`.page[data-page="${page}"] [data-gi="${gi}"]`);
   }
-  function openWordCard(gi, anchor, section) {
+  function openWordCard(gi, anchor, section, extra = {}) {
     closeMenu();
-    return openCard({ page: pageOfElement(anchor), gi, riwaya: riwaya() }, {
+    return openCard({ page: pageOfElement(anchor), gi, riwaya: riwaya(), ...extra }, {
       section,
       toast: showToast,
       onNavigate: (page, g) => go(page).then(() => {
@@ -3092,6 +3100,19 @@ function searchMatcher(query) {
         if (at) selectVerse(at.ayah, at.anchor, true);
       })
     });
+  }
+  function openMarkerCard(end, ayah) {
+    const page = pageOfElement(end);
+    if (end.dataset.head != null) {
+      const nr = Number(end.dataset.nr || 0), nh = Number(end.dataset.nh || 0);
+      openWordCard(Number(end.dataset.head), end, "ayah-count", { marker: { nr, nh, ty: end.dataset.ty || "" } });
+      return true;
+    }
+    const a = Number(String(ayah).split(":")[1]), root = end.closest(".page");
+    const words = root ? [...root.querySelectorAll(`[data-ayah="${ayah}"] [data-gi],[data-ayah="${ayah}"][data-gi]`)] : [];
+    if (!words.length || !a) return false;
+    openWordCard(Number(words[words.length - 1].dataset.gi), end, "ayah-count", { marker: { nr: a, nh: a, ty: "" } });
+    return true;
   }
   function openAyahCard() {
     const page = reading.currentPage, root = document.querySelector(`.page[data-page="${page}"]`);
@@ -4383,20 +4404,20 @@ function searchMatcher(query) {
       const current3 = surahHost.querySelector(".quran-index-row.current");
       if (current3) centerIndexItem(surahHost, current3);
     }
-    function createQuarterRow(info2) {
-      const key = `${info2.surah}:${info2.ayah}`, row = document.createElement("button");
+    function createQuarterRow(info) {
+      const key = `${info.surah}:${info.ayah}`, row = document.createElement("button");
       row.type = "button";
       row.className = "quran-index-row quran-index-quarter-row";
       row.dataset.verseKey = key;
-      const next = LOCAL_HIZB_QUARTERS[info2.rub] || null, nextPage = next ? Number(next[2]) : TOTAL_PAGES + 1;
-      if (reading.currentPage >= info2.page && reading.currentPage < nextPage) row.classList.add("current");
-      const ringClass = info2.phase === 0 ? "start" : `q${info2.phase}`, cached = indexExcerptCache[key] || "";
-      row.innerHTML = `<span class="hizb-ring ${ringClass}">${info2.phase === 0 ? ar(info2.hizb) : ""}</span><span class="quran-index-main"><span class="quran-index-quarter-title ${cached ? "" : "index-excerpt-placeholder"}" data-excerpt>${escapeHtml(cached || "بداية ربع الحزب")}</span><span class="quran-index-meta">سورة ${escapeHtml(reading.chapterMap.get(info2.surah)?.name_arabic || ar(info2.surah))}، آية ${ar(info2.ayah)}</span></span><span class="quran-index-page">${ar(info2.page)}</span>`;
+      const next = LOCAL_HIZB_QUARTERS[info.rub] || null, nextPage = next ? Number(next[2]) : TOTAL_PAGES + 1;
+      if (reading.currentPage >= info.page && reading.currentPage < nextPage) row.classList.add("current");
+      const ringClass = info.phase === 0 ? "start" : `q${info.phase}`, cached = indexExcerptCache[key] || "";
+      row.innerHTML = `<span class="hizb-ring ${ringClass}">${info.phase === 0 ? ar(info.hizb) : ""}</span><span class="quran-index-main"><span class="quran-index-quarter-title ${cached ? "" : "index-excerpt-placeholder"}" data-excerpt>${escapeHtml(cached || "بداية ربع الحزب")}</span><span class="quran-index-meta">سورة ${escapeHtml(reading.chapterMap.get(info.surah)?.name_arabic || ar(info.surah))}، آية ${ar(info.ayah)}</span></span><span class="quran-index-page">${ar(info.page)}</span>`;
       row.onclick = async () => {
         leaveHubForReader();
-        await go(info2.page);
-        await ensurePage(info2.page);
-        const a = document.querySelector(`.page[data-page="${info2.page}"] .verse-segment[data-key="${key}"]`);
+        await go(info.page);
+        await ensurePage(info.page);
+        const a = document.querySelector(`.page[data-page="${info.page}"] .verse-segment[data-key="${key}"]`);
         if (a) selectVerse(key, a, true);
       };
       return row;
@@ -4407,9 +4428,9 @@ function searchMatcher(query) {
           if (!alive || !row.isConnected) break;
           const key = row.dataset.verseKey;
           if (indexExcerptCache[key]) continue;
-          const info2 = row._quarterInfo, target = row.querySelector("[data-excerpt]");
+          const info = row._quarterInfo, target = row.querySelector("[data-excerpt]");
           try {
-            const txt = await verseExcerptForIndex(key, info2.page);
+            const txt = await verseExcerptForIndex(key, info.page);
             if (txt && alive && target && target.isConnected) {
               target.textContent = txt;
               target.classList.remove("index-excerpt-placeholder");
@@ -4437,9 +4458,9 @@ function searchMatcher(query) {
       }
       if (inner.dataset.ready === "1") return;
       const j = Number(section.dataset.juz), rows = [], frag = document.createDocumentFragment();
-      for (const info2 of localQuarterRowsForJuz(j)) {
-        const row = createQuarterRow(info2);
-        row._quarterInfo = info2;
+      for (const info of localQuarterRowsForJuz(j)) {
+        const row = createQuarterRow(info);
+        row._quarterInfo = info;
         rows.push(row);
         frag.appendChild(row);
       }
@@ -4479,8 +4500,8 @@ function searchMatcher(query) {
       for (const [name, kind, items] of [["آخر الزيارات", "recent", recent], ["الانتقال إلى العلامة", "page", pagesList]]) {
         const rows = [];
         for (const x of items) {
-          const info2 = await pageDisplayInfo(x.page);
-          rows.push({ kind, page: info2.page, title: `سورة ${info2.sname}`, meta: `الصفحة ${ar(info2.page)}، الجزء ${ar(info2.juz)}` });
+          const info = await pageDisplayInfo(x.page);
+          rows.push({ kind, page: info.page, title: `سورة ${info.sname}`, meta: `الصفحة ${ar(info.page)}، الجزء ${ar(info.juz)}` });
         }
         groups.push({ name, kind, rows });
       }

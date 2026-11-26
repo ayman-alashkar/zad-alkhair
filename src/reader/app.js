@@ -8,7 +8,7 @@ import { loadWordIndex, wordGiAt } from "./word-gi.mjs";
 import { createDigitalKhattEngine } from "./engines/digitalkhatt.mjs";
 import { riwaya, riwayaName, initRiwaya } from "./riwaya.mjs";
 import { loadRiwayaAudio, riwayaAyahFiles, riwayaAyahNumber } from "./riwaya-audio.mjs";
-import { openCard, reportTarget, hasMutashabihat, wordText, isDisputedHead } from "./card/index.mjs";
+import { openCard, reportTarget, hasMutashabihat, wordText } from "./card/index.mjs";
 import { HIGHLIGHTS, allMarks, decorateMarks, markOf, onMarksChange, setHighlight, setNote } from "./hafiz.mjs";
 import { ayahAt, ayahElements, clearAyahHighlight, highlightAyah } from "./ayah-marks.mjs";
 import { bindGestures, onGesture } from "./gestures.mjs";
