@@ -512,16 +512,25 @@ async function missingUrls(cache,urls){
   }
   return missing;
 }
+/* ستة عشر طلبًا متوازيًا بلا انتظار بين الدفعات: كل طلب ينتهي يبدأ مكانه التالي، فلا يعطّل
+   ملف بطيء غيره. والتقدم يُرسل كل ربع ثانية على الأكثر. */
 async function cacheSet(cache,urls,kind,offset,total){
-  let done=0,failed=0;
-  for(let i=0;i<urls.length;i+=8){
-    const batch=urls.slice(i,i+8);
-    const results=await Promise.all(batch.map(url=>putOne(cache,url)));
-    const batchFailed=results.filter(value=>!value).length;
-    failed+=batchFailed;
-    done+=batch.length-batchFailed;
+  let done=0,failed=0,next=0,lastNotify=0;
+  const report=async(force=false)=>{
+    const now=Date.now();
+    if(!force&&now-lastNotify<250)return;
+    lastNotify=now;
     await notifyAll({type:"OFFLINE_LIBRARY_PROGRESS",kind,done:offset+done,total});
-  }
+  };
+  const worker=async()=>{
+    while(next<urls.length){
+      const url=urls[next++];
+      if(await putOne(cache,url))done++;else failed++;
+      await report();
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(16,urls.length)},worker));
+  await report(true);
   return {cache,failed};
 }
 async function ensureOfflineLibrary(){
