@@ -1,5 +1,5 @@
-/* أقسام مستوى الكلمة: القراءات، والمعنى والإعراب (المعنى والتصريف والإعراب معًا). */
-import { registerSection } from "../card.mjs";
+/* أقسام مستوى الكلمة: القراءات، والمعنى (المعنى والتصريف والإعراب اختيارات في نافذة واحدة). */
+import { registerSection, refresh } from "../card.mjs";
 import { qiraatIndex, statements, wordLayers } from "../data.mjs";
 import { formElement } from "../forms.mjs";
 import { esc, node, para, ref, shareBlock, RIWAYA_NAMES, SOURCE_CENTER } from "./util.mjs";
@@ -56,20 +56,29 @@ registerSection({
   },
 });
 
-/* ---------- المعنى والإعراب: المعنى ثم التصريف ثم الإعراب، من مركز تفسير ---------- */
+/* ---------- المعنى، التصريف، الإعراب: كالتفسير، ثلاثة اختيارات في نافذة واحدة ---------- */
 const PARTS = [["meaning", "المعنى"], ["sarf", "التصريف"], ["irab", "الإعراب"]];
+let part = "meaning";
+const partOf = L => (L[part] ? part : (PARTS.find(([f]) => L[f]) || PARTS[0])[0]);
 registerSection({
-  id: "meaning", level: "word", label: "المعنى والإعراب", order: 20, nav: "word",
+  id: "meaning", level: "word", label: "المعنى", order: 20, nav: "word",
+  async title(ctx) { const cur = partOf((await wordLayers(ctx.page, ctx.gi)) || {}); return PARTS.find(([f]) => f === cur)[1]; },
   async available(ctx) { const L = await wordLayers(ctx.page, ctx.gi); return !!(L && (L.meaning || L.sarf || L.irab)); },
   source: () => SOURCE_CENTER,
   async render(ctx) {
-    const L = await wordLayers(ctx.page, ctx.gi);
-    const parts = PARTS.filter(([f]) => L[f]).map(([f, label]) => `<div class="zc-h">${label}</div>${para(esc(L[f]), label)}`).join("");
-    return node(`<div class="zc-stack"><div class="zc-word">${esc(L.text)}</div><div class="ref">${esc(await ref(ctx))}</div>${parts}</div>`);
+    const L = await wordLayers(ctx.page, ctx.gi), cur = partOf(L), label = PARTS.find(([f]) => f === cur)[1];
+    const box = node(`<div class="zc-stack"><div class="zc-chips"></div><div class="zc-word">${esc(L.text)}</div><div class="ref">${esc(await ref(ctx))}</div>${para(esc(L[cur]), label)}</div>`);
+    const chips = box.querySelector(".zc-chips");
+    for (const [f, name] of PARTS) {
+      if (!L[f]) continue;
+      const b = node(`<button type="button" class="zc-chip${f === cur ? " on" : ""}">${name}</button>`);
+      b.onclick = () => { part = f; refresh(); };
+      chips.appendChild(b);
+    }
+    return box;
   },
   async shareText(ctx) {
-    const L = await wordLayers(ctx.page, ctx.gi);
-    const body = PARTS.filter(([f]) => L[f]).map(([f, label]) => `${label}: ${L[f]}`).join("\n");
-    return shareBlock(`«${L.text}»`, body, SOURCE_CENTER, ctx);
+    const L = await wordLayers(ctx.page, ctx.gi), cur = partOf(L);
+    return shareBlock(`${PARTS.find(([f]) => f === cur)[1]} «${L.text}»`, L[cur], SOURCE_CENTER, ctx);
   },
 });

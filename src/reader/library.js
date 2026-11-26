@@ -448,6 +448,19 @@ function openQuranIndex(initialTab="s",options={}){
     }
     if(!alive)return;
     bookmarkHost.replaceChildren();
+    /* تظليلات الحافظ وتعليقاته (hafiz.mjs)، بترتيب المصحف. */
+    const marks=allMarks();let marksSec=null;
+    if(marks.length){
+      const sec=document.createElement("section");sec.className="quran-bookmark-group ref-marks";sec.innerHTML=`<h4>تظليلاتي وتعليقاتي</h4>`;
+      for(const m of marks){
+        const v=m.k?verseParts(m.k):null;
+        const row=document.createElement("div");row.className="quran-bookmark-row hz-row";
+        row.innerHTML=`<button type="button" class="quran-bookmark-open"><b>${m.c?`<i class="hz-sw hz-c${m.c}"></i>`:""}<span class="hz-row-word">${escapeHtml(m.w||"")}</span>${v?`<span class="hz-row-ref">سورة ${escapeHtml(v.sname)} · الآية ${ar(shownAyah(v.s,v.a))}</span>`:""}</b>${m.n?`<small>${escapeHtml(m.n.length>90?m.n.slice(0,90)+"…":m.n)}</small>`:""}</button>`;
+        row.querySelector(".quran-bookmark-open").onclick=async()=>{leaveHubForReader();if(m.p)await go(m.p);if(m.n){const el=document.querySelector(`.page[data-page="${m.p}"] [data-gi="${m.gi}"]`);openNote(m.gi,el)}};
+        sec.appendChild(row);
+      }
+      marksSec=sec;
+    }
     for(const {name,kind,rows} of groups){
       const sec=document.createElement("section");sec.className=`quran-bookmark-group ${kind==="recent"?"ref-recent":"ref-pages"}`;sec.innerHTML=`<h4>${name}</h4>`;
       if(!rows.length)sec.insertAdjacentHTML("beforeend",`<div class="quran-bookmark-empty">${kind==="recent"?"ستظهر هنا مواضع آخر زياراتك.":"لحفظ موضعك، اضغط «أضف علامة» من أدوات القراءة."}</div>`);
@@ -461,6 +474,7 @@ function openQuranIndex(initialTab="s",options={}){
       }
       bookmarkHost.appendChild(sec);
     }
+    if(marksSec)bookmarkHost.appendChild(marksSec);
   }
   function setTab(kind){if(!["s","j","m"].includes(kind)||kind===activeTab)return;activeTab=kind;if(homeMode)saveReaderSurface("quran-home",{tab:kind});panel.querySelectorAll(".quran-index-tab").forEach(x=>x.classList.toggle("active",x.dataset.tab===kind));slider.style.transform=kind==="s"?"translate3d(-66.666666%,0,0)":kind==="j"?"translate3d(-33.333333%,0,0)":"translate3d(0,0,0)";if(kind==="s")drawSurahs();else if(kind==="j")drawJuz();else drawBookmarks();viewport.scrollLeft=0}
   panel.querySelectorAll(".quran-index-tab").forEach(x=>x.onclick=()=>setTab(x.dataset.tab));viewport.addEventListener("pointerdown",e=>{ix=e.clientX;iy=e.clientY},{passive:true});viewport.addEventListener("pointerup",e=>{const dx=e.clientX-ix,dy=e.clientY-iy;if(Math.abs(dx)<52||Math.abs(dx)<Math.abs(dy)*1.25)return;if(activeTab==="s"&&dx>0)setTab("j");else if(activeTab==="j"&&dx>0)setTab("m");else if(activeTab==="m"&&dx<0)setTab("j");else if(activeTab==="j"&&dx<0)setTab("s")},{passive:true});

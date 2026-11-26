@@ -9,8 +9,9 @@ function clearVerseContext(){
 function showVerseContext(v){
   const context=document.getElementById("readerContext");if(!context)return;
   clearTimeout(context._t);
-  context.innerHTML=`<span class="context-surah">سورة ${escapeHtml(v.sname)}</span> <span class="context-ayah">الآية ${ar(v.a)}</span>`;
-  context.title=`سورة ${v.sname} · الآية ${ar(v.a)}`;
+  const shown=shownAyah(v.s,v.a);
+  context.innerHTML=`<span class="context-surah">سورة ${escapeHtml(v.sname)}</span> <span class="context-ayah">الآية ${ar(shown)}</span>`;
+  context.title=`سورة ${v.sname} · الآية ${ar(shown)}`;
   context.classList.add("show");showToolsFor(5400);
   context._t=setTimeout(clearVerseContext,5000);
 }
@@ -100,17 +101,21 @@ function selectVerse(k,anchor,force=false,point=null){
    وفي كل نافذة «المزيد» لبقية الأقسام (src/reader/card). */
 onGesture("tap",({ayah,anchor,gi,point})=>{
   if(gi!=null&&markOf(gi)?.n){openNote(gi,anchor);return}
+
   const on=selectVerse(ayah,anchor,false,point);if(on)showToolsFor(2800);
 });
-onGesture("longPress",({ayah,anchor,gi,point})=>{
+onGesture("longPress",({ayah,anchor,gi,point,event})=>{
   clearTimeout(reading.toolsTimer);selectVerse(ayah,anchor,true,point);
+  /* على علامة الآية: نافذة رقمها في عدّ الرواية وسبب اختلافه عن حفص. */
+  const end=event?.target?.closest?.(".dk-end,.word.end");
+  if(end&&openMarkerCard(end,ayah))return;
   openPrimaryMenu(anchor,gi);
 });
 function pageOfElement(el){return Number(el?.closest?.(".page")?.dataset.page)||reading.currentPage}
 function wordElement(page,gi){return document.querySelector(`.page[data-page="${page}"] [data-gi="${gi}"]`)}
-function openWordCard(gi,anchor,section){
+function openWordCard(gi,anchor,section,extra={}){
   closeMenu();
-  return openCard({page:pageOfElement(anchor),gi,riwaya:riwaya()},{
+  return openCard({page:pageOfElement(anchor),gi,riwaya:riwaya(),...extra},{
     section,
     toast:showToast,
     onNavigate:(page,g)=>go(page).then(()=>{
@@ -118,6 +123,19 @@ function openWordCard(gi,anchor,section){
       if(at)selectVerse(at.ayah,at.anchor,true);
     }),
   });
+}
+/* علامة الآية: في مصحف الرواية بياناتها على العلامة نفسها (digitalkhatt.mjs)، وفي حفص رقمها رقم الآية.
+   الكلمة المرجع آخر كلمة في الآية قبل العلامة. */
+function openMarkerCard(end,ayah){
+  const page=pageOfElement(end);
+  if(end.dataset.head!=null){
+    const nr=Number(end.dataset.nr||0),nh=Number(end.dataset.nh||0);
+    openWordCard(Number(end.dataset.head),end,"ayah-count",{marker:{nr,nh,ty:end.dataset.ty||""}});return true;
+  }
+  const a=Number(String(ayah).split(":")[1]),root=end.closest(".page");
+  const words=root?[...root.querySelectorAll(`[data-ayah="${ayah}"] [data-gi],[data-ayah="${ayah}"][data-gi]`)]:[];
+  if(!words.length||!a)return false;
+  openWordCard(Number(words[words.length-1].dataset.gi),end,"ayah-count",{marker:{nr:a,nh:a,ty:""}});return true;
 }
 /* التفسير (زر الشريط وقائمة الآية): نافذة التفسير للآية المختارة، أو أول آية في الصفحة. */
 function openAyahCard(){
@@ -129,12 +147,16 @@ function openAyahCard(){
 window.addEventListener("zad:tafsir-author",()=>openAuthorInfo());
 
 /* ---------- تظليل الكلمة وتعليقها (hafiz.mjs) ---------- */
+async function markMeta(gi,anchor){
+  const page=pageOfElement(anchor),el=wordElement(page,gi)||anchor,at=el&&ayahAt(el);
+  return {p:page,k:at?.ayah||reading.selectedKey||"",w:await wordText(page,gi).catch(()=>"")};
+}
 function openHighlightPicker(gi,anchor){
   const cur=markOf(gi)?.c||0;
   menu.classList.remove("word");
   menu.innerHTML=HIGHLIGHTS.map(h=>`<button type="button" class="menu-btn hz-pick${cur===h.id?" on":""}" data-hz="${h.id}" aria-label="تظليل ${h.name}"><i class="hz-sw hz-c${h.id}"></i><span class="menu-label">${h.name}</span></button>`).join("")+
     (cur?`<button type="button" class="menu-btn" data-hz="0"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg><span class="menu-label">إزالة</span></button>`:"");
-  menu.querySelectorAll("[data-hz]").forEach(b=>b.onclick=()=>{setHighlight(gi,Number(b.dataset.hz));closeMenu()});
+  menu.querySelectorAll("[data-hz]").forEach(b=>b.onclick=async()=>{closeMenu();setHighlight(gi,Number(b.dataset.hz),await markMeta(gi,anchor))});
   placeMenu(anchor);
 }
 function openNote(gi,anchor){
@@ -148,7 +170,7 @@ function openNote(gi,anchor){
     <div class="hz-note-hint">التعليق محفوظ في هذا المتصفح، والضغط على الكلمة يفتحه.</div></div>`);
   wordText(page,gi).then(t=>{const w=b.querySelector(".hz-note-word");if(w)w.textContent=t});
   const ta=b.querySelector("textarea");
-  b.querySelector(".hz-note-save").onclick=()=>{setNote(gi,ta.value);b.remove();showToast(ta.value.trim()?"حُفظ التعليق":"حُذف التعليق")};
+  b.querySelector(".hz-note-save").onclick=async()=>{const v=ta.value;b.remove();setNote(gi,v,await markMeta(gi,anchor));showToast(v.trim()?"حُفظ التعليق":"حُذف التعليق")};
   const del=b.querySelector(".hz-note-del");if(del)del.onclick=()=>{setNote(gi,"");b.remove();showToast("حُذف التعليق")};
   if(!cur)setTimeout(()=>ta.focus(),60);
 }

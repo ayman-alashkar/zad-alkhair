@@ -4,6 +4,7 @@ import "./sections/word.mjs";
 import "./sections/mutashabihat.mjs";
 import "./sections/ayah.mjs";
 import "./sections/page.mjs";
+import "./sections/count.mjs";
 export { openCard, closeCard, reportTarget } from "./card.mjs";
 import { mutashabihatFor, wordLayers } from "./data.mjs";
 /** نص الكلمة بالرسم العثماني (لنافذة التعليق). */

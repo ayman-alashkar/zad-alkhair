@@ -33,3 +33,11 @@ test("merged, split and shifted ayahs map to the right files",async()=>{
 test("Bazzi's missing surah is recorded",()=>{
   assert.deepEqual(data.reciters.bazzi.missing,[64]);
 });
+
+test("the player and context bar show the riwaya's own ayah number",async()=>{
+  const {riwayaAyahNumber:n}=await load();
+  assert.equal(n(data,"qalun",2,74),73);     // «الم» ليست آية عند المدنيين
+  assert.equal(n(data,"qalun",1,2),1);       // البسملة ليست آية
+  assert.equal(n(data,"shubah",2,286),286);  // الكوفي مثل حفص
+  assert.equal(n(data,"bazzi",78,40),40);
+});

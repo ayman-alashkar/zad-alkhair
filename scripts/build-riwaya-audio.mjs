@@ -6,6 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { surahFiles } from "../src/reader/riwaya-audio.mjs";
+import { riwayaEnds } from "./qiraat/ayah-count.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = JSON.parse(fs.readFileSync(path.join(root, "data/qiraat-src/ayah-count.json"), "utf8"));
@@ -50,7 +51,37 @@ for (const M of order) {
     else (e.i ||= {})[a] = ((e.i || {})[a] || 0) + 1; // رأس داخل آية حفص
   }
 }
-const data = { format: 1, about: "تلاوة كل رواية: قارئها في قرآنبيديا ومذهب ترقيم ملفاتها، وفروق كل مذهب عن عدّ حفص. انظر src/reader/riwaya-audio.mjs", source: "قرآنبيديا quranpedia.net، ملف لكل آية: files.quranpedia.net/recitations/{id}/{SSS}{AAA}.mp3", reciters: RECITERS, hafs, events };
+/* رقم الآية كما يُعرض في مصحف الرواية (عدّها أو مطبوع المجمع) لكل آية حفص: رقم آية الرواية التي
+   تبدأ فيها. يُخزَّن فرقًا عن رقم حفص عند كل تغيّر: display.spec[r] → مفتاح، display.by[مفتاح][سورة] →
+   [[من آية حفص، الفرق]…]. */
+const HAFS = JSON.parse(fs.readFileSync(path.join(root, "data/mushaf-src/hafs.json"), "utf8"));
+const display = { spec: {}, by: {} };
+{
+  const starts = HAFS.ayah_starts, sStarts = HAFS.surah_starts;
+  for (const r of Object.keys(RECITERS)) {
+    const spec = src.riwayat[r];
+    display.spec[r] = spec;
+    if (display.by[spec]) continue;
+    const ends = [...riwayaEnds(r)].sort((a, b) => a - b), by = {};
+    let k = 0, ai = 0;
+    for (let s = 1; s <= 114; s++) {
+      const s0 = sStarts[s - 1];
+      while (k < ends.length && ends[k] < s0) k++;
+      let before = k, off = 0;
+      const changes = [];
+      for (let a = 1; a <= hafs[s - 1]; a++, ai++) {
+        const w = starts[ai];
+        while (before < ends.length && ends[before] < w) before++;
+        const n = before - k + 1, d = n - a;
+        if (d !== off) { changes.push([a, d]); off = d; }
+      }
+      if (changes.length) by[s] = changes;
+    }
+    display.by[spec] = by;
+  }
+}
+
+const data = { format: 1, about: "تلاوة كل رواية: قارئها في قرآنبيديا ومذهب ترقيم ملفاتها، وفروق كل مذهب عن عدّ حفص. انظر src/reader/riwaya-audio.mjs", source: "قرآنبيديا quranpedia.net، ملف لكل آية: files.quranpedia.net/recitations/{id}/{SSS}{AAA}.mp3", reciters: RECITERS, hafs, events, display };
 
 // التحقق: آخر ملف في كل سورة يساوي عدد آيها في المذهب.
 for (const M of order) for (let s = 1; s <= 114; s++) {

@@ -2772,3 +2772,7 @@ html[data-theme="dark"]{--hz1:rgba(251,226,122,.38);--hz2:rgba(191,232,166,.32);
 .hz-note-actions button{min-height:42px;border-radius:999px;padding:0 18px;font:600 12px Alexandria,system-ui,sans-serif;border:1px solid var(--ui-line);background:var(--ui-surface-2);color:var(--ui-text)}
 .hz-note-actions .hz-note-save{background:var(--ui-accent);border-color:var(--ui-accent);color:#FFF9EA}
 .hz-note-hint{font-size:11px;color:var(--ui-muted)}
+.hz-row .quran-bookmark-open b{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hz-row .hz-sw{width:14px;height:14px;border-radius:4px;flex:none}
+.hz-row-word{font:400 20px/1.4 Amiri,serif}
+.hz-row-ref{font-weight:400;font-size:11px;opacity:.75}
