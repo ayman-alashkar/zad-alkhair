@@ -114,6 +114,33 @@ const isOnTop = (page, selector) => page.$eval(selector, el => {
   return hit === el || el.contains(hit);
 });
 
+/* خط كل صفحة ملوّن. تراكمها كلها أثناء التقليب كان يبطئ كل إعادة رسم حتى انهار Chromium
+   على Windows (٢٦ نوفمبر)، فلا يبقى إلا خطوط الصفحات القريبة وألوانها. */
+test("paging through the mushaf keeps only nearby page fonts and their colours", async () => {
+  const { page, errors, context } = await readerPage();
+  await page.goto(BASE + "/quran-read/?page=20");
+  await page.locator('.page[data-page="20"] .word').first().waitFor();
+  for (let i = 0; i < 24; i++) {
+    await page.evaluate(() => document.getElementById("nextBtn").click());
+    await page.waitForTimeout(90);
+  }
+  await page.locator('.page[data-page="44"] .word').first().waitFor();
+  /* التحرير يلي جلب الصفحات المجاورة، وتُعدّ الصفحة الحالية في WebKit بموضع التمرير
+     فقد تكون ٤٣ لحظة آخر تحرير؛ فيُفحص أن الباقي نافذة صغيرة حول الصفحة لا عددها المطلق. */
+  await page.waitForTimeout(800);
+  const kept = await page.evaluate(() => ({
+    fonts: [...document.fonts].filter(f => /^QCFV4_P\d{3}$/.test(f.family)).map(f => Number(f.family.slice(7))),
+    palettes: [...document.querySelectorAll("style[data-qfont]")].map(s => Number(s.dataset.qfont.slice(7))),
+  }));
+  assert.ok(kept.fonts.length <= 13, `only nearby page fonts stay loaded, got ${kept.fonts.length}`);
+  assert.ok(Math.max(...kept.fonts) - Math.min(...kept.fonts) <= 12, `kept fonts form a small window: ${kept.fonts}`);
+  assert.ok(kept.fonts.includes(44), `the current page keeps its font: ${kept.fonts}`);
+  assert.ok(kept.palettes.every(n => kept.fonts.includes(n)), `colours only for loaded fonts: ${kept.palettes}`);
+  assert.ok(kept.palettes.includes(44), "the current page keeps its colours");
+  assert.deepEqual(errors, []);
+  await context.close();
+});
+
 test("home opens on a phone without script errors and shows the bottom tabs", async () => {
   const { page, errors, context } = await appPage();
   await page.goto(BASE + "/", { waitUntil: "load" });

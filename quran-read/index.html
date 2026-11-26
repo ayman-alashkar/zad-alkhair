@@ -5240,6 +5240,19 @@ function searchMatcher(query) {
     qcfFontLoads.set(name, job);
     return job;
   }
+  const QCF_FONT_KEEP = 6;
+  function releaseQcfFonts(center) {
+    for (const [name, job] of [...qcfFontLoads]) {
+      const p = Number(name.slice(7));
+      if (Math.abs(p - center) <= QCF_FONT_KEEP) continue;
+      qcfFontLoads.delete(name);
+      job.then((face) => {
+        document.fonts.delete(face);
+        if (!qcfFontLoads.has(name)) removeQcfPalettes(name);
+      }, () => {
+      });
+    }
+  }
   function showToast(m) {
     toast.textContent = m;
     toast.classList.add("show");
@@ -5453,6 +5466,7 @@ function searchMatcher(query) {
       }
     });
     prunePageDataCache(center);
+    releaseQcfFonts(center);
   }
   async function getVersePage(k) {
     try {
@@ -5598,9 +5612,13 @@ function searchMatcher(query) {
     const ink = mode === "a" ? c.red : c.ink;
     return [...Array(10).fill(ink), c.ayah, "transparent", "transparent", c.ayah, "transparent", ink];
   }
-  const qcfPaletteStyle = document.createElement("style");
-  document.head.appendChild(qcfPaletteStyle);
+  const qcfPaletteStyles = /* @__PURE__ */ new Map();
+  function removeQcfPalettes(fam) {
+    qcfPaletteStyles.get(fam)?.remove();
+    qcfPaletteStyles.delete(fam);
+  }
   function addQcfPalettes(fam) {
+    removeQcfPalettes(fam);
     const n = fam.slice(7), page = `.page[data-qfont="${fam}"]`, css = [];
     for (const theme of ["l", "d"]) for (const mode of ["t", "a", "j"]) {
       const colors = qcfPalette(theme, mode).map((x, i) => i + " " + x).join(",");
@@ -5615,7 +5633,11 @@ function searchMatcher(query) {
       `html[data-tajweed="on"] ${page} .word,html[data-tajweed="on"] ${page} .word.allah{font-palette:--q${n}lj}`,
       `html[data-theme="dark"][data-tajweed="on"] ${page} .word,html[data-theme="dark"][data-tajweed="on"] ${page} .word.allah{font-palette:--q${n}dj}`
     );
-    qcfPaletteStyle.textContent += css.join("\n") + "\n";
+    const style = document.createElement("style");
+    style.dataset.qfont = fam;
+    style.textContent = css.join("\n");
+    document.head.appendChild(style);
+    qcfPaletteStyles.set(fam, style);
   }
   const TAJWEED_KEY = "zad:mushaf-tajweed";
   const TAJWEED_LEGEND = [
