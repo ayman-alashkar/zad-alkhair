@@ -81,6 +81,22 @@ async function ensureQcfFont(name){
   qcfFontLoads.set(name,job);
   return job;
 }
+/* لا يبقى في الذاكرة إلا خطوط الصفحات القريبة من الصفحة الحالية. خط كل صفحة ملوّن،
+   وتراكمها كلها (حتى ٦٠٤ خطوط وأكثر من ٤٠٠٠ قاعدة ألوان) يبطئ كل إعادة رسم حتى ينهار
+   Chromium على Windows. الصفحات أبعد من ±٢ تُفرَّغ أصلًا (trimPageDom)، فتحرير خطوط ما
+   بعد ±QCF_FONT_KEEP آمن؛ وإن عاد القارئ إليها حُمّل خطها من ذاكرة العمل دون اتصال. */
+const QCF_FONT_KEEP=6;
+function releaseQcfFonts(center){
+  for(const [name,job] of [...qcfFontLoads]){
+    const p=Number(name.slice(7));
+    if(Math.abs(p-center)<=QCF_FONT_KEEP)continue;
+    qcfFontLoads.delete(name);
+    job.then(face=>{
+      document.fonts.delete(face);
+      if(!qcfFontLoads.has(name))removeQcfPalettes(name);  /* لم يُطلب من جديد في الأثناء */
+    },()=>{});
+  }
+}
 function showToast(m){toast.textContent=m;toast.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>toast.classList.remove("show"),1450)}
 
 /* Android/PWA back policy. The first Back at the real app boundary removes
@@ -229,6 +245,7 @@ function trimPageDom(center){
     if(Math.abs(p-center)>2){root.innerHTML="";delete root.dataset.loaded;}
   });
   prunePageDataCache(center);
+  releaseQcfFonts(center);
 }
 async function getVersePage(k){
   try{

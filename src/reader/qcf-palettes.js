@@ -22,9 +22,16 @@ function qcfPalette(theme,mode){
   const ink=mode==="a"?c.red:c.ink;
   return [...Array(10).fill(ink),c.ayah,"transparent","transparent",c.ayah,"transparent",ink];
 }
-const qcfPaletteStyle=document.createElement("style");
-document.head.appendChild(qcfPaletteStyle);
+/* لكل خط صفحة عنصر <style> خاص بألوانه، يُضاف عند تحميل الخط ويُحذف عند تحريره
+   (releaseQcfFonts). كانت الألوان كلها تُلحق بعنصر واحد يكبر مع كل صفحة، فيُعاد تحليله كله
+   في كل مرة، وتتراكم مئات الخطوط الملوّنة حتى ينهار Chromium على Windows (٢٦ نوفمبر). */
+const qcfPaletteStyles=new Map();
+function removeQcfPalettes(fam){
+  qcfPaletteStyles.get(fam)?.remove();
+  qcfPaletteStyles.delete(fam);
+}
 function addQcfPalettes(fam){
+  removeQcfPalettes(fam);
   const n=fam.slice(7),page=`.page[data-qfont="${fam}"]`,css=[];
   for(const theme of ["l","d"])for(const mode of ["t","a","j"]){
     const colors=qcfPalette(theme,mode).map((x,i)=>i+" "+x).join(",");
@@ -39,7 +46,9 @@ function addQcfPalettes(fam){
     `html[data-tajweed="on"] ${page} .word,html[data-tajweed="on"] ${page} .word.allah{font-palette:--q${n}lj}`,
     `html[data-theme="dark"][data-tajweed="on"] ${page} .word,html[data-theme="dark"][data-tajweed="on"] ${page} .word.allah{font-palette:--q${n}dj}`
   );
-  qcfPaletteStyle.textContent+=css.join("\n")+"\n";
+  const style=document.createElement("style");
+  style.dataset.qfont=fam;style.textContent=css.join("\n");
+  document.head.appendChild(style);qcfPaletteStyles.set(fam,style);
 }
 
 /* ---------- وضع التجويد ----------
